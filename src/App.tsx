@@ -18,49 +18,48 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import Ingresos from "./pages/Mavet/Ingresos";
+import RegistroPublico from "./pages/Mavet/RegistroPublico";
 
 export default function App() {
   return (
-    <>
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+    <Router>
+      <ScrollToTop />
+      <Routes>
+        {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
+        <Route element={<AppLayout />}>
+          <Route index path="/" element={<Home />} />
+          <Route path="/profile" element={<UserProfiles />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/blank" element={<Blank />} />
+          <Route path="/form-elements" element={<FormElements />} />
+          <Route path="/basic-tables" element={<BasicTables />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/avatars" element={<Avatars />} />
+          <Route path="/badge" element={<Badges />} />
+          <Route path="/buttons" element={<Buttons />} />
+          <Route path="/images" element={<Images />} />
+          <Route path="/videos" element={<Videos />} />
+          <Route path="/line-chart" element={<LineChart />} />
+          <Route path="/bar-chart" element={<BarChart />} />
+          
+          {/* Módulos específicos del MAVET */}
+          <Route path="/ingresos" element={<Ingresos />} />
+          <Route path="/inventario-obras" element={<BasicTables />} /> 
+          <Route path="/biblioteca" element={<BasicTables />} />
+          <Route path="/talleres" element={<FormElements />} />
+          <Route path="/auditorio" element={<Calendar />} />
+        </Route>
 
-            {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
+        {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
+        <Route path="/registro-visitante" element={<RegistroPublico tipo="visitante" />} />
+        <Route path="/registro-trabajador" element={<RegistroPublico tipo="trabajador" />} />
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
-
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-          </Route>
-
-          {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-
-          {/* Fallback Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-    </>
+        {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
