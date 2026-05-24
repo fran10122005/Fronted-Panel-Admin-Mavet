@@ -6,8 +6,8 @@ export default function NotFound() {
   return (
     <>
       <PageMeta
-        title="React.js 404 Dashboard | MAVET - React.js Admin Dashboard Template"
-        description="This is React.js 404 Dashboard page for MAVET - React.js Tailwind CSS Admin Dashboard Template"
+        title="MAVET | Panel de Administración"
+        description="Panel administrativo del MAVET"
       />
       <div className="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1">
         <GridShape />

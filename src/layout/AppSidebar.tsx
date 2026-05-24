@@ -31,8 +31,8 @@ const navItems: NavItem[] = [
   },
   {
     icon: <TableIcon />,
-    name: "Colecciones",
-    path: "/colecciones",
+    name: "Inventario de Bóveda",
+    path: "/inventario-obras",
   },
   {
     icon: <PageIcon />,
@@ -50,15 +50,16 @@ const navItems: NavItem[] = [
     path: "/recepcion",
   },
   {
-    icon: <CalenderIcon />,
-    name: "Educación",
-    path: "/educacion",
+    icon: <PageIcon />,
+    name: "Talleres",
+    path: "/talleres",
   },
   {
-    icon: <GridIcon />,
-    name: "Espacios",
-    path: "/espacios",
+    icon: <CalenderIcon />,
+    name: "Auditorio",
+    path: "/auditorio",
   },
+
 ];
 
 const othersItems: NavItem[] = [
@@ -149,22 +150,19 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
+              className={`menu-item group ${openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "menu-item-active"
                   : "menu-item-inactive"
-              } cursor-pointer ${
-                !isExpanded && !isHovered
+                } cursor-pointer ${!isExpanded && !isHovered
                   ? "lg:justify-center"
                   : "lg:justify-start"
-              }`}
+                }`}
             >
               <span
-                className={`menu-item-icon-size  ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                className={`menu-item-icon-size  ${openSubmenu?.type === menuType && openSubmenu?.index === index
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
-                }`}
+                  }`}
               >
                 {nav.icon}
               </span>
@@ -173,12 +171,11 @@ const AppSidebar: React.FC = () => {
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
+                  className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType &&
+                      openSubmenu?.index === index
                       ? "rotate-180 text-brand-500"
                       : ""
-                  }`}
+                    }`}
                 />
               )}
             </button>
@@ -186,16 +183,14 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 to={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                }`}
+                className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                  }`}
               >
                 <span
-                  className={`menu-item-icon-size ${
-                    isActive(nav.path)
+                  className={`menu-item-icon-size ${isActive(nav.path)
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
-                  }`}
+                    }`}
                 >
                   {nav.icon}
                 </span>
@@ -223,32 +218,29 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
+                      className={`menu-dropdown-item ${isActive(subItem.path)
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
-                      }`}
+                        }`}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
+                            className={`ml-auto ${isActive(subItem.path)
                                 ? "menu-dropdown-badge-active"
                                 : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge`}
+                              } menu-dropdown-badge`}
                           >
                             new
                           </span>
                         )}
                         {subItem.pro && (
                           <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
+                            className={`ml-auto ${isActive(subItem.path)
                                 ? "menu-dropdown-badge-active"
                                 : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge`}
+                              } menu-dropdown-badge`}
                           >
                             pro
                           </span>
@@ -268,10 +260,9 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${
-          isExpanded || isMobileOpen
-            ? "w-[290px]"
-            : isHovered
+        ${isExpanded || isMobileOpen
+          ? "w-[290px]"
+          : isHovered
             ? "w-[290px]"
             : "w-[90px]"
         }
@@ -281,27 +272,29 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-6 flex flex-col ${
-          !isExpanded && !isHovered ? "items-center justify-center" : "items-start justify-start"
-        }`}
+        className={`py-6 flex flex-col ${!isExpanded && !isHovered ? "items-center justify-center" : "items-start justify-start"
+          }`}
       >
-        <Link to="/" className="flex flex-col items-center w-full">
+        <Link to="/" className="flex items-center w-full gap-3 px-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex flex-col items-center text-center px-2">
+            <div className="flex items-center w-full">
               <img
                 src="/images/logo/mavet.png"
                 alt="Logo MAVET"
-                className="max-h-16 w-auto object-contain mb-2"
+                className="h-16 w-auto object-contain flex-shrink-0"
               />
-              <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold leading-tight">
-                museo de artes visuales y del estado táchira
+              <span 
+                className="text-[18px] text-gray-900 dark:text-gray-100 leading-snug text-left ml-3 drop-shadow-sm"
+                style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700 }}
+              >
+                Museo de Artes Visuales y Espacios del Táchira
               </span>
             </div>
           ) : (
             <img
               src="/images/logo/mavet.png"
               alt="Logo MAVET"
-              className="w-10 h-10 object-contain"
+              className="w-10 h-10 object-contain mx-auto"
             />
           )}
         </Link>
@@ -311,11 +304,10 @@ const AppSidebar: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"
-                }`}
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Menu"
@@ -327,11 +319,10 @@ const AppSidebar: React.FC = () => {
             </div>
             <div className="">
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"
-                }`}
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Others"

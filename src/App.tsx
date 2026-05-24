@@ -21,9 +21,12 @@ import Home from "./pages/Dashboard/Home";
 import Ingresos from "./pages/Mavet/Ingresos";
 import RegistroPublico from "./pages/Mavet/RegistroPublico";
 import RRHH from "./pages/Mavet/RRHH";
-import Colecciones from "./pages/Mavet/Colecciones";
 import Recepcion from "./pages/Mavet/Recepcion";
 import Biblioteca from "./pages/Mavet/Biblioteca";
+import Asistencia from "./pages/Mavet/Asistencia";
+import InventarioBoveda from "./pages/Mavet/InventarioBoveda";
+import Talleres from "./pages/Mavet/Talleres";
+import Auditorio from "./pages/Mavet/Auditorio";
 
 export default function App() {
   return (
@@ -46,24 +49,23 @@ export default function App() {
           <Route path="/videos" element={<Videos />} />
           <Route path="/line-chart" element={<LineChart />} />
           <Route path="/bar-chart" element={<BarChart />} />
-          
+
           {/* Módulos específicos del MAVET */}
-          <Route path="/colecciones" element={<Colecciones />} />
           <Route path="/biblioteca" element={<Biblioteca />} />
           <Route path="/rrhh" element={<RRHH />} />
           <Route path="/recepcion" element={<Recepcion />} />
           <Route path="/educacion" element={<Blank />} />
-          <Route path="/espacios" element={<Blank />} />
-          
+
+
           <Route path="/ingresos" element={<Ingresos />} />
-          <Route path="/inventario-obras" element={<BasicTables />} /> 
-          <Route path="/talleres" element={<FormElements />} />
-          <Route path="/auditorio" element={<Calendar />} />
+          <Route path="/inventario-obras" element={<InventarioBoveda />} />
+          <Route path="/talleres" element={<Talleres />} />
+          <Route path="/auditorio" element={<Auditorio />} />
         </Route>
 
         {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
-        <Route path="/registro-visitante" element={<RegistroPublico tipo="visitante" />} />
-        <Route path="/registro-trabajador" element={<RegistroPublico tipo="trabajador" />} />
+        <Route path="/registro-visitante" element={<RegistroPublico />} />
+        <Route path="/asistencia" element={<Asistencia />} />
 
         {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
         <Route path="/signin" element={<SignIn />} />

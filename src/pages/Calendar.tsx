@@ -118,8 +118,8 @@ const Calendar: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="React.js Calendar Dashboard | MAVET - Next.js Admin Dashboard Template"
-        description="This is React.js Calendar Dashboard page for MAVET - React.js Tailwind CSS Admin Dashboard Template"
+        title="MAVET | Panel de Administración"
+        description="Panel administrativo del MAVET"
       />
       <div className="rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="custom-calendar">

@@ -6,8 +6,8 @@ export default function SignUp() {
   return (
     <>
       <PageMeta
-        title="React.js SignUp Dashboard | MAVET - Next.js Admin Dashboard Template"
-        description="This is React.js SignUp Tables Dashboard page for MAVET - React.js Tailwind CSS Admin Dashboard Template"
+        title="MAVET | Panel de Administración"
+        description="Panel administrativo del MAVET"
       />
       <AuthLayout>
         <SignUpForm />
