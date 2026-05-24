@@ -20,6 +20,10 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import Ingresos from "./pages/Mavet/Ingresos";
 import RegistroPublico from "./pages/Mavet/RegistroPublico";
+import RRHH from "./pages/Mavet/RRHH";
+import Colecciones from "./pages/Mavet/Colecciones";
+import Recepcion from "./pages/Mavet/Recepcion";
+import Biblioteca from "./pages/Mavet/Biblioteca";
 
 export default function App() {
   return (
@@ -44,9 +48,15 @@ export default function App() {
           <Route path="/bar-chart" element={<BarChart />} />
           
           {/* Módulos específicos del MAVET */}
+          <Route path="/colecciones" element={<Colecciones />} />
+          <Route path="/biblioteca" element={<Biblioteca />} />
+          <Route path="/rrhh" element={<RRHH />} />
+          <Route path="/recepcion" element={<Recepcion />} />
+          <Route path="/educacion" element={<Blank />} />
+          <Route path="/espacios" element={<Blank />} />
+          
           <Route path="/ingresos" element={<Ingresos />} />
           <Route path="/inventario-obras" element={<BasicTables />} /> 
-          <Route path="/biblioteca" element={<BasicTables />} />
           <Route path="/talleres" element={<FormElements />} />
           <Route path="/auditorio" element={<Calendar />} />
         </Route>

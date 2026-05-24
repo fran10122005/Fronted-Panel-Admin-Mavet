@@ -22,15 +22,34 @@ const RegistroPublico: React.FC<Props> = ({ tipo }) => {
                 <label className="block mb-2 text-sm font-medium">Nombre Completo</label>
                 <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: Juan Pérez" required />
               </div>
+
               <div>
-                <label className="block mb-2 text-sm font-medium">Procedencia</label>
-                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ciudad o Estado" required />
+                <label className="block mb-2 text-sm font-medium">Cedula</label>
+                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: V-31434151" required />
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium">Telefono</label>
+                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: 0412-7666666" required />
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium">Edad</label>
+                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: 18" required />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium">Institucion</label>
+                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: UNEFA" required />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium">Profesion</label>
+                <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: Maesttro" required />
               </div>
             </>
           ) : (
             <div>
               <label className="block mb-2 text-sm font-medium">Cédula de Identidad</label>
-              <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="V-12345678" required />
+              <input type="text" className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-primary" placeholder="Ej: V-12345678" required />
             </div>
           )}
           
