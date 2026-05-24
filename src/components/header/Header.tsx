@@ -78,17 +78,15 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
             </svg>
           </button>
 
-          <Link to="/" className="lg:hidden">
+          <Link to="/" className="lg:hidden flex items-center gap-2">
             <img
-              className="dark:hidden"
-              src="./images/logo/logo.svg"
-              alt="Logo"
+              src="/images/logo/mavet.png"
+              alt="Logo MAVET"
+              className="h-10 w-auto object-contain"
             />
-            <img
-              className="hidden dark:block"
-              src="./images/logo/logo-dark.svg"
-              alt="Logo"
-            />
+            <span className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold leading-tight max-w-[150px]">
+              museo de artes visuales y del estado táchira
+            </span>
           </Link>
 
           <button

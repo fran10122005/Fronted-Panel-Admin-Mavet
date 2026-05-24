@@ -17,16 +17,18 @@ export default function AuthLayout({
             {/* <!-- ===== Common Grid Shape Start ===== --> */}
             <GridShape />
             <div className="flex flex-col items-center max-w-xs">
-              <Link to="/" className="block mb-4">
+              <Link to="/" className="block mb-2">
                 <img
-                  width={231}
-                  height={48}
-                  src="/images/logo/auth-logo.svg"
-                  alt="Logo"
+                  src="/images/logo/mavet.png"
+                  alt="Logo MAVET"
+                  className="max-h-24 w-auto object-contain"
                 />
               </Link>
-              <p className="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
+              <span className="text-center text-xs uppercase tracking-wider text-gray-400 dark:text-white/60 font-bold mb-4 leading-tight">
+                museo de artes visuales y del estado táchira
+              </span>
+              <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
+                Panel de Administración
               </p>
             </div>
           </div>

@@ -281,34 +281,27 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+        className={`py-6 flex flex-col ${
+          !isExpanded && !isHovered ? "items-center justify-center" : "items-start justify-start"
         }`}
       >
-        <Link to="/">
+        <Link to="/" className="flex flex-col items-center w-full">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
+            <div className="flex flex-col items-center text-center px-2">
               <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
+                src="/images/logo/mavet.png"
+                alt="Logo MAVET"
+                className="max-h-16 w-auto object-contain mb-2"
               />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold leading-tight">
+                museo de artes visuales y del estado táchira
+              </span>
+            </div>
           ) : (
             <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
+              src="/images/logo/mavet.png"
+              alt="Logo MAVET"
+              className="w-10 h-10 object-contain"
             />
           )}
         </Link>
