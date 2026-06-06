@@ -14,7 +14,7 @@ import {
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-
+import { useAuth } from "../context/AuthContext";
 
 type NavItem = {
   name: string;
@@ -75,9 +75,32 @@ const othersItems: NavItem[] = [
   },
 ];
 
+const routePermissions: Record<string, string[]> = {
+  "/": ["*"],
+  "/inventario-obras": ["Administrador", "admin", "Curador"],
+  "/biblioteca": ["Administrador", "admin", "Bibliotecario", "Guía"],
+  "/rrhh": ["Administrador", "admin", "Recursos Humanos"],
+  "/recepcion": ["Administrador", "admin", "Recepcionista", "Seguridad"],
+  "/talleres": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
+  "/auditorio": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
+};
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { logout, user } = useAuth();
   const location = useLocation();
+
+  // Agregamos fallbacks en caso de que el objeto user antiguo en localStorage no tenga .Role
+  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+
+  const filteredNavItems = useCallback(() => {
+    if (userRole === "Administrador" || userRole === "admin") return navItems;
+    return navItems.filter((item) => {
+      const allowedRoles = routePermissions[item.path || ""] || [];
+      if (allowedRoles.includes("*")) return true;
+      return allowedRoles.includes(userRole);
+    });
+  }, [userRole])();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -97,7 +120,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
+      const items = menuType === "main" ? filteredNavItems : othersItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -181,23 +204,39 @@ const AppSidebar: React.FC = () => {
             </button>
           ) : (
             nav.path && (
-              <Link
-                to={nav.path}
-                className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                  }`}
-              >
-                <span
-                  className={`menu-item-icon-size ${isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
+              nav.name === "Cerrar Sesión" ? (
+                <button
+                  onClick={() => {
+                    logout();
+                  }}
+                  className={`w-full text-left menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"}`}
+                >
+                  <span className={`menu-item-icon-size ${isActive(nav.path) ? "menu-item-icon-active" : "menu-item-icon-inactive"}`}>
+                    {nav.icon}
+                  </span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="menu-item-text">{nav.name}</span>
+                  )}
+                </button>
+              ) : (
+                <Link
+                  to={nav.path}
+                  className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                     }`}
                 >
-                  {nav.icon}
-                </span>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">{nav.name}</span>
-                )}
-              </Link>
+                  <span
+                    className={`menu-item-icon-size ${isActive(nav.path)
+                        ? "menu-item-icon-active"
+                        : "menu-item-icon-inactive"
+                      }`}
+                  >
+                    {nav.icon}
+                  </span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="menu-item-text">{nav.name}</span>
+                  )}
+                </Link>
+              )
             )
           )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
@@ -315,7 +354,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(navItems, "main")}
+              {renderMenuItems(filteredNavItems, "main")}
             </div>
             <div className="">
               <h2

@@ -7,6 +7,7 @@ import { DateSelectArg, EventClickArg } from "@fullcalendar/core";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
+import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 
 const Auditorio: React.FC = () => {
@@ -65,41 +66,56 @@ const Auditorio: React.FC = () => {
     openModal();
   };
 
-  const handleAddOrUpdateEvent = () => {
-    if (selectedEvent) {
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === selectedEvent.id
-            ? {
-                ...event,
-                title: eventTitle,
-                start: eventStartDate,
-                end: eventEndDate,
-                extendedProps: { organizador, tipoEvento },
-              }
-            : event
-        )
-      );
-    } else {
-      const newEvent: EventoAuditorio = {
-        id: Date.now().toString(),
-        title: eventTitle,
-        start: eventStartDate,
-        end: eventEndDate,
-        allDay: true,
-        extendedProps: { organizador, tipoEvento },
+  const handleAddOrUpdateEvent = async () => {
+    try {
+      setIsLoading(true);
+      const payload = {
+        id_espacio: 1,
+        nombre_responsable: organizador,
+        institucion: tipoEvento,
+        fecha_solicitada: eventStartDate.split("T")[0],
+        hora_inicio: "08:00:00",
+        hora_fin: "18:00:00",
+        motivo_uso: eventTitle,
+        estado_solicitud: "Aprobada",
+        id_usuario_aprobador: 1
       };
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
-    }
-    closeModal();
-    resetModalFields();
-  };
 
-  const handleDeleteEvent = () => {
-    if (selectedEvent) {
-      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== selectedEvent.id));
+      if (selectedEvent) {
+        await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
+      } else {
+        await mavetApi.registrarReservaAuditorio(payload);
+      }
+      
+      const data = await mavetApi.getEventos();
+      setEvents(data);
       closeModal();
       resetModalFields();
+    } catch (error) {
+      console.error("Error al guardar reserva:", error);
+      alert("Error al guardar la reserva");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (selectedEvent) {
+      if (window.confirm("¿Está seguro de eliminar esta reserva?")) {
+        try {
+          setIsLoading(true);
+          await mavetApi.eliminarReservaAuditorio(selectedEvent.id);
+          const data = await mavetApi.getEventos();
+          setEvents(data);
+          closeModal();
+          resetModalFields();
+        } catch (error) {
+          console.error("Error al eliminar reserva:", error);
+          alert("Error al eliminar la reserva");
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
   };
 
@@ -141,9 +157,21 @@ const Auditorio: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reservas de Auditorio</h1>
           <p className="text-sm text-gray-500">Gestión administrativa de agenda y ocupación de espacios.</p>
         </div>
-        <button onClick={openModal} className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors">
-          + Registrar Reserva
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => {
+              if (events.length === 0) return;
+              exportarHistorialEventos(events);
+            }}
+            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Exportar Historial PDF
+          </button>
+          <button onClick={openModal} className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors">
+            + Registrar Reserva
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">

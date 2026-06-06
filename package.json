@@ -4,7 +4,7 @@
   "version": "2.1.0",
   "type": "module",
   "scripts": {
-    "dev":  "vite --host",
+    "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -21,6 +21,8 @@
     "apexcharts": "^4.1.0",
     "clsx": "^2.1.1",
     "flatpickr": "^4.6.13",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { mavetApi } from "../../services/api";
+import { exportarInventarioObras } from "../../services/pdf.service";
 import { Obra } from "../../types";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
@@ -27,6 +28,14 @@ export default function InventarioBoveda() {
   const { isOpen, openModal, closeModal } = useModal();
   const [formData, setFormData] = useState<Obra>(initialFormState);
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
+
+  const showAlert = (message: string, type: 'success' | 'error') => {
+    setAlertInfo({ show: true, message, type });
+    setTimeout(() => setAlertInfo({ show: false, message: "", type: "success" }), 4000);
+  };
 
   useEffect(() => {
     const fetchObras = async () => {
@@ -54,9 +63,19 @@ export default function InventarioBoveda() {
     openModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("¿Está seguro de que desea eliminar esta obra del inventario?")) {
-      setObras(obras.filter(o => o.id !== id));
+      try {
+        setIsLoading(true);
+        await mavetApi.eliminarObra(id);
+        const data = await mavetApi.getObras();
+        setObras(data);
+        showAlert("Obra eliminada exitosamente", "success");
+      } catch (error: any) {
+        showAlert(error.message || "Error al eliminar obra", "error");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -68,15 +87,25 @@ export default function InventarioBoveda() {
     }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing) {
-      setObras(obras.map(o => o.id === formData.id ? formData : o));
-    } else {
-      const newObra = { ...formData, id: `OBR-00${obras.length + 4}` }; 
-      setObras([...obras, newObra]);
+    setIsSubmitting(true);
+    try {
+      if (isEditing) {
+        await mavetApi.actualizarObra(formData.id, formData);
+        showAlert("Obra actualizada exitosamente", "success");
+      } else {
+        await mavetApi.crearObra(formData);
+        showAlert("Obra registrada exitosamente", "success");
+      }
+      const data = await mavetApi.getObras();
+      setObras(data);
+      closeModal();
+    } catch (error: any) {
+      showAlert(error.message || "Error al guardar obra", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    closeModal();
   };
 
   // Filtrado reactivo de las obras
@@ -94,19 +123,42 @@ export default function InventarioBoveda() {
   }, [obras, searchTerm, filterEstado]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Alerta flotante */}
+      {alertInfo.show && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-sm ${alertInfo.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+            <span className="font-semibold text-sm">
+              {alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventario de Bóveda</h1>
           <p className="text-sm text-gray-500">Catálogo de obras de arte registradas.</p>
         </div>
-        <button 
-          onClick={handleOpenAdd}
-          className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-          Agregar Nueva Obra
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (obras.length === 0) return;
+              exportarInventarioObras(filteredObras);
+            }}
+            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Exportar PDF
+          </button>
+          <button 
+            onClick={handleOpenAdd}
+            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+            Agregar Nueva Obra
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden min-h-[400px] flex flex-col">
@@ -355,9 +407,14 @@ export default function InventarioBoveda() {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors"
+                disabled={isSubmitting}
+                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait"
               >
-                {isEditing ? "Actualizar Obra" : "Registrar Obra"}
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  isEditing ? "Actualizar Obra" : "Registrar Obra"
+                )}
               </button>
             </div>
           </form>

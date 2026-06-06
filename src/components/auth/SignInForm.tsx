@@ -5,6 +5,7 @@ import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
@@ -13,23 +14,22 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setIsLoading(true);
 
-    // Simular un pequeño retardo de red
-    setTimeout(() => {
-      if (email === "javierpinto10122005@gmail.com" && password === "admin123") {
-        navigate("/"); // Autenticación exitosa, ir al Dashboard
-      } else {
-        setErrorMsg("Credenciales incorrectas. Verifique su correo o contraseña.");
-        setIsLoading(false);
-      }
-    }, 800);
+    try {
+      await login(email, password);
+      navigate("/"); // Autenticación exitosa, ir al Dashboard
+    } catch (err: any) {
+      setErrorMsg(err.message || "Credenciales incorrectas. Verifique su correo o contraseña.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -1,6 +1,19 @@
 import PageMeta from "../../components/common/PageMeta";
+import { useState, useEffect } from "react";
+import { mavetApi } from "../../services/api";
+import { Link } from "react-router";
 
 export default function Home() {
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    mavetApi.getDashboardStats().then(data => {
+      if (data) setStats(data);
+      setIsLoading(false);
+    });
+  }, []);
+
   return (
     <>
       <PageMeta
@@ -28,7 +41,9 @@ export default function Home() {
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Obras en Bóveda</span>
-              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">597</h4>
+              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">
+                {isLoading ? "..." : stats?.totalObras || 0}
+              </h4>
             </div>
           </div>
 
@@ -45,7 +60,9 @@ export default function Home() {
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Títulos en Biblioteca</span>
-              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">1,240</h4>
+              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">
+                {isLoading ? "..." : stats?.totalLibros || 0}
+              </h4>
             </div>
           </div>
 
@@ -62,7 +79,9 @@ export default function Home() {
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Visitantes este Mes</span>
-              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">3,450</h4>
+              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">
+                {isLoading ? "..." : stats?.visitantesMes || 0}
+              </h4>
             </div>
           </div>
 
@@ -75,7 +94,9 @@ export default function Home() {
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Eventos Programados</span>
-              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">12</h4>
+              <h4 className="mt-1 font-bold text-gray-900 text-2xl dark:text-white">
+                {isLoading ? "..." : stats?.totalEventosActivos || 0}
+              </h4>
             </div>
           </div>
         </div>
@@ -84,40 +105,32 @@ export default function Home() {
           {/* Actividades Recientes */}
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Próximos Eventos y Talleres</h3>
-              <a href="/auditorio" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ver Auditorio</a>
+              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Próximos Eventos</h3>
+              <Link to="/auditorio" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ver Auditorio</Link>
             </div>
             <div className="p-0 divide-y divide-gray-100 dark:divide-gray-800">
-              <div className="p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-brand-500/10 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400">MAY</span>
-                  <span className="text-lg font-black text-brand-700 dark:text-brand-300">25</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white text-base">Inauguración Exposición "Luz y Sombra"</h4>
-                  <p className="text-sm text-gray-500 mt-0.5">Auditorio Principal • 10:00 AM</p>
-                </div>
-              </div>
-              <div className="p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-brand-500/10 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400">JUN</span>
-                  <span className="text-lg font-black text-brand-700 dark:text-brand-300">02</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white text-base">Taller Básico de Escultura</h4>
-                  <p className="text-sm text-gray-500 mt-0.5">Patio Central • 02:00 PM</p>
-                </div>
-              </div>
-              <div className="p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-brand-500/10 flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-brand-600 dark:text-brand-400">JUN</span>
-                  <span className="text-lg font-black text-brand-700 dark:text-brand-300">15</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white text-base">Conferencia: Arte Contemporáneo</h4>
-                  <p className="text-sm text-gray-500 mt-0.5">Auditorio Principal • 04:30 PM</p>
-                </div>
-              </div>
+              {isLoading ? (
+                <div className="p-5 text-center text-gray-500">Cargando eventos...</div>
+              ) : stats?.proximosEventos?.length === 0 ? (
+                <div className="p-5 text-center text-gray-500">No hay eventos programados.</div>
+              ) : stats?.proximosEventos?.map((evento: any) => {
+                const dateObj = new Date(evento.fecha_solicitada);
+                const month = dateObj.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                
+                return (
+                  <div key={evento.id_solicitud} className="p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-brand-500/10 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-brand-600 dark:text-brand-400">{month}</span>
+                      <span className="text-lg font-black text-brand-700 dark:text-brand-300">{day}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-base truncate">{evento.motivo_uso || "Evento MAVET"}</h4>
+                      <p className="text-sm text-gray-500 mt-0.5">Auditorio • {evento.hora_inicio || "Por definir"}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -125,7 +138,7 @@ export default function Home() {
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="font-bold text-gray-800 dark:text-white text-lg">Últimas Obras Registradas</h3>
-              <a href="/inventario-obras" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ir a Bóveda</a>
+              <Link to="/inventario-obras" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ir a Bóveda</Link>
             </div>
             <div className="p-5 overflow-x-auto">
               <table className="w-full text-left">
@@ -137,27 +150,30 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-800">
-                  <tr>
-                    <td className="py-4 font-mono text-xs text-brand-600 dark:text-brand-400">OBR-003</td>
-                    <td className="py-4 font-medium">Abstracto I</td>
-                    <td className="py-4 text-center">
-                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium border bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400">Restauración</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-4 font-mono text-xs text-brand-600 dark:text-brand-400">OBR-002</td>
-                    <td className="py-4 font-medium">Busto de Bolívar</td>
-                    <td className="py-4 text-center">
-                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400">Bueno</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-4 font-mono text-xs text-brand-600 dark:text-brand-400">OBR-001</td>
-                    <td className="py-4 font-medium">Paisaje Andino</td>
-                    <td className="py-4 text-center">
-                      <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium border bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400">Excelente</span>
-                    </td>
-                  </tr>
+                  {isLoading ? (
+                    <tr><td colSpan={3} className="py-4 text-center text-gray-500">Cargando obras...</td></tr>
+                  ) : stats?.ultimasObras?.length === 0 ? (
+                    <tr><td colSpan={3} className="py-4 text-center text-gray-500">No hay obras registradas.</td></tr>
+                  ) : stats?.ultimasObras?.map((obra: any) => {
+                    const isRestauracion = obra.EstadoObra?.nombre_estado === 'Restauración';
+                    const isExcelente = obra.EstadoObra?.nombre_estado === 'Excelente';
+                    
+                    return (
+                      <tr key={obra.id_obra}>
+                        <td className="py-4 font-mono text-xs text-brand-600 dark:text-brand-400">{obra.codigo_inventario || `OBR-${obra.id_obra}`}</td>
+                        <td className="py-4 font-medium truncate max-w-[150px]">{obra.titulo || "Sin Título"}</td>
+                        <td className="py-4 text-center">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${
+                            isRestauracion ? 'bg-orange-50 text-orange-700 border-orange-200' : 
+                            isExcelente ? 'bg-green-50 text-green-700 border-green-200' : 
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}>
+                            {obra.EstadoObra?.nombre_estado || "Bueno"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

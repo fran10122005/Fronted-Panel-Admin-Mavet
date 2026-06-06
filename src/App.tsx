@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
+import { AuthProvider } from "./context/AuthContext";
+import AuthRoute from "./components/auth/AuthRoute";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
@@ -30,12 +32,14 @@ import Auditorio from "./pages/Mavet/Auditorio";
 
 export default function App() {
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
-        {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
-        <Route element={<AppLayout />}>
-          <Route index path="/" element={<Home />} />
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        <Routes>
+          {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
+          <Route element={<AuthRoute />}>
+            <Route element={<AppLayout />}>
+              <Route index path="/" element={<Home />} />
           <Route path="/profile" element={<UserProfiles />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/blank" element={<Blank />} />
@@ -59,8 +63,9 @@ export default function App() {
 
           <Route path="/ingresos" element={<Ingresos />} />
           <Route path="/inventario-obras" element={<InventarioBoveda />} />
-          <Route path="/talleres" element={<Talleres />} />
-          <Route path="/auditorio" element={<Auditorio />} />
+            <Route path="/talleres" element={<Talleres />} />
+            <Route path="/auditorio" element={<Auditorio />} />
+          </Route>
         </Route>
 
         {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
@@ -73,5 +78,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
+    </AuthProvider>
   );
 }

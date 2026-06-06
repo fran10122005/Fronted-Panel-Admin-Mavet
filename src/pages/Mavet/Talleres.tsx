@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ComponentCard from "../../components/common/ComponentCard";
 import { mavetApi } from "../../services/api";
 
 export default function Talleres() {
+  const [talleres, setTalleres] = useState<any[]>([]);
+  const [inscripciones, setInscripciones] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
-    tallerId: "TALLER-PINTURA-01",
+    tallerId: "",
     alumnoNombre: "",
     alumnoEdad: "",
     repNombre: "",
@@ -14,6 +17,25 @@ export default function Talleres() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const talleresData = await mavetApi.getTalleres();
+      setTalleres(talleresData);
+      if (talleresData.length > 0) {
+        setFormData(prev => ({ ...prev, tallerId: talleresData[0].id_taller }));
+      }
+
+      const inscripcionesData = await mavetApi.getInscripcionesTaller();
+      setInscripciones(inscripcionesData);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,8 +59,13 @@ export default function Talleres() {
       
       showAlert(response.message, 'success');
       setFormData({ tallerId: formData.tallerId, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" });
-    } catch (error) {
-      showAlert("Ocurrió un error al inscribir al alumno.", 'error');
+      
+      // Refrescar lista de inscritos
+      const inscripcionesData = await mavetApi.getInscripcionesTaller();
+      setInscripciones(inscripcionesData);
+
+    } catch (error: any) {
+      showAlert(error.message || "Ocurrió un error al inscribir al alumno.", 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,11 +91,8 @@ export default function Talleres() {
           <p className="text-sm text-gray-500">Administración de programas y matrículas.</p>
         </div>
         <div className="flex gap-3">
-          <div className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-lg font-medium border border-gray-200 dark:border-gray-700">
-            Cupos Disponibles: 12
-          </div>
           <button className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors">
-            + Crear Taller
+            + Crear Nuevo Taller
           </button>
         </div>
       </div>
@@ -85,12 +109,16 @@ export default function Talleres() {
                   name="tallerId" 
                   value={formData.tallerId} 
                   onChange={handleChange}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || talleres.length === 0}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-4 py-3 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-50"
+                  required
                 >
-                  <option value="TALLER-PINTURA-01">Pintura al Óleo (Tardes)</option>
-                  <option value="TALLER-ESCULTURA-01">Escultura Básica (Mañanas)</option>
-                  <option value="TALLER-DIBUJO-01">Dibujo Artístico (Sábados)</option>
+                  {talleres.length === 0 && <option value="">Cargando talleres...</option>}
+                  {talleres.map(t => (
+                    <option key={t.id_taller} value={t.id_taller}>
+                      {t.nombre_curso}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -188,6 +216,56 @@ export default function Talleres() {
           </button>
         </div>
       </form>
+
+      {/* Tabla de Alumnos Inscritos */}
+      <div className="mt-8">
+        <ComponentCard title="Alumnos Inscritos Recientemente">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                  <th scope="col" className="px-6 py-3">Alumno</th>
+                  <th scope="col" className="px-6 py-3">Taller</th>
+                  <th scope="col" className="px-6 py-3">Representante</th>
+                  <th scope="col" className="px-6 py-3">Fecha</th>
+                  <th scope="col" className="px-6 py-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inscripciones.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                      No hay alumnos inscritos aún.
+                    </td>
+                  </tr>
+                ) : (
+                  inscripciones.map((ins, index) => (
+                    <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                        {ins.Alumno ? ins.Alumno.nombres : "Desconocido"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {ins.Taller ? ins.Taller.nombre_curso : `Taller #${ins.id_taller}`}
+                      </td>
+                      <td className="px-6 py-4">
+                        {ins.Representante ? `${ins.Representante.nombres} ${ins.Representante.apellido}` : "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {new Date(ins.fecha_inscripcion).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
+                          {ins.estado_inscripcion || "Activo"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </ComponentCard>
+      </div>
     </div>
   );
 }
