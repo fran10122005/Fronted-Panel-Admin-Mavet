@@ -13,35 +13,73 @@ import { EventoAuditorio } from "../../types";
 const Auditorio: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [eventTitle, setEventTitle] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [horaInicio, setHoraInicio] = useState("08:00");
+  const [horaFin, setHoraFin] = useState("18:00");
   const [organizador, setOrganizador] = useState("");
+  const [cedulaOrganizador, setCedulaOrganizador] = useState("");
+  const [organizadorLoading, setOrganizadorLoading] = useState(false);
+  const [organizadorError, setOrganizadorError] = useState("");
+  const [organizadorAuto, setOrganizadorAuto] = useState(false);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
   
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
+  const loadEventos = async () => {
+    try {
+      const data = await mavetApi.getEventos();
+      setEvents(data);
+    } catch (error) {
+      console.error("Error al cargar eventos:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchEventos = async () => {
-      try {
-        const data = await mavetApi.getEventos();
-        setEvents(data);
-      } catch (error) {
-        console.error("Error al cargar eventos:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchEventos();
+    loadEventos();
   }, []);
+
+  const handleCedulaBlur = async () => {
+    const cedula = cedulaOrganizador.trim();
+    if (!cedula) {
+      setOrganizadorError("");
+      setOrganizadorAuto(false);
+      return;
+    }
+    setOrganizadorLoading(true);
+    setOrganizadorError("");
+    try {
+      const result = await mavetApi.checkVisitante(cedula);
+      if (result.existe && result.visitante) {
+        const p = result.visitante;
+        const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
+        setOrganizador(nombreCompleto);
+        setOrganizadorAuto(true);
+        setOrganizadorError("");
+      } else {
+        setOrganizador("");
+        setOrganizadorAuto(false);
+        setOrganizadorError("Persona no encontrada. Debe registrar su ingreso como visitante primero.");
+      }
+    } catch {
+      setOrganizadorError("Error al buscar la cédula. Intente de nuevo.");
+      setOrganizadorAuto(false);
+    } finally {
+      setOrganizadorLoading(false);
+    }
+  };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     resetModalFields();
-    setEventStartDate(selectInfo.startStr);
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr);
+    setEventDate(selectInfo.startStr.split("T")[0]);
+    setHoraInicio("08:00");
+    setHoraFin("18:00");
     openModal();
   };
 
@@ -59,26 +97,28 @@ const Auditorio: React.FC = () => {
       }
     });
     setEventTitle(event.title);
-    setEventStartDate(event.start?.toISOString().split("T")[0] || "");
-    setEventEndDate(event.end?.toISOString().split("T")[0] || "");
+    setEventDate(event.startStr?.split("T")[0] || "");
+    setHoraInicio((event.startStr?.split("T")[1]?.substring(0, 5)) || "08:00");
+    setHoraFin((event.endStr?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(event.extendedProps.organizador || "");
+    setCedulaOrganizador(event.extendedProps.cedula || "");
     setTipoEvento(event.extendedProps.tipoEvento || "Conferencia");
     openModal();
   };
 
   const handleAddOrUpdateEvent = async () => {
     try {
-      setIsLoading(true);
+      setSaving(true);
       const payload = {
         id_espacio: 1,
+        cedula: cedulaOrganizador,
         nombre_responsable: organizador,
         institucion: tipoEvento,
-        fecha_solicitada: eventStartDate.split("T")[0],
-        hora_inicio: "08:00:00",
-        hora_fin: "18:00:00",
-        motivo_uso: eventTitle,
-        estado_solicitud: "Aprobada",
-        id_usuario_aprobador: 1
+        fecha_uso: eventDate,
+        hora_inicio: horaInicio + ":00",
+        hora_fin: horaFin + ":00",
+        motivo: eventTitle,
+        estado: "Aprobada"
       };
 
       if (selectedEvent) {
@@ -95,35 +135,37 @@ const Auditorio: React.FC = () => {
       console.error("Error al guardar reserva:", error);
       alert("Error al guardar la reserva");
     } finally {
-      setIsLoading(false);
+      setSaving(false);
     }
   };
 
   const handleDeleteEvent = async () => {
-    if (selectedEvent) {
-      if (window.confirm("¿Está seguro de eliminar esta reserva?")) {
-        try {
-          setIsLoading(true);
-          await mavetApi.eliminarReservaAuditorio(selectedEvent.id);
-          const data = await mavetApi.getEventos();
-          setEvents(data);
-          closeModal();
-          resetModalFields();
-        } catch (error) {
-          console.error("Error al eliminar reserva:", error);
-          alert("Error al eliminar la reserva");
-        } finally {
-          setIsLoading(false);
-        }
-      }
+    if (!selectedEvent) return;
+    if (!window.confirm("¿Está seguro de eliminar esta reserva?")) return;
+    try {
+      setSaving(true);
+      await mavetApi.eliminarReservaAuditorio(selectedEvent.id);
+      setEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
+      closeModal();
+      resetModalFields();
+    } catch (error) {
+      console.error("Error al eliminar reserva:", error);
+      alert("Error al eliminar la reserva");
+    } finally {
+      setSaving(false);
     }
   };
 
   const resetModalFields = () => {
     setEventTitle("");
-    setEventStartDate("");
-    setEventEndDate("");
+    setEventDate("");
+    setHoraInicio("08:00");
+    setHoraFin("18:00");
     setOrganizador("");
+    setCedulaOrganizador("");
+    setOrganizadorLoading(false);
+    setOrganizadorError("");
+    setOrganizadorAuto(false);
     setTipoEvento("Conferencia");
     setSelectedEvent(null);
   };
@@ -191,7 +233,7 @@ const Auditorio: React.FC = () => {
               <p className="text-gray-500 font-medium animate-pulse">Cargando agenda...</p>
             </div>
           ) : (
-            <div className="calendar-container">
+            <div className={`calendar-container ${saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
               <FullCalendar
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -249,37 +291,74 @@ const Auditorio: React.FC = () => {
               />
             </div>
             
+            <div>
+              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Fecha del Evento</label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Inicio</label>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Hora Inicio</label>
                 <input
-                  type="date"
-                  value={eventStartDate}
-                  onChange={(e) => setEventStartDate(e.target.value)}
+                  type="time"
+                  value={horaInicio}
+                  onChange={(e) => setHoraInicio(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Hora Fin</label>
                 <input
-                  type="date"
-                  value={eventEndDate}
-                  onChange={(e) => setEventEndDate(e.target.value)}
+                  type="time"
+                  value={horaFin}
+                  onChange={(e) => setHoraFin(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Organizador</label>
-              <input
-                type="text"
-                value={organizador}
-                onChange={(e) => setOrganizador(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                placeholder="Nombre o Institución"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Cédula del Organizador</label>
+                <input
+                  type="text"
+                  value={cedulaOrganizador}
+                  onChange={(e) => {
+                    setCedulaOrganizador(e.target.value);
+                    if (organizadorAuto) {
+                      setOrganizador("");
+                      setOrganizadorAuto(false);
+                    }
+                    setOrganizadorError("");
+                  }}
+                  onBlur={handleCedulaBlur}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  placeholder="Ej. V-12345678"
+                />
+                {organizadorLoading && <p className="text-xs text-gray-500 mt-1">Buscando persona...</p>}
+                {organizadorError && <p className="text-xs text-red-500 mt-1">{organizadorError}</p>}
+              </div>
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre del Organizador</label>
+                <input
+                  type="text"
+                  value={organizador}
+                  onChange={(e) => {
+                    setOrganizador(e.target.value);
+                    setOrganizadorAuto(false);
+                  }}
+                  readOnly={organizadorAuto}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                  placeholder="Se carga automáticamente al buscar la cédula"
+                />
+              </div>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Ingrese la cédula y salga del campo para buscar los datos automáticamente.</p>
 
             <div>
               <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Evento</label>
@@ -305,9 +384,10 @@ const Auditorio: React.FC = () => {
             </button>
             <button
               onClick={handleAddOrUpdateEvent}
-              className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors"
+              disabled={saving}
+              className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {selectedEvent ? "Actualizar Registro" : "Guardar Reserva"}
+              {saving ? "Guardando..." : selectedEvent ? "Actualizar Registro" : "Guardar Reserva"}
             </button>
           </div>
         </div>

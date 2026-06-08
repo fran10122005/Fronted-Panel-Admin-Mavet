@@ -114,7 +114,7 @@ export default function Home() {
               ) : stats?.proximosEventos?.length === 0 ? (
                 <div className="p-5 text-center text-gray-500">No hay eventos programados.</div>
               ) : stats?.proximosEventos?.map((evento: any) => {
-                const dateObj = new Date(evento.fecha_solicitada);
+                const dateObj = new Date(evento.fecha_uso || evento.fecha_solicitada);
                 const month = dateObj.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, '0');
                 
@@ -125,7 +125,7 @@ export default function Home() {
                       <span className="text-lg font-black text-brand-700 dark:text-brand-300">{day}</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-base truncate">{evento.motivo_uso || "Evento MAVET"}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-base truncate">{evento.motivo || evento.motivo_uso || "Evento MAVET"}</h4>
                       <p className="text-sm text-gray-500 mt-0.5">Auditorio • {evento.hora_inicio || "Por definir"}</p>
                     </div>
                   </div>

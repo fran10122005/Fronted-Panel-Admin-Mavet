@@ -29,6 +29,7 @@ import Asistencia from "./pages/Mavet/Asistencia";
 import InventarioBoveda from "./pages/Mavet/InventarioBoveda";
 import Talleres from "./pages/Mavet/Talleres";
 import Auditorio from "./pages/Mavet/Auditorio";
+import Educacion from "./pages/Mavet/Educacion";
 
 export default function App() {
   return (
@@ -58,7 +59,7 @@ export default function App() {
           <Route path="/biblioteca" element={<Biblioteca />} />
           <Route path="/rrhh" element={<RRHH />} />
           <Route path="/recepcion" element={<Recepcion />} />
-          <Route path="/educacion" element={<Blank />} />
+          <Route path="/educacion" element={<Educacion />} />
 
 
           <Route path="/ingresos" element={<Ingresos />} />

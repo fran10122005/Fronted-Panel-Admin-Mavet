@@ -137,8 +137,8 @@ export default function Asistencia() {
             </div>
           </div>
 
-          {/* Grilla de 4 Botones */}
-          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+          {/* Grilla de 2 Botones */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <button
               onClick={() => handleRegistro("Entrada Mañana")}
               disabled={isSubmitting}
@@ -151,41 +151,7 @@ export default function Asistencia() {
               ) : (
                 <>
                   <svg className="w-8 h-8 text-green-600 group-hover:text-white mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                  <span className="font-bold text-green-800 group-hover:text-white text-lg">Entrada Mañana</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleRegistro("Salida Mañana")}
-              disabled={isSubmitting}
-              className={`relative group flex flex-col items-center justify-center p-6 border-2 border-red-500 bg-red-50 rounded-2xl transition-all ${
-                isSubmitting && activeButton !== "Salida Mañana" ? "opacity-50 cursor-not-allowed grayscale" : "hover:bg-red-500 hover:text-white shadow-sm hover:shadow-lg hover:-translate-y-1"
-              }`}
-            >
-              {isSubmitting && activeButton === "Salida Mañana" ? (
-                <div className="w-8 h-8 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <svg className="w-8 h-8 text-red-600 group-hover:text-white mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                  <span className="font-bold text-red-800 group-hover:text-white text-lg">Salida Mañana</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleRegistro("Entrada Tarde")}
-              disabled={isSubmitting}
-              className={`relative group flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-green-50 rounded-2xl transition-all ${
-                isSubmitting && activeButton !== "Entrada Tarde" ? "opacity-50 cursor-not-allowed grayscale" : "hover:bg-green-500 hover:text-white shadow-sm hover:shadow-lg hover:-translate-y-1"
-              }`}
-            >
-              {isSubmitting && activeButton === "Entrada Tarde" ? (
-                <div className="w-8 h-8 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <svg className="w-8 h-8 text-green-600 group-hover:text-white mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                  <span className="font-bold text-green-800 group-hover:text-white text-lg">Entrada Tarde</span>
+                  <span className="font-bold text-green-800 group-hover:text-white text-lg">Entrada</span>
                 </>
               )}
             </button>
@@ -202,7 +168,7 @@ export default function Asistencia() {
               ) : (
                 <>
                   <svg className="w-8 h-8 text-red-600 group-hover:text-white mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                  <span className="font-bold text-red-800 group-hover:text-white text-lg">Salida Tarde</span>
+                  <span className="font-bold text-red-800 group-hover:text-white text-lg">Salida</span>
                 </>
               )}
             </button>

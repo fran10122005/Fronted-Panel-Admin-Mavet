@@ -10,25 +10,7 @@ import {
   RegistroAsistencia
 } from "../types";
 
-// Mock Data
-const ObrasMock: Obra[] = [
-  { id: "OBR-001", titulo: "Paisaje Andino", autor: "Manuel Otero", medidas: "120x80 cm", ano: 1998, tecnica: "Óleo sobre lienzo", modalidad: "Pintura", estado: "Excelente", ubicacion: "Sala Principal" },
-  { id: "OBR-002", titulo: "Busto de Bolívar", autor: "Desconocido", medidas: "50x40x30 cm", ano: 1950, tecnica: "Bronce", modalidad: "Escultura", estado: "Bueno", ubicacion: "Bóveda" },
-  { id: "OBR-003", titulo: "Abstracto I", autor: "Luisa Cáceres", medidas: "90x90 cm", ano: 2015, tecnica: "Acrílico", modalidad: "Pintura", estado: "Restauración", ubicacion: "Taller" },
-];
 
-const LibrosMock: Libro[] = [
-  { id: "LIB-1001", titulo: "Historia del Arte Venezolano", autor: "Boulton, Alfredo", estante: "Estante A - Fila 2", cantidad: 3, cuota: 1, estado: "Aprobado" },
-  { id: "LIB-1002", titulo: "Técnicas de Restauración", autor: "Smith, John", estante: "Estante B - Fila 1", cantidad: 1, cuota: 0, estado: "Pendiente" },
-  { id: "LIB-1003", titulo: "Catálogo Exposición 1990", autor: "MAVET", estante: "Archivo Histórico", cantidad: 5, cuota: 5, estado: "Descartado/Venta" },
-  { id: "LIB-1004", titulo: "Color y Forma en la Escultura", autor: "García, Pedro", estante: "Estante C - Fila 4", cantidad: 2, cuota: 1, estado: "Aprobado" },
-];
-
-const AsistenciaMock: RegistroAsistencia[] = [
-  { id: "AST-001", fecha: new Date().toISOString().split("T")[0], cedula: "V-12345678", trabajadorNombre: "María González", cargo: "Curador", entradaManana: "08:00 AM", salidaManana: "12:05 PM", entradaTarde: "01:55 PM", salidaTarde: "05:00 PM" },
-  { id: "AST-002", fecha: new Date().toISOString().split("T")[0], cedula: "V-87654321", trabajadorNombre: "Carlos Ruiz", cargo: "Seguridad", entradaManana: "08:15 AM", salidaManana: "12:00 PM", entradaTarde: "02:00 PM", salidaTarde: "05:05 PM" },
-  { id: "AST-003", fecha: new Date().toISOString().split("T")[0], cedula: "V-11223344", trabajadorNombre: "Ana López", cargo: "Guía de Museo", entradaManana: "07:55 AM", salidaManana: "12:10 PM", entradaTarde: "02:20 PM", salidaTarde: "-" },
-];
 
 // Helper para simular latencia de red
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -52,20 +34,29 @@ export const mavetApi = {
     const list = Array.isArray(data) ? data : [];
     return list.map((item: any) => ({
       id: item.id_obra.toString(),
+      codigo_inventario: item.codigo_inventario || "",
       titulo: item.titulo || "Sin título",
       autor: item.Artista
         ? `${item.Artista.nombres || ""} ${item.Artista.apellidos || ""}`.trim()
         : "Desconocido",
+      id_artista: item.id_artista || undefined,
+      id_tecnica: item.id_tecnica || undefined,
+      id_estado_actual: item.id_estado_actual || undefined,
       medidas: item.medidas || "",
       ano: item.anio || 0,
       tecnica: item.TecnicaObra?.nombre_tecnica || "",
-      modalidad: item.tipo_ingreso || "N/A",
+      categoria: item.CategoriaObra?.nombre_categoria || "",
+      id_categoria_obra: item.id_categoria_obra || undefined,
+      tipo_ingreso: item.tipo_ingreso || "",
+      piezas: item.piezas || 1,
+      peso: item.peso || undefined,
+      descripcion: item.descripcion || "",
       estado: item.EstadoObra?.nombre_estado || "Bueno",
       ubicacion: item.ubicacion_actual || "Depósito"
     }));
   },
 
-  crearObra: async (payload: Obra): Promise<{ success: boolean; message: string }> => {
+  crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
     const res = await fetch("http://localhost:3000/api/obras/obras", {
       method: "POST",
       headers: getHeaders(),
@@ -75,7 +66,7 @@ export const mavetApi = {
     return { success: true, message: "Obra agregada exitosamente al inventario." };
   },
 
-  actualizarObra: async (id: string, payload: Obra): Promise<{ success: boolean; message: string }> => {
+  actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     const res = await fetch(`http://localhost:3000/api/obras/obras/${id}`, {
       method: "PUT",
       headers: getHeaders(),
@@ -102,21 +93,36 @@ export const mavetApi = {
       });
       if (!res.ok) throw new Error("Error fetching libros");
       const data = await res.json();
-      return data.map((item: any) => ({
-        id: item.id_libro.toString(),
-        titulo: item.titulo,
-        autor: item.AutorLibros?.[0]?.nombre || item.Autores?.[0]?.nombre || "Desconocido", // handle both possible associations
-        estante: item.unidad || "Depósito",
-        cantidad: item.cantidad_total || 1,
-        cuota: item.cantidad_disponible !== undefined ? item.cantidad_disponible : 1,
-        estado: item.estado || "Aprobado"
-      }));
+      return data.map((item: any) => {
+        // Construir nombre completo del autor desde la relación Many-to-Many
+        const primerAutor = item.AutorLibros?.[0];
+        const nombreAutor = primerAutor
+          ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim()
+          : "Desconocido";
+
+        return {
+          id:                  item.id_libro.toString(),
+          unidad:              item.unidad              || "",
+          cuota:               item.cuota               || "",
+          titulo:              item.titulo              || "",
+          autor:               nombreAutor,
+          id_autor:            primerAutor?.id_autor,
+          estante:             item.estante             || "",
+          ano_libro:           item.ano_libro           || "",
+          id_categoria:        item.id_categoria,
+          categoria:           item.CategoriaLibro?.nombre_categoria || "",
+          cantidad_total:      item.cantidad_total      ?? 0,
+          cantidad_disponible: item.cantidad_disponible ?? 0,
+          estado:              item.estado              || "Aprobado",
+          fecha_ingreso:       item.fecha_ingreso       || ""
+        };
+      });
     } catch {
       return [];
     }
   },
 
-  crearLibro: async (payload: Libro): Promise<{ success: boolean; message: string }> => {
+  crearLibro: async (payload: any): Promise<{ success: boolean; message: string }> => {
     const res = await fetch("http://localhost:3000/api/biblioteca/libros", {
       method: "POST",
       headers: getHeaders(),
@@ -126,7 +132,7 @@ export const mavetApi = {
     return { success: true, message: "Libro registrado exitosamente." };
   },
 
-  actualizarLibro: async (id: string, payload: Libro): Promise<{ success: boolean; message: string }> => {
+  actualizarLibro: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     const res = await fetch(`http://localhost:3000/api/biblioteca/libros/${id}`, {
       method: "PUT",
       headers: getHeaders(),
@@ -146,16 +152,84 @@ export const mavetApi = {
   },
 
   registrarPrestamo: async (payload: PrestamoPayload): Promise<{ success: boolean; message: string }> => {
+    const body = {
+      id_libro: payload.libroId,
+      cedula: payload.cedulaSolicitante,
+      nombre: payload.nombreSolicitante,
+      estado: payload.estado
+    };
     const res = await fetch("http://localhost:3000/api/biblioteca/consultas-sala", {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || "Error al registrar el préstamo");
     }
     return { success: true, message: "Préstamo registrado exitosamente en el sistema." };
+  },
+
+  devolverLibro: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`http://localhost:3000/api/biblioteca/libros/${id}/devolver`, {
+      method: "PUT",
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Error al devolver el libro");
+    }
+    return { success: true, message: "Libro devuelto exitosamente en el sistema." };
+  },
+
+  // === Catálogos (rutas públicas — no requieren token) ===
+  getArtistas: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/obras/artistas");
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  },
+  getTecnicas: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/obras/tecnicas");
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  },
+  getEstadosObra: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/obras/estados");
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  },
+  getCategoriasObra: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/obras/categorias");
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  },
+  getAutoresLibro: async (): Promise<any[]> => {
+    const res = await fetch("http://localhost:3000/api/biblioteca/autores", { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  getCategoriasLibro: async (): Promise<any[]> => {
+    const res = await fetch("http://localhost:3000/api/biblioteca/categorias", { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  getCargos: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/rrhh/cargos", { headers: getHeaders() });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data.data || []);
+    } catch {
+      return [];
+    }
   },
 
   // === Asistencia y RRHH ===
@@ -174,7 +248,9 @@ export const mavetApi = {
         telefono: item.telefono || "",
         correo: item.correo_personal || "",
         cargo: item.CargoTrabajador?.nombre_cargo || "Sin cargo",
-        estado: item.estado || "Activo"
+        horas_semanales: item.horas_semanales || 0,
+        estado: (item.estado === true || item.estado === "Activo") ? "Activo" : "Inactivo",
+        id: item.id_trabajador
       }));
     } catch (e) {
       console.error(e);
@@ -200,9 +276,9 @@ export const mavetApi = {
           trabajadorNombre: `${t.nombres || ""} ${t.apellidos || ""}`.trim(),
           cargo: c.nombre_cargo || "Sin cargo",
           entradaManana: item.entrada_manana ? new Date(item.entrada_manana).toLocaleTimeString() : "-",
-          salidaManana: item.salida_manana ? new Date(item.salida_manana).toLocaleTimeString() : "-",
-          entradaTarde: item.entrada_tarde ? new Date(item.entrada_tarde).toLocaleTimeString() : "-",
-          salidaTarde: item.salida_tarde ? new Date(item.salida_tarde).toLocaleTimeString() : "-"
+          salidaTarde: item.salida_tarde ? new Date(item.salida_tarde).toLocaleTimeString() : "-",
+          horasCumplidas: item.horas_cumplidas_dia ?? null,
+          observaciones: item.observaciones || ""
         };
       });
     } catch (e) {
@@ -211,17 +287,17 @@ export const mavetApi = {
     }
   },
 
-  registrarTrabajador: async (payload: Trabajador): Promise<{ success: boolean; message: string }> => {
+  registrarTrabajador: async (payload: any): Promise<{ success: boolean; message: string }> => {
     // We map frontend payload to backend structure
     const body = {
       cedula: payload.cedula,
-      nombres: payload.nombre,
-      apellidos: payload.apellido,
+      nombres: payload.nombres || payload.nombre,
+      apellidos: payload.apellidos || payload.apellido,
       telefono: payload.telefono,
-      correo_personal: payload.correo,
-      // Default to an existing id_cargo if not strictly mapped yet
-      id_cargo: payload.cargo === "Curador" ? 1 : payload.cargo === "Seguridad" ? 2 : 3,
-      estado: payload.estado
+      correo_personal: payload.correo_personal || payload.correo,
+      id_cargo: payload.id_cargo,
+      horas_semanales: payload.horas_semanales,
+      estado: payload.estado === "Activo"
     };
 
     const res = await fetch("http://localhost:3000/api/rrhh/trabajadores", {
@@ -304,6 +380,43 @@ export const mavetApi = {
     }
   },
 
+  crearTaller: async (payload: any): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch("http://localhost:3000/api/educacion/talleres", {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Error al crear taller");
+    }
+    return { success: true, message: "Taller creado correctamente." };
+  },
+
+  getInstructores: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/educacion/instructores", {
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error("Error fetching instructores");
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  getEspaciosMuseo: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/educacion/espacios", {
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error("Error fetching espacios");
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
   getInscripcionesTaller: async (): Promise<any[]> => {
     try {
       const res = await fetch("http://localhost:3000/api/educacion/inscripciones-talleres", {
@@ -331,26 +444,28 @@ export const mavetApi = {
 
   // === Auditorio ===
   getEventos: async (): Promise<EventoAuditorio[]> => {
-    try {
-      const res = await fetch("http://localhost:3000/api/educacion/solicitudes-espacio", {
-        headers: getHeaders()
-      });
-      if (!res.ok) throw new Error("Error fetching eventos");
-      const data = await res.json();
-      return data.map((item: any) => ({
+    const res = await fetch("http://localhost:3000/api/educacion/solicitudes-espacio", {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error(`Error fetching eventos: ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error("Respuesta del servidor no es un arreglo");
+    return data.map((item: any) => {
+      const p = item.Persona || {};
+      const orgName = item.nombre_responsable || [p.nombres, p.apellidos].filter(Boolean).join(' ') || '';
+      return {
         id: item.id_solicitud.toString(),
-        title: item.motivo_uso || "Evento",
-        start: `${item.fecha_solicitada}T${item.hora_inicio || "00:00:00"}`,
-        end: `${item.fecha_solicitada}T${item.hora_fin || "23:59:59"}`,
+        title: item.motivo || "Evento",
+        start: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_inicio || "00:00:00"}`,
+        end: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_fin || "23:59:59"}`,
         allDay: !item.hora_inicio,
         extendedProps: {
-          organizador: item.nombre_responsable,
-          tipoEvento: item.institucion || "Conferencia"
+          organizador: orgName,
+          tipoEvento: item.institucion || "Conferencia",
+          cedula: p.cedula || item.cedula || ""
         }
-      }));
-    } catch {
-      return [];
-    }
+      };
+    });
   },
 
   registrarReservaAuditorio: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
@@ -395,6 +510,124 @@ export const mavetApi = {
       throw new Error(data.message || "Credenciales incorrectas");
     }
     return data.data; // { token, usuario }
+  },
+
+  getRoles: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/auth/roles", {
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error("Error fetching roles");
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data.data || []);
+    } catch {
+      return [];
+    }
+  },
+
+  getUsuarios: async (): Promise<any[]> => {
+    try {
+      const res = await fetch("http://localhost:3000/api/auth", {
+        headers: getHeaders()
+      });
+      if (!res.ok) {
+        console.error("[getUsuarios] Error HTTP:", res.status);
+        return [];
+      }
+      const json = await res.json();
+      // El backend devuelve { status: 'success', data: [...] }
+      const list: any[] = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
+      if (list.length === 0) {
+        console.warn("[getUsuarios] Lista vacía. Respuesta del servidor:", JSON.stringify(json).slice(0, 200));
+      }
+      return list.map((u: any) => ({
+        id: u.id_usuario ?? u.id,
+        correo: u.correo,
+        rol: u.Role?.nombre_rol || "Sin Rol",
+        id_rol: u.id_rol,
+        estado: u.estado,
+        trabajador: u.Trabajador ? {
+          id: u.Trabajador.id_trabajador,
+          nombre: `${u.Trabajador.nombres || ""} ${u.Trabajador.apellidos || ""}`.trim(),
+          cargo: u.Trabajador.CargoTrabajador?.nombre_cargo || "Sin Cargo"
+        } : null
+      }));
+    } catch (e) {
+      console.error("[getUsuarios] Excepción:", e);
+      return [];
+    }
+  },
+
+  registrarUsuario: async (payload: any): Promise<{ success: boolean; message: string }> => {
+    // Usamos el endpoint de registro con cabeceras de auth para que el backend
+    // pueda vincular el trabajador si se proporciona id_trabajador
+    const body: any = {
+      correo: payload.correo,
+      password: payload.password,
+      id_rol: payload.id_rol
+    };
+    if (payload.id_trabajador && payload.id_trabajador !== 0) {
+      body.id_trabajador = payload.id_trabajador;
+    }
+    const res = await fetch("http://localhost:3000/api/auth/register", {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al registrar usuario");
+    return { success: true, message: "Usuario creado exitosamente" };
+  },
+
+  actualizarUsuario: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`http://localhost:3000/api/auth/${id}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al actualizar usuario");
+    return { success: true, message: "Usuario actualizado exitosamente" };
+  },
+
+  actualizarTrabajador: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+    const body = {
+      nombres: payload.nombres || payload.nombre,
+      apellidos: payload.apellidos || payload.apellido,
+      telefono: payload.telefono,
+      correo_personal: payload.correo_personal || payload.correo,
+      id_cargo: payload.id_cargo,
+      horas_semanales: payload.horas_semanales,
+      estado: payload.estado === "Activo"
+    };
+
+    const res = await fetch(`http://localhost:3000/api/rrhh/trabajadores/${id}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Error al actualizar trabajador");
+    return { success: true, message: data.message };
+  },
+
+  getMe: async (): Promise<any> => {
+    const res = await fetch("http://localhost:3000/api/auth/me", {
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Error obteniendo perfil");
+    const json = await res.json();
+    return json.data;
+  },
+
+  updateMe: async (payload: any): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch("http://localhost:3000/api/auth/me", {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error("Error al actualizar perfil");
+    return { success: true, message: "Perfil actualizado exitosamente" };
   },
 
   // === Dashboard Stats ===

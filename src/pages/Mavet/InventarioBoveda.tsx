@@ -5,20 +5,26 @@ import { Obra } from "../../types";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 
-const initialFormState: Obra = {
+const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
   id: "",
+  codigo_inventario: "",
   titulo: "",
-  autor: "",
   medidas: "",
   ano: new Date().getFullYear(),
-  tecnica: "",
-  modalidad: "",
-  estado: "Bueno",
+  id_categoria_obra: undefined,
+  tipo_ingreso: "",
+  piezas: 1,
+  peso: undefined,
+  descripcion: "",
   ubicacion: "",
 };
 
 export default function InventarioBoveda() {
   const [obras, setObras] = useState<Obra[]>([]);
+  const [artistas, setArtistas] = useState<any[]>([]);
+  const [tecnicas, setTecnicas] = useState<any[]>([]);
+  const [estados, setEstados] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados para búsqueda y filtrado
@@ -26,7 +32,7 @@ export default function InventarioBoveda() {
   const [filterEstado, setFilterEstado] = useState("Todos");
 
   const { isOpen, openModal, closeModal } = useModal();
-  const [formData, setFormData] = useState<Obra>(initialFormState);
+  const [formData, setFormData] = useState<any>(initialFormState);
   const [isEditing, setIsEditing] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,17 +44,31 @@ export default function InventarioBoveda() {
   };
 
   useEffect(() => {
-    const fetchObras = async () => {
+    const fetchDatos = async () => {
+      setIsLoading(true);
       try {
-        const data = await mavetApi.getObras();
-        setObras(data);
+        // Ejecutamos las peticiones independientemente para que un fallo en una no bloquee las demás
+        const artData = await mavetApi.getArtistas().catch(e => { console.error("Error Artistas:", e); return []; });
+        setArtistas(artData);
+
+        const tecData = await mavetApi.getTecnicas().catch(e => { console.error("Error Tecnicas:", e); return []; });
+        setTecnicas(tecData);
+
+        const estData = await mavetApi.getEstadosObra().catch(e => { console.error("Error Estados:", e); return []; });
+        setEstados(estData);
+
+        const catData = await mavetApi.getCategoriasObra().catch(e => { console.error("Error Categorias:", e); return []; });
+        setCategorias(catData);
+
+        const obrasData = await mavetApi.getObras().catch(e => { console.error("Error Obras:", e); return []; });
+        setObras(obrasData);
       } catch (error) {
-        console.error("Error al cargar obras:", error);
+        console.error("Error general al cargar datos:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchObras();
+    fetchDatos();
   }, []);
 
   const handleOpenAdd = () => {
@@ -81,21 +101,40 @@ export default function InventarioBoveda() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
+    
+    // Parse immediate dropdown selection fields to numbers
+    const dropdownFields = ['id_artista', 'id_tecnica', 'id_estado_actual', 'id_categoria_obra'];
+    
+    setFormData((prev: any) => ({ 
       ...prev, 
-      [name]: name === "ano" ? parseInt(value) || "" : value 
+      [name]: dropdownFields.includes(name) 
+        ? (value ? parseInt(value, 10) : undefined)
+        : value 
     }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.titulo || !formData.id_artista || !formData.id_tecnica || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
+      showAlert("Por favor complete todos los campos obligatorios.", "error");
+      return;
+    }
     setIsSubmitting(true);
+
+    // Parse text input number fields before sending to the backend
+    const payload = {
+      ...formData,
+      ano: formData.ano !== undefined && formData.ano !== "" ? parseInt(formData.ano.toString(), 10) : null,
+      piezas: formData.piezas !== undefined && formData.piezas !== "" ? parseInt(formData.piezas.toString(), 10) : 1,
+      peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
+    };
+
     try {
       if (isEditing) {
-        await mavetApi.actualizarObra(formData.id, formData);
+        await mavetApi.actualizarObra(formData.id, payload);
         showAlert("Obra actualizada exitosamente", "success");
       } else {
-        await mavetApi.crearObra(formData);
+        await mavetApi.crearObra(payload);
         showAlert("Obra registrada exitosamente", "success");
       }
       const data = await mavetApi.getObras();
@@ -114,6 +153,7 @@ export default function InventarioBoveda() {
       const matchesSearch = 
         obra.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
         obra.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (obra.codigo_inventario && obra.codigo_inventario.toLowerCase().includes(searchTerm.toLowerCase())) ||
         obra.autor.toLowerCase().includes(searchTerm.toLowerCase());
         
       const matchesEstado = filterEstado === "Todos" || obra.estado === filterEstado;
@@ -207,9 +247,14 @@ export default function InventarioBoveda() {
                     <th className="px-5 py-4">Título</th>
                     <th className="px-5 py-4">Autor</th>
                     <th className="px-5 py-4">Medidas</th>
+                    <th className="px-5 py-4">Peso (kg)</th>
                     <th className="px-5 py-4">Año</th>
-                    <th className="px-5 py-4">Técnica / Modalidad</th>
+                    <th className="px-5 py-4 text-center">Piezas</th>
+                    <th className="px-5 py-4">Categoría/Modalidad</th>
+                    <th className="px-5 py-4">Técnica</th>
+                    <th className="px-5 py-4">Tipo Ingreso</th>
                     <th className="px-5 py-4 text-center">Estado</th>
+                    <th className="px-5 py-4">Descripción</th>
                     <th className="px-5 py-4">Ubicación</th>
                     <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
@@ -217,7 +262,7 @@ export default function InventarioBoveda() {
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredObras.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-5 py-12 text-center text-gray-500">
+                      <td colSpan={14} className="px-5 py-12 text-center text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <p className="text-base font-medium">No se encontraron resultados</p>
                         <p className="text-sm mt-1">Prueba ajustando tu búsqueda o filtros.</p>
@@ -226,16 +271,25 @@ export default function InventarioBoveda() {
                   ) : (
                     filteredObras.map((obra) => (
                       <tr key={obra.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-5 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{obra.id}</td>
+                        <td className="px-5 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{obra.codigo_inventario || obra.id}</td>
                         <td className="px-5 py-4 font-semibold">{obra.titulo}</td>
                         <td className="px-5 py-4">{obra.autor}</td>
                         <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.medidas}</td>
+                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.peso || '—'}</td>
                         <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.ano}</td>
+                        <td className="px-5 py-4 text-center font-medium">{obra.piezas ?? 1}</td>
                         <td className="px-5 py-4">
-                          <div className="flex flex-col">
-                            <span>{obra.tecnica}</span>
-                            <span className="text-xs text-gray-500">{obra.modalidad}</span>
-                          </div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400">
+                            {obra.categoria || '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">{obra.tecnica}</td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            obra.tipo_ingreso === 'Por donación'
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-400'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-400'
+                          }`}>{obra.tipo_ingreso || '—'}</span>
                         </td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
@@ -246,6 +300,7 @@ export default function InventarioBoveda() {
                             {obra.estado}
                           </span>
                         </td>
+                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400 max-w-[150px] truncate" title={obra.descripcion}>{obra.descripcion || '—'}</td>
                         <td className="px-5 py-4 text-gray-600 dark:text-gray-400">{obra.ubicacion}</td>
                         <td className="px-5 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -294,7 +349,19 @@ export default function InventarioBoveda() {
           </h3>
           
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Código / Serial</label>
+                <input
+                  type="text"
+                  name="codigo_inventario"
+                  value={formData.codigo_inventario || ""}
+                  onChange={handleChange}
+                  placeholder="Ej. MVT-001"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  required
+                />
+              </div>
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
                 <input
@@ -307,15 +374,19 @@ export default function InventarioBoveda() {
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Autor</label>
-                <input
-                  type="text"
-                  name="autor"
-                  value={formData.autor}
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Autor / Artista</label>
+                <select
+                  name="id_artista"
+                  value={formData.id_artista || ""}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
-                />
+                >
+                  <option value="" disabled>Seleccione un artista...</option>
+                  {artistas.map((a: any) => (
+                    <option key={a.id_artista} value={a.id_artista}>{a.nombres} {a.apellidos}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -346,42 +417,50 @@ export default function InventarioBoveda() {
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Estado de Conservación</label>
                 <select
-                  name="estado"
-                  value={formData.estado}
+                  name="id_estado_actual"
+                  value={formData.id_estado_actual || ""}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  required
                 >
-                  <option value="Excelente">Excelente</option>
-                  <option value="Bueno">Bueno</option>
-                  <option value="Restauración">En Restauración</option>
+                  <option value="" disabled>Seleccione un estado...</option>
+                  {estados.map((e: any) => (
+                    <option key={e.id_estado} value={e.id_estado}>{e.nombre_estado}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Modalidad</label>
-                <input
-                  type="text"
-                  name="modalidad"
-                  value={formData.modalidad}
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Categoría / Modalidad</label>
+                <select
+                  name="id_categoria_obra"
+                  value={formData.id_categoria_obra || ""}
                   onChange={handleChange}
-                  placeholder="Ej. Pintura, Escultura"
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
-                />
+                >
+                  <option value="" disabled>Seleccione una categoría...</option>
+                  {categorias.map((c: any) => (
+                    <option key={c.id_categoria_obra} value={c.id_categoria_obra}>{c.nombre_categoria}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Técnica</label>
-                <input
-                  type="text"
-                  name="tecnica"
-                  value={formData.tecnica}
+                <select
+                  name="id_tecnica"
+                  value={formData.id_tecnica || ""}
                   onChange={handleChange}
-                  placeholder="Ej. Óleo sobre lienzo"
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
-                />
+                >
+                  <option value="" disabled>Seleccione una técnica...</option>
+                  {tecnicas.map((t: any) => (
+                    <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre_tecnica}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Ubicación</label>
@@ -395,6 +474,60 @@ export default function InventarioBoveda() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Fila: Cantidad de piezas, Tipo de ingreso, Peso */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Cantidad de Piezas</label>
+                <input
+                  type="number"
+                  name="piezas"
+                  min={1}
+                  value={formData.piezas ?? 1}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Peso (kg)</label>
+                <input
+                  type="number"
+                  name="peso"
+                  step="0.01"
+                  min={0}
+                  value={formData.peso || ""}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Ingreso</label>
+                <select
+                  name="tipo_ingreso"
+                  value={formData.tipo_ingreso || ""}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  required
+                >
+                  <option value="" disabled>Seleccione tipo de ingreso...</option>
+                  <option value="Por donación">Por donación</option>
+                  <option value="Por requisito de exposición">Por requisito de exposición del autor</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Descripción / Detalles adicionales</label>
+              <textarea
+                name="descripcion"
+                value={formData.descripcion || ""}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Descripción detallada de la obra..."
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none resize-y"
+              ></textarea>
             </div>
 
             <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100 dark:border-gray-700">

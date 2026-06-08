@@ -70,7 +70,7 @@ export function exportarReporteAsistencia(
 }
 
 // ─── PDF: Carta de Aval de Horas (Trabajador individual) ─────────────────────
-export function exportarCartaAvalHoras(
+export async function exportarCartaAvalHoras(
   trabajador: Trabajador,
   asistencias: RegistroAsistencia[]
 ) {
@@ -78,10 +78,34 @@ export function exportarCartaAvalHoras(
     alert("No se puede generar la carta: el trabajador no tiene una cédula asignada.");
     return;
   }
-  window.open(`http://localhost:3000/api/reportes/carta-aval/${trabajador.cedula}`, "_blank");
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:3000/api/reportes/carta-aval/${trabajador.cedula}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarCartaAvalHoras]", e);
+    alert("Error al generar la carta de aval. Verifica tu conexión e inicia sesión nuevamente.");
+  }
 }
 
 // ─── PDF: Historial de Eventos (Auditorio) ──────────────────────────────────
-export function exportarHistorialEventos(eventos: any[]) {
-  window.open("http://localhost:3000/api/reportes/eventos", "_blank");
+export async function exportarHistorialEventos(eventos: any[]) {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:3000/api/reportes/eventos", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarHistorialEventos]", e);
+    alert("Error al generar el historial de eventos. Verifica tu conexión e inicia sesión nuevamente.");
+  }
 }
