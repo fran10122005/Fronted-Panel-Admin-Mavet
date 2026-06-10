@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Obra, RegistroAsistencia, Trabajador } from "../types";
+import { API_BASE } from "./api";
 
 const MAVET_COLOR: [number, number, number] = [128, 0, 0]; // #800000 brand-500
 const ACCENT_COLOR: [number, number, number] = [163, 61, 61]; // #A33D3D brand-400
@@ -57,7 +58,7 @@ function addFooter(doc: jsPDF) {
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
 export function exportarInventarioObras(obras: Obra[]) {
   // Ahora usamos el endpoint del backend que genera un PDF más limpio y rápido.
-  window.open("http://localhost:3000/api/reportes/obras", "_blank");
+  window.open(`${API_BASE}/api/reportes/obras`, "_blank");
 }
 
 // ─── PDF: Reporte de Asistencia ──────────────────────────────────────────────
@@ -66,7 +67,7 @@ export function exportarReporteAsistencia(
   periodo?: string
 ) {
   // Ahora usamos el endpoint del backend.
-  window.open("http://localhost:3000/api/reportes/asistencia", "_blank");
+  window.open(`${API_BASE}/api/reportes/asistencia`, "_blank");
 }
 
 // ─── PDF: Carta de Aval de Horas (Trabajador individual) ─────────────────────
@@ -80,7 +81,7 @@ export async function exportarCartaAvalHoras(
   }
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:3000/api/reportes/carta-aval/${trabajador.cedula}`, {
+    const res = await fetch(`${API_BASE}/api/reportes/carta-aval/${trabajador.cedula}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
@@ -97,7 +98,7 @@ export async function exportarCartaAvalHoras(
 export async function exportarHistorialEventos(eventos: any[]) {
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:3000/api/reportes/eventos", {
+    const res = await fetch(`${API_BASE}/api/reportes/eventos`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);

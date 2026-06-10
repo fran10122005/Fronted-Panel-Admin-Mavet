@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
-import { mavetApi } from "../../services/api";
+import { mavetApi, API_BASE } from "../../services/api";
 import { Libro, PrestamoPayload } from "../../types";
 
 const today = new Date().toISOString().split("T")[0];
@@ -233,7 +233,7 @@ export default function Biblioteca() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => window.open("http://localhost:3000/api/reportes/biblioteca", "_blank")}
+            onClick={() => window.open(`${API_BASE}/api/reportes/biblioteca`, "_blank")}
             className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

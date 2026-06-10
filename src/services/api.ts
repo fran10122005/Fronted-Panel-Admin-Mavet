@@ -10,6 +10,8 @@ import {
   RegistroAsistencia
 } from "../types";
 
+export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 
 
 // Helper para simular latencia de red
@@ -26,7 +28,7 @@ const getHeaders = () => {
 export const mavetApi = {
   // === Inventario Bóveda ===
   getObras: async (): Promise<Obra[]> => {
-    const res = await fetch("http://localhost:3000/api/obras/obras", {
+    const res = await fetch(`${API_BASE}/api/obras/obras`, {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error(`Error fetching obras: ${res.status}`);
@@ -57,7 +59,7 @@ export const mavetApi = {
   },
 
   crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/obras/obras", {
+    const res = await fetch(`${API_BASE}/api/obras/obras`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -67,7 +69,7 @@ export const mavetApi = {
   },
 
   actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/obras/obras/${id}`, {
+    const res = await fetch(`${API_BASE}/api/obras/obras/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -77,7 +79,7 @@ export const mavetApi = {
   },
 
   eliminarObra: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/obras/obras/${id}`, {
+    const res = await fetch(`${API_BASE}/api/obras/obras/${id}`, {
       method: "DELETE",
       headers: getHeaders()
     });
@@ -88,7 +90,7 @@ export const mavetApi = {
   // === Biblioteca ===
   getLibros: async (): Promise<Libro[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/biblioteca/libros", {
+      const res = await fetch(`${API_BASE}/api/biblioteca/libros`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching libros");
@@ -123,7 +125,7 @@ export const mavetApi = {
   },
 
   crearLibro: async (payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/biblioteca/libros", {
+    const res = await fetch(`${API_BASE}/api/biblioteca/libros`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -133,7 +135,7 @@ export const mavetApi = {
   },
 
   actualizarLibro: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/biblioteca/libros/${id}`, {
+    const res = await fetch(`${API_BASE}/api/biblioteca/libros/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -143,7 +145,7 @@ export const mavetApi = {
   },
 
   eliminarLibro: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/biblioteca/libros/${id}`, {
+    const res = await fetch(`${API_BASE}/api/biblioteca/libros/${id}`, {
       method: "DELETE",
       headers: getHeaders()
     });
@@ -158,7 +160,7 @@ export const mavetApi = {
       nombre: payload.nombreSolicitante,
       estado: payload.estado
     };
-    const res = await fetch("http://localhost:3000/api/biblioteca/consultas-sala", {
+    const res = await fetch(`${API_BASE}/api/biblioteca/consultas-sala`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -171,7 +173,7 @@ export const mavetApi = {
   },
 
   devolverLibro: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/biblioteca/libros/${id}/devolver`, {
+    const res = await fetch(`${API_BASE}/api/biblioteca/libros/${id}/devolver`, {
       method: "PUT",
       headers: getHeaders()
     });
@@ -185,45 +187,45 @@ export const mavetApi = {
   // === Catálogos (rutas públicas — no requieren token) ===
   getArtistas: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/obras/artistas");
+      const res = await fetch(`${API_BASE}/api/obras/artistas`);
       if (!res.ok) return [];
       return await res.json();
     } catch { return []; }
   },
   getTecnicas: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/obras/tecnicas");
+      const res = await fetch(`${API_BASE}/api/obras/tecnicas`);
       if (!res.ok) return [];
       return await res.json();
     } catch { return []; }
   },
   getEstadosObra: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/obras/estados");
+      const res = await fetch(`${API_BASE}/api/obras/estados`);
       if (!res.ok) return [];
       return await res.json();
     } catch { return []; }
   },
   getCategoriasObra: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/obras/categorias");
+      const res = await fetch(`${API_BASE}/api/obras/categorias`);
       if (!res.ok) return [];
       return await res.json();
     } catch { return []; }
   },
   getAutoresLibro: async (): Promise<any[]> => {
-    const res = await fetch("http://localhost:3000/api/biblioteca/autores", { headers: getHeaders() });
+    const res = await fetch(`${API_BASE}/api/biblioteca/autores`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
   getCategoriasLibro: async (): Promise<any[]> => {
-    const res = await fetch("http://localhost:3000/api/biblioteca/categorias", { headers: getHeaders() });
+    const res = await fetch(`${API_BASE}/api/biblioteca/categorias`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
   getCargos: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/rrhh/cargos", { headers: getHeaders() });
+      const res = await fetch(`${API_BASE}/api/rrhh/cargos`, { headers: getHeaders() });
       if (!res.ok) return [];
       const data = await res.json();
       return Array.isArray(data) ? data : (data.data || []);
@@ -235,7 +237,7 @@ export const mavetApi = {
   // === Asistencia y RRHH ===
   getTrabajadores: async (): Promise<Trabajador[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/rrhh/trabajadores", {
+      const res = await fetch(`${API_BASE}/api/rrhh/trabajadores`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error(`Error fetching trabajadores: ${res.status}`);
@@ -260,7 +262,7 @@ export const mavetApi = {
 
   getAsistencia: async (): Promise<RegistroAsistencia[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/rrhh/asistencias", {
+      const res = await fetch(`${API_BASE}/api/rrhh/asistencias`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error(`Error fetching asistencias: ${res.status}`);
@@ -300,7 +302,7 @@ export const mavetApi = {
       estado: payload.estado === "Activo"
     };
 
-    const res = await fetch("http://localhost:3000/api/rrhh/trabajadores", {
+    const res = await fetch(`${API_BASE}/api/rrhh/trabajadores`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -317,7 +319,7 @@ export const mavetApi = {
   registrarAsistencia: async (payload: AsistenciaPayload): Promise<{ success: boolean; message: string }> => {
     if (!payload.cedulaTrabajador) throw new Error("Cédula requerida");
     
-    const res = await fetch("http://localhost:3000/api/rrhh/asistencias", {
+    const res = await fetch(`${API_BASE}/api/rrhh/asistencias`, {
       method: "POST",
       headers: { "Content-Type": "application/json" }, // This is public Kiosk
       body: JSON.stringify(payload)
@@ -334,7 +336,7 @@ export const mavetApi = {
   // === Registro Público Visitantes / Ingresos ===
   obtenerMotivos: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/visitantes/motivos");
+      const res = await fetch(`${API_BASE}/api/visitantes/motivos`);
       if (!res.ok) throw new Error("Error fetching motivos");
       return await res.json();
     } catch {
@@ -343,13 +345,13 @@ export const mavetApi = {
   },
 
   checkVisitante: async (cedula: string): Promise<{ existe: boolean; visitante: any }> => {
-    const res = await fetch(`http://localhost:3000/api/visitantes/ingresos/check/${cedula}`);
+    const res = await fetch(`${API_BASE}/api/visitantes/ingresos/check/${cedula}`);
     if (!res.ok) throw new Error("Error comprobando visitante");
     return await res.json();
   },
 
   registrarIngreso: async (payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/visitantes/ingresos", {
+    const res = await fetch(`${API_BASE}/api/visitantes/ingresos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" }, // Public Checkin
       body: JSON.stringify(payload)
@@ -359,7 +361,7 @@ export const mavetApi = {
   },
 
   getIngresosStats: async (): Promise<any> => {
-    const res = await fetch("http://localhost:3000/api/visitantes/ingresos/stats", {
+    const res = await fetch(`${API_BASE}/api/visitantes/ingresos/stats`, {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error("Error fetching stats");
@@ -370,7 +372,7 @@ export const mavetApi = {
   // === Talleres ===
   getTalleres: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/educacion/talleres", {
+      const res = await fetch(`${API_BASE}/api/educacion/talleres`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching talleres");
@@ -381,7 +383,7 @@ export const mavetApi = {
   },
 
   crearTaller: async (payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/educacion/talleres", {
+    const res = await fetch(`${API_BASE}/api/educacion/talleres`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -395,7 +397,7 @@ export const mavetApi = {
 
   getInstructores: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/educacion/instructores", {
+      const res = await fetch(`${API_BASE}/api/educacion/instructores`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching instructores");
@@ -407,7 +409,7 @@ export const mavetApi = {
 
   getEspaciosMuseo: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/educacion/espacios", {
+      const res = await fetch(`${API_BASE}/api/educacion/espacios`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching espacios");
@@ -419,7 +421,7 @@ export const mavetApi = {
 
   getInscripcionesTaller: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/educacion/inscripciones-talleres", {
+      const res = await fetch(`${API_BASE}/api/educacion/inscripciones-talleres`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching inscripciones");
@@ -430,7 +432,7 @@ export const mavetApi = {
   },
 
   inscribirTaller: async (payload: TallerInscripcionPayload): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/educacion/inscripciones-talleres", {
+    const res = await fetch(`${API_BASE}/api/educacion/inscripciones-talleres`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -444,7 +446,7 @@ export const mavetApi = {
 
   // === Auditorio ===
   getEventos: async (): Promise<EventoAuditorio[]> => {
-    const res = await fetch("http://localhost:3000/api/educacion/solicitudes-espacio", {
+    const res = await fetch(`${API_BASE}/api/educacion/solicitudes-espacio`, {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error(`Error fetching eventos: ${res.status}`);
@@ -469,7 +471,7 @@ export const mavetApi = {
   },
 
   registrarReservaAuditorio: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
-    const res = await fetch("http://localhost:3000/api/educacion/solicitudes-espacio", {
+    const res = await fetch(`${API_BASE}/api/educacion/solicitudes-espacio`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -480,7 +482,7 @@ export const mavetApi = {
   },
 
   actualizarReservaAuditorio: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/educacion/solicitudes-espacio/${id}`, {
+    const res = await fetch(`${API_BASE}/api/educacion/solicitudes-espacio/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -490,7 +492,7 @@ export const mavetApi = {
   },
 
   eliminarReservaAuditorio: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/educacion/solicitudes-espacio/${id}`, {
+    const res = await fetch(`${API_BASE}/api/educacion/solicitudes-espacio/${id}`, {
       method: "DELETE",
       headers: getHeaders()
     });
@@ -500,7 +502,7 @@ export const mavetApi = {
 
   // === Auth ===
   login: async (correo: string, password: string): Promise<{ token: string; usuario: any }> => {
-    const res = await fetch("http://localhost:3000/api/auth/login", {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ correo, password })
@@ -514,7 +516,7 @@ export const mavetApi = {
 
   getRoles: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/roles", {
+      const res = await fetch(`${API_BASE}/api/auth/roles`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching roles");
@@ -527,7 +529,7 @@ export const mavetApi = {
 
   getUsuarios: async (): Promise<any[]> => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth", {
+      const res = await fetch(`${API_BASE}/api/auth`, {
         headers: getHeaders()
       });
       if (!res.ok) {
@@ -569,7 +571,7 @@ export const mavetApi = {
     if (payload.id_trabajador && payload.id_trabajador !== 0) {
       body.id_trabajador = payload.id_trabajador;
     }
-    const res = await fetch("http://localhost:3000/api/auth/register", {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -580,7 +582,7 @@ export const mavetApi = {
   },
 
   actualizarUsuario: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch(`http://localhost:3000/api/auth/${id}`, {
+    const res = await fetch(`${API_BASE}/api/auth/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -601,7 +603,7 @@ export const mavetApi = {
       estado: payload.estado === "Activo"
     };
 
-    const res = await fetch(`http://localhost:3000/api/rrhh/trabajadores/${id}`, {
+    const res = await fetch(`${API_BASE}/api/rrhh/trabajadores/${id}`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(body)
@@ -612,7 +614,7 @@ export const mavetApi = {
   },
 
   getMe: async (): Promise<any> => {
-    const res = await fetch("http://localhost:3000/api/auth/me", {
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error("Error obteniendo perfil");
@@ -621,7 +623,7 @@ export const mavetApi = {
   },
 
   updateMe: async (payload: any): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch("http://localhost:3000/api/auth/me", {
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
       method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify(payload)
@@ -633,7 +635,7 @@ export const mavetApi = {
   // === Dashboard Stats ===
   getDashboardStats: async (): Promise<any> => {
     try {
-      const res = await fetch("http://localhost:3000/api/reportes/dashboard", {
+      const res = await fetch(`${API_BASE}/api/reportes/dashboard`, {
         headers: getHeaders()
       });
       if (!res.ok) throw new Error("Error fetching dashboard stats");
