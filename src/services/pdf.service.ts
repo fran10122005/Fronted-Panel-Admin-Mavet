@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Obra, RegistroAsistencia, Trabajador } from "../types";
-import { API_BASE } from "./api";
+import { axiosInstance } from "./api";
 
 const MAVET_COLOR: [number, number, number] = [128, 0, 0]; // #800000 brand-500
 const ACCENT_COLOR: [number, number, number] = [163, 61, 61]; // #A33D3D brand-400
@@ -56,18 +56,42 @@ function addFooter(doc: jsPDF) {
 }
 
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
-export function exportarInventarioObras(obras: Obra[]) {
-  // Ahora usamos el endpoint del backend que genera un PDF más limpio y rápido.
-  window.open(`${API_BASE}/api/reportes/obras`, "_blank");
+export async function exportarInventarioObras(obras: Obra[]) {
+  try {
+    const res = await axiosInstance.get('/api/reportes/obras', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarInventarioObras]", e);
+    alert("Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.");
+  }
 }
 
 // ─── PDF: Reporte de Asistencia ──────────────────────────────────────────────
-export function exportarReporteAsistencia(
+export async function exportarReporteAsistencia(
   asistencias: RegistroAsistencia[],
   periodo?: string
 ) {
-  // Ahora usamos el endpoint del backend.
-  window.open(`${API_BASE}/api/reportes/asistencia`, "_blank");
+  try {
+    const res = await axiosInstance.get('/api/reportes/asistencia', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarReporteAsistencia]", e);
+    alert("Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.");
+  }
+}
+
+// ─── PDF: Catálogo de Biblioteca ─────────────────────────────────────────────
+export async function exportarCatalogoBiblioteca() {
+  try {
+    const res = await axiosInstance.get('/api/reportes/biblioteca', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarCatalogoBiblioteca]", e);
+    alert("Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.");
+  }
 }
 
 // ─── PDF: Carta de Aval de Horas (Trabajador individual) ─────────────────────
@@ -80,13 +104,8 @@ export async function exportarCartaAvalHoras(
     return;
   }
   try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${API_BASE}/api/reportes/carta-aval/${trabajador.cedula}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
-    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const res = await axiosInstance.get(`/api/reportes/carta-aval/${trabajador.cedula}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
     window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarCartaAvalHoras]", e);
@@ -97,13 +116,8 @@ export async function exportarCartaAvalHoras(
 // ─── PDF: Historial de Eventos (Auditorio) ──────────────────────────────────
 export async function exportarHistorialEventos(eventos: any[]) {
   try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${API_BASE}/api/reportes/eventos`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
-    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const res = await axiosInstance.get('/api/reportes/eventos', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
     window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarHistorialEventos]", e);

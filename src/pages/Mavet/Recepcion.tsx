@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { mavetApi, API_BASE } from "../../services/api";
+import { mavetApi, axiosInstance } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
 
 export default function Recepcion() {
@@ -54,8 +54,8 @@ export default function Recepcion() {
     setIsSearching(true);
     try {
       // Endpoint simulado del frontend, en el real llamaría a mavetApi.buscarPersona
-      const res = await fetch(`${API_BASE}/api/personas/buscar?q=${searchQuery}`);
-      const result = await res.json();
+      const res = await axiosInstance.get(`/api/personas/buscar?q=${searchQuery}`);
+      const result = res.data;
       if (result.data && result.data.length > 0) {
         setSearchResults(result.data);
       } else {

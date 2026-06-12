@@ -16,6 +16,7 @@
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "apexcharts": "^4.1.0",
+    "axios": "^1.17.0",
     "clsx": "^2.1.1",
     "flatpickr": "^4.6.13",
     "jspdf": "^4.2.1",
