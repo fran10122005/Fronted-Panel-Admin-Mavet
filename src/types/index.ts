@@ -17,6 +17,7 @@ export interface Obra {
   id_categoria_obra?: number;
   estado: string;
   ubicacion: string;
+  imagen_url?: string;
 }
 
 export interface Libro {

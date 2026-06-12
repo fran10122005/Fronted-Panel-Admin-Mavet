@@ -33,6 +33,7 @@ export default function InventarioBoveda() {
 
   const { isOpen, openModal, closeModal } = useModal();
   const [formData, setFormData] = useState<any>(initialFormState);
+  const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,12 +74,14 @@ export default function InventarioBoveda() {
 
   const handleOpenAdd = () => {
     setFormData(initialFormState);
+    setImagenFile(null);
     setIsEditing(false);
     openModal();
   };
 
   const handleEdit = (obra: Obra) => {
     setFormData(obra);
+    setImagenFile(null);
     setIsEditing(true);
     openModal();
   };
@@ -121,7 +124,6 @@ export default function InventarioBoveda() {
     }
     setIsSubmitting(true);
 
-    // Parse text input number fields before sending to the backend
     const payload = {
       ...formData,
       ano: formData.ano !== undefined && formData.ano !== "" ? parseInt(formData.ano.toString(), 10) : null,
@@ -129,12 +131,25 @@ export default function InventarioBoveda() {
       peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
     };
 
+    let dataToSend: any = payload;
+
+    // Si hay una imagen nueva o estamos creando y se seleccionó una imagen
+    if (imagenFile) {
+      dataToSend = new FormData();
+      Object.keys(payload).forEach(key => {
+        if (payload[key] !== null && payload[key] !== undefined) {
+          dataToSend.append(key, payload[key]);
+        }
+      });
+      dataToSend.append("imagen", imagenFile);
+    }
+
     try {
       if (isEditing) {
-        await mavetApi.actualizarObra(formData.id, payload);
+        await mavetApi.actualizarObra(formData.id, dataToSend);
         showAlert("Obra actualizada exitosamente", "success");
       } else {
-        await mavetApi.crearObra(payload);
+        await mavetApi.crearObra(dataToSend);
         showAlert("Obra registrada exitosamente", "success");
       }
       const data = await mavetApi.getObras();
@@ -528,6 +543,19 @@ export default function InventarioBoveda() {
                 placeholder="Descripción detallada de la obra..."
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none resize-y"
               ></textarea>
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Imagen de la Obra</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+              />
+              {isEditing && formData.imagen_url && !imagenFile && (
+                <p className="mt-2 text-sm text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100 dark:border-gray-700">

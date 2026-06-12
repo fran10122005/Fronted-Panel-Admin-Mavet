@@ -11,7 +11,7 @@ import {
   RegistroAsistencia
 } from "../types";
 
-export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE,
@@ -54,7 +54,8 @@ export const mavetApi = {
         peso: item.peso || undefined,
         descripcion: item.descripcion || "",
         estado: item.EstadoObra?.nombre_estado || "Bueno",
-        ubicacion: item.ubicacion_actual || "Depósito"
+        ubicacion: item.ubicacion_actual || "Depósito",
+        imagen_url: item.imagen_url || undefined
       }));
     } catch {
       return [];
@@ -175,37 +176,37 @@ export const mavetApi = {
   getArtistas: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/artistas');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getTecnicas: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/tecnicas');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getEstadosObra: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/estados');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getCategoriasObra: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/categorias');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getAutoresLibro: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/biblioteca/autores');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getCategoriasLibro: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/biblioteca/categorias');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
   getCargos: async (): Promise<any[]> => {
@@ -296,7 +297,7 @@ export const mavetApi = {
   obtenerMotivos: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/visitantes/motivos');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       return [];
     }
@@ -333,7 +334,7 @@ export const mavetApi = {
   getTalleres: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/talleres');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       return [];
     }
@@ -351,7 +352,7 @@ export const mavetApi = {
   getInstructores: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/instructores');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       return [];
     }
@@ -360,7 +361,7 @@ export const mavetApi = {
   getEspaciosMuseo: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/espacios');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       return [];
     }
@@ -369,7 +370,7 @@ export const mavetApi = {
   getInscripcionesTaller: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/inscripciones-talleres');
-      return res.data;
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       return [];
     }
@@ -388,8 +389,8 @@ export const mavetApi = {
   getEventos: async (): Promise<EventoAuditorio[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/solicitudes-espacio');
-      const data = res.data;
-      if (!Array.isArray(data)) throw new Error("Respuesta del servidor no es un arreglo");
+      const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+
       return data.map((item: any) => {
         const p = item.Persona || {};
         const orgName = item.nombre_responsable || [p.nombres, p.apellidos].filter(Boolean).join(' ') || '';
