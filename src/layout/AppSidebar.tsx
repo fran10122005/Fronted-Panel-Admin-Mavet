@@ -6,7 +6,6 @@ import {
   CalenderIcon,
   ChevronDownIcon,
   GridIcon,
-  HorizontaLDots,
   ListIcon,
   PageIcon,
   PlugInIcon,
@@ -209,9 +208,11 @@ const AppSidebar: React.FC = () => {
                   onClick={() => {
                     logout();
                   }}
-                  className={`w-full text-left menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"}`}
+                  className={`w-full menu-item group menu-item-logout ${
+                    !isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
+                  }`}
                 >
-                  <span className={`menu-item-icon-size ${isActive(nav.path) ? "menu-item-icon-active" : "menu-item-icon-inactive"}`}>
+                  <span className="menu-item-icon-size">
                     {nav.icon}
                   </span>
                   {(isExpanded || isHovered || isMobileOpen) && (
@@ -222,7 +223,7 @@ const AppSidebar: React.FC = () => {
                 <Link
                   to={nav.path}
                   className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-                    }`}
+                    } ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
                 >
                   <span
                     className={`menu-item-icon-size ${isActive(nav.path)
@@ -298,7 +299,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed flex flex-col top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out ${isMobileOpen ? "z-[999999]" : "z-50"} border-r border-gray-200 
+      className={`fixed flex flex-col top-0 px-5 left-0 aside-gradient dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out ${isMobileOpen ? "z-[999999]" : "z-50"} border-r border-gray-200 
         ${isExpanded || isMobileOpen
           ? "w-[290px]"
           : isHovered
@@ -311,19 +312,18 @@ const AppSidebar: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-6 flex flex-col ${!isExpanded && !isHovered ? "items-center justify-center" : "items-start justify-start"
-          }`}
+        className="py-6 flex flex-col items-center justify-center w-full border-b border-gray-200 dark:border-gray-800"
       >
-        <Link to="/" className="flex items-center w-full gap-3 px-2">
+        <Link to="/" className="flex flex-col items-center justify-center w-full px-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex items-center w-full">
+            <div className="flex flex-col items-center justify-center w-full text-center">
               <img
-                src="/images/logo/mavet.png"
+                src="/images/logo/mavet2.png"
                 alt="Logo MAVET"
-                className="h-16 w-auto object-contain flex-shrink-0"
+                className="h-16 w-auto object-contain mb-3 flex-shrink-0"
               />
               <span 
-                className="text-[18px] text-gray-900 dark:text-gray-100 leading-snug text-left ml-3 drop-shadow-sm"
+                className="text-[16px] text-gray-900 dark:text-gray-100 leading-snug font-bold drop-shadow-sm block text-center"
                 style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontWeight: 700 }}
               >
                 Museo de Artes Visuales y Espacios del Táchira
@@ -331,7 +331,7 @@ const AppSidebar: React.FC = () => {
             </div>
           ) : (
             <img
-              src="/images/logo/mavet.png"
+              src="/images/logo/mavet2.png"
               alt="Logo MAVET"
               className="w-10 h-10 object-contain mx-auto"
             />
@@ -339,36 +339,13 @@ const AppSidebar: React.FC = () => {
         </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
+        <nav className="mt-4 mb-6">
           <div className="flex flex-col gap-4">
             <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots className="size-6" />
-                )}
-              </h2>
               {renderMenuItems(filteredNavItems, "main")}
             </div>
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
+            <hr className="border-gray-200 dark:border-gray-800" />
+            <div>
               {renderMenuItems(othersItems, "others")}
             </div>
           </div>

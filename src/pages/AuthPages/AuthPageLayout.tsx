@@ -19,7 +19,7 @@ export default function AuthLayout({
             <div className="flex flex-col items-center max-w-xs">
               <Link to="/" className="block mb-2">
                 <img
-                  src="/images/logo/mavet.png"
+                  src="/images/logo/mavet2.png"
                   alt="Logo MAVET"
                   className="max-h-24 w-auto object-contain"
                 />

@@ -138,8 +138,8 @@ export default function Talleres() {
     }
   };
 
-  const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-4 py-3 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-50";
-  const labelCls = "block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300";
+  const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-50";
+  const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 
   return (
     <div className="space-y-6 relative">
@@ -294,17 +294,17 @@ export default function Talleres() {
       </div>
 
       {/* Modal: Crear Nuevo Taller */}
-      <Modal isOpen={isOpenTaller} onClose={closeTaller} className="max-w-[640px] p-6">
+      <Modal isOpen={isOpenTaller} onClose={closeTaller} className="max-w-[550px] p-5">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Crear Nuevo Taller</h3>
-          <form onSubmit={handleSubmitTaller} className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Crear Nuevo Taller</h3>
+          <form onSubmit={handleSubmitTaller} className="space-y-3">
             <div>
               <label className={labelCls}>Nombre del Curso / Taller</label>
               <input type="text" name="nombre_curso" value={tallerForm.nombre_curso} onChange={handleTallerFormChange}
                 className={inputCls} required />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Instructor</label>
                 <select name="id_instructor" value={tallerForm.id_instructor} onChange={handleTallerFormChange} className={inputCls}>
@@ -327,7 +327,7 @@ export default function Talleres() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>Sesiones</label>
                 <input type="number" name="sesiones" value={tallerForm.sesiones} onChange={handleTallerFormChange}
@@ -350,7 +350,7 @@ export default function Talleres() {
               <input type="date" name="fecha" value={tallerForm.fecha} onChange={handleTallerFormChange} className={inputCls} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Hora Inicio</label>
                 <input type="time" name="hora_inicio" value={tallerForm.hora_inicio} onChange={handleTallerFormChange} className={inputCls} />
@@ -361,7 +361,7 @@ export default function Talleres() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Horas Totales</label>
                 <input type="number" name="horas_totales" value={tallerForm.horas_totales} onChange={handleTallerFormChange}
@@ -377,15 +377,15 @@ export default function Talleres() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700 mt-2">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-700 mt-2">
               <button type="button" onClick={closeTaller} disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+                className="px-4 py-1.5 text-xs font-semibold text-gray-650 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
                 Cancelar
               </button>
               <button type="submit" disabled={isSubmitting || !tallerForm.nombre_curso}
-                className="flex items-center justify-center min-w-[180px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait">
+                className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait">
                 {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : "Crear Taller"}
               </button>
             </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
+import { useNavigate } from "react-router";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
@@ -33,19 +33,10 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="w-full max-w-md pt-10 mx-auto">
-        <Link
-          to="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon className="size-5" />
-          Volver al Inicio
-        </Link>
-      </div>
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div>
-          <div className="mb-5 sm:mb-8 text-center sm:text-left">
+    <div className="flex flex-col flex-1 px-4">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto py-10">
+        <div className="p-6 sm:p-8 rounded-2xl border border-gray-200 dark:border-gray-800 aside-gradient shadow-theme-lg">
+          <div className="mb-6 sm:mb-8 text-center">
             <h1 className="mb-2 font-bold text-gray-900 text-3xl dark:text-white/90">
               Iniciar Sesión
             </h1>

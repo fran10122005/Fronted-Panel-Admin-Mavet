@@ -35,6 +35,7 @@ export default function InventarioBoveda() {
   const [formData, setFormData] = useState<any>(initialFormState);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
@@ -261,23 +262,16 @@ export default function InventarioBoveda() {
                     <th className="px-5 py-4">Código</th>
                     <th className="px-5 py-4">Título</th>
                     <th className="px-5 py-4">Autor</th>
-                    <th className="px-5 py-4">Medidas</th>
-                    <th className="px-5 py-4">Peso (kg)</th>
-                    <th className="px-5 py-4">Año</th>
-                    <th className="px-5 py-4 text-center">Piezas</th>
                     <th className="px-5 py-4">Categoría/Modalidad</th>
-                    <th className="px-5 py-4">Técnica</th>
-                    <th className="px-5 py-4">Tipo Ingreso</th>
-                    <th className="px-5 py-4 text-center">Estado</th>
-                    <th className="px-5 py-4">Descripción</th>
                     <th className="px-5 py-4">Ubicación</th>
+                    <th className="px-5 py-4 text-center">Estado</th>
                     <th className="px-5 py-4 text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredObras.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="px-5 py-12 text-center text-gray-500">
+                      <td colSpan={7} className="px-5 py-12 text-center text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <p className="text-base font-medium">No se encontraron resultados</p>
                         <p className="text-sm mt-1">Prueba ajustando tu búsqueda o filtros.</p>
@@ -285,27 +279,20 @@ export default function InventarioBoveda() {
                     </tr>
                   ) : (
                     filteredObras.map((obra) => (
-                      <tr key={obra.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <tr 
+                        key={obra.id} 
+                        onClick={() => setSelectedObraForDetail(obra)}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                      >
                         <td className="px-5 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{obra.codigo_inventario || obra.id}</td>
                         <td className="px-5 py-4 font-semibold">{obra.titulo}</td>
                         <td className="px-5 py-4">{obra.autor}</td>
-                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.medidas}</td>
-                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.peso || '—'}</td>
-                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{obra.ano}</td>
-                        <td className="px-5 py-4 text-center font-medium">{obra.piezas ?? 1}</td>
                         <td className="px-5 py-4">
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400">
                             {obra.categoria || '—'}
                           </span>
                         </td>
-                        <td className="px-5 py-4">{obra.tecnica}</td>
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            obra.tipo_ingreso === 'Por donación'
-                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-400'
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-400'
-                          }`}>{obra.tipo_ingreso || '—'}</span>
-                        </td>
+                        <td className="px-5 py-4 text-gray-600 dark:text-gray-400">{obra.ubicacion}</td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                             obra.estado === 'Excelente' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/10 dark:text-green-400' :
@@ -315,9 +302,7 @@ export default function InventarioBoveda() {
                             {obra.estado}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400 max-w-[150px] truncate" title={obra.descripcion}>{obra.descripcion || '—'}</td>
-                        <td className="px-5 py-4 text-gray-600 dark:text-gray-400">{obra.ubicacion}</td>
-                        <td className="px-5 py-4 text-center">
+                        <td className="px-5 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => handleEdit(obra)}
@@ -357,44 +342,44 @@ export default function InventarioBoveda() {
       </div>
 
       {/* Modal de Formulario Administrativo */}
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] p-6">
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[620px] p-5">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             {isEditing ? `Editar Obra: ${formData.id}` : "Registrar Nueva Obra"}
           </h3>
           
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <form onSubmit={handleSave} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Código / Serial</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código / Serial</label>
                 <input
                   type="text"
                   name="codigo_inventario"
                   value={formData.codigo_inventario || ""}
                   onChange={handleChange}
                   placeholder="Ej. MVT-001"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Título</label>
                 <input
                   type="text"
                   name="titulo"
                   value={formData.titulo}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Autor / Artista</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Autor / Artista</label>
                 <select
                   name="id_artista"
                   value={formData.id_artista || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 >
                   <option value="" disabled>Seleccione un artista...</option>
@@ -405,37 +390,37 @@ export default function InventarioBoveda() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Medidas</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medidas</label>
                 <input
                   type="text"
                   name="medidas"
                   value={formData.medidas}
                   onChange={handleChange}
                   placeholder="Ej. 120x80 cm"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Año</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Año</label>
                 <input
                   type="number"
                   name="ano"
                   value={formData.ano}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Estado de Conservación</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado de Conservación</label>
                 <select
                   name="id_estado_actual"
                   value={formData.id_estado_actual || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 >
                   <option value="" disabled>Seleccione un estado...</option>
@@ -446,14 +431,14 @@ export default function InventarioBoveda() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Categoría / Modalidad</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría / Modalidad</label>
                 <select
                   name="id_categoria_obra"
                   value={formData.id_categoria_obra || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 >
                   <option value="" disabled>Seleccione una categoría...</option>
@@ -463,12 +448,12 @@ export default function InventarioBoveda() {
                 </select>
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Técnica</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Técnica</label>
                 <select
                   name="id_tecnica"
                   value={formData.id_tecnica || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 >
                   <option value="" disabled>Seleccione una técnica...</option>
@@ -478,35 +463,35 @@ export default function InventarioBoveda() {
                 </select>
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Ubicación</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</label>
                 <input
                   type="text"
                   name="ubicacion"
                   value={formData.ubicacion}
                   onChange={handleChange}
                   placeholder="Ej. Bóveda, Sala Principal"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
             </div>
 
             {/* Fila: Cantidad de piezas, Tipo de ingreso, Peso */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Cantidad de Piezas</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cantidad de Piezas</label>
                 <input
                   type="number"
                   name="piezas"
                   min={1}
                   value={formData.piezas ?? 1}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Peso (kg)</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peso (kg)</label>
                 <input
                   type="number"
                   name="peso"
@@ -514,16 +499,16 @@ export default function InventarioBoveda() {
                   min={0}
                   value={formData.peso || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Ingreso</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Ingreso</label>
                 <select
                   name="tipo_ingreso"
                   value={formData.tipo_ingreso || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   required
                 >
                   <option value="" disabled>Seleccione tipo de ingreso...</option>
@@ -534,45 +519,45 @@ export default function InventarioBoveda() {
             </div>
 
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Descripción / Detalles adicionales</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción / Detalles adicionales</label>
               <textarea
                 name="descripcion"
                 value={formData.descripcion || ""}
                 onChange={handleChange}
-                rows={3}
+                rows={2}
                 placeholder="Descripción detallada de la obra..."
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none resize-y"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-650 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none resize-y"
               ></textarea>
             </div>
 
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Imagen de la Obra</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen de la Obra</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
               />
               {isEditing && formData.imagen_url && !imagenFile && (
-                <p className="mt-2 text-sm text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
+                <p className="mt-1 text-xs text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
               )}
             </div>
 
-            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
               <button
                 type="button"
                 onClick={closeModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-1.5 text-xs font-semibold text-gray-750 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait"
+                className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait"
               >
                 {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   isEditing ? "Actualizar Obra" : "Registrar Obra"
                 )}
@@ -580,6 +565,257 @@ export default function InventarioBoveda() {
             </div>
           </form>
         </div>
+      </Modal>
+
+      {/* Modal de Detalle (Ficha de Obra) */}
+      <Modal
+        isOpen={selectedObraForDetail !== null}
+        onClose={() => setSelectedObraForDetail(null)}
+        showCloseButton={false}
+        className="max-w-3xl p-0 overflow-hidden"
+      >
+        {selectedObraForDetail && (
+          <div className="flex flex-col md:flex-row min-h-[420px]">
+            {/* Columna Izquierda: Ficha Visual */}
+            <div 
+              className="md:w-[280px] w-full bg-brand-950 p-5 flex flex-col items-center justify-between relative text-white"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
+                  linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+                `,
+                backgroundSize: '20px 20px'
+              }}
+            >
+              {/* Encabezado Ficha */}
+              <div className="w-full flex justify-between text-[11px] font-semibold tracking-wider text-brand-300">
+                <span>{selectedObraForDetail.codigo_inventario || selectedObraForDetail.id}</span>
+                <span>BÓVEDA DE ARTE</span>
+              </div>
+
+              {/* Contenedor Ficha de Obra */}
+              <div className="w-44 h-56 my-6 border border-brand-800/60 bg-brand-950/40 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center relative p-4 group overflow-hidden">
+                {/* Esquinas Reforzadas */}
+                <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t border-l border-brand-400"></div>
+                <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t border-r border-brand-400"></div>
+                <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b border-l border-brand-400"></div>
+                <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b border-r border-brand-400"></div>
+
+                {selectedObraForDetail.imagen_url ? (
+                  <img 
+                    src={selectedObraForDetail.imagen_url} 
+                    alt={selectedObraForDetail.titulo}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center">
+                    <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase">Ficha de Obra</span>
+                    <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1">Colección MAVET</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Pie Ficha */}
+              <div className="text-center">
+                <p className="text-xs font-semibold tracking-widest text-brand-300">MAVET</p>
+                <p className="text-[9px] text-brand-400/60 mt-0.5">Museo de Artes Visuales y del Espacio</p>
+              </div>
+            </div>
+
+            {/* Columna Derecha: Datos */}
+            <div className="flex-1 p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between">
+              <div>
+                {/* Header info */}
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white leading-tight">
+                      {selectedObraForDetail.titulo}
+                    </h2>
+                    <p className="text-brand-500 dark:text-brand-400 font-semibold text-xs mt-1">
+                      • {selectedObraForDetail.autor}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedObraForDetail(null)}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Tarjeta Estado de Conservación */}
+                <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-xl">
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Estado de Conservación</span>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Condición Actual</span>
+                    </div>
+                  </div>
+                  <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold border ${
+                    selectedObraForDetail.estado === 'Excelente' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800/40' :
+                    selectedObraForDetail.estado === 'Bueno' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800/40' :
+                    'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800/40'
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                    {selectedObraForDetail.estado}
+                  </span>
+                </div>
+
+                {/* Grilla de Parámetros */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
+                  {/* Categoría */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Categoría</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.categoria || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Técnica */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Técnica</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.tecnica || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Medidas */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Medidas</span>
+                      <span className="text-xs font-semibold text-gray-855 dark:text-gray-200">{selectedObraForDetail.medidas || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Peso */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Peso</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.peso ? `${selectedObraForDetail.peso} kg` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Año de creación */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Año de Creación</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.ano || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Cantidad de piezas */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cantidad de Piezas</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-250">{selectedObraForDetail.piezas ?? '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Ubicación */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Ubicación</span>
+                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.ubicacion || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Tipo de ingreso */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tipo de Ingreso</span>
+                      <span className="inline-block text-[10px] font-semibold text-gray-850 dark:text-gray-200 bg-yellow-50 dark:bg-yellow-950/20 px-2 py-0.5 rounded border border-yellow-100 dark:border-yellow-900/30">
+                        {selectedObraForDetail.tipo_ingreso || '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Descripción (si existe) */}
+                {selectedObraForDetail.descripcion && (
+                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                    <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Descripción / Detalles Adicionales</span>
+                    <p className="text-xs text-gray-650 dark:text-gray-300 leading-relaxed font-outfit">
+                      {selectedObraForDetail.descripcion}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Acciones del pie */}
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
+                <button
+                  onClick={() => setSelectedObraForDetail(null)}
+                  className="px-5 py-2 text-xs font-semibold text-gray-650 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    handleEdit(selectedObraForDetail);
+                    setSelectedObraForDetail(null);
+                  }}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Editar Obra
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

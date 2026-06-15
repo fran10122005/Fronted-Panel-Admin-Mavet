@@ -40,11 +40,11 @@ const AppHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 lg:border-b">
+    <header className="sticky top-0 flex w-full header-gradient border-gray-200 z-99999 dark:border-gray-800 lg:border-b">
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
         <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
           <button
-            className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 dark:border-gray-800 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border"
+            className="flex items-center justify-center w-10 h-10 text-gray-600 border border-gray-300 rounded-lg z-99999 dark:border-gray-700 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border bg-white/90 backdrop-blur-xs dark:bg-gray-950/60 shadow-theme-xs transition-all duration-300 hover:text-brand-500 hover:border-brand-500 hover:scale-105 active:scale-95 hover:shadow-sm"
             onClick={handleToggle}
             aria-label="Toggle Sidebar"
           >
@@ -79,12 +79,11 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             )}
-            {/* Cross Icon */}
           </button>
 
           <Link to="/" className="lg:hidden flex items-center gap-2">
             <img
-              src="/images/logo/mavet.png"
+              src="/images/logo/mavet2.png"
               alt="Logo MAVET"
               className="h-10 w-auto object-contain"
             />
@@ -115,10 +114,10 @@ const AppHeader: React.FC = () => {
 
           <div className="hidden lg:block">
             <form>
-              <div className="relative">
+              <div className="relative group">
                 <span className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2">
                   <svg
-                    className="fill-gray-500 dark:fill-gray-400"
+                    className="fill-gray-400 transition-colors duration-300 group-hover:fill-brand-500 group-focus-within:fill-brand-500 dark:fill-gray-500 dark:group-hover:fill-brand-400 dark:group-focus-within:fill-brand-400"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -137,10 +136,10 @@ const AppHeader: React.FC = () => {
                   ref={inputRef}
                   type="text"
                   placeholder="Search or type command..."
-                  className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
+                  className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-white/95 backdrop-blur-xs py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 transition-all duration-300 hover:border-brand-400 hover:shadow-sm hover:scale-[1.01] focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-950/60 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-500 xl:w-[430px]"
                 />
 
-                <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-300 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 transition-all duration-300 group-hover:border-brand-400 group-hover:text-brand-600 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-400 dark:group-hover:text-brand-400">
                   <span> ⌘ </span>
                   <span> K </span>
                 </button>

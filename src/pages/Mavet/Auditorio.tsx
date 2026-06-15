@@ -262,16 +262,16 @@ const Auditorio: React.FC = () => {
       </div>
 
       {/* Modal de Formulario Administrativo */}
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[500px] p-6">
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[420px] p-5">
         <div>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
               {selectedEvent ? "Editar Reserva" : "Nueva Reserva"}
             </h3>
             {selectedEvent && (
               <button 
                 onClick={handleDeleteEvent}
-                className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors"
+                className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors"
                 title="Eliminar evento"
               >
                 Eliminar
@@ -279,52 +279,52 @@ const Auditorio: React.FC = () => {
             )}
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Título del Evento</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Título del Evento</label>
               <input
                 type="text"
                 value={eventTitle}
                 onChange={(e) => setEventTitle(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                 placeholder="Ej. Conferencia de Arte"
               />
             </div>
             
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Fecha del Evento</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha del Evento</label>
               <input
                 type="date"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Hora Inicio</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hora Inicio</label>
                 <input
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Hora Fin</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hora Fin</label>
                 <input
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Cédula del Organizador</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula del Organizador</label>
                 <input
                   type="text"
                   value={cedulaOrganizador}
@@ -337,14 +337,14 @@ const Auditorio: React.FC = () => {
                     setOrganizadorError("");
                   }}
                   onBlur={handleCedulaBlur}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
                   placeholder="Ej. V-12345678"
                 />
-                {organizadorLoading && <p className="text-xs text-gray-500 mt-1">Buscando persona...</p>}
-                {organizadorError && <p className="text-xs text-red-500 mt-1">{organizadorError}</p>}
+                {organizadorLoading && <p className="text-[11px] text-gray-500 mt-0.5">Buscando persona...</p>}
+                {organizadorError && <p className="text-[11px] text-red-500 mt-0.5">{organizadorError}</p>}
               </div>
               <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre del Organizador</label>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre Organizador</label>
                 <input
                   type="text"
                   value={organizador}
@@ -353,19 +353,19 @@ const Auditorio: React.FC = () => {
                     setOrganizadorAuto(false);
                   }}
                   readOnly={organizadorAuto}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
-                  placeholder="Se carga automáticamente al buscar la cédula"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  placeholder="Se busca con cédula"
                 />
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Ingrese la cédula y salga del campo para buscar los datos automáticamente.</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">Ingrese la cédula y salga del campo para buscar los datos automáticamente.</p>
 
             <div>
-              <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Evento</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Evento</label>
               <select
                 value={tipoEvento}
                 onChange={(e) => setTipoEvento(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
               >
                 <option value="Conferencia">Conferencia</option>
                 <option value="Exposición">Exposición</option>
@@ -375,17 +375,17 @@ const Auditorio: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
             <button
               onClick={closeModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-1.5 text-xs font-semibold text-gray-655 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleAddOrUpdateEvent}
               disabled={saving}
-              className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Guardando..." : selectedEvent ? "Actualizar Registro" : "Guardar Reserva"}
             </button>
