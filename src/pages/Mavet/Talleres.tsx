@@ -4,25 +4,42 @@ import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 
+const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
+const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
+const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
+
 export default function Talleres() {
+  // ─── Data ───
   const [talleres, setTalleres] = useState<any[]>([]);
+  const [inventario, setInventario] = useState<any[]>([]);
   const [instructores, setInstructores] = useState<any[]>([]);
   const [espacios, setEspacios] = useState<any[]>([]);
   const [inscripciones, setInscripciones] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { isOpen: isOpenTaller, openModal: openTaller, closeModal: closeTaller } = useModal();
+  // ─── Pagination & search ───
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const [formData, setFormData] = useState({
-    tallerId: "",
-    alumnoNombre: "",
-    alumnoEdad: "",
-    repNombre: "",
-    repCedula: "",
-    repTelefono: ""
-  });
+  // ─── Modals ───
+  const { isOpen: isOpenCrear, openModal: openCrear, closeModal: closeCrear } = useModal();
+  const { isOpen: isOpenEditar, openModal: openEditar, closeModal: closeEditar } = useModal();
+  const { isOpen: isOpenPlanificar, openModal: openPlanificar, closeModal: closePlanificar } = useModal();
+  const { isOpen: isOpenInscr, openModal: openInscrModal, closeModal: closeInscrModal } = useModal();
+  const { isOpen: isOpenEnroll, openModal: openEnrollModal, closeModal: closeEnrollModal } = useModal();
 
-  const [tallerForm, setTallerForm] = useState({
-    nombre_curso: "",
+  // ─── Selected states ───
+  const [selectedInventario, setSelectedInventario] = useState<any>(null);
+  const [selectedTaller, setSelectedTaller] = useState<any>(null);
+  const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
+  const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
+
+  // ─── Forms ───
+  const [inventarioForm, setInventarioForm] = useState({ nombre: "", descripcion: "" });
+
+  const [planificarForm, setPlanificarForm] = useState({
+    id_taller_inventario: 0,
     id_instructor: 0,
     id_espacio: 0,
     sesiones: "",
@@ -35,47 +52,44 @@ export default function Talleres() {
     estado: true
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
+  const [enrollForm, setEnrollForm] = useState({
+    tallerId: "",
+    alumnoNombre: "",
+    alumnoEdad: "",
+    repNombre: "",
+    repCedula: "",
+    repTelefono: ""
+  });
 
-  const edadNum = parseInt(formData.alumnoEdad, 10);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
+
+  const edadNum = parseInt(enrollForm.alumnoEdad, 10);
   const esMenor = !isNaN(edadNum) && edadNum < 18;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ─── Fetch ───
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
-      const [talleresData, inscripcionesData, instrData, espData] = await Promise.all([
+      const [talleresData, invData, inscripcionesData, instrData, espData] = await Promise.all([
         mavetApi.getTalleres(),
+        mavetApi.getInventarioTalleres(),
         mavetApi.getInscripcionesTaller(),
         mavetApi.getInstructores(),
         mavetApi.getEspaciosMuseo()
       ]);
       setTalleres(talleresData);
+      setInventario(invData);
       setInscripciones(inscripcionesData);
       setInstructores(instrData);
       setEspacios(espData);
-      if (talleresData.length > 0) {
-        setFormData(prev => ({ ...prev, tallerId: talleresData[0].id_taller }));
-      }
     } catch (err) {
       console.error("Error fetching data:", err);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleTallerFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const numFields = ["id_instructor", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
-    setTallerForm({
-      ...tallerForm,
-      [name]: numFields.includes(name) ? Number(value) : value
-    });
   };
 
   const showAlert = (message: string, type: 'success' | 'error') => {
@@ -83,54 +97,25 @@ export default function Talleres() {
     setTimeout(() => setAlertInfo({ show: false, message: "", type: "success" }), 4000);
   };
 
-  const handleSubmitInscripcion = async (e: React.FormEvent) => {
+  // ─── Inventario: Crear ───
+  const handleOpenCrear = () => {
+    setInventarioForm({ nombre: "", descripcion: "" });
+    openCrear();
+  };
+
+  const handleCrearInventario = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (esMenor && (!formData.repNombre || !formData.repCedula)) {
-      showAlert("Los menores de edad requieren nombre y cédula del representante.", "error");
+    if (!inventarioForm.nombre.trim()) {
+      showAlert("El nombre del taller es obligatorio.", "error");
       return;
     }
     setIsSubmitting(true);
-
     try {
-      const payload: any = {
-        tallerId: formData.tallerId,
-        alumno: { nombre: formData.alumnoNombre, edad: formData.alumnoEdad }
-      };
-      if (esMenor) {
-        payload.representante = {
-          nombre: formData.repNombre,
-          cedula: formData.repCedula,
-          telefono: formData.repTelefono
-        };
-      }
-      const response = await mavetApi.inscribirTaller(payload);
-
-      showAlert(response.message, 'success');
-      setFormData({ tallerId: formData.tallerId, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" });
-
-      const inscripcionesData = await mavetApi.getInscripcionesTaller();
-      setInscripciones(inscripcionesData);
-    } catch (error: any) {
-      showAlert(error.message || "Ocurrió un error al inscribir al alumno.", 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmitTaller = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await mavetApi.crearTaller(tallerForm);
-      showAlert("Taller creado correctamente.", "success");
-      closeTaller();
-      const talleresData = await mavetApi.getTalleres();
-      setTalleres(talleresData);
-      setTallerForm({
-        nombre_curso: "", id_instructor: 0, id_espacio: 0, sesiones: "",
-        fecha: "", hora_inicio: "", hora_fin: "", horas_totales: 0,
-        cupo_minimo: 0, cupo_maximo: 0, estado: true
-      });
+      await mavetApi.crearInventarioTaller(inventarioForm);
+      showAlert("Taller agregado al inventario.", "success");
+      closeCrear();
+      const refreshed = await mavetApi.getInventarioTalleres();
+      setInventario(refreshed);
     } catch (error: any) {
       showAlert(error.message || "Error al crear taller.", "error");
     } finally {
@@ -138,176 +123,483 @@ export default function Talleres() {
     }
   };
 
-  const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-50";
-  const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
+  // ─── Inventario: Editar ───
+  const handleOpenEditar = (item: any) => {
+    setSelectedInventario(item);
+    setInventarioForm({ nombre: item.nombre || "", descripcion: item.descripcion || "" });
+    openEditar();
+  };
+
+  const handleEditarInventario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inventarioForm.nombre.trim()) {
+      showAlert("El nombre del taller es obligatorio.", "error");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await mavetApi.actualizarInventarioTaller(selectedInventario.id_taller || selectedInventario.id, inventarioForm);
+      showAlert("Taller actualizado en el inventario.", "success");
+      closeEditar();
+      const refreshed = await mavetApi.getInventarioTalleres();
+      setInventario(refreshed);
+    } catch (error: any) {
+      showAlert(error.message || "Error al actualizar taller.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ─── Inventario: Ocultar ───
+  const handleOcultarInventario = async (item: any) => {
+    if (!window.confirm(`¿Ocultar "${item.nombre}" del inventario?`)) return;
+    try {
+      await mavetApi.ocultarInventarioTaller(item.id_taller || item.id);
+      showAlert("Taller ocultado del inventario.", "success");
+      const refreshed = await mavetApi.getInventarioTalleres();
+      setInventario(refreshed);
+    } catch (error: any) {
+      showAlert(error.message || "Error al ocultar taller.", "error");
+    }
+  };
+
+  // ─── Planificar Taller ───
+  const handleOpenPlanificar = () => {
+    setPlanificarForm({
+      id_taller_inventario: 0, id_instructor: 0, id_espacio: 0, sesiones: "",
+      fecha: "", hora_inicio: "", hora_fin: "", horas_totales: 0,
+      cupo_minimo: 0, cupo_maximo: 0, estado: true
+    });
+    openPlanificar();
+  };
+
+  const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const numFields = ["id_taller_inventario", "id_instructor", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
+    setPlanificarForm(prev => ({
+      ...prev,
+      [name]: numFields.includes(name) ? Number(value) : value
+    }));
+  };
+
+  const handleSubmitPlanificar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!planificarForm.id_taller_inventario) {
+      showAlert("Debe seleccionar un taller del inventario.", "error");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
+      const payload = {
+        ...planificarForm,
+        nombre_curso: selected?.nombre || ""
+      };
+      await mavetApi.crearTaller(payload);
+      showAlert("Taller planificado correctamente.", "success");
+      closePlanificar();
+      const [talleresData, inscripcionesData] = await Promise.all([
+        mavetApi.getTalleres(),
+        mavetApi.getInscripcionesTaller()
+      ]);
+      setTalleres(talleresData);
+      setInscripciones(inscripcionesData);
+    } catch (error: any) {
+      showAlert(error.message || "Error al planificar taller.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ─── Inscripciones ───
+  const openEnroll = (taller: any) => {
+    setSelectedTallerEnroll(taller);
+    setEnrollForm(prev => ({ ...prev, tallerId: taller.id_taller }));
+    openEnrollModal();
+  };
+
+  const handleEnrollChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEnrollForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmitInscripcion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
+      showAlert("Los menores de edad requieren nombre y cédula del representante.", "error");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload: any = {
+        tallerId: enrollForm.tallerId,
+        alumno: { nombre: enrollForm.alumnoNombre, edad: enrollForm.alumnoEdad }
+      };
+      if (esMenor) {
+        payload.representante = {
+          nombre: enrollForm.repNombre,
+          cedula: enrollForm.repCedula,
+          telefono: enrollForm.repTelefono
+        };
+      }
+      await mavetApi.inscribirTaller(payload);
+      showAlert("Alumno inscrito correctamente.", "success");
+      setEnrollForm(prev => ({ ...prev, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
+      const refreshed = await mavetApi.getInscripcionesTaller();
+      setInscripciones(refreshed);
+    } catch (error: any) {
+      showAlert(error.message || "Error al inscribir al alumno.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEnrolments = async (taller: any) => {
+    setSelectedTaller(taller);
+    try {
+      const data = await mavetApi.getInscripcionesPorTaller(taller.id_taller);
+      setTallerInscripciones(data);
+    } catch {
+      setTallerInscripciones([]);
+    }
+    openInscrModal();
+  };
+
+  const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
+    if (!selectedTaller) return;
+    try {
+      const resp = await mavetApi.exportInscripciones(selectedTaller.id_taller, format);
+      window.open(resp.url, "_blank");
+    } catch {
+      showAlert("Error al exportar inscripciones.", "error");
+    }
+  };
+
+  // ─── Filters & Pagination ───
+  const filteredTalleres = talleres.filter(t => {
+    const term = searchTerm.toLowerCase();
+    return (
+      t.nombre_curso?.toLowerCase().includes(term) ||
+      t.Instructor?.Persona?.nombres?.toLowerCase().includes(term) ||
+      t.Instructor?.Persona?.apellidos?.toLowerCase().includes(term)
+    );
+  });
+  const totalPages = Math.ceil(filteredTalleres.length / itemsPerPage);
+  const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const thCls = "px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
+  const tdCls = "px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200";
 
   return (
     <div className="space-y-6 relative">
+      {/* Alert */}
       {alertInfo.show && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-sm ${alertInfo.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-            <span className="font-semibold text-sm">{alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}</span>
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-md ${
+            alertInfo.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <span className="font-semibold text-sm">
+              {alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}
+            </span>
           </div>
         </div>
       )}
 
+      {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Talleres</h1>
-          <p className="text-sm text-gray-500">Administración de programas y matrículas.</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={openTaller}
-            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors"
-          >
-            + Crear Nuevo Taller
-          </button>
+          <p className="text-sm text-gray-500">Inventario de talleres y planificación de programas.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmitInscripcion}>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <ComponentCard title="Selección de Taller">
-            <div className="space-y-4">
-              <div>
-                <label className={labelCls}>Taller o Curso</label>
-                <select name="tallerId" value={formData.tallerId} onChange={handleChange}
-                  disabled={isSubmitting || talleres.length === 0}
-                  className={inputCls} required>
-                  {talleres.length === 0 && <option value="">Cargando talleres...</option>}
-                  {talleres.map(t => (
-                    <option key={t.id_taller} value={t.id_taller}>{t.nombre_curso}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </ComponentCard>
-
-          <ComponentCard title="Datos del Alumno">
-            <div className="space-y-4">
-              <div>
-                <label className={labelCls}>Nombre Completo</label>
-                <input type="text" name="alumnoNombre" value={formData.alumnoNombre} onChange={handleChange}
-                  disabled={isSubmitting} placeholder="Ej. Carlos Mendoza" className={inputCls} required />
-              </div>
-              <div>
-                <label className={labelCls}>Edad</label>
-                <input type="number" name="alumnoEdad" value={formData.alumnoEdad} onChange={handleChange}
-                  disabled={isSubmitting} placeholder="Ej. 12" className={inputCls} required />
-                {formData.alumnoEdad && !esMenor && (
-                  <p className="text-xs text-green-600 mt-1">Mayor de edad — no requiere representante.</p>
-                )}
-                {esMenor && (
-                  <p className="text-xs text-amber-600 mt-1">Menor de edad — se requieren datos del representante.</p>
-                )}
-              </div>
-            </div>
-          </ComponentCard>
-
-          <ComponentCard title="Datos del Representante">
-            <div className="space-y-4">
-              {!formData.alumnoEdad ? (
-                <p className="text-sm text-gray-400 italic">Ingresa la edad del alumno para determinar si requiere representante.</p>
-              ) : !esMenor ? (
-                <p className="text-sm text-green-600 font-medium">Alumno mayor de edad — no requiere representante.</p>
-              ) : (
-                <>
-                  <div>
-                    <label className={labelCls}>Nombre del Representante</label>
-                    <input type="text" name="repNombre" value={formData.repNombre} onChange={handleChange}
-                      disabled={isSubmitting} placeholder="Ej. Ana Mendoza" className={inputCls} required />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Cédula</label>
-                    <input type="text" name="repCedula" value={formData.repCedula} onChange={handleChange}
-                      disabled={isSubmitting} placeholder="Ej. V-12345678" className={inputCls} required />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Teléfono</label>
-                    <input type="text" name="repTelefono" value={formData.repTelefono} onChange={handleChange}
-                      disabled={isSubmitting} placeholder="Ej. 0414-1234567" className={inputCls} required />
-                  </div>
-                </>
-              )}
-            </div>
-          </ComponentCard>
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <button type="submit" disabled={isSubmitting}
-            className="flex items-center justify-center min-w-[180px] bg-brand-500 text-white font-medium py-3 px-8 rounded-lg shadow-sm hover:bg-brand-600 transition-colors disabled:opacity-70 disabled:cursor-wait">
-            {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              "Inscribir Alumno"
-            )}
+      {/* ══════════════════════════════════════════
+          INVENTARIO DE TALLERES
+         ══════════════════════════════════════════ */}
+      <ComponentCard title="Inventario de Talleres" desc="Catálogo maestro de talleres disponibles">
+        <div className="flex justify-end mb-4">
+          <button onClick={handleOpenCrear}
+            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Taller
           </button>
         </div>
-      </form>
-
-      <div className="mt-8">
-        <ComponentCard title="Alumnos Inscritos Recientemente">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">Alumno</th>
-                  <th scope="col" className="px-6 py-3">Taller</th>
-                  <th scope="col" className="px-6 py-3">Representante</th>
-                  <th scope="col" className="px-6 py-3">Fecha</th>
-                  <th scope="col" className="px-6 py-3">Estado</th>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                <th className={thCls}>Nombre</th>
+                <th className={thCls}>Descripción</th>
+                <th className={`${thCls} text-center w-32`}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {isLoading ? (
+                <tr><td colSpan={3} className="px-5 py-10 text-center text-gray-500">Cargando...</td></tr>
+              ) : inventario.length === 0 ? (
+                <tr><td colSpan={3} className="px-5 py-10 text-center text-gray-500">
+                  <p className="text-sm font-medium">No hay talleres en el inventario.</p>
+                  <p className="text-xs text-gray-400 mt-1">Cree un nuevo taller usando el botón "Crear Taller".</p>
+                </td></tr>
+              ) : inventario.map((item: any) => (
+                <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                  <td className={`${tdCls} font-semibold`}>{item.nombre}</td>
+                  <td className={`${tdCls} text-gray-500 dark:text-gray-400 max-w-xs truncate`}>{item.descripcion || "—"}</td>
+                  <td className="px-5 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => handleOpenEditar(item)}
+                        className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
+                        title="Editar">
+                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                      <button onClick={() => handleOcultarInventario(item)}
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Ocultar">
+                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {inscripciones.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">No hay alumnos inscritos aún.</td>
-                  </tr>
-                ) : (
-                  inscripciones.map((ins, index) => (
-                    <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                        {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "Desconocido"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {ins.Taller ? ins.Taller.nombre_curso : `Taller #${ins.id_taller}`}
-                      </td>
-                      <td className="px-6 py-4">
-                        {ins.Representante ? `${ins.Representante.nombres || ""} ${ins.Representante.apellidos || ""}`.trim() : "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
-                          {ins.estado_inscripcion || "Activo"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </ComponentCard>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ComponentCard>
 
-      {/* Modal: Crear Nuevo Taller */}
-      <Modal isOpen={isOpenTaller} onClose={closeTaller} className="max-w-[550px] p-5">
+      {/* ══════════════════════════════════════════
+          LISTADO DE TALLERES
+         ══════════════════════════════════════════ */}
+      <ComponentCard title="Listado de Talleres" desc="Talleres planificados con instructor, fecha y cupos">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <input type="text" placeholder="Buscar por nombre o instructor..."
+            value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className={inputCls + " w-full sm:w-64"} />
+          <button onClick={handleOpenPlanificar}
+            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Planificar Taller
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                <th className={thCls}>Código</th>
+                <th className={thCls}>Nombre</th>
+                <th className={thCls}>Instructor</th>
+                <th className={thCls}>Fecha</th>
+                <th className={thCls}>Cupos</th>
+                <th className={thCls}>Sesiones</th>
+                <th className={`${thCls} text-center`}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {paginatedTalleres.length === 0 ? (
+                <tr><td colSpan={7} className="px-5 py-10 text-center text-gray-500">
+                  <p className="text-sm font-medium">No se encontraron talleres.</p>
+                </td></tr>
+              ) : paginatedTalleres.map((t) => (
+                <tr key={t.id_taller} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                  <td className={`${tdCls} font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold`}>{t.id_taller}</td>
+                  <td className={`${tdCls} font-semibold`}>{t.nombre_curso}</td>
+                  <td className={`${tdCls} text-gray-600 dark:text-gray-300`}>
+                    {t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "-"}
+                  </td>
+                  <td className={`${tdCls} text-gray-500`}>
+                    {t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES') : "-"}
+                  </td>
+                  <td className={`${tdCls}`}>
+                    <span className="text-xs font-medium">{t.cupo_minimo || 0} / {t.cupo_maximo || 0}</span>
+                  </td>
+                  <td className={`${tdCls} text-gray-500`}>{t.sesiones || "-"}</td>
+                  <td className="px-5 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => openEnrolments(t)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/30 px-2.5 py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Inscritos
+                      </button>
+                      <button onClick={() => openEnroll(t)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 px-2.5 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inscribir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Página {currentPage} de {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Anterior
+              </button>
+              <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
+      </ComponentCard>
+
+      {/* ══════════════════════════════════════════
+          ÚLTIMOS ALUMNOS INSCRITOS
+         ══════════════════════════════════════════ */}
+      <ComponentCard title="Últimos 10 Alumnos Inscritos">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                <th className={thCls}>Nombre</th>
+                <th className={thCls}>Cédula</th>
+                <th className={thCls}>Taller</th>
+                <th className={thCls}>Fecha</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {[...inscripciones]
+                .sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime())
+                .slice(0, 10)
+                .map((ins, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                    <td className={`${tdCls} font-medium`}>
+                      {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "-"}
+                    </td>
+                    <td className={`${tdCls} text-gray-500`}>{ins.Alumno?.cedula || "-"}</td>
+                    <td className={`${tdCls}`}>{ins.Taller?.nombre_curso || "-"}</td>
+                    <td className={`${tdCls} text-gray-500`}>
+                      {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString('es-ES') : "-"}
+                    </td>
+                  </tr>
+                ))}
+              {inscripciones.length === 0 && (
+                <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-500">No hay inscripciones registradas.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </ComponentCard>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Crear Taller (Inventario)
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenCrear} onClose={closeCrear} className="max-w-md p-6">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Crear Nuevo Taller</h3>
-          <form onSubmit={handleSubmitTaller} className="space-y-3">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Crear Taller</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Agregue un taller al inventario maestro.</p>
+          <form onSubmit={handleCrearInventario} className="space-y-4">
             <div>
-              <label className={labelCls}>Nombre del Curso / Taller</label>
-              <input type="text" name="nombre_curso" value={tallerForm.nombre_curso} onChange={handleTallerFormChange}
+              <label className={labelCls}>Nombre del Taller <span className="text-red-500">*</span></label>
+              <input type="text" value={inventarioForm.nombre}
+                onChange={e => setInventarioForm(prev => ({ ...prev, nombre: e.target.value }))}
+                className={inputCls} placeholder="Ej. Pintura al Óleo" required />
+            </div>
+            <div>
+              <label className={labelCls}>Descripción</label>
+              <textarea rows={3} value={inventarioForm.descripcion}
+                onChange={e => setInventarioForm(prev => ({ ...prev, descripcion: e.target.value }))}
+                className={inputCls + " resize-none"} placeholder="Breve descripción del taller..." />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={closeCrear} disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={isSubmitting}
+                className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Guardar Taller"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Editar Taller (Inventario)
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenEditar} onClose={closeEditar} className="max-w-md p-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Editar Taller</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Modifique los datos del taller en el inventario.</p>
+          <form onSubmit={handleEditarInventario} className="space-y-4">
+            <div>
+              <label className={labelCls}>Nombre del Taller <span className="text-red-500">*</span></label>
+              <input type="text" value={inventarioForm.nombre}
+                onChange={e => setInventarioForm(prev => ({ ...prev, nombre: e.target.value }))}
                 className={inputCls} required />
             </div>
+            <div>
+              <label className={labelCls}>Descripción</label>
+              <textarea rows={3} value={inventarioForm.descripcion}
+                onChange={e => setInventarioForm(prev => ({ ...prev, descripcion: e.target.value }))}
+                className={inputCls + " resize-none"} />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={closeEditar} disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={isSubmitting}
+                className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Actualizar"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* ══════════════════════════════════════════
+          MODAL: Planificar Taller (Listado)
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenPlanificar} onClose={closePlanificar} className="max-w-[580px] p-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Planificar Taller</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Programe una edición del taller con fecha, instructor y cupos.</p>
+          <form onSubmit={handleSubmitPlanificar} className="space-y-4">
+            <div>
+              <label className={labelCls}>Taller <span className="text-red-500">*</span></label>
+              <select name="id_taller_inventario" value={planificarForm.id_taller_inventario}
+                onChange={handlePlanificarChange} className={selectCls} required>
+                <option value={0}>Seleccione un taller del inventario...</option>
+                {inventario.map((i: any) => (
+                  <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Instructor</label>
-                <select name="id_instructor" value={tallerForm.id_instructor} onChange={handleTallerFormChange} className={inputCls}>
+                <select name="id_instructor" value={planificarForm.id_instructor}
+                  onChange={handlePlanificarChange} className={selectCls}>
                   <option value={0}>Seleccione...</option>
                   {instructores.map(i => (
                     <option key={i.id_instructor} value={i.id_instructor}>
@@ -318,7 +610,8 @@ export default function Talleres() {
               </div>
               <div>
                 <label className={labelCls}>Espacio / Sala</label>
-                <select name="id_espacio" value={tallerForm.id_espacio} onChange={handleTallerFormChange} className={inputCls}>
+                <select name="id_espacio" value={planificarForm.id_espacio}
+                  onChange={handlePlanificarChange} className={selectCls}>
                   <option value={0}>Seleccione...</option>
                   {espacios.map(e => (
                     <option key={e.id_espacio} value={e.id_espacio}>{e.nombre}</option>
@@ -326,70 +619,207 @@ export default function Talleres() {
                 </select>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className={labelCls}>Sesiones</label>
-                <input type="number" name="sesiones" value={tallerForm.sesiones} onChange={handleTallerFormChange}
-                  className={inputCls} />
+                <input type="number" name="sesiones" value={planificarForm.sesiones}
+                  onChange={handlePlanificarChange} className={inputCls} min={1} />
               </div>
               <div>
                 <label className={labelCls}>Cupo Mínimo</label>
-                <input type="number" name="cupo_minimo" value={tallerForm.cupo_minimo} onChange={handleTallerFormChange}
-                  className={inputCls} />
+                <input type="number" name="cupo_minimo" value={planificarForm.cupo_minimo}
+                  onChange={handlePlanificarChange} className={inputCls} min={0} />
               </div>
               <div>
                 <label className={labelCls}>Cupo Máximo</label>
-                <input type="number" name="cupo_maximo" value={tallerForm.cupo_maximo} onChange={handleTallerFormChange}
-                  className={inputCls} />
+                <input type="number" name="cupo_maximo" value={planificarForm.cupo_maximo}
+                  onChange={handlePlanificarChange} className={inputCls} min={1} />
               </div>
             </div>
-
             <div>
               <label className={labelCls}>Fecha del Taller</label>
-              <input type="date" name="fecha" value={tallerForm.fecha} onChange={handleTallerFormChange} className={inputCls} />
+              <input type="date" name="fecha" value={planificarForm.fecha}
+                onChange={handlePlanificarChange} className={inputCls} />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Hora Inicio</label>
-                <input type="time" name="hora_inicio" value={tallerForm.hora_inicio} onChange={handleTallerFormChange} className={inputCls} />
+                <input type="time" name="hora_inicio" value={planificarForm.hora_inicio}
+                  onChange={handlePlanificarChange} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Hora Fin</label>
-                <input type="time" name="hora_fin" value={tallerForm.hora_fin} onChange={handleTallerFormChange} className={inputCls} />
+                <input type="time" name="hora_fin" value={planificarForm.hora_fin}
+                  onChange={handlePlanificarChange} className={inputCls} />
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Horas Totales</label>
-                <input type="number" name="horas_totales" value={tallerForm.horas_totales} onChange={handleTallerFormChange}
-                  className={inputCls} />
+                <input type="number" name="horas_totales" value={planificarForm.horas_totales}
+                  onChange={handlePlanificarChange} className={inputCls} min={0} />
               </div>
               <div>
                 <label className={labelCls}>Estado</label>
-                <select name="estado" value={tallerForm.estado ? "true" : "false"}
-                  onChange={(e) => setTallerForm({ ...tallerForm, estado: e.target.value === "true" })} className={inputCls}>
+                <select name="estado" value={planificarForm.estado ? "true" : "false"}
+                  onChange={e => setPlanificarForm(prev => ({ ...prev, estado: e.target.value === "true" }))}
+                  className={selectCls}>
                   <option value="true">Activo</option>
                   <option value="false">Inactivo</option>
                 </select>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-700 mt-2">
-              <button type="button" onClick={closeTaller} disabled={isSubmitting}
-                className="px-4 py-1.5 text-xs font-semibold text-gray-650 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={closePlanificar} disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
                 Cancelar
               </button>
-              <button type="submit" disabled={isSubmitting || !tallerForm.nombre_curso}
-                className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait">
+              <button type="submit" disabled={isSubmitting}
+                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
                 {isSubmitting ? (
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : "Crear Taller"}
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Planificar Taller"}
               </button>
             </div>
           </form>
+        </div>
+      </Modal>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Inscribir Alumno
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenEnroll} onClose={closeEnrollModal} className="max-w-2xl p-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Inscribir Alumno</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+            Taller: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTallerEnroll?.nombre_curso || ""}</span>
+          </p>
+          <form onSubmit={handleSubmitInscripcion} className="space-y-4">
+            <div>
+              <label className={labelCls}>Taller o Curso</label>
+              <select name="tallerId" value={enrollForm.tallerId} onChange={handleEnrollChange} className={selectCls} required>
+                {talleres.map(t => <option key={t.id_taller} value={t.id_taller}>{t.nombre_curso}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Nombre del Alumno <span className="text-red-500">*</span></label>
+                <input type="text" name="alumnoNombre" value={enrollForm.alumnoNombre} onChange={handleEnrollChange}
+                  className={inputCls} required disabled={isSubmitting} placeholder="Ej. Carlos Mendoza" />
+              </div>
+              <div>
+                <label className={labelCls}>Edad <span className="text-red-500">*</span></label>
+                <input type="number" name="alumnoEdad" value={enrollForm.alumnoEdad} onChange={handleEnrollChange}
+                  className={inputCls} required disabled={isSubmitting} placeholder="Ej. 12" />
+                {enrollForm.alumnoEdad && !esMenor && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">Mayor de edad — no requiere representante.</p>
+                )}
+                {esMenor && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Menor de edad — se requieren datos del representante.</p>
+                )}
+              </div>
+            </div>
+            {esMenor && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-amber-50/50 dark:bg-amber-500/5 rounded-lg border border-amber-200 dark:border-amber-500/20">
+                <div>
+                  <label className={labelCls}>Nombre del Representante</label>
+                  <input type="text" name="repNombre" value={enrollForm.repNombre} onChange={handleEnrollChange}
+                    className={inputCls} required disabled={isSubmitting} placeholder="Ej. Ana Mendoza" />
+                </div>
+                <div>
+                  <label className={labelCls}>Cédula</label>
+                  <input type="text" name="repCedula" value={enrollForm.repCedula} onChange={handleEnrollChange}
+                    className={inputCls} required disabled={isSubmitting} placeholder="V-12345678" />
+                </div>
+                <div>
+                  <label className={labelCls}>Teléfono</label>
+                  <input type="text" name="repTelefono" value={enrollForm.repTelefono} onChange={handleEnrollChange}
+                    className={inputCls} disabled={isSubmitting} placeholder="0414-1234567" />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={closeEnrollModal} disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={isSubmitting}
+                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Inscribir Alumno"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Ver Inscripciones
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenInscr} onClose={closeInscrModal} className="max-w-4xl p-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Inscripciones</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+            Taller: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
+          </p>
+          <div className="flex gap-2 mb-4">
+            <button onClick={() => exportInscripcionesFn('pdf')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar PDF
+            </button>
+            <button onClick={() => exportInscripcionesFn('excel')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar Excel
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <th className={thCls}>Alumno</th>
+                  <th className={thCls}>Representante</th>
+                  <th className={thCls}>Fecha</th>
+                  <th className={thCls}>Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {tallerInscripciones.length === 0 ? (
+                  <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-500">No hay inscripciones para este taller.</td></tr>
+                ) : tallerInscripciones.map((ins, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                    <td className={`${tdCls} font-medium`}>
+                      {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "-"}
+                    </td>
+                    <td className={`${tdCls} text-gray-500`}>
+                      {ins.Representante ? `${ins.Representante.nombres || ""} ${ins.Representante.apellidos || ""}`.trim() : "-"}
+                    </td>
+                    <td className={`${tdCls} text-gray-500`}>
+                      {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString('es-ES') : "-"}
+                    </td>
+                    <td className={`${tdCls}`}>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        {ins.estado_inscripcion || "Activo"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button onClick={closeInscrModal}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Cerrar
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
+import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -155,6 +156,10 @@ const AppHeader: React.FC = () => {
           <div className="flex items-center gap-2 2xsm:gap-3">
             <NotificationDropdown />
             {/* <!-- Notification Menu Area --> */}
+          </div>
+          {/* <!-- Theme Toggle --> */}
+          <div className="flex items-center">
+            <ThemeToggleButton />
           </div>
           {/* <!-- User Area --> */}
           <UserDropdown />

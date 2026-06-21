@@ -119,3 +119,22 @@ export interface RegistroAsistencia {
   horasCumplidas: number | null;
   observaciones: string;
 }
+
+export interface Prestamo {
+  id: string;
+  libroId: string;
+  libroTitulo: string;
+  libroUnidad: string;
+  cedulaSolicitante: string;
+  nombreSolicitante: string;
+  fechaPrestamo: string;
+  fechaDevolucion?: string;
+  estado: "ACTIVO" | "DEVUELTO";
+}
+
+export interface TopVisitante {
+  cedula: string;
+  nombre: string;
+  totalVisitas: number;
+  ultimaVisita: string;
+}

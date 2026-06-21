@@ -8,7 +8,9 @@ import {
   TallerInscripcionPayload,
   EventoAuditorio,
   Trabajador,
-  RegistroAsistencia
+  RegistroAsistencia,
+  Prestamo,
+  TopVisitante
 } from "../types";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -172,6 +174,26 @@ export const mavetApi = {
     }
   },
 
+  getPrestamosBiblioteca: async (): Promise<Prestamo[]> => {
+    try {
+      const res = await axiosInstance.get('/api/biblioteca/prestamos');
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      return list.map((item: any) => ({
+        id: item.id_prestamo?.toString() || item.id?.toString(),
+        libroId: item.id_libro?.toString() || item.libroId,
+        libroTitulo: item.Libro?.titulo || item.libroTitulo || "",
+        libroUnidad: item.Libro?.unidad || item.libroUnidad || "",
+        cedulaSolicitante: item.cedula || item.cedulaSolicitante || "",
+        nombreSolicitante: item.nombre || item.nombreSolicitante || "",
+        fechaPrestamo: item.fecha_prestamo || item.fechaPrestamo || "",
+        fechaDevolucion: item.fecha_devolucion || item.fechaDevolucion,
+        estado: item.estado === "DEVUELTO" ? "DEVUELTO" : "ACTIVO"
+      }));
+    } catch {
+      return [];
+    }
+  },
+
   // === Catálogos (rutas públicas — no requieren token) ===
   getArtistas: async (): Promise<any[]> => {
     try {
@@ -330,6 +352,21 @@ export const mavetApi = {
     }
   },
 
+  getTopVisitantes: async (): Promise<TopVisitante[]> => {
+    try {
+      const res = await axiosInstance.get('/api/visitantes/ingresos/top');
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      return list.map((item: any) => ({
+        cedula: item.cedula || "",
+        nombre: item.nombre || item.nombres || "Desconocido",
+        totalVisitas: item.total_visitas || item.totalVisitas || 0,
+        ultimaVisita: item.ultima_visita || item.ultimaVisita || ""
+      }));
+    } catch {
+      return [];
+    }
+  },
+
   // === Talleres ===
   getTalleres: async (): Promise<any[]> => {
     try {
@@ -346,6 +383,43 @@ export const mavetApi = {
       return { success: true, message: "Taller creado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear taller");
+    }
+  },
+
+  // === Inventario de Talleres ===
+  getInventarioTalleres: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get('/api/educacion/talleres/inventario');
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      return [];
+    }
+  },
+
+  crearInventarioTaller: async (payload: { nombre: string; descripcion: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post('/api/educacion/talleres/inventario', payload);
+      return { success: true, message: "Taller agregado al inventario." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear taller en inventario");
+    }
+  },
+
+  actualizarInventarioTaller: async (id: number, payload: { nombre: string; descripcion: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/educacion/talleres/inventario/${id}`, payload);
+      return { success: true, message: "Taller actualizado en el inventario." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar taller en inventario");
+    }
+  },
+
+  ocultarInventarioTaller: async (id: number): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/educacion/talleres/inventario/${id}`);
+      return { success: true, message: "Taller ocultado del inventario." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al ocultar taller");
     }
   },
 
@@ -382,6 +456,24 @@ export const mavetApi = {
       return { success: true, message: "Alumno inscrito correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al inscribir alumno");
+    }
+  },
+
+  getInscripcionesPorTaller: async (id: number): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/inscripciones-talleres/taller/${id}`);
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      return [];
+    }
+  },
+
+  exportInscripciones: async (id: number, format: string): Promise<any> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/inscripciones-talleres/taller/${id}/export?format=${format}`);
+      return res.data;
+    } catch {
+      throw new Error("Error al exportar inscripciones");
     }
   },
 

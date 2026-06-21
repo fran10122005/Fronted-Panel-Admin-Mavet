@@ -5,11 +5,16 @@ import { Link } from "react-router";
 
 export default function Home() {
   const [stats, setStats] = useState<any>(null);
+  const [topVisitantes, setTopVisitantes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    mavetApi.getDashboardStats().then(data => {
+    Promise.all([
+      mavetApi.getDashboardStats(),
+      mavetApi.getTopVisitantes()
+    ]).then(([data, top]: any) => {
       if (data) setStats(data);
+      setTopVisitantes(top || []);
       setIsLoading(false);
     });
   }, []);
@@ -101,7 +106,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
           {/* Actividades Recientes */}
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
@@ -131,6 +136,44 @@ export default function Home() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Top Visitantes */}
+          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Visitantes Frecuentes</h3>
+              <span className="text-xs text-gray-400 font-medium">Top 3 del mes</span>
+            </div>
+            <div className="p-0 divide-y divide-gray-100 dark:divide-gray-800">
+              {isLoading ? (
+                <div className="p-5 text-center text-gray-500">Cargando visitantes...</div>
+              ) : topVisitantes.length === 0 ? (
+                <div className="p-5 text-center text-gray-500">
+                  <svg className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p className="text-sm">No hay datos de visitantes este mes.</p>
+                </div>
+              ) : topVisitantes.map((v: any, idx: number) => (
+                <div key={v.cedula || idx} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0 ${
+                    idx === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 ring-2 ring-amber-300 dark:ring-amber-600/40' :
+                    idx === 1 ? 'bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-300 ring-2 ring-gray-300 dark:ring-gray-600/40' :
+                    'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400 ring-2 ring-orange-300 dark:ring-orange-600/40'
+                  }`}>
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{v.nombre || "Visitante"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{v.cedula}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-brand-600 dark:text-brand-400 text-lg leading-none">{v.totalVisitas}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">visitas</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

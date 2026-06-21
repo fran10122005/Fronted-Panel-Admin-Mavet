@@ -3,7 +3,7 @@ import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarCatalogoBiblioteca } from "../../services/pdf.service";
-import { Libro, PrestamoPayload } from "../../types";
+import { Libro, PrestamoPayload, Prestamo } from "../../types";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -36,6 +36,8 @@ export default function Biblioteca() {
   // Búsqueda y Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("Todos");
+  const [filterCategoria, setFilterCategoria] = useState("Todas");
+  const [filterAutor, setFilterAutor] = useState("Todos");
 
   // Modal Prestamo
   const [selectedLibroId, setSelectedLibroId] = useState<string>("");
@@ -56,18 +58,24 @@ export default function Biblioteca() {
     type: "success",
   });
 
+  // Estado préstamos
+  const [prestamos, setPrestamos] = useState<Prestamo[]>([]);
+  const [searchCedula, setSearchCedula] = useState("");
+
   // ───────── Carga de datos ─────────
   const fetchDatos = async () => {
     setIsLoading(true);
     try {
-      const [librosData, autoresData, catData] = await Promise.all([
+      const [librosData, autoresData, catData, prestamosData] = await Promise.all([
         mavetApi.getLibros(),
         mavetApi.getAutoresLibro(),
         mavetApi.getCategoriasLibro(),
+        mavetApi.getPrestamosBiblioteca(),
       ]);
       setLibros(librosData);
       setAutores(autoresData);
       setCategorias(catData);
+      setPrestamos(prestamosData);
     } catch (error) {
       console.error("Error al cargar datos:", error);
     } finally {
@@ -107,6 +115,7 @@ export default function Biblioteca() {
       showAlert(response.message, "success");
       setCedula("");
       setNombre("");
+      await fetchDatos();
     } catch {
       showAlert("Ocurrió un error al registrar el préstamo.", "error");
     } finally {
@@ -184,14 +193,24 @@ export default function Biblioteca() {
       const autorStr   = libro.autor  || "";
       const unidadStr  = libro.unidad || "";
       const tituloStr  = libro.titulo || "";
+      const catStr     = libro.categoria || "";
       const matchesSearch =
         tituloStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         unidadStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         autorStr.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesEstado = filterEstado === "Todos" || libro.estado === filterEstado;
-      return matchesSearch && matchesEstado;
+      const matchesCategoria = filterCategoria === "Todas" || catStr === filterCategoria;
+      const matchesAutor = filterAutor === "Todos" || autorStr === filterAutor;
+      return matchesSearch && matchesEstado && matchesCategoria && matchesAutor;
     });
-  }, [libros, searchTerm, filterEstado]);
+  }, [libros, searchTerm, filterEstado, filterCategoria, filterAutor]);
+
+  const filteredPrestamos = useMemo(() => {
+    if (!searchCedula.trim()) return prestamos.filter(p => p.estado === "ACTIVO");
+    return prestamos.filter(p =>
+      p.cedulaSolicitante.toLowerCase().includes(searchCedula.toLowerCase())
+    );
+  }, [prestamos, searchCedula]);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "—";
@@ -259,32 +278,60 @@ export default function Biblioteca() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden flex flex-col">
 
         {/* Barra búsqueda / filtros */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full sm:max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar por unidad, título o autor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Buscar por unidad, título o autor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-            />
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+              <select
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value)}
+                className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+              >
+                <option value="Todos">Todos</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Descartado/Venta">Descartado/Venta</option>
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
             <select
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none"
+              value={filterCategoria}
+              onChange={(e) => setFilterCategoria(e.target.value)}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none min-w-[140px]"
+            >
+              <option value="Todas">Todas</option>
+              {categorias.map((c: any) => (
+                <option key={c.id_categoria} value={c.nombre_categoria}>{c.nombre_categoria}</option>
+              ))}
+            </select>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
+            <select
+              value={filterAutor}
+              onChange={(e) => setFilterAutor(e.target.value)}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none min-w-[160px]"
             >
               <option value="Todos">Todos</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="Descartado/Venta">Descartado/Venta</option>
+              {autores.map((a: any) => (
+                <option key={a.id_autor} value={`${a.nombre} ${a.apellido}`}>
+                  {a.nombre} {a.apellido}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -439,6 +486,92 @@ export default function Biblioteca() {
             </div>
           </>
         )}
+      </div>
+
+      {/* ══════════════════════════════════════════
+          Sección: Control de Préstamos por Cédula
+         ══════════════════════════════════════════ */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-gray-800 dark:text-white text-base">Control de Préstamos por Cédula</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Busque por cédula para ver el historial de préstamos de una persona</p>
+          </div>
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Buscar por cédula..."
+              value={searchCedula}
+              onChange={(e) => setSearchCedula(e.target.value)}
+              className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                <th className="px-5 py-3">Cédula</th>
+                <th className="px-5 py-3">Solicitante</th>
+                <th className="px-5 py-3">Libro</th>
+                <th className="px-5 py-3">Unidad</th>
+                <th className="px-5 py-3">Fecha Préstamo</th>
+                <th className="px-5 py-3 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredPrestamos.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
+                    <p className="text-sm font-medium">
+                      {searchCedula.trim() ? "No se encontraron préstamos para esta cédula." : "No hay préstamos activos."}
+                    </p>
+                  </td>
+                </tr>
+              ) : filteredPrestamos.map((p) => (
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                  <td className="px-5 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
+                    {p.cedulaSolicitante}
+                  </td>
+                  <td className="px-5 py-3 font-medium">{p.nombreSolicitante}</td>
+                  <td className="px-5 py-3 max-w-[200px]">
+                    <span className="block truncate" title={p.libroTitulo}>{p.libroTitulo}</span>
+                  </td>
+                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
+                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                    {p.fechaPrestamo ? new Date(p.fechaPrestamo).toLocaleDateString('es-ES') : "—"}
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                      p.estado === "ACTIVO"
+                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"
+                        : "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        p.estado === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"
+                      }`}></span>
+                      {p.estado === "ACTIVO" ? "Activo" : "Devuelto"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-5 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+          <span>
+            {searchCedula.trim()
+              ? `${filteredPrestamos.length} resultado(s) para "${searchCedula}"`
+              : `${filteredPrestamos.length} préstamo(s) activo(s)`
+            }
+          </span>
+          {!searchCedula.trim() && (
+            <span className="text-gray-400">Utilice el buscador para consultar por cédula</span>
+          )}
+        </div>
       </div>
 
       {/* ══════════════════════════════════════════
