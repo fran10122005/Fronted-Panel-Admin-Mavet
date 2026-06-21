@@ -301,9 +301,9 @@ const AppSidebar: React.FC = () => {
     <aside
       className={`fixed flex flex-col top-0 px-5 left-0 aside-gradient dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out ${isMobileOpen ? "z-[999999]" : "z-50"} border-r border-gray-200 
         ${isExpanded || isMobileOpen
-          ? "w-[290px]"
+          ? "w-[250px]"
           : isHovered
-            ? "w-[290px]"
+            ? "w-[250px]"
             : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}

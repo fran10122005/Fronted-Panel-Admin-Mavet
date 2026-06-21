@@ -4,7 +4,21 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { DateSelectArg, EventClickArg } from "@fullcalendar/core";
+import { 
+  Plus, 
+  List, 
+  Grid, 
+  Calendar as CalendarIcon, 
+  Clock, 
+  MapPin, 
+  Pencil, 
+  Trash2,
+  Download,
+  Search,
+  AlertCircle
+} from "lucide-react";
 import { Modal } from "../../components/ui/modal";
+import DatePicker from "../../components/form/date-picker";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
@@ -26,7 +40,10 @@ const Auditorio: React.FC = () => {
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
   
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
@@ -105,8 +122,55 @@ const Auditorio: React.FC = () => {
     setTipoEvento(event.extendedProps.tipoEvento || "Conferencia");
     openModal();
   };
+  
+  const handleEditFromList = (ev: EventoAuditorio) => {
+    setSelectedEvent(ev);
+    setEventTitle(ev.title);
+    setEventDate(ev.start?.split("T")[0] || "");
+    setHoraInicio((ev.start?.split("T")[1]?.substring(0, 5)) || "08:00");
+    setHoraFin((ev.end?.split("T")[1]?.substring(0, 5)) || "18:00");
+    setOrganizador(ev.extendedProps.organizador || "");
+    setCedulaOrganizador((ev as any).extendedProps?.cedula || ""); 
+    setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
+    openModal();
+  };
 
-  const handleAddOrUpdateEvent = async () => {
+  const handleAddOrUpdateEvent = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setFormError("");
+
+    if (!cedulaOrganizador || !organizador) {
+      setFormError("Debe buscar y seleccionar un organizador válido.");
+      return;
+    }
+
+    if (horaInicio >= horaFin) {
+      setFormError("La hora de inicio debe ser anterior a la hora de finalización.");
+      return;
+    }
+
+    // Verificación de superposición de horarios (overlap)
+    const isOverlapping = events.some(ev => {
+      // Ignorar el evento actual si estamos editando
+      if (selectedEvent && ev.id === selectedEvent.id) return false;
+      
+      const evDate = ev.start?.split("T")[0];
+      if (evDate !== eventDate) return false;
+
+      const evStart = ev.start?.split("T")[1]?.substring(0, 5);
+      const evEnd = ev.end?.split("T")[1]?.substring(0, 5);
+      
+      if (evStart && evEnd) {
+         return horaInicio < evEnd && horaFin > evStart;
+      }
+      return false;
+    });
+
+    if (isOverlapping) {
+      setFormError("Ya existe una reserva en el auditorio para este horario. Por favor, elija otro bloque de horas.");
+      return;
+    }
+
     try {
       setSaving(true);
       const payload = {
@@ -168,9 +232,19 @@ const Auditorio: React.FC = () => {
     setOrganizadorAuto(false);
     setTipoEvento("Conferencia");
     setSelectedEvent(null);
+    setFormError("");
   };
 
-  const getColorPorTipo = (tipo: string) => {
+  const getColorClass = (tipo: string) => {
+    switch(tipo) {
+      case "Exposición": return "bg-blue-500 text-white border-blue-600";
+      case "Taller": return "bg-green-500 text-white border-green-600";
+      case "Reunión": return "bg-orange-500 text-white border-orange-600";
+      default: return "bg-brand-500 text-white border-brand-600"; // Conferencia u otros
+    }
+  };
+
+  const getCalendarColorClass = (tipo: string) => {
     switch(tipo) {
       case "Exposición": return "bg-blue-500";
       case "Taller": return "bg-green-500";
@@ -181,215 +255,370 @@ const Auditorio: React.FC = () => {
 
   const renderEventContent = (eventInfo: any) => {
     const tipo = eventInfo.event.extendedProps.tipoEvento;
-    const colorClass = getColorPorTipo(tipo);
+    const colorClass = getCalendarColorClass(tipo);
     
     return (
-      <div className={`flex items-center px-2 py-1 rounded text-xs text-white ${colorClass} overflow-hidden shadow-sm`}>
+      <div className={`flex items-center px-2 py-1 rounded text-xs text-white ${colorClass} overflow-hidden shadow-sm hover:opacity-90 transition-opacity`}>
         <div className="font-semibold truncate w-full" title={eventInfo.event.title}>
           {eventInfo.event.title}
         </div>
       </div>
     );
   };
+  
+  const formatDateForList = (dateString: string) => {
+    if (!dateString) return "";
+    const dateObj = new Date(dateString);
+    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    return `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+  };
+
+  const getTimeFromISO = (isoString: string) => {
+    if (!isoString) return "";
+    return isoString.split("T")[1]?.substring(0, 5) || "";
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reservas de Auditorio</h1>
-          <p className="text-sm text-gray-500">Gestión administrativa de agenda y ocupación de espacios.</p>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            Reservas de Auditorio
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Gestión administrativa de agenda y ocupación de espacios.
+          </p>
         </div>
+        
         <div className="flex gap-3">
           <button 
             onClick={() => {
               if (events.length === 0) return;
               exportarHistorialEventos(events);
             }}
-            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium py-2 px-4 rounded-xl shadow-theme-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
           >
-            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Exportar Historial PDF
+            <Download className="h-4 w-4 text-red-500" />
+            <span className="hidden sm:inline">Exportar PDF</span>
           </button>
-          <button onClick={openModal} className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors">
-            + Registrar Reserva
+          
+          <div className="flex rounded-xl bg-white p-1 border border-gray-200 dark:border-gray-800 dark:bg-gray-900 shadow-theme-xs">
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
+                viewMode === "calendar"
+                  ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              <Grid className="h-4 w-4" />
+              <span className="hidden sm:inline">Mes</span>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
+                viewMode === "list"
+                  ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </button>
+          </div>
+          
+          <button
+            onClick={() => { resetModalFields(); openModal(); }}
+            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nueva Reserva</span>
           </button>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Leyenda */}
-        <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm text-sm w-full">
-          <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">Leyenda:</span>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-brand-500"></div><span className="text-gray-600 dark:text-gray-400">Conferencia</span></div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500"></div><span className="text-gray-600 dark:text-gray-400">Exposición</span></div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500"></div><span className="text-gray-600 dark:text-gray-400">Taller</span></div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-gray-600 dark:text-gray-400">Reunión</span></div>
-        </div>
+        {/* Leyenda solo en vista de calendario */}
+        {viewMode === "calendar" && (
+          <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-theme-xs text-sm w-full">
+            <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">Leyenda:</span>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-brand-500"></div><span className="text-gray-600 dark:text-gray-400">Conferencia</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500"></div><span className="text-gray-600 dark:text-gray-400">Exposición</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500"></div><span className="text-gray-600 dark:text-gray-400">Taller</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-gray-600 dark:text-gray-400">Reunión</span></div>
+          </div>
+        )}
 
-        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-4 sm:p-6 shadow-sm min-h-[500px]">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-96 space-y-4">
-              <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
-              <p className="text-gray-500 font-medium animate-pulse">Cargando agenda...</p>
-            </div>
-          ) : (
-            <div className={`calendar-container ${saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                headerToolbar={{
-                  left: "prev,next today",
-                  center: "title",
-                  right: "dayGridMonth,timeGridWeek",
-                }}
-                events={events}
-                selectable={true}
-                select={handleDateSelect}
-                eventClick={handleEventClick}
-                eventContent={renderEventContent}
-                height="auto"
-                locale="es"
-                buttonText={{
-                  today: 'Hoy',
-                  month: 'Mes',
-                  week: 'Semana'
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modal de Formulario Administrativo */}
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[420px] p-5">
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {selectedEvent ? "Editar Reserva" : "Nueva Reserva"}
-            </h3>
-            {selectedEvent && (
-              <button 
-                onClick={handleDeleteEvent}
-                className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors"
-                title="Eliminar evento"
-              >
-                Eliminar
-              </button>
+        {viewMode === "calendar" ? (
+          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-4 sm:p-6 shadow-theme-lg min-h-[500px]">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-96 space-y-4">
+                <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-medium animate-pulse">Cargando agenda...</p>
+              </div>
+            ) : (
+              <div className={`calendar-container ${saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
+                <FullCalendar
+                  ref={calendarRef}
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    right: "",
+                  }}
+                  events={events}
+                  selectable={true}
+                  select={handleDateSelect}
+                  eventClick={handleEventClick}
+                  eventContent={renderEventContent}
+                  height="auto"
+                  locale="es"
+                  buttonText={{
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana'
+                  }}
+                />
+              </div>
             )}
           </div>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Título del Evento</label>
-              <input
-                type="text"
-                value={eventTitle}
-                onChange={(e) => setEventTitle(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
-                placeholder="Ej. Conferencia de Arte"
-              />
-            </div>
-            
-            <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha del Evento</label>
-              <input
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
-              />
-            </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {isLoading ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
+                <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
+                <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas registradas en el auditorio.</p>
+                <button onClick={() => { resetModalFields(); openModal(); }} className="mt-4 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all">
+                  Crear primera reserva
+                </button>
+              </div>
+            ) : (
+              events.map(ev => {
+                const badgeClass = getColorClass(ev.extendedProps.tipoEvento || "Conferencia");
+                return (
+                  <div key={ev.id} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-theme-md hover:-translate-y-1">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
+                        {ev.extendedProps.tipoEvento || "Conferencia"}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-1">{ev.title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 flex-1">
+                      Organizado por: <span className="font-semibold text-gray-700 dark:text-gray-300">{ev.extendedProps.organizador}</span>
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                        <CalendarIcon className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{formatDateForList(ev.start)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                        <Clock className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
+                      </div>
+                      <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                        <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                        <span className="truncate">Auditorio Principal</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )}
+      </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hora Inicio</label>
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
+        <div className="p-6">
+          <div className="mb-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+              {selectedEvent ? "Editar Reserva de Auditorio" : "Nueva Reserva de Auditorio"}
+            </h3>
+          </div>
+          
+          <form onSubmit={handleAddOrUpdateEvent} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Motivo / Título de la Reserva</label>
                 <input
+                  required
+                  type="text"
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                  placeholder="Ej. Conferencia de Historia del Arte"
+                />
+              </div>
+
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Fecha del Evento</label>
+                {/* Usamos el componente DatePicker (Flatpickr) para una experiencia premium */}
+                <DatePicker 
+                  id="event-date-picker"
+                  defaultDate={eventDate}
+                  onChange={(dates, dateStr) => setEventDate(dateStr)}
+                  placeholder="Seleccione una fecha"
+                />
+              </div>
+
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Tipo de Evento</label>
+                <select
+                  required
+                  value={tipoEvento}
+                  onChange={(e) => setTipoEvento(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                >
+                  <option value="Conferencia">Conferencia</option>
+                  <option value="Exposición">Exposición</option>
+                  <option value="Taller">Taller / Curso</option>
+                  <option value="Reunión">Reunión Interna</option>
+                </select>
+              </div>
+
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Hora Inicio</label>
+                <input
+                  required
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
-              <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hora Fin</label>
+
+              <div className="col-span-2 md:col-span-1 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Hora Fin</label>
                 <input
+                  required
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark]"
                 />
+              </div>
+
+              <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Datos del Organizador</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Cédula del Organizador</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={cedulaOrganizador}
+                        onChange={(e) => {
+                          setCedulaOrganizador(e.target.value);
+                          if (organizadorAuto) {
+                            setOrganizador("");
+                            setOrganizadorAuto(false);
+                          }
+                          setOrganizadorError("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleCedulaBlur();
+                          }
+                        }}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                        placeholder="Ej. V-12345678"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCedulaBlur}
+                        disabled={organizadorLoading || !cedulaOrganizador}
+                        className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
+                      >
+                        <Search className="w-5 h-5" />
+                        <span className="hidden sm:inline">Buscar</span>
+                      </button>
+                    </div>
+                    {organizadorLoading && (
+                      <p className="text-sm text-brand-600 font-medium flex items-center gap-2 mt-2">
+                        <span className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></span> 
+                        Buscando persona en la base de datos...
+                      </p>
+                    )}
+                    {organizadorError && (
+                      <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 p-3 rounded-lg mt-2 border border-red-100 dark:border-red-900/30">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                        <p className="text-sm font-medium">{organizadorError}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Nombre Completo</label>
+                    <input
+                      required
+                      type="text"
+                      value={organizador}
+                      onChange={(e) => {
+                        setOrganizador(e.target.value);
+                        setOrganizadorAuto(false);
+                      }}
+                      readOnly={organizadorAuto}
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-60"
+                      placeholder="Se autocompleta con cédula"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {formError && (
+              <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-medium">{formError}</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula del Organizador</label>
-                <input
-                  type="text"
-                  value={cedulaOrganizador}
-                  onChange={(e) => {
-                    setCedulaOrganizador(e.target.value);
-                    if (organizadorAuto) {
-                      setOrganizador("");
-                      setOrganizadorAuto(false);
-                    }
-                    setOrganizadorError("");
-                  }}
-                  onBlur={handleCedulaBlur}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
-                  placeholder="Ej. V-12345678"
-                />
-                {organizadorLoading && <p className="text-[11px] text-gray-500 mt-0.5">Buscando persona...</p>}
-                {organizadorError && <p className="text-[11px] text-red-500 mt-0.5">{organizadorError}</p>}
+                {selectedEvent && (
+                  <button 
+                    onClick={handleDeleteEvent}
+                    className="text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 dark:border-red-900/50 dark:hover:bg-red-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                    title="Eliminar evento"
+                    type="button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Eliminar</span>
+                  </button>
+                )}
               </div>
-              <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre Organizador</label>
-                <input
-                  type="text"
-                  value={organizador}
-                  onChange={(e) => {
-                    setOrganizador(e.target.value);
-                    setOrganizadorAuto(false);
-                  }}
-                  readOnly={organizadorAuto}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-                  placeholder="Se busca con cédula"
-                />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
+                </button>
               </div>
             </div>
-            <p className="text-[11px] text-gray-500 mt-0.5">Ingrese la cédula y salga del campo para buscar los datos automáticamente.</p>
-
-            <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Evento</label>
-              <select
-                value={tipoEvento}
-                onChange={(e) => setTipoEvento(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
-              >
-                <option value="Conferencia">Conferencia</option>
-                <option value="Exposición">Exposición</option>
-                <option value="Taller">Taller / Curso</option>
-                <option value="Reunión">Reunión Interna</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <button
-              onClick={closeModal}
-              className="px-4 py-1.5 text-xs font-semibold text-gray-655 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleAddOrUpdateEvent}
-              disabled={saving}
-              className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? "Guardando..." : selectedEvent ? "Actualizar Registro" : "Guardar Reserva"}
-            </button>
-          </div>
+          </form>
         </div>
       </Modal>
     </div>

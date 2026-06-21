@@ -14,6 +14,7 @@ export default function Recepcion() {
     fecha_nacimiento: "",
     telefono: "",
     institucion_profesion: "",
+    
     id_motivo: ""
   });
 
