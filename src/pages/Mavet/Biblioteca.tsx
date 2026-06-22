@@ -346,17 +346,17 @@ export default function Biblioteca() {
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-5 py-4">Unidad</th>
-                    <th className="px-5 py-4">Título</th>
-                    <th className="px-5 py-4">Autor</th>
-                    <th className="px-5 py-4">Estante</th>
-                    <th className="px-5 py-4">Categoría</th>
-                    <th className="px-5 py-4 text-center">Estado</th>
-                    <th className="px-5 py-4 text-center">Acciones</th>
+                  <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-3 py-3">Unidad</th>
+                    <th className="px-3 py-3">Título</th>
+                    <th className="px-3 py-3">Autor</th>
+                    <th className="px-3 py-3">Estante</th>
+                    <th className="px-3 py-3">Categoría</th>
+                    <th className="px-3 py-3 text-center">Estado</th>
+                    <th className="px-3 py-3 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredLibros.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-5 py-14 text-center text-gray-500">
@@ -375,27 +375,27 @@ export default function Biblioteca() {
                         className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
                       >
                         {/* Unidad */}
-                        <td className="px-5 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold whitespace-nowrap">
+                        <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
                           {libro.unidad || "—"}
                         </td>
 
                         {/* Título */}
-                        <td className="px-5 py-4 font-semibold max-w-[250px]">
+                        <td className="px-3 py-3 font-semibold max-w-[250px]">
                           <span className="block truncate" title={libro.titulo}>{libro.titulo}</span>
                         </td>
 
                         {/* Autor */}
-                        <td className="px-5 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                        <td className="px-3 py-3 text-gray-700 dark:text-gray-300">
                           {libro.autor}
                         </td>
 
                         {/* Estante */}
-                        <td className="px-5 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                           {libro.estante || "—"}
                         </td>
 
                         {/* Categoría */}
-                        <td className="px-5 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3">
                           {libro.categoria ? (
                             <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-medium border border-blue-200 dark:border-blue-500/30">
                               {libro.categoria}
@@ -404,7 +404,7 @@ export default function Biblioteca() {
                         </td>
 
                         {/* Estado */}
-                        <td className="px-5 py-4 text-center">
+                        <td className="px-3 py-3 text-center">
                           <span
                             className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                               libro.estado === "Aprobado"
@@ -419,7 +419,7 @@ export default function Biblioteca() {
                         </td>
 
                         {/* Acciones */}
-                        <td className="px-5 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
@@ -513,16 +513,16 @@ export default function Biblioteca() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-xs font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                <th className="px-5 py-3">Cédula</th>
-                <th className="px-5 py-3">Solicitante</th>
-                <th className="px-5 py-3">Libro</th>
-                <th className="px-5 py-3">Unidad</th>
-                <th className="px-5 py-3">Fecha Préstamo</th>
-                <th className="px-5 py-3 text-center">Estado</th>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                <th className="px-3 py-3">Cédula</th>
+                <th className="px-3 py-3">Solicitante</th>
+                <th className="px-3 py-3">Libro</th>
+                <th className="px-3 py-3">Unidad</th>
+                <th className="px-3 py-3">Fecha Préstamo</th>
+                <th className="px-3 py-3 text-center">Estado</th>
               </tr>
             </thead>
-            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
               {filteredPrestamos.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
@@ -533,18 +533,18 @@ export default function Biblioteca() {
                 </tr>
               ) : filteredPrestamos.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                  <td className="px-5 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
+                  <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
                     {p.cedulaSolicitante}
                   </td>
-                  <td className="px-5 py-3 font-medium">{p.nombreSolicitante}</td>
-                  <td className="px-5 py-3 max-w-[200px]">
+                  <td className="px-3 py-3 font-medium">{p.nombreSolicitante}</td>
+                  <td className="px-3 py-3 max-w-[200px]">
                     <span className="block truncate" title={p.libroTitulo}>{p.libroTitulo}</span>
                   </td>
-                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
-                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {p.fechaPrestamo ? new Date(p.fechaPrestamo).toLocaleDateString('es-ES') : "—"}
                   </td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="px-3 py-3 text-center">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                       p.estado === "ACTIVO"
                         ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"

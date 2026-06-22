@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { Toaster } from "react-hot-toast";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import { AuthProvider } from "./context/AuthContext";
@@ -36,6 +37,48 @@ export default function App() {
     <AuthProvider>
       <Router>
         <ScrollToTop />
+        <Toaster 
+          position="top-center" 
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#fff',
+              color: '#333',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+              borderRadius: '0.5rem',
+              fontWeight: '500',
+            },
+            success: {
+              style: {
+                border: '1px solid #bbf7d0', // green-200
+                background: '#f0fdf4',       // green-50
+                color: '#166534',            // green-800
+              },
+              iconTheme: {
+                primary: '#22c55e',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              style: {
+                border: '1px solid #fecaca', // red-200
+                background: '#fef2f2',       // red-50
+                color: '#991b1b',            // red-800
+              },
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+            loading: {
+              style: {
+                border: '1px solid #bfdbfe', // blue-200
+                background: '#eff6ff',       // blue-50
+                color: '#1e40af',            // blue-800
+              },
+            }
+          }}
+        />
         <Routes>
           {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
           <Route element={<AuthRoute />}>

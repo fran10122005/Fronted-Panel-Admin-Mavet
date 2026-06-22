@@ -176,7 +176,7 @@ export const mavetApi = {
 
   getPrestamosBiblioteca: async (): Promise<Prestamo[]> => {
     try {
-      const res = await axiosInstance.get('/api/biblioteca/prestamos');
+      const res = await axiosInstance.get('/api/biblioteca/consultas-sala');
       const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
       return list.map((item: any) => ({
         id: item.id_prestamo?.toString() || item.id?.toString(),
@@ -187,7 +187,7 @@ export const mavetApi = {
         nombreSolicitante: item.nombre || item.nombreSolicitante || "",
         fechaPrestamo: item.fecha_prestamo || item.fechaPrestamo || "",
         fechaDevolucion: item.fecha_devolucion || item.fechaDevolucion,
-        estado: item.estado === "DEVUELTO" ? "DEVUELTO" : "ACTIVO"
+        estado: item.estado?.toUpperCase() === "DEVUELTO" || item.estado === "Devuelto" ? "DEVUELTO" : "ACTIVO"
       }));
     } catch {
       return [];
@@ -468,10 +468,19 @@ export const mavetApi = {
     }
   },
 
-  exportInscripciones: async (id: number, format: string): Promise<any> => {
+  exportInscripciones: async (id: number, format: string): Promise<void> => {
     try {
-      const res = await axiosInstance.get(`/api/educacion/inscripciones-talleres/taller/${id}/export?format=${format}`);
-      return res.data;
+      const res = await axiosInstance.get(`/api/educacion/inscripciones-talleres/taller/${id}/export?format=${format}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Inscripciones_Taller_${id}_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'pdf'}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch {
       throw new Error("Error al exportar inscripciones");
     }

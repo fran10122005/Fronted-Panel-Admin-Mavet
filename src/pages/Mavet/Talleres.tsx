@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import React, { useState, useEffect } from "react";
 import ComponentCard from "../../components/common/ComponentCard";
 import { Modal } from "../../components/ui/modal";
@@ -19,6 +20,7 @@ export default function Talleres() {
 
   // ─── Pagination & search ───
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterInstructor, setFilterInstructor] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -58,46 +60,43 @@ export default function Talleres() {
     alumnoEdad: "",
     repNombre: "",
     repCedula: "",
-    repTelefono: ""
+    repTelefono: "",
+    correo: ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [alertInfo, setAlertInfo] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
 
   const edadNum = parseInt(enrollForm.alumnoEdad, 10);
   const esMenor = !isNaN(edadNum) && edadNum < 18;
 
-  // ─── Fetch ───
-  useEffect(() => { fetchData(); }, []);
-
-  const fetchData = async () => {
+  // ─── Data Fetching ───
+  const loadData = async () => {
     setIsLoading(true);
     try {
-      const [talleresData, invData, inscripcionesData, instrData, espData] = await Promise.all([
-        mavetApi.getTalleres(),
+      const [inv, tal, inst, esp, ins] = await Promise.all([
         mavetApi.getInventarioTalleres(),
-        mavetApi.getInscripcionesTaller(),
+        mavetApi.getTalleres(),
         mavetApi.getInstructores(),
-        mavetApi.getEspaciosMuseo()
+        mavetApi.getEspaciosMuseo(),
+        mavetApi.getInscripcionesTaller()
       ]);
-      setTalleres(talleresData);
-      setInventario(invData);
-      setInscripciones(inscripcionesData);
-      setInstructores(instrData);
-      setEspacios(espData);
-    } catch (err) {
-      console.error("Error fetching data:", err);
+      setInventario(inv);
+      setTalleres(tal);
+      setInstructores(inst);
+      setEspacios(esp);
+      setInscripciones(ins);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al cargar datos");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showAlert = (message: string, type: 'success' | 'error') => {
-    setAlertInfo({ show: true, message, type });
-    setTimeout(() => setAlertInfo({ show: false, message: "", type: "success" }), 4000);
-  };
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  // ─── Inventario: Crear ───
   const handleOpenCrear = () => {
     setInventarioForm({ nombre: "", descripcion: "" });
     openCrear();
@@ -106,18 +105,18 @@ export default function Talleres() {
   const handleCrearInventario = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inventarioForm.nombre.trim()) {
-      showAlert("El nombre del taller es obligatorio.", "error");
+      toast.error("El nombre del taller es obligatorio.");
       return;
     }
     setIsSubmitting(true);
     try {
       await mavetApi.crearInventarioTaller(inventarioForm);
-      showAlert("Taller agregado al inventario.", "success");
+      toast.success("Taller agregado al inventario.");
       closeCrear();
       const refreshed = await mavetApi.getInventarioTalleres();
       setInventario(refreshed);
     } catch (error: any) {
-      showAlert(error.message || "Error al crear taller.", "error");
+      toast.error(error.message || "Error al crear taller.");
     } finally {
       setIsSubmitting(false);
     }
@@ -133,18 +132,18 @@ export default function Talleres() {
   const handleEditarInventario = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inventarioForm.nombre.trim()) {
-      showAlert("El nombre del taller es obligatorio.", "error");
+      toast.error("El nombre del taller es obligatorio.");
       return;
     }
     setIsSubmitting(true);
     try {
       await mavetApi.actualizarInventarioTaller(selectedInventario.id_taller || selectedInventario.id, inventarioForm);
-      showAlert("Taller actualizado en el inventario.", "success");
+      toast.success("Taller actualizado en el inventario.");
       closeEditar();
       const refreshed = await mavetApi.getInventarioTalleres();
       setInventario(refreshed);
     } catch (error: any) {
-      showAlert(error.message || "Error al actualizar taller.", "error");
+      toast.error(error.message || "Error al actualizar taller.");
     } finally {
       setIsSubmitting(false);
     }
@@ -155,11 +154,11 @@ export default function Talleres() {
     if (!window.confirm(`¿Ocultar "${item.nombre}" del inventario?`)) return;
     try {
       await mavetApi.ocultarInventarioTaller(item.id_taller || item.id);
-      showAlert("Taller ocultado del inventario.", "success");
+      toast.success("Taller ocultado del inventario.");
       const refreshed = await mavetApi.getInventarioTalleres();
       setInventario(refreshed);
     } catch (error: any) {
-      showAlert(error.message || "Error al ocultar taller.", "error");
+      toast.error(error.message || "Error al ocultar taller.");
     }
   };
 
@@ -185,7 +184,7 @@ export default function Talleres() {
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planificarForm.id_taller_inventario) {
-      showAlert("Debe seleccionar un taller del inventario.", "error");
+      toast.error("Debe seleccionar un taller del inventario.");
       return;
     }
     setIsSubmitting(true);
@@ -196,7 +195,7 @@ export default function Talleres() {
         nombre_curso: selected?.nombre || ""
       };
       await mavetApi.crearTaller(payload);
-      showAlert("Taller planificado correctamente.", "success");
+      toast.success("Taller planificado correctamente.");
       closePlanificar();
       const [talleresData, inscripcionesData] = await Promise.all([
         mavetApi.getTalleres(),
@@ -205,7 +204,7 @@ export default function Talleres() {
       setTalleres(talleresData);
       setInscripciones(inscripcionesData);
     } catch (error: any) {
-      showAlert(error.message || "Error al planificar taller.", "error");
+      toast.error(error.message || "Error al planificar taller.");
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +224,7 @@ export default function Talleres() {
   const handleSubmitInscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
-      showAlert("Los menores de edad requieren nombre y cédula del representante.", "error");
+      toast.error("Los menores de edad requieren nombre y cédula del representante.");
       return;
     }
     setIsSubmitting(true);
@@ -242,12 +241,12 @@ export default function Talleres() {
         };
       }
       await mavetApi.inscribirTaller(payload);
-      showAlert("Alumno inscrito correctamente.", "success");
+      toast.success("Alumno inscrito correctamente.");
       setEnrollForm(prev => ({ ...prev, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
       const refreshed = await mavetApi.getInscripcionesTaller();
       setInscripciones(refreshed);
     } catch (error: any) {
-      showAlert(error.message || "Error al inscribir al alumno.", "error");
+      toast.error(error.message || "Error al inscribir al alumno.");
     } finally {
       setIsSubmitting(false);
     }
@@ -267,21 +266,26 @@ export default function Talleres() {
   const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
     if (!selectedTaller) return;
     try {
-      const resp = await mavetApi.exportInscripciones(selectedTaller.id_taller, format);
-      window.open(resp.url, "_blank");
+      await mavetApi.exportInscripciones(selectedTaller.id_taller, format);
+      toast.success(`Inscripciones exportadas en formato ${format.toUpperCase()}`);
     } catch {
-      showAlert("Error al exportar inscripciones.", "error");
+      toast.error("Error al exportar inscripciones.");
     }
   };
 
   // ─── Filters & Pagination ───
   const filteredTalleres = talleres.filter(t => {
     const term = searchTerm.toLowerCase();
-    return (
+    const instructorName = t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "";
+    
+    const matchesSearch = 
       t.nombre_curso?.toLowerCase().includes(term) ||
       t.Instructor?.Persona?.nombres?.toLowerCase().includes(term) ||
-      t.Instructor?.Persona?.apellidos?.toLowerCase().includes(term)
-    );
+      t.Instructor?.Persona?.apellidos?.toLowerCase().includes(term);
+      
+    const matchesInstructor = filterInstructor === "Todos" || instructorName === filterInstructor;
+    
+    return matchesSearch && matchesInstructor;
   });
   const totalPages = Math.ceil(filteredTalleres.length / itemsPerPage);
   const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -292,19 +296,7 @@ export default function Talleres() {
   return (
     <div className="space-y-6 relative">
       {/* Alert */}
-      {alertInfo.show && (
-        <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-md ${
-            alertInfo.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
-            <span className="font-semibold text-sm">
-              {alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}
-            </span>
-          </div>
-        </div>
-      )}
+      
 
       {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -377,11 +369,29 @@ export default function Talleres() {
           LISTADO DE TALLERES
          ══════════════════════════════════════════ */}
       <ComponentCard title="Listado de Talleres" desc="Talleres planificados con instructor, fecha y cupos">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <input type="text" placeholder="Buscar por nombre o instructor..."
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className={inputCls + " w-full sm:w-64"} />
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-start sm:items-center">
+            <div className="relative w-full sm:w-64">
+              <input type="text" placeholder="Buscar por nombre o instructor..."
+                value={searchTerm}
+                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className={inputCls + " pl-10"} />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Instructor:</span>
+              <select value={filterInstructor} onChange={e => { setFilterInstructor(e.target.value); setCurrentPage(1); }} className={inputCls + " max-w-[200px]"}>
+                <option value="Todos">Todos</option>
+                {instructores.map(inst => (
+                  <option key={inst.id_instructor} value={`${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim()}>
+                    {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <button onClick={handleOpenPlanificar}
             className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
