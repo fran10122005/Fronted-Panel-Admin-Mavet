@@ -1,349 +1,254 @@
-import React, { useState, useEffect } from "react";
-import { mavetApi } from "../../services/api";
+import React, { useState, useEffect } from 'react';
+import { mavetApi } from '../../services/api';
 
-const RegistroPublico: React.FC = () => {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [existeVisitante, setExisteVisitante] = useState<boolean>(false);
+export default function RegistroPublico() {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [cedula, setCedula] = useState('');
+  const [existe, setExiste] = useState(false);
+  const [nombreExistente, setNombreExistente] = useState<string | null>(null);
+  
   const [motivos, setMotivos] = useState<any[]>([]);
-
+  const [eventosHoy, setEventosHoy] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    nombre: "",
-    apellidos: "",
-    cedula: "",
-    telefono: "",
-    fecha_nacimiento: "",
-    institucion: "",
-    profesion: "",
-    id_motivo: ""
+    nombres: '',
+    apellidos: '',
+    telefono: '',
+    fecha_nacimiento: '',
+    id_motivo: ''
   });
 
-  const [showAlert, setShowAlert] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingCheck, setIsLoadingCheck] = useState(false);
-
-  const [isCheckingAuto, setIsCheckingAuto] = useState(false);
-  const [isModoKiosko, setIsModoKiosko] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchMotivos = async () => {
-      try {
-        const data = await mavetApi.obtenerMotivos();
-        setMotivos(data);
-      } catch (error) {
-        console.error("Error cargando motivos", error);
-      }
+    const fetchDatos = async () => {
+      const [mots, ag] = await Promise.all([
+        mavetApi.obtenerMotivosPublicos(),
+        mavetApi.getAgendaPublica()
+      ]);
+      setMotivos(mots);
+      
+      // Filtrar agenda para hoy
+      const hoyStr = new Date().toISOString().split('T')[0];
+      const eventosDeHoy = ag.filter((e: any) => e.fecha?.startsWith(hoyStr));
+      setEventosHoy(eventosDeHoy);
     };
-    fetchMotivos();
-
-    // Auto-Recordar Cédula (sólo si no estamos en modo kiosko)
-    const savedCedula = localStorage.getItem("mavet_cedula");
-    if (savedCedula) {
-      setFormData((prev) => ({ ...prev, cedula: savedCedula }));
-      autoCheckCedula(savedCedula);
-    }
+    fetchDatos();
   }, []);
 
-  const autoCheckCedula = async (cedulaToValidate: string) => {
-    setIsCheckingAuto(true);
-    setIsLoadingCheck(true);
-    try {
-      const result = await mavetApi.checkVisitante(cedulaToValidate);
-      setExisteVisitante(result.existe);
-      setStep(2);
-    } catch (error) {
-      console.error("Error comprobando cédula", error);
-      setStep(1);
-    } finally {
-      setIsLoadingCheck(false);
-      setIsCheckingAuto(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleClearCedula = () => {
-    localStorage.removeItem("mavet_cedula");
-    setFormData((prev) => ({ ...prev, cedula: "" }));
-    setExisteVisitante(false);
-    setStep(1);
-  };
-
-  const handleCheckCedula = async (e: React.FormEvent) => {
+  const handleVerificarCedula = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.cedula) return;
-    setIsLoadingCheck(true);
-    
-    try {
-      const result = await mavetApi.checkVisitante(formData.cedula);
-      setExisteVisitante(result.existe);
-      setStep(2);
-    } catch (error) {
-      console.error("Error comprobando cédula", error);
-      // Fallback a formulario completo si hay error de conexión
-      setExisteVisitante(false);
-      setStep(2);
-    } finally {
-      setIsLoadingCheck(false);
+    if (!cedula || cedula.length < 5) {
+      setError("Cédula inválida");
+      return;
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
     
+    setIsLoading(true);
+    setError('');
     try {
-      const payload: any = {
-        cedula: formData.cedula,
-        id_motivo: parseInt(formData.id_motivo)
-      };
-
-      if (!existeVisitante) {
-        payload.nombres = formData.nombre;
-        payload.apellidos = formData.apellidos || "";
-        payload.telefono = formData.telefono;
-        payload.fecha_nacimiento = formData.fecha_nacimiento || "2000-01-01"; // Default si no tiene
-        payload.institucion_profesion = formData.institucion || formData.profesion || "";
-      }
-
-      await mavetApi.registrarIngreso(payload);
-      
-      if (isModoKiosko) {
-        // En modo kiosko NO guardamos, y limpiamos todo
-        localStorage.removeItem("mavet_cedula");
-        setFormData({
-          nombre: "", apellidos: "", cedula: "", telefono: "", 
-          fecha_nacimiento: "", institucion: "", profesion: "", id_motivo: ""
-        });
-        setExisteVisitante(false);
+      const res = await mavetApi.checkVisitantePublico(cedula);
+      if (res.existe) {
+        setExiste(true);
+        setNombreExistente(res.nombre);
       } else {
-        // Guardar cédula en el navegador para el auto-recordatorio
-        localStorage.setItem("mavet_cedula", formData.cedula);
-        setFormData({
-          nombre: "", apellidos: "", cedula: formData.cedula, telefono: "", 
-          fecha_nacimiento: "", institucion: "", profesion: "", id_motivo: ""
-        });
+        setExiste(false);
+      }
+      setStep(2);
+    } catch (err) {
+      setError("Error al conectar con el sistema. Intente de nuevo.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegistrar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.id_motivo) {
+      setError("Por favor seleccione el motivo de su visita.");
+      return;
+    }
+
+    if (!existe && (!formData.nombres || !formData.apellidos)) {
+      setError("Por favor complete sus nombres y apellidos.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      let finalMotivo = '';
+      let finalTaller: string | undefined = undefined;
+
+      if (formData.id_motivo.startsWith('evento_')) {
+        finalTaller = formData.id_motivo.split('_')[1];
+        // Buscar el motivo que contenga taller o educación, sino usar el primero
+        const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
+        finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
+      } else {
+        finalMotivo = formData.id_motivo.split('_')[1];
       }
 
-      setStep(1);
-      
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000);
-    } catch (error) {
-      console.error("Error al registrar visitante:", error);
-      alert("Ocurrió un error al registrar el acceso. Por favor, intente nuevamente.");
+      await mavetApi.registrarAutoIngreso({
+        cedula,
+        ...formData,
+        id_motivo: finalMotivo,
+        id_taller: finalTaller
+      });
+      setStep(3); // Pantalla de éxito
+    } catch (err: any) {
+      setError(err.message || "No se pudo registrar. Acuda a recepción.");
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* Alerta de Éxito Flotante */}
-      {showAlert && (
-        <div className="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-50 animate-fade-in-down">
-          <div className="flex w-full items-center justify-between rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm sm:p-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10.9331 5.3999L6.13313 10.1999L4.06647 8.13324" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <h5 className="text-sm font-semibold text-green-800">¡Registro Exitoso!</h5>
-                <p className="text-xs text-green-600">Bienvenido al museo MAVET.</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full mx-auto space-y-8 bg-white p-8 rounded-2xl shadow-xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-brand-700">MAVET</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Museo de Artes Visuales y Espacios del Táchira
+          </p>
+          <div className="mt-4 border-b border-gray-200 w-16 mx-auto"></div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm text-center font-medium animate-pulse">
+            {error}
+          </div>
+        )}
+
+        {step === 1 && (
+          <form onSubmit={handleVerificarCedula} className="space-y-6 animate-fade-in">
+            <div>
+              <label htmlFor="cedula" className="block text-sm font-medium text-gray-700 mb-2">
+                Introduce tu Cédula de Identidad
+              </label>
+              <input
+                id="cedula"
+                name="cedula"
+                type="text"
+                required
+                value={cedula}
+                onChange={(e) => setCedula(e.target.value)}
+                className="appearance-none block w-full px-4 py-4 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-lg shadow-sm"
+                placeholder="Ej: V-12345678"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-70"
+            >
+              {isLoading ? "Buscando..." : "Siguiente"}
+            </button>
+          </form>
+        )}
+
+        {step === 2 && (
+          <form onSubmit={handleRegistrar} className="space-y-6 animate-fade-in">
+            <div className="text-center mb-6">
+              <span className="text-4xl">👋</span>
+              {existe ? (
+                <h3 className="text-xl font-bold text-gray-900 mt-2">¡Hola de nuevo, {nombreExistente}!</h3>
+              ) : (
+                <h3 className="text-xl font-bold text-gray-900 mt-2">¡Bienvenido al Museo!</h3>
+              )}
+              <p className="text-sm text-gray-500 mt-1">Completa tu registro para entrar.</p>
+            </div>
+
+            {!existe && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                  <input type="text" required value={formData.nombres} onChange={e => setFormData({...formData, nombres: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-base" placeholder="Tus nombres" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                  <input type="text" required value={formData.apellidos} onChange={e => setFormData({...formData, apellidos: e.target.value})} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-base" placeholder="Tus apellidos" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                    <input type="tel" value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm" placeholder="Opcional" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nacimiento</label>
+                    <input type="date" value={formData.fecha_nacimiento} onChange={e => setFormData({...formData, fecha_nacimiento: e.target.value})} className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm" />
+                  </div>
+                </div>
               </div>
+            )}
+
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-sm font-bold text-gray-800 mb-2">¿Cuál es el motivo de tu visita hoy? *</label>
+              <select 
+                required 
+                value={formData.id_motivo} 
+                onChange={e => setFormData({...formData, id_motivo: e.target.value})} 
+                className="w-full px-4 py-4 bg-gray-50 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-lg text-gray-700"
+              >
+                <option value="">Selecciona una opción...</option>
+                {motivos.map(m => (
+                  <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
+                ))}
+                {eventosHoy.length > 0 && (
+                  <optgroup label="Eventos y Talleres de Hoy">
+                    {eventosHoy.map((e, idx) => (
+                      <option key={`e_${idx}`} value={`evento_${e.id.split('-')[1]}`}>
+                        {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0,5)})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-70 mt-6"
+            >
+              {isLoading ? "Registrando..." : "¡Registrar mi Entrada!"}
+            </button>
+            
+            <div className="text-center mt-4">
+              <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-gray-500 hover:text-gray-800">
+                Atrás
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 3 && (
+          <div className="text-center space-y-6 animate-fade-in-up">
+            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100">
+              <svg className="h-16 w-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-extrabold text-gray-900">¡Ingreso Registrado!</h2>
+            <p className="text-gray-600 text-lg">
+              Disfruta tu visita en el MAVET. Ya puedes pasar adelante.
+            </p>
+            <div className="pt-6">
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setCedula('');
+                  setFormData({nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', id_motivo: ''});
+                }}
+                className="text-brand-600 hover:text-brand-800 font-semibold"
+              >
+                Registrar a otra persona
+              </button>
             </div>
           </div>
-        </div>
-      )}
-
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        <div className="bg-brand-500 px-6 py-8 text-center text-white">
-          <h1 className="text-3xl font-bold mb-2">MAVET</h1>
-          <h2 className="text-lg font-medium opacity-90">Registro de Visitantes</h2>
-          <p className="text-sm mt-2 opacity-80">Complete el formulario para registrar su acceso</p>
-        </div>
-
-        <div className="p-6 sm:p-8">
-          {step === 1 ? (
-            <form className="space-y-5" onSubmit={handleCheckCedula}>
-              <div>
-                <label htmlFor="cedula" className="block mb-1.5 text-sm font-medium text-gray-700">Cédula de Identidad</label>
-                <input 
-                  id="cedula"
-                  name="cedula"
-                  type="text" 
-                  value={formData.cedula}
-                  onChange={handleChange}
-                  disabled={isLoadingCheck}
-                  className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                  placeholder="Ej: V-12345678" 
-                  required 
-                />
-              </div>
-              <div className="pt-4">
-                <button 
-                  type="submit" 
-                  disabled={isLoadingCheck || !formData.cedula}
-                  className="w-full flex justify-center items-center bg-brand-500 text-white py-3.5 px-4 rounded-lg font-semibold text-lg hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/30 transition-all active:scale-[0.98] shadow-md shadow-brand-500/20 disabled:opacity-70 min-h-[56px]"
-                >
-                  {isLoadingCheck ? (
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    "Continuar"
-                  )}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form className="space-y-5 animate-fade-in-up" onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <span className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  Cédula: {formData.cedula}
-                  <button type="button" onClick={handleClearCedula} className="ml-1 text-brand-600 hover:text-brand-800">
-                    (Cambiar cédula)
-                  </button>
-                </span>
-                {existeVisitante && (
-                  <p className="text-sm text-brand-600 mt-2 font-medium">¡Bienvenido de nuevo! Solo necesitamos conocer el motivo de su visita.</p>
-                )}
-              </div>
-
-              {!existeVisitante && (
-                <>
-                  <div>
-                    <label htmlFor="nombre" className="block mb-1.5 text-sm font-medium text-gray-700">Nombres</label>
-                    <input 
-                      id="nombre"
-                      name="nombre"
-                      type="text" 
-                      value={formData.nombre}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                      placeholder="Ej: Juan" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="apellidos" className="block mb-1.5 text-sm font-medium text-gray-700">Apellidos</label>
-                    <input 
-                      id="apellidos"
-                      name="apellidos"
-                      type="text" 
-                      value={formData.apellidos}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                      placeholder="Ej: Pérez" 
-                      required 
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="telefono" className="block mb-1.5 text-sm font-medium text-gray-700">Teléfono</label>
-                      <input 
-                        id="telefono"
-                        name="telefono"
-                        type="tel" 
-                        value={formData.telefono}
-                        onChange={handleChange}
-                        disabled={isSubmitting}
-                        className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                        placeholder="0412-1234567" 
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="fecha_nacimiento" className="block mb-1.5 text-sm font-medium text-gray-700">Fecha Nac.</label>
-                      <input 
-                        id="fecha_nacimiento"
-                        name="fecha_nacimiento"
-                        type="date" 
-                        value={formData.fecha_nacimiento}
-                        onChange={handleChange}
-                        disabled={isSubmitting}
-                        className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="institucion" className="block mb-1.5 text-sm font-medium text-gray-700">Institución / Profesión</label>
-                    <input 
-                      id="institucion"
-                      name="institucion"
-                      type="text" 
-                      value={formData.institucion}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                      placeholder="Ej: Estudiante ULA" 
-                    />
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label htmlFor="id_motivo" className="block mb-1.5 text-sm font-medium text-gray-700">Motivo de la Visita</label>
-                <select 
-                  id="id_motivo"
-                  name="id_motivo"
-                  value={formData.id_motivo}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-shadow disabled:opacity-50" 
-                  required
-                >
-                  <option value="" disabled>Seleccione un motivo...</option>
-                  {motivos.map((m: any) => (
-                    <option key={m.id_motivo} value={m.id_motivo}>
-                      {m.descripcion}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="pt-4">
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting || !formData.id_motivo}
-                  className="w-full flex justify-center items-center bg-brand-500 text-white py-3.5 px-4 rounded-lg font-semibold text-lg hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/30 transition-all active:scale-[0.98] shadow-md shadow-brand-500/20 disabled:opacity-70 disabled:cursor-wait min-h-[56px]"
-                >
-                  {isSubmitting ? (
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    "Registrar Acceso"
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* MODO KIOSKO / RECEPCIÓN */}
-        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-center">
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input 
-              type="checkbox" 
-              checked={isModoKiosko}
-              onChange={(e) => {
-                setIsModoKiosko(e.target.checked);
-                if (e.target.checked) handleClearCedula();
-              }}
-              className="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500"
-            />
-            <span className="text-xs font-medium text-gray-500 group-hover:text-gray-700 transition-colors">
-              Modo Personal del Museo (Registrar a otros / No recordar datos)
-            </span>
-          </label>
-        </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default RegistroPublico;
+}

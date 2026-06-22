@@ -91,6 +91,44 @@ export const mavetApi = {
     }
   },
 
+  // === RUTAS PÚBLICAS (Auto-Ingreso QR) ===
+
+  obtenerMotivosPublicos: async (): Promise<any[]> => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/visitantes/motivos`);
+      return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+    } catch {
+      return [];
+    }
+  },
+
+  getAgendaPublica: async (): Promise<any[]> => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/public/agenda`);
+      return res.data.data || res.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  checkVisitantePublico: async (cedula: string): Promise<{ existe: boolean, nombre: string | null }> => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/publico/visitantes/check/${cedula}`);
+      return res.data;
+    } catch {
+      return { existe: false, nombre: null };
+    }
+  },
+
+  registrarAutoIngreso: async (payload: any): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axios.post(`${API_BASE}/api/publico/visitantes/ingreso`, payload);
+      return { success: true, message: res.data.message };
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al auto-registrar ingreso');
+    }
+  },
+
   // === Biblioteca ===
   getLibros: async (): Promise<Libro[]> => {
     try {
@@ -331,6 +369,15 @@ export const mavetApi = {
       return res.data;
     } catch (e: any) {
       throw new Error("Error comprobando visitante");
+    }
+  },
+
+  getTodosIngresos: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get('/api/visitantes/ingresos');
+      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch {
+      return [];
     }
   },
 
