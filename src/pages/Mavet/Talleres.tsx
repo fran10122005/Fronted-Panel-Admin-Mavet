@@ -36,6 +36,8 @@ export default function Talleres() {
   const [selectedTaller, setSelectedTaller] = useState<any>(null);
   const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
   const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
+  const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
+  const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
 
   // ─── Forms ───
   const [inventarioForm, setInventarioForm] = useState({ nombre: "", descripcion: "" });
@@ -263,6 +265,18 @@ export default function Talleres() {
     openInscrModal();
   };
 
+  const openAsistentes = async (taller: any) => {
+    setSelectedTaller(taller);
+    try {
+      const todosIngresos = await mavetApi.getTodosIngresos();
+      const asistentes = todosIngresos.filter(i => String(i.id_taller) === String(taller.id_taller));
+      setTallerAsistentes(asistentes);
+    } catch {
+      setTallerAsistentes([]);
+    }
+    openAsistentesModal();
+  };
+
   const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
     if (!selectedTaller) return;
     try {
@@ -440,6 +454,13 @@ export default function Talleres() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Inscritos
+                      </button>
+                      <button onClick={() => openAsistentes(t)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Asistentes
                       </button>
                       <button onClick={() => openEnroll(t)}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 px-2.5 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors">
@@ -827,6 +848,69 @@ export default function Talleres() {
           <div className="flex justify-end mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button onClick={closeInscrModal}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Ver Asistentes (Recepción / QR)
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl p-6">
+        <div>
+          <div className="flex justify-between items-start mb-1">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Asistentes Check-In</h3>
+            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full dark:bg-amber-900/30 dark:text-amber-400">
+              Total: {tallerAsistentes.length} {tallerAsistentes.length === 1 ? 'persona' : 'personas'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+            Visitantes confirmados en recepción o por QR para: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
+          </p>
+          
+          <div className="overflow-x-auto max-h-[60vh]">
+            <table className="w-full text-left relative">
+              <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+                <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {tallerAsistentes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-10 text-center text-gray-500">
+                      Nadie se ha registrado en puerta para este taller.
+                    </td>
+                  </tr>
+                ) : (
+                  tallerAsistentes.map((a, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200 font-medium">
+                        {a.Persona ? `${a.Persona.nombres || ""} ${a.Persona.apellidos || ""}`.trim() : "Desconocido"}
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200">
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-brand-800 bg-brand-100 rounded-full dark:bg-brand-900/30 dark:text-brand-400">
+                          +{a.cantidad_acompanantes || 0}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">
+                        {new Date(a.fecha_hora_entrada).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="flex justify-end pt-4 mt-2 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" onClick={closeAsistentesModal}
+              className="px-5 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition">
               Cerrar
             </button>
           </div>

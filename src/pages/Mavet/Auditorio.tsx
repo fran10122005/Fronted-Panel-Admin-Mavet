@@ -46,6 +46,9 @@ const Auditorio: React.FC = () => {
 
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
+  
+  const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
+  const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
 
   const loadEventos = async () => {
     try {
@@ -133,6 +136,18 @@ const Auditorio: React.FC = () => {
     setCedulaOrganizador((ev as any).extendedProps?.cedula || ""); 
     setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
     openModal();
+  };
+
+  const handleVerAsistentes = async (ev: EventoAuditorio) => {
+    setSelectedEvent(ev);
+    try {
+      const todosIngresos = await mavetApi.getTodosIngresos();
+      const asistentes = todosIngresos.filter(i => String(i.id_taller) === String(ev.id));
+      setEventoAsistentes(asistentes);
+    } catch {
+      setEventoAsistentes([]);
+    }
+    openAsistentesModal();
   };
 
   const handleAddOrUpdateEvent = async (e?: React.FormEvent) => {
@@ -428,9 +443,15 @@ const Auditorio: React.FC = () => {
                         <Clock className="h-3.5 w-3.5 text-gray-400" />
                         <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
                       </div>
-                      <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                      <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 mb-3">
                         <MapPin className="h-3.5 w-3.5 text-gray-400" />
                         <span className="truncate">Auditorio Principal</span>
+                      </div>
+                      <div className="col-span-2">
+                        <button onClick={() => handleVerAsistentes(ev)} className="w-full inline-flex justify-center items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                          <AlertCircle className="w-4 h-4" />
+                          Ver Asistentes (Check-In)
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -619,6 +640,69 @@ const Auditorio: React.FC = () => {
               </div>
             </div>
           </form>
+        </div>
+      </Modal>
+
+      {/* ══════════════════════════════════════════
+          MODAL: Ver Asistentes (Recepción / QR)
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl p-6">
+        <div>
+          <div className="flex justify-between items-start mb-1">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Asistentes Check-In</h3>
+            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full dark:bg-amber-900/30 dark:text-amber-400">
+              Total: {eventoAsistentes.length} {eventoAsistentes.length === 1 ? 'persona' : 'personas'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+            Visitantes confirmados en recepción o por QR para el evento: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedEvent?.title || ""}</span>
+          </p>
+          
+          <div className="overflow-x-auto max-h-[60vh]">
+            <table className="w-full text-left relative">
+              <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+                <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
+                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {eventoAsistentes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-10 text-center text-gray-500">
+                      Nadie se ha registrado en puerta para este evento.
+                    </td>
+                  </tr>
+                ) : (
+                  eventoAsistentes.map((a, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200 font-medium">
+                        {a.Persona ? `${a.Persona.nombres || ""} ${a.Persona.apellidos || ""}`.trim() : "Desconocido"}
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200">
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-brand-800 bg-brand-100 rounded-full dark:bg-brand-900/30 dark:text-brand-400">
+                          +{a.cantidad_acompanantes || 0}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">
+                        {new Date(a.fecha_hora_entrada).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="flex justify-end pt-4 mt-2 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" onClick={closeAsistentesModal}
+              className="px-5 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition">
+              Cerrar
+            </button>
+          </div>
         </div>
       </Modal>
     </div>
