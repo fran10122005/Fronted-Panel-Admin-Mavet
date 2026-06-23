@@ -444,6 +444,22 @@ export const mavetApi = {
       throw new Error(e.response?.data?.message || "Error al crear taller");
     }
   },
+  actualizarTaller: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/educacion/talleres/${id}`, payload);
+      return { success: true, message: "Taller actualizado correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar taller");
+    }
+  },
+  eliminarTaller: async (id: number): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/educacion/talleres/${id}`);
+      return { success: true, message: "Taller eliminado correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar taller");
+    }
+  },
 
   // === Inventario de Talleres ===
   getInventarioTalleres: async (): Promise<any[]> => {
@@ -473,12 +489,12 @@ export const mavetApi = {
     }
   },
 
-  ocultarInventarioTaller: async (id: number): Promise<{ success: boolean; message: string }> => {
+  eliminarInventarioTaller: async (id: number): Promise<{ success: boolean; message: string }> => {
     try {
       await axiosInstance.delete(`/api/educacion/talleres/inventario/${id}`);
-      return { success: true, message: "Taller ocultado del inventario." };
+      return { success: true, message: "Taller eliminado del inventario." };
     } catch (e: any) {
-      throw new Error(e.response?.data?.message || "Error al ocultar taller");
+      throw new Error(e.response?.data?.message || "Error al eliminar taller del inventario");
     }
   },
 
