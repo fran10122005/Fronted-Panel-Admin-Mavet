@@ -80,7 +80,7 @@ export default function Asistencia() {
       {/* Floating Alert */}
       {alertInfo.show && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 animate-fade-in-down">
-          <div className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 shadow-2xl ${
+          <div className={`flex items-center gap-3 px-6 py-2 rounded-xl border-2 shadow-2xl ${
             alertInfo.type === 'success' 
               ? 'bg-green-50 border-green-500 text-green-900' 
               : 'bg-red-50 border-red-500 text-red-900'
@@ -106,7 +106,7 @@ export default function Asistencia() {
           <h1 className="text-3xl font-black tracking-tight mb-2 uppercase">Control de Asistencia</h1>
           <p className="text-brand-100 font-medium text-lg uppercase tracking-widest mb-6">Museo MAVET</p>
           
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl py-4 inline-block px-12 border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl py-2 inline-block px-12 border border-white/20">
             <div className="text-5xl font-mono font-black tabular-nums tracking-tighter">{formattedTime}</div>
             <div className="text-sm font-medium mt-1 text-brand-100 capitalize">{formattedDate}</div>
           </div>
@@ -130,7 +130,7 @@ export default function Asistencia() {
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}
                 disabled={isSubmitting}
-                className="block w-full pl-12 pr-4 py-4 text-center text-2xl font-bold text-gray-900 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500 outline-none placeholder:text-gray-300 placeholder:font-normal"
+                className="block w-full pl-12 pr-4 py-2 text-center text-2xl font-bold text-gray-900 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500 outline-none placeholder:text-gray-300 placeholder:font-normal"
                 placeholder="Ej. V-12345678"
                 autoComplete="off"
               />

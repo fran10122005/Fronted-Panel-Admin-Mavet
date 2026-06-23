@@ -104,7 +104,7 @@ export default function RegistroPublico() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full mx-auto space-y-8 bg-white p-8 rounded-2xl shadow-xl">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-brand-700">MAVET</h2>
@@ -133,7 +133,7 @@ export default function RegistroPublico() {
                 required
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}
-                className="appearance-none block w-full px-4 py-4 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-lg shadow-sm"
+                className="appearance-none block w-full px-4 py-2 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-lg shadow-sm"
                 placeholder="Ej: V-12345678"
               />
             </div>
@@ -141,7 +141,7 @@ export default function RegistroPublico() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-70"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-70"
             >
               {isLoading ? "Buscando..." : "Siguiente"}
             </button>
@@ -189,7 +189,7 @@ export default function RegistroPublico() {
                 required 
                 value={formData.id_motivo} 
                 onChange={e => setFormData({...formData, id_motivo: e.target.value})} 
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-lg text-gray-700"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-lg text-gray-700"
               >
                 <option value="">Selecciona una opción...</option>
                 {motivos.map(m => (
@@ -210,7 +210,7 @@ export default function RegistroPublico() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-70 mt-6"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-70 mt-6"
             >
               {isLoading ? "Registrando..." : "¡Registrar mi Entrada!"}
             </button>

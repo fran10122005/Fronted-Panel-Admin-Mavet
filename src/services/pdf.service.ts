@@ -124,3 +124,27 @@ export async function exportarHistorialEventos(eventos: any[]) {
     alert("Error al generar el historial de eventos. Verifica tu conexión e inicia sesión nuevamente.");
   }
 }
+
+// ─── PDF: Listado de Trabajadores ──────────────────────────────────────────
+export async function exportarReporteTrabajadores() {
+  try {
+    const res = await axiosInstance.get('/api/reportes/trabajadores', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarReporteTrabajadores]", e);
+    alert("Error al generar el listado de trabajadores. Verifica tu conexión e inicia sesión nuevamente.");
+  }
+}
+
+// ─── PDF: Listado de Usuarios ──────────────────────────────────────────────
+export async function exportarReporteUsuarios() {
+  try {
+    const res = await axiosInstance.get('/api/reportes/usuarios', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarReporteUsuarios]", e);
+    alert("Error al generar el listado de usuarios. Verifica tu conexión e inicia sesión nuevamente.");
+  }
+}

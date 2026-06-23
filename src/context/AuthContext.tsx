@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (correo: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (newUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,19 +26,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Error parsing stored user", e);
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+      
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        try {
+          setUser(JSON.parse(storedUser));
+          // Refresh user data from server in background
+          mavetApi.getMe().then((res) => {
+             if (res && res.usuario) {
+               setUser(res.usuario);
+               localStorage.setItem("user", JSON.stringify(res.usuario));
+             }
+          }).catch(console.error);
+        } catch (e) {
+          console.error("Error parsing stored user", e);
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
+
+  const updateUser = (newUser: User) => {
+    setUser(newUser);
+    localStorage.setItem("user", JSON.stringify(newUser));
+  };
 
   const login = async (correo: string, password: string) => {
     const data = await mavetApi.login(correo, password);
@@ -55,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

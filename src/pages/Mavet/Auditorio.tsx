@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -42,6 +42,9 @@ const Auditorio: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   
+  const [filterTipo, setFilterTipo] = useState("Todos");
+  const [searchTerm, setSearchTerm] = useState("");
+  
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
   const calendarRef = useRef<FullCalendar>(null);
@@ -64,6 +67,16 @@ const Auditorio: React.FC = () => {
   useEffect(() => {
     loadEventos();
   }, []);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter(ev => {
+      const matchTipo = filterTipo === "Todos" || ev.extendedProps.tipoEvento === filterTipo;
+      const matchSearch = searchTerm === "" || 
+        ev.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase());
+      return matchTipo && matchSearch;
+    });
+  }, [events, filterTipo, searchTerm]);
 
   const handleCedulaBlur = async () => {
     const cedula = cedulaOrganizador.trim();
@@ -305,7 +318,34 @@ const Auditorio: React.FC = () => {
           </p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          {/* Filtros */}
+          <div className="flex gap-2">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="h-4 w-4 text-gray-400" />
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar evento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 w-48 sm:w-64 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              />
+            </div>
+            <select
+              value={filterTipo}
+              onChange={(e) => setFilterTipo(e.target.value)}
+              className="py-2 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              <option value="Todos">Todos los tipos</option>
+              <option value="Conferencia">Conferencia</option>
+              <option value="Exposición">Exposición</option>
+              <option value="Taller">Taller / Curso</option>
+              <option value="Reunión">Reunión Interna</option>
+            </select>
+          </div>
+
           <button 
             onClick={() => {
               if (events.length === 0) return;
@@ -382,7 +422,7 @@ const Auditorio: React.FC = () => {
                     center: "title",
                     right: "",
                   }}
-                  events={events}
+                  events={filteredEvents}
                   selectable={true}
                   select={handleDateSelect}
                   eventClick={handleEventClick}
@@ -408,13 +448,13 @@ const Auditorio: React.FC = () => {
               <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
                 <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas registradas en el auditorio.</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas que coincidan con la búsqueda.</p>
                 <button onClick={() => { resetModalFields(); openModal(); }} className="mt-4 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all">
                   Crear primera reserva
                 </button>
               </div>
             ) : (
-              events.map(ev => {
+              filteredEvents.map(ev => {
                 const badgeClass = getColorClass(ev.extendedProps.tipoEvento || "Conferencia");
                 return (
                   <div key={ev.id} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-theme-md hover:-translate-y-1">
@@ -662,32 +702,32 @@ const Auditorio: React.FC = () => {
             <table className="w-full text-left relative">
               <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {eventoAsistentes.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-10 text-center text-gray-500">
+                    <td colSpan={4} className="px-5 py-6 text-center text-gray-500">
                       Nadie se ha registrado en puerta para este evento.
                     </td>
                   </tr>
                 ) : (
                   eventoAsistentes.map((a, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200 font-medium">
+                      <td className="px-5 py-2 text-sm text-gray-800 dark:text-gray-200 font-medium">
                         {a.Persona ? `${a.Persona.nombres || ""} ${a.Persona.apellidos || ""}`.trim() : "Desconocido"}
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200">
+                      <td className="px-5 py-2 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
+                      <td className="px-5 py-2 text-sm text-gray-800 dark:text-gray-200">
                         <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-brand-800 bg-brand-100 rounded-full dark:bg-brand-900/30 dark:text-brand-400">
                           +{a.cantidad_acompanantes || 0}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">
+                      <td className="px-5 py-2 text-sm text-gray-500">
                         {new Date(a.fecha_hora_entrada).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
                       </td>
                     </tr>

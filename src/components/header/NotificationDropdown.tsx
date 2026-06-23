@@ -3,16 +3,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router";
 
-const notificationsData = [
-  { id: 1, name: "Terry Franci", avatar: "/images/user/user-02.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 5 min", status: "success" },
-  { id: 2, name: "Alena Franci", avatar: "/images/user/user-03.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 8 min", status: "success" },
-  { id: 3, name: "Jocelyn Kenter", avatar: "/images/user/user-04.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 15 min", status: "success" },
-  { id: 4, name: "Brandon Philips", avatar: "/images/user/user-05.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 1 hora", status: "error", to: "/" },
-  { id: 5, name: "Terry Franci", avatar: "/images/user/user-02.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 2 horas", status: "success" },
-  { id: 6, name: "Alena Franci", avatar: "/images/user/user-03.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 3 horas", status: "success" },
-  { id: 7, name: "Jocelyn Kenter", avatar: "/images/user/user-04.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 4 horas", status: "success" },
-  { id: 8, name: "Brandon Philips", avatar: "/images/user/user-05.jpg", action: "requests permission to change", target: "Project - Nganter App", category: "Project", time: "Hace 1 día", status: "error" },
-];
+const notificationsData: any[] = [];
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -88,50 +79,9 @@ export default function NotificationDropdown() {
             </svg>
           </button>
         </div>
-        <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {notificationsData.map((item) => (
-            <li key={item.id}>
-              <DropdownItem
-                onItemClick={closeDropdown}
-                className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-brand-50/30 dark:border-gray-800 dark:hover:bg-brand-500/5 transition-all duration-300 hover:translate-x-1"
-                to={item.to}
-              >
-                <span className="relative block w-full h-10 rounded-full z-1 max-w-10">
-                  <img
-                    width={40}
-                    height={40}
-                    src={item.avatar}
-                    alt="User"
-                    className="w-full overflow-hidden rounded-full"
-                  />
-                  <span
-                    className={`absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900 ${
-                      item.status === "error" ? "bg-error-500" : "bg-success-500"
-                    }`}
-                  ></span>
-                </span>
-
-                <span className="block text-left">
-                  <span className="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-semibold text-gray-800 dark:text-white/90 mr-1">
-                      {item.name}
-                    </span>
-                    {item.action}
-                    <span className="font-semibold text-brand-600 dark:text-brand-400 ml-1">
-                      {item.target}
-                    </span>
-                  </span>
-
-                  <span className="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                    <span>{item.category}</span>
-                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                    <span>{item.time}</span>
-                  </span>
-                </span>
-              </DropdownItem>
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col flex-grow items-center justify-center p-4 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">No tienes notificaciones recientes.</p>
+        </div>
         <Link
           to="/"
           className="block px-4 py-2.5 mt-3 text-sm font-semibold text-center text-brand-600 bg-brand-50/30 border border-brand-500/20 rounded-lg transition-all duration-300 hover:bg-brand-500 hover:text-white hover:border-brand-500 hover:shadow-sm dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20 dark:hover:bg-brand-500 dark:hover:text-white"

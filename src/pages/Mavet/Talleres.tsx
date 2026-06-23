@@ -304,8 +304,8 @@ export default function Talleres() {
   const totalPages = Math.ceil(filteredTalleres.length / itemsPerPage);
   const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const thCls = "px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
-  const tdCls = "px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200";
+  const thCls = "px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
+  const tdCls = "px-5 py-2 text-sm text-gray-800 dark:text-gray-200";
 
   return (
     <div className="space-y-6 relative">
@@ -344,9 +344,9 @@ export default function Talleres() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
-                <tr><td colSpan={3} className="px-5 py-10 text-center text-gray-500">Cargando...</td></tr>
+                <tr><td colSpan={3} className="px-5 py-6 text-center text-gray-500">Cargando...</td></tr>
               ) : inventario.length === 0 ? (
-                <tr><td colSpan={3} className="px-5 py-10 text-center text-gray-500">
+                <tr><td colSpan={3} className="px-5 py-6 text-center text-gray-500">
                   <p className="text-sm font-medium">No hay talleres en el inventario.</p>
                   <p className="text-xs text-gray-400 mt-1">Cree un nuevo taller usando el botón "Crear Taller".</p>
                 </td></tr>
@@ -354,7 +354,7 @@ export default function Talleres() {
                 <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                   <td className={`${tdCls} font-semibold`}>{item.nombre}</td>
                   <td className={`${tdCls} text-gray-500 dark:text-gray-400 max-w-xs truncate`}>{item.descripcion || "—"}</td>
-                  <td className="px-5 py-3.5 text-center">
+                  <td className="px-5 py-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={() => handleOpenEditar(item)}
                         className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
@@ -429,7 +429,7 @@ export default function Talleres() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {paginatedTalleres.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-gray-500">
+                <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500">
                   <p className="text-sm font-medium">No se encontraron talleres.</p>
                 </td></tr>
               ) : paginatedTalleres.map((t) => (
@@ -446,7 +446,7 @@ export default function Talleres() {
                     <span className="text-xs font-medium">{t.cupo_minimo || 0} / {t.cupo_maximo || 0}</span>
                   </td>
                   <td className={`${tdCls} text-gray-500`}>{t.sesiones || "-"}</td>
-                  <td className="px-5 py-3.5 text-center">
+                  <td className="px-5 py-2 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={() => openEnrolments(t)}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/30 px-2.5 py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors">
@@ -529,7 +529,7 @@ export default function Talleres() {
                   </tr>
                 ))}
               {inscripciones.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-500">No hay inscripciones registradas.</td></tr>
+                <tr><td colSpan={4} className="px-5 py-6 text-center text-gray-500">No hay inscripciones registradas.</td></tr>
               )}
             </tbody>
           </table>
@@ -822,7 +822,7 @@ export default function Talleres() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {tallerInscripciones.length === 0 ? (
-                  <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-500">No hay inscripciones para este taller.</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-6 text-center text-gray-500">No hay inscripciones para este taller.</td></tr>
                 ) : tallerInscripciones.map((ins, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                     <td className={`${tdCls} font-medium`}>
@@ -873,32 +873,32 @@ export default function Talleres() {
             <table className="w-full text-left relative">
               <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
-                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {tallerAsistentes.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-10 text-center text-gray-500">
+                    <td colSpan={4} className="px-5 py-6 text-center text-gray-500">
                       Nadie se ha registrado en puerta para este taller.
                     </td>
                   </tr>
                 ) : (
                   tallerAsistentes.map((a, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200 font-medium">
+                      <td className="px-5 py-2 text-sm text-gray-800 dark:text-gray-200 font-medium">
                         {a.Persona ? `${a.Persona.nombres || ""} ${a.Persona.apellidos || ""}`.trim() : "Desconocido"}
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-800 dark:text-gray-200">
+                      <td className="px-5 py-2 text-sm text-gray-500">{a.Persona?.cedula || "-"}</td>
+                      <td className="px-5 py-2 text-sm text-gray-800 dark:text-gray-200">
                         <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-brand-800 bg-brand-100 rounded-full dark:bg-brand-900/30 dark:text-brand-400">
                           +{a.cantidad_acompanantes || 0}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-gray-500">
+                      <td className="px-5 py-2 text-sm text-gray-500">
                         {new Date(a.fecha_hora_entrada).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
                       </td>
                     </tr>

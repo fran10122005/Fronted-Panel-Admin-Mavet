@@ -19,7 +19,7 @@ export default function Educacion() {
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           <button
             onClick={() => setActiveTab("talleres")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === "talleres"
                 ? "border-brand-500 text-brand-600 dark:text-brand-400"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
@@ -29,7 +29,7 @@ export default function Educacion() {
           </button>
           <button
             onClick={() => setActiveTab("auditorio")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === "auditorio"
                 ? "border-brand-500 text-brand-600 dark:text-brand-400"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"

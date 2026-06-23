@@ -421,35 +421,41 @@ export default function Biblioteca() {
                         {/* Acciones */}
                         <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
-                              disabled={libro.estado === "Descartado/Venta" || libro.cantidad_disponible <= 0}
-                              className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
-                                libro.estado === "Descartado/Venta" || libro.cantidad_disponible <= 0
-                                  ? "text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50"
-                                  : "text-brand-600 border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-                              }`}
-                            >
-                              Prestar
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (window.confirm("¿Marcar como devuelto?")) {
-                                  try {
-                                    const result = await mavetApi.devolverLibro(libro.id);
-                                    showAlert(result.message, "success");
-                                    await fetchDatos();
-                                  } catch (e: any) {
-                                    showAlert(e.message || "Error al devolver.", "error");
+                            {libro.cantidad_disponible > 0 && (
+                              <button
+                                onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
+                                disabled={libro.estado === "Descartado/Venta"}
+                                className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
+                                  libro.estado === "Descartado/Venta"
+                                    ? "text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50"
+                                    : "text-brand-600 border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                                }`}
+                              >
+                                Prestar
+                              </button>
+                            )}
+                            {libro.cantidad_disponible < libro.cantidad_total && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm("¿Marcar como devuelto?")) {
+                                    try {
+                                      const result = await mavetApi.devolverLibro(libro.id);
+                                      showAlert(result.message, "success");
+                                      await fetchDatos();
+                                    } catch (e: any) {
+                                      showAlert(e.message || "Error al devolver.", "error");
+                                    }
                                   }
-                                }
-                              }}
-                              disabled={libro.estado === "Descartado/Venta" || libro.cantidad_disponible >= libro.cantidad_total}
-                              className="font-semibold text-xs border px-2 py-1 rounded transition w-18 text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              Devolver
-                            </button>
-                            <div className="h-4 w-[1px] bg-gray-250 dark:bg-gray-700 mx-1"></div>
+                                }}
+                                disabled={libro.estado === "Descartado/Venta"}
+                                className="font-semibold text-xs border px-2 py-1 rounded transition w-18 text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                Devolver
+                              </button>
+                            )}
+                            {(libro.cantidad_disponible > 0 || libro.cantidad_disponible < libro.cantidad_total) && (
+                              <div className="h-4 w-[1px] bg-gray-250 dark:bg-gray-700 mx-1"></div>
+                            )}
                             <button
                               onClick={() => handleEditLibro(libro)}
                               className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors"
@@ -478,7 +484,7 @@ export default function Biblioteca() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mt-auto">
+            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mt-auto">
               <span>
                 Mostrando <span className="font-semibold">{filteredLibros.length}</span> de{" "}
                 <span className="font-semibold">{libros.length}</span> libros
@@ -492,7 +498,7 @@ export default function Biblioteca() {
           Sección: Control de Préstamos por Cédula
          ══════════════════════════════════════════ */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="px-5 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-gray-800 dark:text-white text-base">Control de Préstamos por Cédula</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">Busque por cédula para ver el historial de préstamos de una persona</p>
@@ -525,7 +531,7 @@ export default function Biblioteca() {
             <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
               {filteredPrestamos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
+                  <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
                     <p className="text-sm font-medium">
                       {searchCedula.trim() ? "No se encontraron préstamos para esta cédula." : "No hay préstamos activos."}
                     </p>

@@ -30,6 +30,18 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/signin";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const mavetApi = {
   // === Inventario Bóveda ===
   getObras: async (): Promise<Obra[]> => {

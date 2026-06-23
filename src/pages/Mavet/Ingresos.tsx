@@ -26,7 +26,7 @@ const Ingresos: React.FC = () => {
 
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark flex justify-between items-center">
+      <div className="border-b border-stroke py-2 px-6.5 dark:border-strokedark flex justify-between items-center">
         <h3 className="font-medium text-black dark:text-white">
           Registro de Ingresos - MAVET
         </h3>
@@ -40,7 +40,7 @@ const Ingresos: React.FC = () => {
       {/* Controles de Pestañas */}
       <div className="flex border-b border-stroke dark:border-strokedark">
         <button
-          className={`w-1/2 py-4 font-medium ${
+          className={`w-1/2 py-2 font-medium ${
             pestanaActiva === "visitantes"
               ? "text-primary border-b-2 border-primary"
               : "text-bodydark hover:text-black dark:hover:text-white"
@@ -50,7 +50,7 @@ const Ingresos: React.FC = () => {
           📊 Dashboard Visitantes
         </button>
         <button
-          className={`w-1/2 py-4 font-medium ${
+          className={`w-1/2 py-2 font-medium ${
             pestanaActiva === "trabajadores"
               ? "text-primary border-b-2 border-primary"
               : "text-bodydark hover:text-black dark:hover:text-white"
@@ -67,7 +67,7 @@ const Ingresos: React.FC = () => {
           // Dashboard para Visitantes
           <div>
             {isLoading ? (
-              <div className="flex justify-center items-center py-10">
+              <div className="flex justify-center items-center py-6">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
               </div>
             ) : stats ? (
@@ -96,15 +96,15 @@ const Ingresos: React.FC = () => {
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                            <th className="py-4 px-4 font-medium text-black dark:text-white">Motivo</th>
-                            <th className="py-4 px-4 font-medium text-black dark:text-white w-32">Cantidad</th>
+                            <th className="py-2 px-4 font-medium text-black dark:text-white">Motivo</th>
+                            <th className="py-2 px-4 font-medium text-black dark:text-white w-32">Cantidad</th>
                           </tr>
                         </thead>
                         <tbody>
                           {stats.porMotivo.map((item: any, idx: number) => (
                             <tr key={idx} className="border-t border-stroke dark:border-strokedark">
-                              <td className="py-4 px-4">{item.motivo}</td>
-                              <td className="py-4 px-4 font-semibold text-primary">{item.cantidad}</td>
+                              <td className="py-2 px-4">{item.motivo}</td>
+                              <td className="py-2 px-4 font-semibold text-primary">{item.cantidad}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -116,7 +116,7 @@ const Ingresos: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-10 text-danger">Error al cargar estadísticas</div>
+              <div className="text-center py-6 text-danger">Error al cargar estadísticas</div>
             )}
           </div>
         ) : (

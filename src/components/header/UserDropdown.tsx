@@ -33,9 +33,9 @@ export default function UserDropdown() {
         </span>
 
         <span className="block mr-1 font-medium text-theme-sm text-left">
-          {user?.nombre_usuario || user?.nombres || "Usuario MAVET"}{" "}
+          {user?.Trabajador?.nombres || user?.nombre_usuario || user?.nombres || "Usuario MAVET"}{" "}
           <span className="block text-xs text-gray-500 font-normal">
-            ({user?.rol || "Admin"})
+            ({user?.Role?.nombre_rol || user?.rol || "Administrador"})
           </span>
         </span>
         <svg
