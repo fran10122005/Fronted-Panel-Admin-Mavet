@@ -78,7 +78,10 @@ export const mavetApi = {
 
   crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.post('/api/obras/obras', payload);
+      const isFormData = payload instanceof FormData;
+      await axiosInstance.post('/api/obras/obras', payload, {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {}
+      });
       return { success: true, message: "Obra agregada exitosamente al inventario." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear la obra");
@@ -87,7 +90,10 @@ export const mavetApi = {
 
   actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.put(`/api/obras/obras/${id}`, payload);
+      const isFormData = payload instanceof FormData;
+      await axiosInstance.put(`/api/obras/obras/${id}`, payload, {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {}
+      });
       return { success: true, message: "Obra actualizada exitosamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar la obra");
