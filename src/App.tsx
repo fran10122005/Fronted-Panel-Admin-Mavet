@@ -1,24 +1,36 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { Toaster } from "react-hot-toast";
+
+// Eagerly loaded core components
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import { AuthProvider } from "./context/AuthContext";
 import AuthRoute from "./components/auth/AuthRoute";
-import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
-import Ingresos from "./pages/Mavet/Ingresos";
-import RegistroPublico from "./pages/Mavet/RegistroPublico";
-import RRHH from "./pages/Mavet/RRHH";
-import Recepcion from "./pages/Mavet/Recepcion";
-import Biblioteca from "./pages/Mavet/Biblioteca";
-import Asistencia from "./pages/Mavet/Asistencia";
-import InventarioBoveda from "./pages/Mavet/InventarioBoveda";
-import Talleres from "./pages/Mavet/Talleres";
-import Auditorio from "./pages/Mavet/Auditorio";
-import Educacion from "./pages/Mavet/Educacion";
+
+// Lazy loaded pages (Code Splitting)
+const Home = lazy(() => import("./pages/Dashboard/Home"));
+const UserProfiles = lazy(() => import("./pages/UserProfiles"));
+const Ingresos = lazy(() => import("./pages/Mavet/Ingresos"));
+const RegistroPublico = lazy(() => import("./pages/Mavet/RegistroPublico"));
+const RRHH = lazy(() => import("./pages/Mavet/RRHH"));
+const Recepcion = lazy(() => import("./pages/Mavet/Recepcion"));
+const Biblioteca = lazy(() => import("./pages/Mavet/Biblioteca"));
+const Asistencia = lazy(() => import("./pages/Mavet/Asistencia"));
+const InventarioBoveda = lazy(() => import("./pages/Mavet/InventarioBoveda"));
+const Talleres = lazy(() => import("./pages/Mavet/Talleres"));
+const Auditorio = lazy(() => import("./pages/Mavet/Auditorio"));
+const Educacion = lazy(() => import("./pages/Mavet/Educacion"));
+const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
+
+// Fallback loader for Suspense
+const PageLoader = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 export default function App() {
   return (
@@ -67,37 +79,37 @@ export default function App() {
             }
           }}
         />
-        <Routes>
-          {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
-          <Route element={<AuthRoute />}>
-            <Route element={<AppLayout />}>
-              <Route index path="/" element={<Home />} />
-          <Route path="/profile" element={<UserProfiles />} />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
+            <Route element={<AuthRoute />}>
+              <Route element={<AppLayout />}>
+                <Route index path="/" element={<Home />} />
+                <Route path="/profile" element={<UserProfiles />} />
 
-          {/* Módulos específicos del MAVET */}
-          <Route path="/biblioteca" element={<Biblioteca />} />
-          <Route path="/rrhh" element={<RRHH />} />
-          <Route path="/recepcion" element={<Recepcion />} />
-          <Route path="/educacion" element={<Educacion />} />
+                {/* Módulos específicos del MAVET */}
+                <Route path="/biblioteca" element={<Biblioteca />} />
+                <Route path="/rrhh" element={<RRHH />} />
+                <Route path="/recepcion" element={<Recepcion />} />
+                <Route path="/educacion" element={<Educacion />} />
+                <Route path="/ingresos" element={<Ingresos />} />
+                <Route path="/inventario-obras" element={<InventarioBoveda />} />
+                <Route path="/talleres" element={<Talleres />} />
+                <Route path="/auditorio" element={<Auditorio />} />
+              </Route>
+            </Route>
 
+            {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
+            <Route path="/registro-visitante" element={<RegistroPublico />} />
+            <Route path="/asistencia" element={<Asistencia />} />
 
-          <Route path="/ingresos" element={<Ingresos />} />
-          <Route path="/inventario-obras" element={<InventarioBoveda />} />
-            <Route path="/talleres" element={<Talleres />} />
-            <Route path="/auditorio" element={<Auditorio />} />
-          </Route>
-        </Route>
-
-        {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
-        <Route path="/registro-visitante" element={<RegistroPublico />} />
-        <Route path="/asistencia" element={<Asistencia />} />
-
-        {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+            {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </Router>
     </AuthProvider>
   );
 }

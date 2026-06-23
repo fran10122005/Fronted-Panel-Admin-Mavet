@@ -34,6 +34,7 @@ export default function Talleres() {
   // ─── Selected states ───
   const [selectedInventario, setSelectedInventario] = useState<any>(null);
   const [selectedTaller, setSelectedTaller] = useState<any>(null);
+  const [isEditingPlanificado, setIsEditingPlanificado] = useState(false);
   const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
   const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
   const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
@@ -151,27 +152,60 @@ export default function Talleres() {
     }
   };
 
-  // ─── Inventario: Ocultar ───
-  const handleOcultarInventario = async (item: any) => {
-    if (!window.confirm(`¿Ocultar "${item.nombre}" del inventario?`)) return;
+  // ─── Inventario: Eliminar ───
+  const handleEliminarInventario = async (item: any) => {
+    if (!window.confirm(`¿Estás seguro de eliminar "${item.nombre}" del inventario?`)) return;
     try {
-      await mavetApi.ocultarInventarioTaller(item.id_taller || item.id);
-      toast.success("Taller ocultado del inventario.");
+      await mavetApi.eliminarInventarioTaller(item.id_taller || item.id);
+      toast.success("Taller eliminado del inventario.");
       const refreshed = await mavetApi.getInventarioTalleres();
       setInventario(refreshed);
     } catch (error: any) {
-      toast.error(error.message || "Error al ocultar taller.");
+      toast.error(error.message || "Error al eliminar taller del inventario.");
     }
   };
 
   // ─── Planificar Taller ───
-  const handleOpenPlanificar = () => {
-    setPlanificarForm({
-      id_taller_inventario: 0, id_instructor: 0, id_espacio: 0, sesiones: "",
-      fecha: "", hora_inicio: "", hora_fin: "", horas_totales: 0,
-      cupo_minimo: 0, cupo_maximo: 0, estado: true
-    });
+  const handleOpenPlanificar = (taller?: any) => {
+    if (taller) {
+      setIsEditingPlanificado(true);
+      setSelectedTaller(taller);
+      setPlanificarForm({
+        id_taller_inventario: taller.inventario_id || 0,
+        id_instructor: taller.id_instructor || 0,
+        id_espacio: taller.id_espacio || 0,
+        sesiones: taller.sesiones || "",
+        fecha: taller.fecha || "",
+        hora_inicio: taller.hora_inicio || "",
+        hora_fin: taller.hora_fin || "",
+        horas_totales: taller.horas_totales || 0,
+        cupo_minimo: taller.cupo_minimo || 0,
+        cupo_maximo: taller.cupo_maximo || 0,
+        estado: taller.estado === "Activo" || taller.estado === true
+      });
+    } else {
+      setIsEditingPlanificado(false);
+      setSelectedTaller(null);
+      setPlanificarForm({
+        id_taller_inventario: 0, id_instructor: 0, id_espacio: 0, sesiones: "",
+        fecha: "", hora_inicio: "", hora_fin: "", horas_totales: 0,
+        cupo_minimo: 0, cupo_maximo: 0, estado: true
+      });
+    }
     openPlanificar();
+  };
+
+  const handleEliminarPlanificado = async (taller: any) => {
+    if (window.confirm(`"?Estǭ seguro de eliminar el taller planificado "${taller.nombre_curso}"? Esta accin no se puede deshacer.`)) {
+      try {
+        await mavetApi.eliminarTaller(taller.id_taller);
+        toast.success("Taller eliminado correctamente.");
+        const refreshed = await mavetApi.getTalleres();
+        setTalleres(refreshed);
+      } catch (error: any) {
+        toast.error(error.message || "Error al eliminar taller planificado.");
+      }
+    }
   };
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -190,14 +224,21 @@ export default function Talleres() {
       return;
     }
     setIsSubmitting(true);
-    try {
+      try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
       const payload = {
         ...planificarForm,
         nombre_curso: selected?.nombre || ""
       };
-      await mavetApi.crearTaller(payload);
-      toast.success("Taller planificado correctamente.");
+      
+      if (isEditingPlanificado && selectedTaller) {
+        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload);
+        toast.success("Taller planificado actualizado correctamente.");
+      } else {
+        await mavetApi.crearTaller(payload);
+        toast.success("Taller planificado correctamente.");
+      }
+      
       closePlanificar();
       const [talleresData, inscripcionesData] = await Promise.all([
         mavetApi.getTalleres(),
@@ -323,16 +364,19 @@ export default function Talleres() {
       {/* ══════════════════════════════════════════
           INVENTARIO DE TALLERES
          ══════════════════════════════════════════ */}
-      <ComponentCard title="Inventario de Talleres" desc="Catálogo maestro de talleres disponibles">
-        <div className="flex justify-end mb-4">
+      <ComponentCard 
+        title="Inventario de Talleres" 
+        desc="Catálogo maestro de talleres disponibles"
+        action={
           <button onClick={handleOpenCrear}
-            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm">
+            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             Crear Taller
           </button>
-        </div>
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -363,11 +407,11 @@ export default function Talleres() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                       </button>
-                      <button onClick={() => handleOcultarInventario(item)}
+                      <button onClick={() => handleEliminarInventario(item)}
                         className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Ocultar">
+                        title="Eliminar">
                         <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>
@@ -468,6 +512,14 @@ export default function Talleres() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Inscribir
+                      </button>
+                      <button onClick={() => handleOpenPlanificar(t)}
+                        className="p-1 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors" title="Editar">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => handleEliminarPlanificado(t)}
+                        className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
                   </td>
@@ -613,7 +665,9 @@ export default function Talleres() {
          ══════════════════════════════════════════ */}
       <Modal isOpen={isOpenPlanificar} onClose={closePlanificar} className="max-w-[580px] p-6">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Planificar Taller</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            {isEditingPlanificado ? "Editar Taller Planificado" : "Planificar Taller"}
+          </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Programe una edición del taller con fecha, instructor y cupos.</p>
           <form onSubmit={handleSubmitPlanificar} className="space-y-4">
             <div>

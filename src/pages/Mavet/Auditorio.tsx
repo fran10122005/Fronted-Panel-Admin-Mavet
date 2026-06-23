@@ -18,7 +18,6 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Modal } from "../../components/ui/modal";
-import DatePicker from "../../components/form/date-picker";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
@@ -526,12 +525,12 @@ const Auditorio: React.FC = () => {
 
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Fecha del Evento</label>
-                {/* Usamos el componente DatePicker (Flatpickr) para una experiencia premium */}
-                <DatePicker 
-                  id="event-date-picker"
-                  defaultDate={eventDate}
-                  onChange={(dates, dateStr) => setEventDate(dateStr)}
-                  placeholder="Seleccione una fecha"
+                <input
+                  required
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                 />
               </div>
 
