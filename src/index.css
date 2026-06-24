@@ -386,13 +386,20 @@ layer(base);
 }
 
 @layer utilities {
-  /* For Remove Date Icon */
+  /* For Remove Date Icon (default: hidden) */
   input[type="date"]::-webkit-inner-spin-button,
   input[type="time"]::-webkit-inner-spin-button,
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
     display: none;
     -webkit-appearance: none;
+  }
+
+  /* Show date picker icon for public forms */
+  input[type="date"].show-date-picker::-webkit-calendar-picker-indicator,
+  input[type="date"].show-date-picker::-webkit-inner-spin-button {
+    display: block;
+    -webkit-appearance: auto;
   }
 }
 

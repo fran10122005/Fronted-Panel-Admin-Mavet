@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ComponentCard from "../../components/common/ComponentCard";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
@@ -8,6 +8,20 @@ import { mavetApi } from "../../services/api";
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
+
+function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-5 py-4 shadow-sm">
+      <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${color}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Talleres() {
   // ─── Data ───
@@ -71,6 +85,19 @@ export default function Talleres() {
 
   const edadNum = parseInt(enrollForm.alumnoEdad, 10);
   const esMenor = !isNaN(edadNum) && edadNum < 18;
+
+  // ─── Group inscripciones by taller ───
+  const inscripcionesAgrupadas = useMemo(() => {
+    const map = new Map<number, { taller: any; alumnos: any[] }>();
+    inscripciones.forEach((ins: any) => {
+      const id = ins.Taller?.id_taller || ins.id_taller;
+      if (!map.has(id)) {
+        map.set(id, { taller: ins.Taller, alumnos: [] });
+      }
+      map.get(id)!.alumnos.push(ins);
+    });
+    return Array.from(map.values()).sort((a, b) => b.alumnos.length - a.alumnos.length);
+  }, [inscripciones]);
 
   // ─── Data Fetching ───
   const loadData = async () => {
@@ -196,7 +223,7 @@ export default function Talleres() {
   };
 
   const handleEliminarPlanificado = async (taller: any) => {
-    if (window.confirm(`"?Estǭ seguro de eliminar el taller planificado "${taller.nombre_curso}"? Esta accin no se puede deshacer.`)) {
+    if (window.confirm(`¿Estás seguro de eliminar el taller planificado "${taller.nombre_curso}"? Esta acción no se puede deshacer.`)) {
       try {
         await mavetApi.eliminarTaller(taller.id_taller);
         toast.success("Taller eliminado correctamente.");
@@ -345,83 +372,56 @@ export default function Talleres() {
   const totalPages = Math.ceil(filteredTalleres.length / itemsPerPage);
   const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const thCls = "px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400";
-  const tdCls = "px-5 py-2 text-sm text-gray-800 dark:text-gray-200";
+  const thCls = "px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-nowrap";
+  const tdCls = "px-3 py-2 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap";
+
+  // ─── Totals for stat cards ───
+  const totalPlanificados = talleres.filter(t => t.estado === "Activo" || t.estado === true).length;
+  const totalInscritos = inscripciones.length;
+  const totalInventario = inventario.length;
 
   return (
-    <div className="space-y-6 relative">
-      {/* Alert */}
-      
+    <div className="space-y-6">
 
       {/* ─── Header ─── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Talleres</h1>
-          <p className="text-sm text-gray-500">Inventario de talleres y planificación de programas.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Talleres</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administración de talleres, planificación y control de inscripciones.</p>
       </div>
 
-      {/* ══════════════════════════════════════════
-          INVENTARIO DE TALLERES
-         ══════════════════════════════════════════ */}
-      <ComponentCard 
-        title="Inventario de Talleres" 
-        desc="Catálogo maestro de talleres disponibles"
-        action={
-          <button onClick={handleOpenCrear}
-            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+      {/* ─── Summary Stats ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          icon={
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            Crear Taller
-          </button>
-        }
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className={thCls}>Nombre</th>
-                <th className={thCls}>Descripción</th>
-                <th className={`${thCls} text-center w-32`}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
-                <tr><td colSpan={3} className="px-5 py-6 text-center text-gray-500">Cargando...</td></tr>
-              ) : inventario.length === 0 ? (
-                <tr><td colSpan={3} className="px-5 py-6 text-center text-gray-500">
-                  <p className="text-sm font-medium">No hay talleres en el inventario.</p>
-                  <p className="text-xs text-gray-400 mt-1">Cree un nuevo taller usando el botón "Crear Taller".</p>
-                </td></tr>
-              ) : inventario.map((item: any) => (
-                <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                  <td className={`${tdCls} font-semibold`}>{item.nombre}</td>
-                  <td className={`${tdCls} text-gray-500 dark:text-gray-400 max-w-xs truncate`}>{item.descripcion || "—"}</td>
-                  <td className="px-5 py-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => handleOpenEditar(item)}
-                        className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors"
-                        title="Editar">
-                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button onClick={() => handleEliminarInventario(item)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Eliminar">
-                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </ComponentCard>
+          }
+          label="Talleres Activos"
+          value={totalPlanificados}
+          color="bg-brand-500"
+        />
+        <StatCard
+          icon={
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          }
+          label="Alumnos Inscritos"
+          value={totalInscritos}
+          color="bg-emerald-500"
+        />
+        <StatCard
+          icon={
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+          label="Talleres en Inventario"
+          value={totalInventario}
+          color="bg-violet-500"
+        />
+      </div>
 
       {/* ══════════════════════════════════════════
           LISTADO DE TALLERES
@@ -442,7 +442,7 @@ export default function Talleres() {
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Instructor:</span>
               <select value={filterInstructor} onChange={e => { setFilterInstructor(e.target.value); setCurrentPage(1); }} className={inputCls + " max-w-[200px]"}>
                 <option value="Todos">Todos</option>
-                {instructores.map(inst => (
+                {instructores.map((inst: any) => (
                   <option key={inst.id_instructor} value={`${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim()}>
                     {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""}
                   </option>
@@ -458,76 +458,84 @@ export default function Talleres() {
             Planificar Taller
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className={thCls}>Código</th>
-                <th className={thCls}>Nombre</th>
-                <th className={thCls}>Instructor</th>
-                <th className={thCls}>Fecha</th>
-                <th className={thCls}>Cupos</th>
-                <th className={thCls}>Sesiones</th>
-                <th className={`${thCls} text-center`}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {paginatedTalleres.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500">
-                  <p className="text-sm font-medium">No se encontraron talleres.</p>
-                </td></tr>
-              ) : paginatedTalleres.map((t) => (
-                <tr key={t.id_taller} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                  <td className={`${tdCls} font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold`}>{t.id_taller}</td>
-                  <td className={`${tdCls} font-semibold`}>{t.nombre_curso}</td>
-                  <td className={`${tdCls} text-gray-600 dark:text-gray-300`}>
-                    {t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "-"}
-                  </td>
-                  <td className={`${tdCls} text-gray-500`}>
-                    {t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES') : "-"}
-                  </td>
-                  <td className={`${tdCls}`}>
-                    <span className="text-xs font-medium">{t.cupo_minimo || 0} / {t.cupo_maximo || 0}</span>
-                  </td>
-                  <td className={`${tdCls} text-gray-500`}>{t.sesiones || "-"}</td>
-                  <td className="px-5 py-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => openEnrolments(t)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/30 px-2.5 py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+              <th className={thCls}>Nombre</th>
+              <th className={thCls}>Instructor</th>
+              <th className={thCls}>Fecha</th>
+              <th className={thCls}>Cupos</th>
+              <th className={`${thCls} text-center w-14`}></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {paginatedTalleres.length === 0 ? (
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-gray-500">
+                <p className="text-sm">No se encontraron talleres planificados.</p>
+              </td></tr>
+            ) : paginatedTalleres.map((t) => (
+              <tr key={t.id_taller} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                <td className={`${tdCls}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${t.estado === "Activo" || t.estado === true ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                    <span className="font-medium truncate max-w-[200px]">{t.nombre_curso}</span>
+                  </div>
+                </td>
+                <td className={`${tdCls} text-gray-600 dark:text-gray-300 truncate max-w-[140px]`}>
+                  {t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "-"}
+                </td>
+                <td className={`${tdCls} text-gray-500`}>
+                  {t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : "-"}
+                </td>
+                <td className={`${tdCls} tabular-nums`}>
+                  <span className="text-xs font-medium">{t.cupo_minimo || 0}/{t.cupo_maximo || 0}</span>
+                  {t.sesiones && <span className="text-[11px] text-gray-400 ml-1.5">· {t.sesiones} ses.</span>}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <div className="relative inline-block">
+                    <button onClick={() => {
+                      const menu = document.getElementById(`actions-${t.id_taller}`);
+                      if (menu) { menu.classList.toggle('hidden'); menu.classList.toggle('flex'); }
+                    }}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                      </svg>
+                    </button>
+                    <div id={`actions-${t.id_taller}`} className="hidden absolute right-0 top-full z-20 mt-1 min-w-[140px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnrolments(t); }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Inscritos
                       </button>
-                      <button onClick={() => openAsistentes(t)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
+                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         Asistentes
                       </button>
-                      <button onClick={() => openEnroll(t)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 px-2.5 py-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnroll(t); }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                         Inscribir
                       </button>
-                      <button onClick={() => handleOpenPlanificar(t)}
-                        className="p-1 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors" title="Editar">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleOpenPlanificar(t); }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        Editar
                       </button>
-                      <button onClick={() => handleEliminarPlanificado(t)}
-                        className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleEliminarPlanificado(t); }}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Eliminar
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -551,41 +559,135 @@ export default function Talleres() {
       </ComponentCard>
 
       {/* ══════════════════════════════════════════
-          ÚLTIMOS ALUMNOS INSCRITOS
+          ALUMNOS INSCRITOS POR TALLER
          ══════════════════════════════════════════ */}
-      <ComponentCard title="Últimos 10 Alumnos Inscritos">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className={thCls}>Nombre</th>
-                <th className={thCls}>Cédula</th>
-                <th className={thCls}>Taller</th>
-                <th className={thCls}>Fecha</th>
+      <ComponentCard title="Alumnos Inscritos por Taller" desc="Distribución de inscripciones agrupadas por taller">
+        {inscripcionesAgrupadas.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <p className="text-sm font-medium text-gray-500">No hay alumnos inscritos en ningún taller.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {inscripcionesAgrupadas.map((grupo, idx) => (
+              <details key={idx} className="group rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <summary className="flex items-center justify-between px-5 py-3.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors list-none">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center text-sm font-bold text-brand-700 dark:text-brand-400">
+                      {grupo.alumnos.length}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{grupo.taller?.nombre_curso || "Taller sin nombre"}</p>
+                      <p className="text-xs text-gray-500">{grupo.alumnos.length} alumno{grupo.alumnos.length !== 1 ? "s" : ""} inscrito{grupo.alumnos.length !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="border-t border-gray-200 dark:border-gray-700">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-white dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-700/50">
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-8">#</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Alumno</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Cédula</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-900/20">
+                      {grupo.alumnos.map((ins: any, i: number) => (
+                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                          <td className="px-3 py-1.5 text-xs text-gray-400 tabular-nums">{i + 1}</td>
+                          <td className="px-3 py-1.5 text-sm text-gray-800 dark:text-gray-200">
+                            {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "-"}
+                          </td>
+                          <td className="px-3 py-1.5 text-sm text-gray-500 font-mono">{ins.Alumno?.cedula || "-"}</td>
+                          <td className="px-3 py-1.5 text-sm text-gray-500 whitespace-nowrap">
+                            {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : "-"}
+                          </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400">
+                              <span className="w-1 h-1 rounded-full bg-green-500" />
+                              {ins.estado_inscripcion || "Activo"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </ComponentCard>
+
+      {/* ══════════════════════════════════════════
+          INVENTARIO DE TALLERES
+         ══════════════════════════════════════════ */}
+      <ComponentCard 
+        title="Inventario de Talleres" 
+        desc="Catálogo maestro de talleres disponibles"
+        action={
+          <button onClick={handleOpenCrear}
+            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Taller
+          </button>
+        }
+      >
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+              <th className={thCls}>Nombre</th>
+              <th className={thCls}>Descripción</th>
+              <th className={`${thCls} text-center w-20`}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {isLoading ? (
+              <tr><td colSpan={3} className="px-3 py-6 text-center text-gray-500 text-sm">Cargando...</td></tr>
+            ) : inventario.length === 0 ? (
+              <tr><td colSpan={3} className="px-3 py-8 text-center text-gray-500">
+                <p className="text-sm">No hay talleres en el inventario. Cree uno con el botón "Crear Taller".</p>
+              </td></tr>
+            ) : inventario.map((item: any) => (
+              <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                <td className={`${tdCls} font-medium`}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
+                      <svg className="w-3 h-3 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <span className="truncate">{item.nombre}</span>
+                  </div>
+                </td>
+                <td className={`${tdCls} text-gray-500 dark:text-gray-400 truncate max-w-xs`}>{item.descripcion || "—"}</td>
+                <td className="px-3 py-2 text-center whitespace-nowrap">
+                  <button onClick={() => handleOpenEditar(item)}
+                    className="p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors" title="Editar">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button onClick={() => handleEliminarInventario(item)}
+                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Eliminar">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {[...inscripciones]
-                .sort((a, b) => new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime())
-                .slice(0, 10)
-                .map((ins, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                    <td className={`${tdCls} font-medium`}>
-                      {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "-"}
-                    </td>
-                    <td className={`${tdCls} text-gray-500`}>{ins.Alumno?.cedula || "-"}</td>
-                    <td className={`${tdCls}`}>{ins.Taller?.nombre_curso || "-"}</td>
-                    <td className={`${tdCls} text-gray-500`}>
-                      {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString('es-ES') : "-"}
-                    </td>
-                  </tr>
-                ))}
-              {inscripciones.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-6 text-center text-gray-500">No hay inscripciones registradas.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </ComponentCard>
 
       {/* ══════════════════════════════════════════
