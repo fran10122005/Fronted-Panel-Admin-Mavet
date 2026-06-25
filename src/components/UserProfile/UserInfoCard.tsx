@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
-import Button from "../ui/button/Button";
-import Input from "../form/input/InputField";
-import Label from "../form/Label";
 import { mavetApi } from "../../services/api";
+import toast from "react-hot-toast";
+
+const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
+const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 
 interface UserInfoCardProps {
   profile: any;
@@ -13,13 +14,25 @@ interface UserInfoCardProps {
 
 export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) {
   const { isOpen, openModal, closeModal } = useModal();
+  const [activeTab, setActiveTab] = useState<"datos" | "seguridad" | "foto">("datos");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     nombres: "",
     apellidos: "",
     correo_personal: "",
     telefono: ""
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [passwordData, setPasswordData] = useState({
+    password_actual: "",
+    password_nuevo: "",
+    password_confirmar: ""
+  });
+
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile && profile.Trabajador) {
@@ -37,153 +50,246 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
     setIsSubmitting(true);
     try {
       await mavetApi.updateMe(formData);
+      toast.success("Perfil actualizado exitosamente");
       onRefresh();
       closeModal();
-    } catch (error) {
-      console.error(error);
-      alert("Error al actualizar el perfil");
+    } catch (error: any) {
+      toast.error(error.message || "Error al actualizar el perfil");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const trabajador = profile?.Trabajador || {};
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.password_nuevo !== passwordData.password_confirmar) {
+      toast.error("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    if (passwordData.password_nuevo.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await mavetApi.cambiarPassword({
+        password_actual: passwordData.password_actual,
+        password_nuevo: passwordData.password_nuevo
+      });
+      toast.success("Contraseña actualizada exitosamente");
+      setPasswordData({ password_actual: "", password_nuevo: "", password_confirmar: "" });
+    } catch (error: any) {
+      toast.error(error.message || "Error al cambiar la contraseña");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setFotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadFoto = async () => {
+    if (!fotoFile) return;
+    setIsSubmitting(true);
+    try {
+      await mavetApi.subirFotoPerfil(fotoFile);
+      toast.success("Foto de perfil actualizada");
+      setFotoFile(null);
+      setFotoPreview(null);
+      onRefresh();
+    } catch (error: any) {
+      toast.error(error.message || "Error al subir la foto");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const t = profile?.Trabajador || {};
+
+  const detailRow = (label: string, value: string) => (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="text-sm font-medium text-gray-800 dark:text-white/90">{value || "—"}</span>
+    </div>
+  );
+
+  const tabBtn = (tab: "datos" | "seguridad" | "foto", label: string) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(tab)}
+      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+        activeTab === tab
+          ? "bg-brand-500 text-white shadow-sm"
+          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">
-            Información Personal
-          </h4>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Nombres
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {trabajador.nombres || "—"}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Apellidos
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {trabajador.apellidos || "—"}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Correo Electrónico
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {profile?.correo || trabajador.correo_personal || "—"}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Teléfono
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {trabajador.telefono || "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-
+    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+        <h4 className="text-base font-semibold text-gray-800 dark:text-white/90">Información Personal</h4>
         <button
           onClick={openModal}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
         >
-          <svg
-            className="fill-current"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-              fill=""
-            />
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
           Editar
         </button>
       </div>
 
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-        <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Editar Información Personal
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Actualiza tus detalles para mantener tu perfil al día.
-            </p>
+      <div className="p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {detailRow("Nombres", t.nombres)}
+          {detailRow("Apellidos", t.apellidos)}
+          {detailRow("Usuario", profile?.nombre_usuario)}
+          {detailRow("Rol", profile?.Role?.nombre_rol || "Administrador")}
+          {detailRow("Correo Institucional", profile?.correo)}
+          {detailRow("Correo Personal", t.correo_personal)}
+          {detailRow("Teléfono", t.telefono)}
+          {detailRow("Cargo", t.cargo)}
+        </div>
+      </div>
+
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-xl p-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Editar Perfil</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Administra tus datos, seguridad y foto de perfil.</p>
+
+          <div className="flex gap-2 mb-5">
+            {tabBtn("datos", "Datos Personales")}
+            {tabBtn("seguridad", "Seguridad")}
+            {tabBtn("foto", "Foto de Perfil")}
           </div>
-          <form className="flex flex-col" onSubmit={handleSave}>
-            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              <div className="mt-7">
-                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
-                  Información Personal
-                </h5>
 
-                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Nombres</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.nombres} 
-                      onChange={(e) => setFormData({...formData, nombres: e.target.value})} 
-                    />
-                  </div>
+          {activeTab === "datos" && (
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Apellidos</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.apellidos} 
-                      onChange={(e) => setFormData({...formData, apellidos: e.target.value})} 
-                    />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Correo Electrónico Personal</Label>
-                    <Input 
-                      type="email" 
-                      value={formData.correo_personal} 
-                      onChange={(e) => setFormData({...formData, correo_personal: e.target.value})} 
-                    />
-                  </div>
-
-                  <div className="col-span-2 lg:col-span-1">
-                    <Label>Teléfono</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.telefono} 
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})} 
-                    />
-                  </div>
+                <div>
+                  <label className={labelCls}>Nombres <span className="text-red-500">*</span></label>
+                  <input type="text" value={formData.nombres}
+                    onChange={e => setFormData({...formData, nombres: e.target.value})}
+                    className={inputCls} required />
+                </div>
+                <div>
+                  <label className={labelCls}>Apellidos <span className="text-red-500">*</span></label>
+                  <input type="text" value={formData.apellidos}
+                    onChange={e => setFormData({...formData, apellidos: e.target.value})}
+                    className={inputCls} required />
+                </div>
+                <div>
+                  <label className={labelCls}>Correo Electrónico Personal</label>
+                  <input type="email" value={formData.correo_personal}
+                    onChange={e => setFormData({...formData, correo_personal: e.target.value})}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Teléfono</label>
+                  <input type="text" value={formData.telefono}
+                    onChange={e => setFormData({...formData, telefono: e.target.value})}
+                    className={inputCls} placeholder="0412-1234567" />
                 </div>
               </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onClick={closeModal} disabled={isSubmitting}
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmitting}
+                  className="w-full sm:w-auto flex items-center justify-center min-w-[140px] px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : "Guardar Cambios"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {activeTab === "seguridad" && (
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className={labelCls}>Contraseña Actual <span className="text-red-500">*</span></label>
+                <input type="password" value={passwordData.password_actual}
+                  onChange={e => setPasswordData({...passwordData, password_actual: e.target.value})}
+                  className={inputCls} required placeholder="••••••••" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Nueva Contraseña <span className="text-red-500">*</span></label>
+                  <input type="password" value={passwordData.password_nuevo}
+                    onChange={e => setPasswordData({...passwordData, password_nuevo: e.target.value})}
+                    className={inputCls} required minLength={6} placeholder="Mín. 6 caracteres" />
+                </div>
+                <div>
+                  <label className={labelCls}>Confirmar Contraseña <span className="text-red-500">*</span></label>
+                  <input type="password" value={passwordData.password_confirmar}
+                    onChange={e => setPasswordData({...passwordData, password_confirmar: e.target.value})}
+                    className={inputCls} required minLength={6} placeholder="Repite la contraseña" />
+                </div>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" onClick={closeModal} disabled={isSubmitting}
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmitting}
+                  className="w-full sm:w-auto flex items-center justify-center min-w-[160px] px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : "Cambiar Contraseña"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {activeTab === "foto" && (
+            <div className="space-y-5">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                  {fotoPreview ? (
+                    <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG hasta 2MB</p>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleFotoChange}
+                className="hidden"
+              />
+
+              <div className="flex justify-center gap-3">
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  Seleccionar Foto
+                </button>
+                {fotoFile && (
+                  <button type="button" onClick={handleUploadFoto} disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70">
+                    {isSubmitting ? "Subiendo..." : "Subir Foto"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal} type="button">
-                Cancelar
-              </Button>
-              <Button size="sm" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
-              </Button>
-            </div>
-          </form>
+          )}
         </div>
       </Modal>
     </div>

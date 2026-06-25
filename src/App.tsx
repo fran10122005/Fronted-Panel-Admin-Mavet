@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import AuthRoute from "./components/auth/AuthRoute";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 
 // Lazy loaded pages (Code Splitting)
 const Home = lazy(() => import("./pages/Dashboard/Home"));
@@ -84,29 +85,29 @@ export default function App() {
             {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
             <Route element={<AuthRoute />}>
               <Route element={<AppLayout />}>
-                <Route index path="/" element={<Home />} />
-                <Route path="/profile" element={<UserProfiles />} />
+                <Route index path="/" element={<ErrorBoundary><Home /></ErrorBoundary>} />
+                <Route path="/profile" element={<ErrorBoundary><UserProfiles /></ErrorBoundary>} />
 
                 {/* Módulos específicos del MAVET */}
-                <Route path="/biblioteca" element={<Biblioteca />} />
-                <Route path="/rrhh" element={<RRHH />} />
-                <Route path="/recepcion" element={<Recepcion />} />
-                <Route path="/educacion" element={<Educacion />} />
-                <Route path="/ingresos" element={<Ingresos />} />
-                <Route path="/inventario-obras" element={<InventarioBoveda />} />
-                <Route path="/talleres" element={<Talleres />} />
-                <Route path="/auditorio" element={<Auditorio />} />
+                <Route path="/biblioteca" element={<ErrorBoundary><Biblioteca /></ErrorBoundary>} />
+                <Route path="/rrhh" element={<ErrorBoundary><RRHH /></ErrorBoundary>} />
+                <Route path="/recepcion" element={<ErrorBoundary><Recepcion /></ErrorBoundary>} />
+                <Route path="/educacion" element={<ErrorBoundary><Educacion /></ErrorBoundary>} />
+                <Route path="/ingresos" element={<ErrorBoundary><Ingresos /></ErrorBoundary>} />
+                <Route path="/inventario-obras" element={<ErrorBoundary><InventarioBoveda /></ErrorBoundary>} />
+                <Route path="/talleres" element={<ErrorBoundary><Talleres /></ErrorBoundary>} />
+                <Route path="/auditorio" element={<ErrorBoundary><Auditorio /></ErrorBoundary>} />
               </Route>
             </Route>
 
             {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
-            <Route path="/registro-visitante" element={<RegistroPublico />} />
-            <Route path="/asistencia" element={<Asistencia />} />
+            <Route path="/registro-visitante" element={<ErrorBoundary><RegistroPublico /></ErrorBoundary>} />
+            <Route path="/asistencia" element={<ErrorBoundary><Asistencia /></ErrorBoundary>} />
 
             {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
           </Routes>
         </Suspense>
       </Router>

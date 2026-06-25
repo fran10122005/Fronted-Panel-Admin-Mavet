@@ -1,9 +1,11 @@
-import toast from "react-hot-toast";
-import React, { useState, useEffect, useMemo } from "react";
+import { useTalleres, ITEMS_PER_PAGE } from "../../hooks/useTalleres";
 import ComponentCard from "../../components/common/ComponentCard";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
-import { useModal } from "../../hooks/useModal";
-import { mavetApi } from "../../services/api";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
+import TallerFormModal from "./talleres/TallerFormModal";
+import TallerDetailModal from "./talleres/TallerDetailModal";
+import InscripcionModal from "./talleres/InscripcionModal";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
@@ -24,372 +26,61 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
 }
 
 export default function Talleres() {
-  // ─── Data ───
-  const [talleres, setTalleres] = useState<any[]>([]);
-  const [inventario, setInventario] = useState<any[]>([]);
-  const [instructores, setInstructores] = useState<any[]>([]);
-  const [espacios, setEspacios] = useState<any[]>([]);
-  const [inscripciones, setInscripciones] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    talleres, inventario, instructores, espacios, inscripciones,
+    isLoading,
+    searchTerm, setSearchTerm,
+    filterInstructor, setFilterInstructor,
+    currentPage, setCurrentPage,
+    inventarioForm, setInventarioForm,
+    planificarForm, setPlanificarForm,
+    enrollForm, setEnrollForm,
+    isSubmitting,
+    esMenor, inscripcionesAgrupadas,
+    filteredTalleres, totalPages, paginatedTalleres,
+    totalPlanificados, totalInscritos, totalInventario,
+    selectedTaller,
+    isEditingPlanificado,
+    selectedTallerEnroll,
+    tallerInscripciones,
+    tallerAsistentes,
+    isOpenCrear, closeCrear,
+    isOpenEditar, closeEditar,
+    isOpenPlanificar, closePlanificar,
+    isOpenInscr, closeInscrModal,
+    isOpenEnroll, closeEnrollModal,
+    isOpenAsistentes, closeAsistentesModal,
+    confirm, setConfirm,
+    handleOpenCrear, handleCrearInventario,
+    handleOpenEditar, handleEditarInventario,
+    handleEliminarInventario,
+    handleOpenPlanificar, handleEliminarPlanificado,
+    handlePlanificarChange, handleSubmitPlanificar,
+    openEnroll, handleEnrollChange, handleSubmitInscripcion,
+    openEnrolments, openAsistentes,
+    exportInscripcionesFn,
+  } = useTalleres();
 
-  // ─── Pagination & search ───
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterInstructor, setFilterInstructor] = useState("Todos");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  // ─── Modals ───
-  const { isOpen: isOpenCrear, openModal: openCrear, closeModal: closeCrear } = useModal();
-  const { isOpen: isOpenEditar, openModal: openEditar, closeModal: closeEditar } = useModal();
-  const { isOpen: isOpenPlanificar, openModal: openPlanificar, closeModal: closePlanificar } = useModal();
-  const { isOpen: isOpenInscr, openModal: openInscrModal, closeModal: closeInscrModal } = useModal();
-  const { isOpen: isOpenEnroll, openModal: openEnrollModal, closeModal: closeEnrollModal } = useModal();
-
-  // ─── Selected states ───
-  const [selectedInventario, setSelectedInventario] = useState<any>(null);
-  const [selectedTaller, setSelectedTaller] = useState<any>(null);
-  const [isEditingPlanificado, setIsEditingPlanificado] = useState(false);
-  const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
-  const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
-  const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
-  const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
-
-  // ─── Forms ───
-  const [inventarioForm, setInventarioForm] = useState({ nombre: "", descripcion: "" });
-
-  const [planificarForm, setPlanificarForm] = useState({
-    id_taller_inventario: 0,
-    id_instructor: 0,
-    id_espacio: 0,
-    sesiones: "",
-    fecha: "",
-    hora_inicio: "",
-    hora_fin: "",
-    horas_totales: 0,
-    cupo_minimo: 0,
-    cupo_maximo: 0,
-    estado: true
-  });
-
-  const [enrollForm, setEnrollForm] = useState({
-    tallerId: "",
-    alumnoNombre: "",
-    alumnoEdad: "",
-    repNombre: "",
-    repCedula: "",
-    repTelefono: "",
-    correo: ""
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const edadNum = parseInt(enrollForm.alumnoEdad, 10);
-  const esMenor = !isNaN(edadNum) && edadNum < 18;
-
-  // ─── Group inscripciones by taller ───
-  const inscripcionesAgrupadas = useMemo(() => {
-    const map = new Map<number, { taller: any; alumnos: any[] }>();
-    inscripciones.forEach((ins: any) => {
-      const id = ins.Taller?.id_taller || ins.id_taller;
-      if (!map.has(id)) {
-        map.set(id, { taller: ins.Taller, alumnos: [] });
-      }
-      map.get(id)!.alumnos.push(ins);
-    });
-    return Array.from(map.values()).sort((a, b) => b.alumnos.length - a.alumnos.length);
-  }, [inscripciones]);
-
-  // ─── Data Fetching ───
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [inv, tal, inst, esp, ins] = await Promise.all([
-        mavetApi.getInventarioTalleres(),
-        mavetApi.getTalleres(),
-        mavetApi.getInstructores(),
-        mavetApi.getEspaciosMuseo(),
-        mavetApi.getInscripcionesTaller()
-      ]);
-      setInventario(inv);
-      setTalleres(tal);
-      setInstructores(inst);
-      setEspacios(esp);
-      setInscripciones(ins);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al cargar datos");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const handleOpenCrear = () => {
-    setInventarioForm({ nombre: "", descripcion: "" });
-    openCrear();
-  };
-
-  const handleCrearInventario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inventarioForm.nombre.trim()) {
-      toast.error("El nombre del taller es obligatorio.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await mavetApi.crearInventarioTaller(inventarioForm);
-      toast.success("Taller agregado al inventario.");
-      closeCrear();
-      const refreshed = await mavetApi.getInventarioTalleres();
-      setInventario(refreshed);
-    } catch (error: any) {
-      toast.error(error.message || "Error al crear taller.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // ─── Inventario: Editar ───
-  const handleOpenEditar = (item: any) => {
-    setSelectedInventario(item);
-    setInventarioForm({ nombre: item.nombre || "", descripcion: item.descripcion || "" });
-    openEditar();
-  };
-
-  const handleEditarInventario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inventarioForm.nombre.trim()) {
-      toast.error("El nombre del taller es obligatorio.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await mavetApi.actualizarInventarioTaller(selectedInventario.id_taller || selectedInventario.id, inventarioForm);
-      toast.success("Taller actualizado en el inventario.");
-      closeEditar();
-      const refreshed = await mavetApi.getInventarioTalleres();
-      setInventario(refreshed);
-    } catch (error: any) {
-      toast.error(error.message || "Error al actualizar taller.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // ─── Inventario: Eliminar ───
-  const handleEliminarInventario = async (item: any) => {
-    if (!window.confirm(`¿Estás seguro de eliminar "${item.nombre}" del inventario?`)) return;
-    try {
-      await mavetApi.eliminarInventarioTaller(item.id_taller || item.id);
-      toast.success("Taller eliminado del inventario.");
-      const refreshed = await mavetApi.getInventarioTalleres();
-      setInventario(refreshed);
-    } catch (error: any) {
-      toast.error(error.message || "Error al eliminar taller del inventario.");
-    }
-  };
-
-  // ─── Planificar Taller ───
-  const handleOpenPlanificar = (taller?: any) => {
-    if (taller) {
-      setIsEditingPlanificado(true);
-      setSelectedTaller(taller);
-      setPlanificarForm({
-        id_taller_inventario: taller.inventario_id || 0,
-        id_instructor: taller.id_instructor || 0,
-        id_espacio: taller.id_espacio || 0,
-        sesiones: taller.sesiones || "",
-        fecha: taller.fecha || "",
-        hora_inicio: taller.hora_inicio || "",
-        hora_fin: taller.hora_fin || "",
-        horas_totales: taller.horas_totales || 0,
-        cupo_minimo: taller.cupo_minimo || 0,
-        cupo_maximo: taller.cupo_maximo || 0,
-        estado: taller.estado === "Activo" || taller.estado === true
-      });
-    } else {
-      setIsEditingPlanificado(false);
-      setSelectedTaller(null);
-      setPlanificarForm({
-        id_taller_inventario: 0, id_instructor: 0, id_espacio: 0, sesiones: "",
-        fecha: "", hora_inicio: "", hora_fin: "", horas_totales: 0,
-        cupo_minimo: 0, cupo_maximo: 0, estado: true
-      });
-    }
-    openPlanificar();
-  };
-
-  const handleEliminarPlanificado = async (taller: any) => {
-    if (window.confirm(`¿Estás seguro de eliminar el taller planificado "${taller.nombre_curso}"? Esta acción no se puede deshacer.`)) {
-      try {
-        await mavetApi.eliminarTaller(taller.id_taller);
-        toast.success("Taller eliminado correctamente.");
-        const refreshed = await mavetApi.getTalleres();
-        setTalleres(refreshed);
-      } catch (error: any) {
-        toast.error(error.message || "Error al eliminar taller planificado.");
-      }
-    }
-  };
-
-  const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInventarioFormChange = (e: any) => {
     const { name, value } = e.target;
-    const numFields = ["id_taller_inventario", "id_instructor", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
-    setPlanificarForm(prev => ({
-      ...prev,
-      [name]: numFields.includes(name) ? Number(value) : value
-    }));
+    setInventarioForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitPlanificar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!planificarForm.id_taller_inventario) {
-      toast.error("Debe seleccionar un taller del inventario.");
-      return;
-    }
-    setIsSubmitting(true);
-      try {
-      const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
-      const payload = {
-        ...planificarForm,
-        nombre_curso: selected?.nombre || ""
-      };
-      
-      if (isEditingPlanificado && selectedTaller) {
-        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload);
-        toast.success("Taller planificado actualizado correctamente.");
-      } else {
-        await mavetApi.crearTaller(payload);
-        toast.success("Taller planificado correctamente.");
-      }
-      
-      closePlanificar();
-      const [talleresData, inscripcionesData] = await Promise.all([
-        mavetApi.getTalleres(),
-        mavetApi.getInscripcionesTaller()
-      ]);
-      setTalleres(talleresData);
-      setInscripciones(inscripcionesData);
-    } catch (error: any) {
-      toast.error(error.message || "Error al planificar taller.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handlePlanificarEstadoChange = (value: boolean) => {
+    setPlanificarForm(prev => ({ ...prev, estado: value }));
   };
-
-  // ─── Inscripciones ───
-  const openEnroll = (taller: any) => {
-    setSelectedTallerEnroll(taller);
-    setEnrollForm(prev => ({ ...prev, tallerId: taller.id_taller }));
-    openEnrollModal();
-  };
-
-  const handleEnrollChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setEnrollForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmitInscripcion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
-      toast.error("Los menores de edad requieren nombre y cédula del representante.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const payload: any = {
-        tallerId: enrollForm.tallerId,
-        alumno: { nombre: enrollForm.alumnoNombre, edad: enrollForm.alumnoEdad }
-      };
-      if (esMenor) {
-        payload.representante = {
-          nombre: enrollForm.repNombre,
-          cedula: enrollForm.repCedula,
-          telefono: enrollForm.repTelefono
-        };
-      }
-      await mavetApi.inscribirTaller(payload);
-      toast.success("Alumno inscrito correctamente.");
-      setEnrollForm(prev => ({ ...prev, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
-      const refreshed = await mavetApi.getInscripcionesTaller();
-      setInscripciones(refreshed);
-    } catch (error: any) {
-      toast.error(error.message || "Error al inscribir al alumno.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const openEnrolments = async (taller: any) => {
-    setSelectedTaller(taller);
-    try {
-      const data = await mavetApi.getInscripcionesPorTaller(taller.id_taller);
-      setTallerInscripciones(data);
-    } catch {
-      setTallerInscripciones([]);
-    }
-    openInscrModal();
-  };
-
-  const openAsistentes = async (taller: any) => {
-    setSelectedTaller(taller);
-    try {
-      const todosIngresos = await mavetApi.getTodosIngresos();
-      const asistentes = todosIngresos.filter(i => String(i.id_taller) === String(taller.id_taller));
-      setTallerAsistentes(asistentes);
-    } catch {
-      setTallerAsistentes([]);
-    }
-    openAsistentesModal();
-  };
-
-  const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
-    if (!selectedTaller) return;
-    try {
-      await mavetApi.exportInscripciones(selectedTaller.id_taller, format);
-      toast.success(`Inscripciones exportadas en formato ${format.toUpperCase()}`);
-    } catch {
-      toast.error("Error al exportar inscripciones.");
-    }
-  };
-
-  // ─── Filters & Pagination ───
-  const filteredTalleres = talleres.filter(t => {
-    const term = searchTerm.toLowerCase();
-    const instructorName = t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "";
-    
-    const matchesSearch = 
-      t.nombre_curso?.toLowerCase().includes(term) ||
-      t.Instructor?.Persona?.nombres?.toLowerCase().includes(term) ||
-      t.Instructor?.Persona?.apellidos?.toLowerCase().includes(term);
-      
-    const matchesInstructor = filterInstructor === "Todos" || instructorName === filterInstructor;
-    
-    return matchesSearch && matchesInstructor;
-  });
-  const totalPages = Math.ceil(filteredTalleres.length / itemsPerPage);
-  const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const thCls = "px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-nowrap";
   const tdCls = "px-3 py-2 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap";
 
-  // ─── Totals for stat cards ───
-  const totalPlanificados = talleres.filter(t => t.estado === "Activo" || t.estado === true).length;
-  const totalInscritos = inscripciones.length;
-  const totalInventario = inventario.length;
-
   return (
     <div className="space-y-6">
 
-      {/* ─── Header ─── */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Talleres</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administración de talleres, planificación y control de inscripciones.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gesti&oacute;n de Talleres</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administraci&oacute;n de talleres, planificaci&oacute;n y control de inscripciones.</p>
       </div>
 
-      {/* ─── Summary Stats ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           icon={
@@ -423,42 +114,44 @@ export default function Talleres() {
         />
       </div>
 
-      {/* ══════════════════════════════════════════
-          LISTADO DE TALLERES
-         ══════════════════════════════════════════ */}
+      {isLoading ? (
+        <div className="flex items-center justify-center">
+          <LoadingSkeleton variant="table" rows={8} cols={6} />
+        </div>
+      ) : (
+      <>
+
       <ComponentCard title="Listado de Talleres" desc="Talleres planificados con instructor, fecha y cupos">
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-4">
           <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-start sm:items-center">
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-56 md:w-64">
               <input type="text" placeholder="Buscar por nombre o instructor..."
                 value={searchTerm}
                 onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className={inputCls + " pl-10"} />
+                className={inputCls + " pl-10 text-sm"} />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Instructor:</span>
-              <select value={filterInstructor} onChange={e => { setFilterInstructor(e.target.value); setCurrentPage(1); }} className={inputCls + " max-w-[200px]"}>
-                <option value="Todos">Todos</option>
-                {instructores.map((inst: any) => (
-                  <option key={inst.id_instructor} value={`${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim()}>
-                    {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select value={filterInstructor} onChange={e => { setFilterInstructor(e.target.value); setCurrentPage(1); }} className={inputCls + " w-full sm:max-w-[180px]"}>
+              <option value="Todos">Todos los instructores</option>
+              {instructores.map((inst: any) => (
+                <option key={inst.id_instructor} value={`${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim()}>
+                  {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""}
+                </option>
+              ))}
+            </select>
           </div>
           <button onClick={handleOpenPlanificar}
-            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap w-full sm:w-auto">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Planificar Taller
           </button>
         </div>
-        <table className="w-full text-left">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <table className="w-full text-left min-w-[600px] sm:min-w-0">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
               <th className={thCls}>Nombre</th>
@@ -502,31 +195,31 @@ export default function Talleres() {
                         <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                       </svg>
                     </button>
-                    <div id={`actions-${t.id_taller}`} className="hidden absolute right-0 top-full z-20 mt-1 min-w-[140px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                    <div id={`actions-${t.id_taller}`} className="hidden absolute right-0 sm:right-0 left-auto top-full z-20 mt-1 min-w-[160px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
                       <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnrolments(t); }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Inscritos
                       </button>
                       <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         Asistentes
                       </button>
                       <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnroll(t); }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                         Inscribir
                       </button>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                       <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleOpenPlanificar(t); }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         Editar
                       </button>
                       <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleEliminarPlanificado(t); }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left">
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         Eliminar
                       </button>
                     </div>
@@ -536,21 +229,21 @@ export default function Talleres() {
             ))}
           </tbody>
         </table>
-        {/* Pagination */}
+        </div>
         {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Página {currentPage} de {totalPages}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-sm text-gray-600 dark:text-gray-400 order-2 sm:order-1">
+              P&aacute;gina {currentPage} de {totalPages}
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
               <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 Anterior
               </button>
               <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 Siguiente
               </button>
             </div>
@@ -558,16 +251,13 @@ export default function Talleres() {
         )}
       </ComponentCard>
 
-      {/* ══════════════════════════════════════════
-          ALUMNOS INSCRITOS POR TALLER
-         ══════════════════════════════════════════ */}
       <ComponentCard title="Alumnos Inscritos por Taller" desc="Distribución de inscripciones agrupadas por taller">
         {inscripcionesAgrupadas.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <p className="text-sm font-medium text-gray-500">No hay alumnos inscritos en ningún taller.</p>
+            <p className="text-sm font-medium text-gray-500">No hay alumnos inscritos en ning&uacute;n taller.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -587,25 +277,25 @@ export default function Talleres() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </summary>
-                <div className="border-t border-gray-200 dark:border-gray-700">
-                  <table className="w-full text-left">
+                <div className="border-t border-gray-200 dark:border-gray-700 overflow-x-auto">
+                  <table className="w-full text-left min-w-[500px]">
                     <thead>
                       <tr className="bg-white dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-700/50">
                         <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-8">#</th>
                         <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Alumno</th>
-                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Cédula</th>
-                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
-                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20">Estado</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">C&eacute;dula</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Fecha</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20 whitespace-nowrap">Estado</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-900/20">
                       {grupo.alumnos.map((ins: any, i: number) => (
                         <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                           <td className="px-3 py-1.5 text-xs text-gray-400 tabular-nums">{i + 1}</td>
-                          <td className="px-3 py-1.5 text-sm text-gray-800 dark:text-gray-200">
+                          <td className="px-3 py-1.5 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">
                             {ins.Alumno ? `${ins.Alumno.nombres || ""} ${ins.Alumno.apellidos || ""}`.trim() : "-"}
                           </td>
-                          <td className="px-3 py-1.5 text-sm text-gray-500 font-mono">{ins.Alumno?.cedula || "-"}</td>
+                          <td className="px-3 py-1.5 text-sm text-gray-500 font-mono whitespace-nowrap">{ins.Alumno?.cedula || "-"}</td>
                           <td className="px-3 py-1.5 text-sm text-gray-500 whitespace-nowrap">
                             {ins.fecha_inscripcion ? new Date(ins.fecha_inscripcion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : "-"}
                           </td>
@@ -626,15 +316,12 @@ export default function Talleres() {
         )}
       </ComponentCard>
 
-      {/* ══════════════════════════════════════════
-          INVENTARIO DE TALLERES
-         ══════════════════════════════════════════ */}
-      <ComponentCard 
-        title="Inventario de Talleres" 
+      <ComponentCard
+        title="Inventario de Talleres"
         desc="Catálogo maestro de talleres disponibles"
         action={
           <button onClick={handleOpenCrear}
-            className="bg-brand-500 text-white font-semibold py-2 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
+            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap w-full sm:w-auto justify-center">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -642,20 +329,19 @@ export default function Talleres() {
           </button>
         }
       >
-        <table className="w-full text-left">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <table className="w-full text-left min-w-[500px] sm:min-w-0">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
               <th className={thCls}>Nombre</th>
-              <th className={thCls}>Descripción</th>
+              <th className={thCls}>Descripci&oacute;n</th>
               <th className={`${thCls} text-center w-20`}>Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {isLoading ? (
-              <tr><td colSpan={3} className="px-3 py-6 text-center text-gray-500 text-sm">Cargando...</td></tr>
-            ) : inventario.length === 0 ? (
+            {inventario.length === 0 ? (
               <tr><td colSpan={3} className="px-3 py-8 text-center text-gray-500">
-                <p className="text-sm">No hay talleres en el inventario. Cree uno con el botón "Crear Taller".</p>
+                <p className="text-sm">No hay talleres en el inventario. Cree uno con el bot&oacute;n &quot;Crear Taller&quot;.</p>
               </td></tr>
             ) : inventario.map((item: any) => (
               <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
@@ -669,17 +355,17 @@ export default function Talleres() {
                     <span className="truncate">{item.nombre}</span>
                   </div>
                 </td>
-                <td className={`${tdCls} text-gray-500 dark:text-gray-400 truncate max-w-xs`}>{item.descripcion || "—"}</td>
+                <td className={`${tdCls} text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-xs`}>{item.descripcion || "&mdash;"}</td>
                 <td className="px-3 py-2 text-center whitespace-nowrap">
                   <button onClick={() => handleOpenEditar(item)}
-                    className="p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors" title="Editar">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors" title="Editar">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
                   <button onClick={() => handleEliminarInventario(item)}
-                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Eliminar">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Eliminar">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
@@ -688,279 +374,80 @@ export default function Talleres() {
             ))}
           </tbody>
         </table>
+        </div>
       </ComponentCard>
+      </>
+      )}
 
-      {/* ══════════════════════════════════════════
-          MODAL: Crear Taller (Inventario)
-         ══════════════════════════════════════════ */}
-      <Modal isOpen={isOpenCrear} onClose={closeCrear} className="max-w-md p-6">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Crear Taller</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Agregue un taller al inventario maestro.</p>
-          <form onSubmit={handleCrearInventario} className="space-y-4">
-            <div>
-              <label className={labelCls}>Nombre del Taller <span className="text-red-500">*</span></label>
-              <input type="text" value={inventarioForm.nombre}
-                onChange={e => setInventarioForm(prev => ({ ...prev, nombre: e.target.value }))}
-                className={inputCls} placeholder="Ej. Pintura al Óleo" required />
-            </div>
-            <div>
-              <label className={labelCls}>Descripción</label>
-              <textarea rows={3} value={inventarioForm.descripcion}
-                onChange={e => setInventarioForm(prev => ({ ...prev, descripcion: e.target.value }))}
-                className={inputCls + " resize-none"} placeholder="Breve descripción del taller..." />
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button type="button" onClick={closeCrear} disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-                Cancelar
-              </button>
-              <button type="submit" disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-                {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Guardar Taller"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      <TallerFormModal
+        isOpen={isOpenCrear}
+        onClose={closeCrear}
+        isEditing={false}
+        formData={inventarioForm}
+        isSubmitting={isSubmitting}
+        onChange={handleInventarioFormChange}
+        onSubmit={handleCrearInventario}
+        inputCls={inputCls}
+      />
 
-      {/* ══════════════════════════════════════════
-          MODAL: Editar Taller (Inventario)
-         ══════════════════════════════════════════ */}
-      <Modal isOpen={isOpenEditar} onClose={closeEditar} className="max-w-md p-6">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Editar Taller</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Modifique los datos del taller en el inventario.</p>
-          <form onSubmit={handleEditarInventario} className="space-y-4">
-            <div>
-              <label className={labelCls}>Nombre del Taller <span className="text-red-500">*</span></label>
-              <input type="text" value={inventarioForm.nombre}
-                onChange={e => setInventarioForm(prev => ({ ...prev, nombre: e.target.value }))}
-                className={inputCls} required />
-            </div>
-            <div>
-              <label className={labelCls}>Descripción</label>
-              <textarea rows={3} value={inventarioForm.descripcion}
-                onChange={e => setInventarioForm(prev => ({ ...prev, descripcion: e.target.value }))}
-                className={inputCls + " resize-none"} />
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button type="button" onClick={closeEditar} disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-                Cancelar
-              </button>
-              <button type="submit" disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-                {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Actualizar"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      <TallerFormModal
+        isOpen={isOpenEditar}
+        onClose={closeEditar}
+        isEditing={true}
+        formData={inventarioForm}
+        isSubmitting={isSubmitting}
+        onChange={handleInventarioFormChange}
+        onSubmit={handleEditarInventario}
+        inputCls={inputCls}
+      />
 
-      {/* ══════════════════════════════════════════
-          MODAL: Planificar Taller (Listado)
-         ══════════════════════════════════════════ */}
-      <Modal isOpen={isOpenPlanificar} onClose={closePlanificar} className="max-w-[580px] p-6">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-            {isEditingPlanificado ? "Editar Taller Planificado" : "Planificar Taller"}
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Programe una edición del taller con fecha, instructor y cupos.</p>
-          <form onSubmit={handleSubmitPlanificar} className="space-y-4">
-            <div>
-              <label className={labelCls}>Taller <span className="text-red-500">*</span></label>
-              <select name="id_taller_inventario" value={planificarForm.id_taller_inventario}
-                onChange={handlePlanificarChange} className={selectCls} required>
-                <option value={0}>Seleccione un taller del inventario...</option>
-                {inventario.map((i: any) => (
-                  <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Instructor</label>
-                <select name="id_instructor" value={planificarForm.id_instructor}
-                  onChange={handlePlanificarChange} className={selectCls}>
-                  <option value={0}>Seleccione...</option>
-                  {instructores.map(i => (
-                    <option key={i.id_instructor} value={i.id_instructor}>
-                      {i.Persona ? `${i.Persona.nombres} ${i.Persona.apellidos}` : `Instructor #${i.id_instructor}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Espacio / Sala</label>
-                <select name="id_espacio" value={planificarForm.id_espacio}
-                  onChange={handlePlanificarChange} className={selectCls}>
-                  <option value={0}>Seleccione...</option>
-                  {espacios.map(e => (
-                    <option key={e.id_espacio} value={e.id_espacio}>{e.nombre}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Sesiones</label>
-                <input type="number" name="sesiones" value={planificarForm.sesiones}
-                  onChange={handlePlanificarChange} className={inputCls} min={1} />
-              </div>
-              <div>
-                <label className={labelCls}>Cupo Mínimo</label>
-                <input type="number" name="cupo_minimo" value={planificarForm.cupo_minimo}
-                  onChange={handlePlanificarChange} className={inputCls} min={0} />
-              </div>
-              <div>
-                <label className={labelCls}>Cupo Máximo</label>
-                <input type="number" name="cupo_maximo" value={planificarForm.cupo_maximo}
-                  onChange={handlePlanificarChange} className={inputCls} min={1} />
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Fecha del Taller</label>
-              <input type="date" name="fecha" value={planificarForm.fecha}
-                onChange={handlePlanificarChange} className={inputCls} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Hora Inicio</label>
-                <input type="time" name="hora_inicio" value={planificarForm.hora_inicio}
-                  onChange={handlePlanificarChange} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Hora Fin</label>
-                <input type="time" name="hora_fin" value={planificarForm.hora_fin}
-                  onChange={handlePlanificarChange} className={inputCls} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Horas Totales</label>
-                <input type="number" name="horas_totales" value={planificarForm.horas_totales}
-                  onChange={handlePlanificarChange} className={inputCls} min={0} />
-              </div>
-              <div>
-                <label className={labelCls}>Estado</label>
-                <select name="estado" value={planificarForm.estado ? "true" : "false"}
-                  onChange={e => setPlanificarForm(prev => ({ ...prev, estado: e.target.value === "true" }))}
-                  className={selectCls}>
-                  <option value="true">Activo</option>
-                  <option value="false">Inactivo</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button type="button" onClick={closePlanificar} disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-                Cancelar
-              </button>
-              <button type="submit" disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-                {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Planificar Taller"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      <TallerDetailModal
+        isOpen={isOpenPlanificar}
+        onClose={closePlanificar}
+        isEditing={isEditingPlanificado}
+        formData={planificarForm}
+        inventario={inventario}
+        instructores={instructores}
+        espacios={espacios}
+        isSubmitting={isSubmitting}
+        onChange={handlePlanificarChange}
+        onEstadoChange={handlePlanificarEstadoChange}
+        onSubmit={handleSubmitPlanificar}
+        inputCls={inputCls}
+        selectCls={selectCls}
+      />
 
-      {/* ══════════════════════════════════════════
-          MODAL: Inscribir Alumno
-         ══════════════════════════════════════════ */}
-      <Modal isOpen={isOpenEnroll} onClose={closeEnrollModal} className="max-w-2xl p-6">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Inscribir Alumno</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
-            Taller: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTallerEnroll?.nombre_curso || ""}</span>
-          </p>
-          <form onSubmit={handleSubmitInscripcion} className="space-y-4">
-            <div>
-              <label className={labelCls}>Taller o Curso</label>
-              <select name="tallerId" value={enrollForm.tallerId} onChange={handleEnrollChange} className={selectCls} required>
-                {talleres.map(t => <option key={t.id_taller} value={t.id_taller}>{t.nombre_curso}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Nombre del Alumno <span className="text-red-500">*</span></label>
-                <input type="text" name="alumnoNombre" value={enrollForm.alumnoNombre} onChange={handleEnrollChange}
-                  className={inputCls} required disabled={isSubmitting} placeholder="Ej. Carlos Mendoza" />
-              </div>
-              <div>
-                <label className={labelCls}>Edad <span className="text-red-500">*</span></label>
-                <input type="number" name="alumnoEdad" value={enrollForm.alumnoEdad} onChange={handleEnrollChange}
-                  className={inputCls} required disabled={isSubmitting} placeholder="Ej. 12" />
-                {enrollForm.alumnoEdad && !esMenor && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">Mayor de edad — no requiere representante.</p>
-                )}
-                {esMenor && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Menor de edad — se requieren datos del representante.</p>
-                )}
-              </div>
-            </div>
-            {esMenor && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-amber-50/50 dark:bg-amber-500/5 rounded-lg border border-amber-200 dark:border-amber-500/20">
-                <div>
-                  <label className={labelCls}>Nombre del Representante</label>
-                  <input type="text" name="repNombre" value={enrollForm.repNombre} onChange={handleEnrollChange}
-                    className={inputCls} required disabled={isSubmitting} placeholder="Ej. Ana Mendoza" />
-                </div>
-                <div>
-                  <label className={labelCls}>Cédula</label>
-                  <input type="text" name="repCedula" value={enrollForm.repCedula} onChange={handleEnrollChange}
-                    className={inputCls} required disabled={isSubmitting} placeholder="V-12345678" />
-                </div>
-                <div>
-                  <label className={labelCls}>Teléfono</label>
-                  <input type="text" name="repTelefono" value={enrollForm.repTelefono} onChange={handleEnrollChange}
-                    className={inputCls} disabled={isSubmitting} placeholder="0414-1234567" />
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button type="button" onClick={closeEnrollModal} disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-                Cancelar
-              </button>
-              <button type="submit" disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[150px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-                {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Inscribir Alumno"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      <InscripcionModal
+        isOpen={isOpenEnroll}
+        onClose={closeEnrollModal}
+        talleres={talleres}
+        selectedTallerEnroll={selectedTallerEnroll}
+        enrollForm={enrollForm}
+        esMenor={esMenor}
+        isSubmitting={isSubmitting}
+        onChange={handleEnrollChange}
+        onSubmit={handleSubmitInscripcion}
+        inputCls={inputCls}
+        selectCls={selectCls}
+      />
 
-      {/* ══════════════════════════════════════════
-          MODAL: Ver Inscripciones
-         ══════════════════════════════════════════ */}
       <Modal isOpen={isOpenInscr} onClose={closeInscrModal} className="max-w-4xl p-6">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Inscripciones</h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
             Taller: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
           </p>
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <button onClick={() => exportInscripcionesFn('pdf')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Exportar PDF
             </button>
             <button onClick={() => exportInscripcionesFn('excel')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Exportar Excel
@@ -1003,16 +490,13 @@ export default function Talleres() {
           </div>
           <div className="flex justify-end mt-5 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button onClick={closeInscrModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Cerrar
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* ══════════════════════════════════════════
-          MODAL: Ver Asistentes (Recepción / QR)
-         ══════════════════════════════════════════ */}
       <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl p-6">
         <div>
           <div className="flex justify-between items-start mb-1">
@@ -1022,16 +506,16 @@ export default function Talleres() {
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
-            Visitantes confirmados en recepción o por QR para: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
+            Visitantes confirmados en recepci&oacute;n o por QR para: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
           </p>
-          
+
           <div className="overflow-x-auto max-h-[60vh]">
             <table className="w-full text-left relative">
               <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                   <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre y Apellido</th>
-                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cédula</th>
-                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompañantes</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">C&eacute;dula</th>
+                  <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acompa&ntilde;antes</th>
                   <th className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hora Ingreso</th>
                 </tr>
               </thead>
@@ -1063,15 +547,25 @@ export default function Talleres() {
               </tbody>
             </table>
           </div>
-          
+
           <div className="flex justify-end pt-4 mt-2 border-t border-gray-100 dark:border-gray-700">
             <button type="button" onClick={closeAsistentesModal}
-              className="px-5 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition">
+              className="w-full sm:w-auto px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition">
               Cerrar
             </button>
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        variant={confirm.variant}
+        confirmLabel={confirm.confirmLabel}
+        onConfirm={confirm.onConfirm}
+        onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

@@ -102,6 +102,7 @@ export interface Usuario {
   correo: string;
   rol: string;
   estado: boolean;
+  id_trabajador?: number;
   trabajador?: {
     nombre: string;
     cargo: string;
@@ -137,4 +138,36 @@ export interface TopVisitante {
   nombre: string;
   totalVisitas: number;
   ultimaVisita: string;
+}
+
+export interface Rol {
+  id_rol: number;
+  nombre_rol: string;
+}
+
+export interface Cargo {
+  id_cargo: number;
+  nombre_cargo: string;
+}
+
+export interface UsuarioPayload {
+  correo: string;
+  password?: string;
+  id_rol: number;
+  id_trabajador?: number;
+  estado?: boolean;
+}
+
+export interface TrabajadorPayload {
+  cedula?: string;
+  nombres?: string;
+  apellidos?: string;
+  telefono?: string;
+  correo_personal?: string;
+  id_cargo?: number;
+  horas_semanales?: number;
+  estado?: string | boolean;
+  direccion?: string;
+  fecha_nacimiento?: string;
+  fecha_ingreso?: string;
 }

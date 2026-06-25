@@ -53,7 +53,7 @@ export default function RegistroPublico() {
         setExiste(false);
       }
       setStep(2);
-    } catch (err) {
+    } catch {
       setError("Error al conectar con el sistema. Intente de nuevo.");
     } finally {
       setIsLoading(false);

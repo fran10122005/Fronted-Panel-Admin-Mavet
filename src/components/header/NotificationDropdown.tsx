@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const notificationsData: any[] = [];
 
 export default function NotificationDropdown() {

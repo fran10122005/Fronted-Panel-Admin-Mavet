@@ -9,12 +9,13 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const now = new Date();
     Promise.all([
       mavetApi.getDashboardStats(),
-      mavetApi.getTopVisitantes()
+      mavetApi.getTopVisitantes(now.getMonth() + 1, now.getFullYear())
     ]).then(([data, top]: any) => {
       if (data) setStats(data);
-      setTopVisitantes(top || []);
+      setTopVisitantes((top || []).slice(0, 3));
       setIsLoading(false);
     });
   }, []);

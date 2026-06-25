@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 
 const Ingresos: React.FC = () => {
   const [pestanaActiva, setPestanaActiva] = useState<"visitantes" | "trabajadores">("visitantes");
@@ -67,8 +68,8 @@ const Ingresos: React.FC = () => {
           // Dashboard para Visitantes
           <div>
             {isLoading ? (
-              <div className="flex justify-center items-center py-6">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+              <div className="flex justify-center items-center">
+                <LoadingSkeleton variant="table" rows={8} cols={6} />
               </div>
             ) : stats ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -91,7 +92,7 @@ const Ingresos: React.FC = () => {
                 {/* Gráfico/Lista por Motivo */}
                 <div className="col-span-1 md:col-span-3 mt-4">
                   <h4 className="font-semibold text-black dark:text-white mb-4">Ingresos por Motivo</h4>
-                  <div className="rounded border border-stroke dark:border-strokedark">
+                  <div className="rounded border border-stroke dark:border-strokedark overflow-x-auto">
                     {stats.porMotivo.length > 0 ? (
                       <table className="w-full text-left">
                         <thead>

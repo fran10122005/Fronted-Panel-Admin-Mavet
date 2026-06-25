@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { mavetApi, axiosInstance } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
+import { exportarQRPublico } from "../../services/pdf.service";
+import toast from "react-hot-toast";
 
 export default function Recepcion() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,7 +25,6 @@ export default function Recepcion() {
   const [motivos, setMotivos] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
   const [time, setTime] = useState(new Date().toLocaleTimeString());
 
   // Dashboard state
@@ -65,7 +66,8 @@ export default function Recepcion() {
       const filtrados = eventos.filter((e: any) => e.fecha?.startsWith(hoyStr));
       setEventosHoy(filtrados);
 
-      const topVisitantes = await mavetApi.getTopVisitantes();
+      const now = new Date();
+      const topVisitantes = await mavetApi.getTopVisitantes(now.getMonth() + 1, now.getFullYear());
       setVisitantesFrecuentes(topVisitantes.slice(0, 10)); // Top 10
     } catch (error) {
       console.error("Error cargando dashboard", error);
@@ -78,11 +80,6 @@ export default function Recepcion() {
     fetchDashboardData();
   }, []);
 
-  const showAlert = (message: string, type: 'success' | 'error') => {
-    setAlertInfo({ show: true, message, type });
-    setTimeout(() => setAlertInfo({ show: false, message: "", type: "success" }), 4000);
-  };
-
   const handleSearch = async () => {
     if (!searchQuery || searchQuery.length < 3) return;
     setIsSearching(true);
@@ -94,7 +91,7 @@ export default function Recepcion() {
         setSearchResults(result.data);
       } else {
         setSearchResults([]);
-        showAlert("No se encontró ninguna persona. Puede registrarla ahora.", "error");
+        toast.error("No se encontró ninguna persona. Puede registrarla ahora.");
       }
     } catch (error) {
       console.error("Error buscando persona", error);
@@ -116,9 +113,9 @@ export default function Recepcion() {
     setSearchResults([]);
     
     if (p.require_cedula_update) {
-      showAlert("⚠️ Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.", "error");
+      toast.error("⚠️ Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.");
     } else {
-      showAlert("Persona seleccionada correctamente.", "success");
+      toast.success("Persona seleccionada correctamente.");
     }
   };
 
@@ -129,7 +126,7 @@ export default function Recepcion() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.id_motivo) {
-      showAlert("El motivo de visita es obligatorio.", "error");
+      toast.error("El motivo de visita es obligatorio.");
       return;
     }
 
@@ -157,14 +154,14 @@ export default function Recepcion() {
         id_taller: finalTaller,
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
       });
-      showAlert("Acceso registrado exitosamente.", "success");
+      toast.success("Acceso registrado exitosamente.");
       setFormData({ cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
       setIsVisitaInstitucional(false);
       setSelectedPersona(null);
       setSearchQuery("");
       fetchDashboardData(); // Refrescar ranking
     } catch (error: any) {
-      showAlert(error.message || "Error al registrar ingreso", "error");
+      toast.error(error.message || "Error al registrar ingreso");
     } finally {
       setIsSubmitting(false);
     }
@@ -181,11 +178,11 @@ export default function Recepcion() {
         id_motivo: formData.id_motivo || 1, // Por defecto
         id_representante_persona: selectedPersona?.id_persona
       });
-      showAlert("Menor registrado e ingresado exitosamente.", "success");
+      toast.success("Menor registrado e ingresado exitosamente.");
       setIsMenorModalOpen(false);
       setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "" });
     } catch (error: any) {
-      showAlert(error.message || "Error al registrar menor", "error");
+      toast.error(error.message || "Error al registrar menor");
     } finally {
       setIsSubmitting(false);
     }
@@ -193,16 +190,6 @@ export default function Recepcion() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
-      {alertInfo.show && (
-        <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-sm ${alertInfo.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-            <span className="font-semibold text-sm">
-              {alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}
-            </span>
-          </div>
-        </div>
-      )}
-
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
         <button 
@@ -292,27 +279,27 @@ export default function Recepcion() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
-                  <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" placeholder="Ej. V-12345678" />
+                  <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. V-12345678" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres *</label>
-                  <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" placeholder="Ej. Ana" />
+                  <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. Ana" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos *</label>
-                  <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" placeholder="Ej. Silva" />
+                  <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. Silva" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" />
+                  <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" />
+                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">Motivo *</label>
-                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none">
+                    <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
                     <option value="">Seleccione...</option>
                     {motivos.map(m => (
                       <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
@@ -350,7 +337,7 @@ export default function Recepcion() {
                         name="cantidad_acompanantes" 
                         value={formData.cantidad_acompanantes} 
                         onChange={handleChange} 
-                        className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none" 
+                        className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" 
                         placeholder="Ej. 30" 
                       />
                     </div>
@@ -471,7 +458,7 @@ export default function Recepcion() {
             </div>
             <div>
               <label className="block text-sm mb-1">Fecha de Nacimiento</label>
-              <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({...menorData, fecha_nacimiento: e.target.value})} className="w-full border rounded-lg px-3 py-2" />
+              <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({...menorData, fecha_nacimiento: e.target.value})} className="show-date-picker w-full border rounded-lg px-3 py-2" />
             </div>
             <div className="flex justify-end pt-4">
               <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Guardar e Ingresar</button>
@@ -512,12 +499,12 @@ export default function Recepcion() {
             </button>
             <button 
               type="button" 
-              onClick={() => {
-                const win = window.open('');
-                win?.document.write(`<img src="${qrImageUrl}" style="width:100%;max-width:600px;display:block;margin:auto;" onload="window.print();window.close()" />`);
-              }}
-              className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-bold shadow-sm"
+              onClick={() => exportarQRPublico(qrImageUrl, publicRegistrationUrl)}
+              className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-bold shadow-sm inline-flex items-center justify-center gap-2"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-2a2 2 0 00-2-2H5a2 2 0 00-2 2v2a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
               Imprimir QR
             </button>
           </div>

@@ -2,8 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { mavetApi } from "../../services/api";
 import { exportarInventarioObras } from "../../services/pdf.service";
 import { Obra } from "../../types";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
+import { generateNextCode } from "../../utils/codeGenerator";
+import toast from "react-hot-toast";
 
 const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
   id: "",
@@ -38,18 +42,37 @@ export default function InventarioBoveda() {
   const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [alertInfo, setAlertInfo] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
 
-  const showAlert = (message: string, type: 'success' | 'error') => {
-    setAlertInfo({ show: true, message, type });
-    setTimeout(() => setAlertInfo({ show: false, message: "", type: "success" }), 4000);
+  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
+    open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const ITEMS_PER_PAGE = 20;
+
+  const fetchObrasPaginated = async (page: number) => {
+    const result = await mavetApi.getObras(page, ITEMS_PER_PAGE);
+    if (result.data.length === 0 && page > 1) {
+      return fetchObrasPaginated(page - 1);
+    }
+    setObras(result.data);
+    setCurrentPage(result.currentPage);
+    setTotalPages(result.totalPages);
+    setTotalItems(result.totalItems);
+  };
+
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setIsLoading(true);
+    fetchObrasPaginated(page).finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
     const fetchDatos = async () => {
       setIsLoading(true);
       try {
-        // Ejecutamos las peticiones independientemente para que un fallo en una no bloquee las demás
         const artData = await mavetApi.getArtistas().catch(e => { console.error("Error Artistas:", e); return []; });
         setArtistas(artData);
 
@@ -62,8 +85,7 @@ export default function InventarioBoveda() {
         const catData = await mavetApi.getCategoriasObra().catch(e => { console.error("Error Categorias:", e); return []; });
         setCategorias(catData);
 
-        const obrasData = await mavetApi.getObras().catch(e => { console.error("Error Obras:", e); return []; });
-        setObras(obrasData);
+        await fetchObrasPaginated(1);
       } catch (error) {
         console.error("Error general al cargar datos:", error);
       } finally {
@@ -73,8 +95,14 @@ export default function InventarioBoveda() {
     fetchDatos();
   }, []);
 
-  const handleOpenAdd = () => {
-    setFormData(initialFormState);
+  const handleOpenAdd = async () => {
+    const all = await mavetApi.getObras();
+    const nextCode = generateNextCode(
+      all.data.map(o => o.codigo_inventario),
+      "MVT",
+      3
+    );
+    setFormData({ ...initialFormState, codigo_inventario: nextCode });
     setImagenFile(null);
     setIsEditing(false);
     openModal();
@@ -87,20 +115,27 @@ export default function InventarioBoveda() {
     openModal();
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("¿Está seguro de que desea eliminar esta obra del inventario?")) {
-      try {
-        setIsLoading(true);
-        await mavetApi.eliminarObra(id);
-        const data = await mavetApi.getObras();
-        setObras(data);
-        showAlert("Obra eliminada exitosamente", "success");
-      } catch (error: any) {
-        showAlert(error.message || "Error al eliminar obra", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirm({
+      open: true,
+      title: "Eliminar obra",
+      message: "¿Está seguro de que desea eliminar esta obra del inventario?",
+      variant: "danger",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          setIsLoading(true);
+          await mavetApi.eliminarObra(id);
+          await fetchObrasPaginated(currentPage);
+          toast.success("Obra eliminada exitosamente");
+        } catch (error: any) {
+          toast.error(error.message || "Error al eliminar obra");
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -120,7 +155,7 @@ export default function InventarioBoveda() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.titulo || !formData.id_artista || !formData.id_tecnica || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
-      showAlert("Por favor complete todos los campos obligatorios.", "error");
+      toast.error("Por favor complete todos los campos obligatorios.");
       return;
     }
     setIsSubmitting(true);
@@ -148,16 +183,15 @@ export default function InventarioBoveda() {
     try {
       if (isEditing) {
         await mavetApi.actualizarObra(formData.id, dataToSend);
-        showAlert("Obra actualizada exitosamente", "success");
+        toast.success("Obra actualizada exitosamente");
       } else {
         await mavetApi.crearObra(dataToSend);
-        showAlert("Obra registrada exitosamente", "success");
+        toast.success("Obra registrada exitosamente");
       }
-      const data = await mavetApi.getObras();
-      setObras(data);
+      await fetchObrasPaginated(1);
       closeModal();
     } catch (error: any) {
-      showAlert(error.message || "Error al guardar obra", "error");
+      toast.error(error.message || "Error al guardar obra");
     } finally {
       setIsSubmitting(false);
     }
@@ -180,17 +214,6 @@ export default function InventarioBoveda() {
 
   return (
     <div className="space-y-6 relative">
-      {/* Alerta flotante */}
-      {alertInfo.show && (
-        <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-sm ${alertInfo.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-            <span className="font-semibold text-sm">
-              {alertInfo.type === 'success' ? '✅' : '⚠️'} {alertInfo.message}
-            </span>
-          </div>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventario de Bóveda</h1>
@@ -238,7 +261,7 @@ export default function InventarioBoveda() {
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
             >
               <option value="Todos">Todos</option>
               <option value="Excelente">Excelente</option>
@@ -249,9 +272,8 @@ export default function InventarioBoveda() {
         </div>
 
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center h-64 space-y-4">
-            <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
-            <p className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">Cargando inventario desde el servidor...</p>
+          <div className="flex-1 flex items-center justify-center">
+            <LoadingSkeleton variant="table" rows={8} cols={6} />
           </div>
         ) : (
           <>
@@ -331,10 +353,12 @@ export default function InventarioBoveda() {
               </table>
             </div>
             <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4 mt-auto">
-              <span>Mostrando {filteredObras.length} de {obras.length} obras</span>
+              <span>Página {currentPage} de {totalPages} ({totalItems} obras)</span>
               <div className="flex gap-2">
-                <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors">Anterior</button>
-                <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors">Siguiente</button>
+                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
+                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
               </div>
             </div>
           </>
@@ -358,7 +382,7 @@ export default function InventarioBoveda() {
                   value={formData.codigo_inventario || ""}
                   onChange={handleChange}
                   placeholder="Ej. MVT-001"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -369,7 +393,7 @@ export default function InventarioBoveda() {
                   name="titulo"
                   value={formData.titulo}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -379,7 +403,7 @@ export default function InventarioBoveda() {
                   name="id_artista"
                   value={formData.id_artista || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 >
                   <option value="" disabled>Seleccione un artista...</option>
@@ -399,7 +423,7 @@ export default function InventarioBoveda() {
                   value={formData.medidas}
                   onChange={handleChange}
                   placeholder="Ej. 120x80 cm"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -410,7 +434,7 @@ export default function InventarioBoveda() {
                   name="ano"
                   value={formData.ano}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -420,7 +444,7 @@ export default function InventarioBoveda() {
                   name="id_estado_actual"
                   value={formData.id_estado_actual || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 >
                   <option value="" disabled>Seleccione un estado...</option>
@@ -438,7 +462,7 @@ export default function InventarioBoveda() {
                   name="id_categoria_obra"
                   value={formData.id_categoria_obra || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 >
                   <option value="" disabled>Seleccione una categoría...</option>
@@ -453,7 +477,7 @@ export default function InventarioBoveda() {
                   name="id_tecnica"
                   value={formData.id_tecnica || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 >
                   <option value="" disabled>Seleccione una técnica...</option>
@@ -470,7 +494,7 @@ export default function InventarioBoveda() {
                   value={formData.ubicacion}
                   onChange={handleChange}
                   placeholder="Ej. Bóveda, Sala Principal"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -486,7 +510,7 @@ export default function InventarioBoveda() {
                   min={1}
                   value={formData.piezas ?? 1}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
               </div>
@@ -499,7 +523,7 @@ export default function InventarioBoveda() {
                   min={0}
                   value={formData.peso || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                 />
               </div>
               <div>
@@ -508,7 +532,7 @@ export default function InventarioBoveda() {
                   name="tipo_ingreso"
                   value={formData.tipo_ingreso || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 >
                   <option value="" disabled>Seleccione tipo de ingreso...</option>
@@ -526,7 +550,7 @@ export default function InventarioBoveda() {
                 onChange={handleChange}
                 rows={2}
                 placeholder="Descripción detallada de la obra..."
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-650 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none resize-y"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-650 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 resize-y"
               ></textarea>
             </div>
 
@@ -536,7 +560,7 @@ export default function InventarioBoveda() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white focus:outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
               />
               {isEditing && formData.imagen_url && !imagenFile && (
                 <p className="mt-1 text-xs text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
@@ -641,6 +665,7 @@ export default function InventarioBoveda() {
                   <button 
                     onClick={() => setSelectedObraForDetail(null)}
                     className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title="Cerrar"
                   >
                     <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -817,6 +842,15 @@ export default function InventarioBoveda() {
           </div>
         )}
       </Modal>
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        variant={confirm.variant}
+        confirmLabel={confirm.confirmLabel}
+        onConfirm={confirm.onConfirm}
+        onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

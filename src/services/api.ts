@@ -4,13 +4,17 @@ import {
   Libro, 
   PrestamoPayload, 
   AsistenciaPayload, 
-  RegistroVisitantePayload, 
   TallerInscripcionPayload,
   EventoAuditorio,
   Trabajador,
   RegistroAsistencia,
   Prestamo,
-  TopVisitante
+  TopVisitante,
+  Usuario,
+  Rol,
+  Cargo,
+  UsuarioPayload,
+  TrabajadorPayload
 } from "../types";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -44,35 +48,45 @@ axiosInstance.interceptors.response.use(
 
 export const mavetApi = {
   // === Inventario Bóveda ===
-  getObras: async (): Promise<Obra[]> => {
+  getObras: async (page?: number, limit?: number): Promise<{ data: Obra[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/obras/obras');
-      const list = Array.isArray(res.data) ? res.data : [];
-      return list.map((item: any) => ({
-        id: item.id_obra.toString(),
-        codigo_inventario: item.codigo_inventario || "",
-        titulo: item.titulo || "Sin título",
-        autor: item.Artista
-          ? `${item.Artista.nombres || ""} ${item.Artista.apellidos || ""}`.trim()
-          : "Desconocido",
-        id_artista: item.id_artista || undefined,
-        id_tecnica: item.id_tecnica || undefined,
-        id_estado_actual: item.id_estado_actual || undefined,
-        medidas: item.medidas || "",
-        ano: item.anio || 0,
-        tecnica: item.TecnicaObra?.nombre_tecnica || "",
-        categoria: item.CategoriaObra?.nombre_categoria || "",
-        id_categoria_obra: item.id_categoria_obra || undefined,
-        tipo_ingreso: item.tipo_ingreso || "",
-        piezas: item.piezas || 1,
-        peso: item.peso || undefined,
-        descripcion: item.descripcion || "",
-        estado: item.EstadoObra?.nombre_estado || "Bueno",
-        ubicacion: item.ubicacion_actual || "Depósito",
-        imagen_url: item.imagen_url || undefined
-      }));
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/obras/obras', { params });
+      const json = res.data;
+      const list = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
+      const meta = json?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return {
+        data: list.map((item: any) => ({
+          id: item.id_obra.toString(),
+          codigo_inventario: item.codigo_inventario || "",
+          titulo: item.titulo || "Sin título",
+          autor: item.Artista
+            ? `${item.Artista.nombres || ""} ${item.Artista.apellidos || ""}`.trim()
+            : "Desconocido",
+          id_artista: item.id_artista || undefined,
+          id_tecnica: item.id_tecnica || undefined,
+          id_estado_actual: item.id_estado_actual || undefined,
+          medidas: item.medidas || "",
+          ano: item.anio || 0,
+          tecnica: item.TecnicaObra?.nombre_tecnica || "",
+          categoria: item.CategoriaObra?.nombre_categoria || "",
+          id_categoria_obra: item.id_categoria_obra || undefined,
+          tipo_ingreso: item.tipo_ingreso || "",
+          piezas: item.piezas || 1,
+          peso: item.peso || undefined,
+          descripcion: item.descripcion || "",
+          estado: item.EstadoObra?.nombre_estado || "Bueno",
+          ubicacion: item.ubicacion_actual || "Depósito",
+          imagen_url: item.imagen_url || undefined
+        })),
+        totalItems: meta.totalItems,
+        totalPages: meta.totalPages,
+        currentPage: meta.currentPage
+      };
     } catch {
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
@@ -148,34 +162,41 @@ export const mavetApi = {
   },
 
   // === Biblioteca ===
-  getLibros: async (): Promise<Libro[]> => {
+  getLibros: async (page?: number, limit?: number): Promise<{ data: Libro[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/biblioteca/libros');
-      return res.data.map((item: any) => {
-        const primerAutor = item.AutorLibros?.[0];
-        const nombreAutor = primerAutor
-          ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim()
-          : "Desconocido";
-
-        return {
-          id:                  item.id_libro.toString(),
-          unidad:              item.unidad              || "",
-          cuota:               item.cuota               || "",
-          titulo:              item.titulo              || "",
-          autor:               nombreAutor,
-          id_autor:            primerAutor?.id_autor,
-          estante:             item.estante             || "",
-          ano_libro:           item.ano_libro           || "",
-          id_categoria:        item.id_categoria,
-          categoria:           item.CategoriaLibro?.nombre_categoria || "",
-          cantidad_total:      item.cantidad_total      ?? 0,
-          cantidad_disponible: item.cantidad_disponible ?? 0,
-          estado:              item.estado              || "Aprobado",
-          fecha_ingreso:       item.fecha_ingreso       || ""
-        };
-      });
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/biblioteca/libros', { params });
+      const json = res.data;
+      const list = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
+      const meta = json?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return {
+        data: list.map((item: any) => {
+          const primerAutor = item.AutorLibros?.[0];
+          return {
+            id:                  item.id_libro.toString(),
+            unidad:              item.unidad              || "",
+            cuota:               item.cuota               || "",
+            titulo:              item.titulo              || "",
+            autor:               primerAutor ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim() : "Desconocido",
+            id_autor:            primerAutor?.id_autor,
+            estante:             item.estante             || "",
+            ano_libro:           item.ano_libro           || "",
+            id_categoria:        item.id_categoria,
+            categoria:           item.CategoriaLibro?.nombre_categoria || "",
+            cantidad_total:      item.cantidad_total      ?? 0,
+            cantidad_disponible: item.cantidad_disponible ?? 0,
+            estado:              item.estado              || "Aprobado",
+            fecha_ingreso:       item.fecha_ingreso       || ""
+          };
+        }),
+        totalItems: meta.totalItems,
+        totalPages: meta.totalPages,
+        currentPage: meta.currentPage
+      };
     } catch {
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
@@ -287,63 +308,75 @@ export const mavetApi = {
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
-  getCargos: async (): Promise<any[]> => {
-    try {
-      const res = await axiosInstance.get('/api/rrhh/cargos');
-      return Array.isArray(res.data) ? res.data : (res.data.data || []);
-    } catch { return []; }
-  },
 
   // === Asistencia y RRHH ===
-  getTrabajadores: async (): Promise<Trabajador[]> => {
+  getTrabajadores: async (page?: number, limit?: number): Promise<{ data: Trabajador[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/rrhh/trabajadores');
-      const list = Array.isArray(res.data) ? res.data : [];
-      return list.map((item: any) => ({
-        cedula: item.cedula,
-        nombre: item.nombres,
-        apellido: item.apellidos,
-        telefono: item.telefono || "",
-        correo: item.correo_personal || "",
-        cargo: item.CargoTrabajador?.nombre_cargo || "Sin cargo",
-        horas_semanales: item.horas_semanales || 0,
-        estado: (item.estado === true || item.estado === "Activo") ? "Activo" : "Inactivo",
-        id: item.id_trabajador
-      }));
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/rrhh/trabajadores', { params });
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return {
+        data: list.map((item: any) => ({
+          cedula: item.cedula,
+          nombre: item.nombres,
+          apellido: item.apellidos,
+          telefono: item.telefono || "",
+          correo: item.correo_personal || "",
+          cargo: item.CargoTrabajador?.nombre_cargo || "Sin cargo",
+          horas_semanales: item.horas_semanales || 0,
+          estado: (item.estado === true || item.estado === "Activo") ? "Activo" : "Inactivo",
+          id: item.id_trabajador
+        })),
+        totalItems: meta.totalItems,
+        totalPages: meta.totalPages,
+        currentPage: meta.currentPage
+      };
     } catch (e) {
       console.error(e);
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
-  getAsistencia: async (): Promise<RegistroAsistencia[]> => {
+  getAsistencia: async (page?: number, limit?: number): Promise<{ data: RegistroAsistencia[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/rrhh/asistencias');
-      const list = Array.isArray(res.data) ? res.data : [];
-      return list.map((item: any) => {
-        const t = item.Trabajador || {};
-        const c = t.CargoTrabajador || {};
-        return {
-          id: item.id_asistencia.toString(),
-          fecha: item.fecha,
-          cedula: t.cedula || "",
-          trabajadorNombre: `${t.nombres || ""} ${t.apellidos || ""}`.trim(),
-          cargo: c.nombre_cargo || "Sin cargo",
-          entradaManana: item.entrada_manana ? new Date(item.entrada_manana).toLocaleTimeString() : "-",
-          salidaTarde: item.salida_tarde ? new Date(item.salida_tarde).toLocaleTimeString() : "-",
-          horasCumplidas: item.horas_cumplidas_dia ?? null,
-          observaciones: item.observaciones || ""
-        };
-      });
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/rrhh/asistencias', { params });
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return {
+        data: list.map((item: any) => {
+          const t = item.Trabajador || {};
+          const c = t.CargoTrabajador || {};
+          return {
+            id: item.id_asistencia.toString(),
+            fecha: item.fecha,
+            cedula: t.cedula || "",
+            trabajadorNombre: `${t.nombres || ""} ${t.apellidos || ""}`.trim(),
+            cargo: c.nombre_cargo || "Sin cargo",
+            entradaManana: item.entrada_manana ? new Date(item.entrada_manana).toLocaleTimeString() : "-",
+            salidaTarde: item.salida_tarde ? new Date(item.salida_tarde).toLocaleTimeString() : "-",
+            horasCumplidas: item.horas_cumplidas_dia ?? null,
+            observaciones: item.observaciones || ""
+          };
+        }),
+        totalItems: meta.totalItems,
+        totalPages: meta.totalPages,
+        currentPage: meta.currentPage
+      };
     } catch (e) {
       console.error(e);
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
-  registrarTrabajador: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  registrarTrabajador: async (payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
     try {
-      const body = {
+      const body: any = {
         cedula: payload.cedula,
         nombres: payload.nombres || payload.nombre,
         apellidos: payload.apellidos || payload.apellido,
@@ -353,6 +386,9 @@ export const mavetApi = {
         horas_semanales: payload.horas_semanales,
         estado: payload.estado === "Activo"
       };
+      if (payload.direccion !== undefined) body.direccion = payload.direccion;
+      if (payload.fecha_nacimiento !== undefined) body.fecha_nacimiento = payload.fecha_nacimiento;
+      if (payload.fecha_ingreso !== undefined) body.fecha_ingreso = payload.fecha_ingreso;
 
       await axiosInstance.post('/api/rrhh/trabajadores', body);
       return { success: true, message: "Trabajador registrado exitosamente. QR Generado." };
@@ -385,17 +421,22 @@ export const mavetApi = {
     try {
       const res = await axiosInstance.get(`/api/visitantes/ingresos/check/${cedula}`);
       return res.data;
-    } catch (e: any) {
+    } catch {
       throw new Error("Error comprobando visitante");
     }
   },
 
-  getTodosIngresos: async (): Promise<any[]> => {
+  getTodosIngresos: async (page?: number, limit?: number): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/visitantes/ingresos');
-      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/visitantes/ingresos', { params });
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return { data: list, totalItems: meta.totalItems, totalPages: meta.totalPages, currentPage: meta.currentPage };
     } catch {
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
@@ -403,7 +444,7 @@ export const mavetApi = {
     try {
       await axiosInstance.post('/api/visitantes/ingresos', payload);
       return { success: true, message: "Acceso registrado exitosamente." };
-    } catch (e: any) {
+    } catch {
       throw new Error("Error al registrar ingreso");
     }
   },
@@ -412,14 +453,17 @@ export const mavetApi = {
     try {
       const res = await axiosInstance.get('/api/visitantes/ingresos/stats');
       return res.data.data;
-    } catch (e: any) {
+    } catch {
       throw new Error("Error fetching stats");
     }
   },
 
-  getTopVisitantes: async (): Promise<TopVisitante[]> => {
+  getTopVisitantes: async (month?: number, year?: number): Promise<TopVisitante[]> => {
     try {
-      const res = await axiosInstance.get('/api/visitantes/ingresos/top');
+      const params: any = {};
+      if (month !== undefined) params.mes = month;
+      if (year !== undefined) params.anio = year;
+      const res = await axiosInstance.get('/api/visitantes/ingresos/top', { params });
       const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
       return list.map((item: any) => ({
         cedula: item.cedula || "",
@@ -468,12 +512,17 @@ export const mavetApi = {
   },
 
   // === Inventario de Talleres ===
-  getInventarioTalleres: async (): Promise<any[]> => {
+  getInventarioTalleres: async (page?: number, limit?: number): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const res = await axiosInstance.get('/api/educacion/talleres/inventario');
-      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const params: any = {};
+      if (page !== undefined) params.page = page;
+      if (limit !== undefined) params.limit = limit;
+      const res = await axiosInstance.get('/api/educacion/talleres/inventario', { params });
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return { data: list, totalItems: meta.totalItems, totalPages: meta.totalPages, currentPage: meta.currentPage };
     } catch {
-      return [];
+      return { data: [], totalItems: 0, totalPages: 1, currentPage: 1 };
     }
   },
 
@@ -631,7 +680,7 @@ export const mavetApi = {
     }
   },
 
-  getRoles: async (): Promise<any[]> => {
+  getRoles: async (): Promise<Rol[]> => {
     try {
       const res = await axiosInstance.get('/api/auth/roles');
       return Array.isArray(res.data) ? res.data : (res.data.data || []);
@@ -640,25 +689,28 @@ export const mavetApi = {
     }
   },
 
-  getUsuarios: async (): Promise<any[]> => {
+  getCargos: async (): Promise<Cargo[]> => {
+    try {
+      const res = await axiosInstance.get('/api/rrhh/cargos');
+      return Array.isArray(res.data) ? res.data : (res.data.data || []);
+    } catch { return []; }
+  },
+
+  getUsuarios: async (): Promise<Usuario[]> => {
     try {
       const res = await axiosInstance.get('/api/auth');
       const json = res.data;
       const list: any[] = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
-      if (list.length === 0) {
-        console.warn("[getUsuarios] Lista vacía.");
-      }
       return list.map((u: any) => ({
         id: u.id_usuario ?? u.id,
         correo: u.correo,
         rol: u.Role?.nombre_rol || "Sin Rol",
-        id_rol: u.id_rol,
         estado: u.estado,
+        id_trabajador: u.id_trabajador ?? u.Trabajador?.id_trabajador,
         trabajador: u.Trabajador ? {
-          id: u.Trabajador.id_trabajador,
           nombre: `${u.Trabajador.nombres || ""} ${u.Trabajador.apellidos || ""}`.trim(),
           cargo: u.Trabajador.CargoTrabajador?.nombre_cargo || "Sin Cargo"
-        } : null
+        } : undefined
       }));
     } catch (e) {
       console.error("[getUsuarios] Excepción:", e);
@@ -666,7 +718,7 @@ export const mavetApi = {
     }
   },
 
-  registrarUsuario: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  registrarUsuario: async (payload: UsuarioPayload): Promise<{ success: boolean; message: string }> => {
     try {
       const body: any = {
         correo: payload.correo,
@@ -683,18 +735,35 @@ export const mavetApi = {
     }
   },
 
-  actualizarUsuario: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+  actualizarUsuario: async (id: number, payload: UsuarioPayload): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.put(`/api/auth/${id}`, payload);
+      const body: any = {
+        correo: payload.correo,
+        id_rol: payload.id_rol,
+        estado: payload.estado
+      };
+      if (payload.id_trabajador && payload.id_trabajador !== 0) {
+        body.id_trabajador = payload.id_trabajador;
+      }
+      await axiosInstance.put(`/api/auth/${id}`, body);
       return { success: true, message: "Usuario actualizado exitosamente" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar usuario");
     }
   },
 
-  actualizarTrabajador: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+  resetPasswordUsuario: async (id: number): Promise<{ success: boolean; message: string }> => {
     try {
-      const body = {
+      const res = await axiosInstance.post(`/api/auth/reset-password/${id}`);
+      return { success: true, message: res.data?.message || "Correo de restablecimiento enviado" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al restablecer contraseña");
+    }
+  },
+
+  actualizarTrabajador: async (id: number, payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
+    try {
+      const body: any = {
         nombres: payload.nombres || payload.nombre,
         apellidos: payload.apellidos || payload.apellido,
         telefono: payload.telefono,
@@ -703,6 +772,9 @@ export const mavetApi = {
         horas_semanales: payload.horas_semanales,
         estado: payload.estado === "Activo"
       };
+      if (payload.direccion !== undefined) body.direccion = payload.direccion;
+      if (payload.fecha_nacimiento !== undefined) body.fecha_nacimiento = payload.fecha_nacimiento;
+      if (payload.fecha_ingreso !== undefined) body.fecha_ingreso = payload.fecha_ingreso;
       const res = await axiosInstance.put(`/api/rrhh/trabajadores/${id}`, body);
       return { success: true, message: res.data.message || "Trabajador actualizado" };
     } catch (e: any) {
@@ -714,17 +786,44 @@ export const mavetApi = {
     try {
       const res = await axiosInstance.get('/api/auth/me');
       return res.data.data;
-    } catch (e: any) {
+    } catch {
       throw new Error("Error obteniendo perfil");
     }
   },
 
   updateMe: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.put('/api/auth/me', payload);
+      const body: any = {};
+      if (payload.nombres !== undefined) body.nombres = payload.nombres;
+      if (payload.apellidos !== undefined) body.apellidos = payload.apellidos;
+      if (payload.telefono !== undefined) body.telefono = payload.telefono;
+      if (payload.correo_personal !== undefined) body.correo_personal = payload.correo_personal;
+      await axiosInstance.put('/api/auth/me', body);
       return { success: true, message: "Perfil actualizado exitosamente" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar perfil");
+    }
+  },
+
+  cambiarPassword: async (payload: { password_actual: string; password_nuevo: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.put('/api/auth/me/password', payload);
+      return { success: true, message: res.data?.message || "Contraseña actualizada exitosamente" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al cambiar la contraseña");
+    }
+  },
+
+  subirFotoPerfil: async (file: File): Promise<{ url: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append("foto", file);
+      const res = await axiosInstance.post('/api/auth/me/foto', formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return { url: res.data?.url || res.data?.data?.url || "" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al subir la foto");
     }
   },
 

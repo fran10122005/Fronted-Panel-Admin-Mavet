@@ -29,6 +29,21 @@ const navItems: NavItem[] = [
     path: "/",
   },
   {
+    icon: <CalenderIcon />,
+    name: "Auditorio",
+    path: "/auditorio",
+  },
+  {
+    icon: <ListIcon />,
+    name: "Recepción",
+    path: "/recepcion",
+  },
+  {
+    icon: <PageIcon />,
+    name: "Talleres",
+    path: "/talleres",
+  },
+  {
     icon: <TableIcon />,
     name: "Inventario de Bóveda",
     path: "/inventario-obras",
@@ -43,22 +58,6 @@ const navItems: NavItem[] = [
     name: "Recursos Humanos",
     path: "/rrhh",
   },
-  {
-    icon: <ListIcon />,
-    name: "Recepción",
-    path: "/recepcion",
-  },
-  {
-    icon: <PageIcon />,
-    name: "Talleres",
-    path: "/talleres",
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Auditorio",
-    path: "/auditorio",
-  },
-
 ];
 
 const othersItems: NavItem[] = [
@@ -76,16 +75,16 @@ const othersItems: NavItem[] = [
 
 const routePermissions: Record<string, string[]> = {
   "/": ["*"],
+  "/auditorio": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
+  "/recepcion": ["Administrador", "admin", "Recepcionista", "Seguridad"],
+  "/talleres": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
   "/inventario-obras": ["Administrador", "admin", "Curador"],
   "/biblioteca": ["Administrador", "admin", "Bibliotecario", "Guía"],
   "/rrhh": ["Administrador", "admin", "Recursos Humanos"],
-  "/recepcion": ["Administrador", "admin", "Recepcionista", "Seguridad"],
-  "/talleres": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
-  "/auditorio": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
 };
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const { logout, user } = useAuth();
   const location = useLocation();
 
@@ -204,13 +203,14 @@ const AppSidebar: React.FC = () => {
           ) : (
             nav.path && (
               nav.name === "Cerrar Sesión" ? (
-                <button
-                  onClick={() => {
-                    logout();
-                  }}
-                  className={`w-full menu-item group menu-item-logout ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
-                    }`}
-                >
+              <button
+                onClick={() => {
+                  logout();
+                  if (isMobileOpen) toggleMobileSidebar();
+                }}
+                className={`w-full menu-item group menu-item-logout ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
+                  }`}
+              >
                   <span className="menu-item-icon-size">
                     {nav.icon}
                   </span>
@@ -221,6 +221,7 @@ const AppSidebar: React.FC = () => {
               ) : (
                 <Link
                   to={nav.path}
+                  onClick={() => { if (isMobileOpen) toggleMobileSidebar(); }}
                   className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                     } ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"}`}
                 >
@@ -313,7 +314,7 @@ const AppSidebar: React.FC = () => {
       <div
         className="py-6 flex flex-col items-center justify-center w-full border-b border-gray-200 dark:border-gray-800"
       >
-        <Link to="/" className="flex flex-col items-center justify-center w-full px-2">
+        <Link to="/" onClick={() => { if (isMobileOpen) toggleMobileSidebar(); }} className="flex flex-col items-center justify-center w-full px-2">
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex flex-col items-center justify-center w-full text-center">
               <img

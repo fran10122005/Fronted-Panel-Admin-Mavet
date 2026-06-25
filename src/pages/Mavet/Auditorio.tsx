@@ -17,7 +17,10 @@ import {
   Search,
   AlertCircle
 } from "lucide-react";
+import toast from "react-hot-toast";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
@@ -51,6 +54,10 @@ const Auditorio: React.FC = () => {
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
+
+  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
+    open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
+  });
 
   const loadEventos = async () => {
     try {
@@ -153,8 +160,8 @@ const Auditorio: React.FC = () => {
   const handleVerAsistentes = async (ev: EventoAuditorio) => {
     setSelectedEvent(ev);
     try {
-      const todosIngresos = await mavetApi.getTodosIngresos();
-      const asistentes = todosIngresos.filter(i => String(i.id_taller) === String(ev.id));
+      const result = await mavetApi.getTodosIngresos();
+      const asistentes = result.data.filter(i => String(i.id_taller) === String(ev.id));
       setEventoAsistentes(asistentes);
     } catch {
       setEventoAsistentes([]);
@@ -224,7 +231,7 @@ const Auditorio: React.FC = () => {
       resetModalFields();
     } catch (error) {
       console.error("Error al guardar reserva:", error);
-      alert("Error al guardar la reserva");
+      toast.error("Error al guardar la reserva");
     } finally {
       setSaving(false);
     }
@@ -232,19 +239,28 @@ const Auditorio: React.FC = () => {
 
   const handleDeleteEvent = async () => {
     if (!selectedEvent) return;
-    if (!window.confirm("¿Está seguro de eliminar esta reserva?")) return;
-    try {
-      setSaving(true);
-      await mavetApi.eliminarReservaAuditorio(selectedEvent.id);
-      setEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
-      closeModal();
-      resetModalFields();
-    } catch (error) {
-      console.error("Error al eliminar reserva:", error);
-      alert("Error al eliminar la reserva");
-    } finally {
-      setSaving(false);
-    }
+    setConfirm({
+      open: true,
+      title: "Eliminar reserva",
+      message: "¿Está seguro de eliminar esta reserva?",
+      variant: "danger",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          setSaving(true);
+          await mavetApi.eliminarReservaAuditorio(selectedEvent.id);
+          setEvents(prev => prev.filter(e => e.id !== selectedEvent.id));
+          closeModal();
+          resetModalFields();
+        } catch (error) {
+          console.error("Error al eliminar reserva:", error);
+          toast.error("Error al eliminar la reserva");
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   };
 
   const resetModalFields = () => {
@@ -406,9 +422,8 @@ const Auditorio: React.FC = () => {
         {viewMode === "calendar" ? (
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-4 sm:p-6 shadow-theme-lg min-h-[500px]">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-96 space-y-4">
-                <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
-                <p className="text-gray-500 font-medium animate-pulse">Cargando agenda...</p>
+              <div className="flex items-center justify-center h-96">
+                <LoadingSkeleton variant="table" rows={8} cols={6} />
               </div>
             ) : (
               <div className={`calendar-container ${saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
@@ -440,8 +455,8 @@ const Auditorio: React.FC = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {isLoading ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-500 rounded-full animate-spin"></div>
+              <div className="col-span-full flex items-center justify-center py-16">
+                <LoadingSkeleton variant="table" rows={8} cols={6} />
               </div>
             ) : events.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
@@ -462,7 +477,7 @@ const Auditorio: React.FC = () => {
                         {ev.extendedProps.tipoEvento || "Conferencia"}
                       </div>
                       <div className="flex gap-1.5">
-                        <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors">
+                        <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors" title="Editar evento">
                           <Pencil className="h-4 w-4" />
                         </button>
                       </div>
@@ -530,7 +545,7 @@ const Auditorio: React.FC = () => {
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                  className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                 />
               </div>
 
@@ -744,6 +759,15 @@ const Auditorio: React.FC = () => {
           </div>
         </div>
       </Modal>
+      <ConfirmDialog
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        variant={confirm.variant}
+        confirmLabel={confirm.confirmLabel}
+        onConfirm={confirm.onConfirm}
+        onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 };
