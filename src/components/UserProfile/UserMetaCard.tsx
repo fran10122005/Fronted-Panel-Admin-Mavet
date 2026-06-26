@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
+
 export default function UserMetaCard({ profile }: { profile: any }) {
   const trabajador = profile?.Trabajador || {};
   const nombreCompleto = trabajador.nombres ? `${trabajador.nombres} ${trabajador.apellidos}` : "Usuario MAVET";
   const fotoUrl = profile?.foto_url || trabajador.foto_url || null;
+  const [imgError, setImgError] = useState(false);
+  useEffect(() => { setImgError(false); }, [fotoUrl]);
   const inicial = (trabajador.nombres || "U")[0]?.toUpperCase() || "U";
 
   return (
@@ -9,8 +13,8 @@ export default function UserMetaCard({ profile }: { profile: any }) {
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-100 text-brand-600 shrink-0">
-            {fotoUrl ? (
-              <img src={fotoUrl} alt="Avatar" className="w-full h-full object-cover" />
+            {fotoUrl && !imgError ? (
+              <img src={fotoUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setImgError(true)} />
             ) : (
               <span className="text-2xl font-bold text-brand-700 dark:text-brand-400">{inicial}</span>
             )}

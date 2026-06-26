@@ -125,18 +125,12 @@ export default function Biblioteca() {
               ))}
             </select>
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
-            <select
-              value={filterAutor}
-              onChange={(e) => setFilterAutor(e.target.value)}
+            <input
+              type="text" value={filterAutor === "Todos" ? "" : filterAutor}
+              onChange={(e) => setFilterAutor(e.target.value || "Todos")}
+              placeholder="Buscar autor..."
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[160px]"
-            >
-              <option value="Todos">Todos</option>
-              {autores.map((a: any) => (
-                <option key={a.id_autor} value={`${a.nombre} ${a.apellido}`}>
-                  {a.nombre} {a.apellido}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
@@ -371,7 +365,6 @@ export default function Biblioteca() {
         onClose={closeLibro}
         isEditing={isEditing}
         libroFormData={libroFormData}
-        autores={autores}
         categorias={categorias}
         isSubmitting={isSubmitting}
         onChange={handleLibroChange}

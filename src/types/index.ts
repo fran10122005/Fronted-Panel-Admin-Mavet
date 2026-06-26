@@ -22,19 +22,18 @@ export interface Obra {
 
 export interface Libro {
   id: string;
-  unidad: string;            // Código de unidad/catalogación
-  cuota: string;             // Número largo de catalogación (Dewey, etc.)
+  unidad: string;
+  cuota: string;
   titulo: string;
-  autor: string;             // Nombre completo del autor (para mostrar en tabla)
-  estante: string;           // Ubicación física en la biblioteca
-  ano_libro: string | number; // Año de publicación
-  id_categoria?: number;     // ID para el select de categoría en el formulario
-  categoria?: string;        // Nombre de categoría (para mostrar en tabla)
-  cantidad_total: number;    // Total de ejemplares
+  autor: string;
+  estante: string;
+  ano_libro: string | number;
+  id_categoria?: number;
+  categoria?: string;
+  cantidad_total: number;
   cantidad_disponible: number;
   estado: string;
-  fecha_ingreso: string;     // Fecha de ingreso al inventario
-  id_autor?: number;         // ID para el select de autor en el formulario
+  fecha_ingreso: string;
 }
 
 export interface PrestamoPayload {
@@ -95,6 +94,7 @@ export interface Trabajador {
   cargo: string;
   horas_semanales?: number;
   estado: "Activo" | "Inactivo";
+  foto_url?: string;
 }
 
 export interface Usuario {

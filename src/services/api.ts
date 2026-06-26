@@ -179,8 +179,7 @@ export const mavetApi = {
             unidad:              item.unidad              || "",
             cuota:               item.cuota               || "",
             titulo:              item.titulo              || "",
-            autor:               primerAutor ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim() : "Desconocido",
-            id_autor:            primerAutor?.id_autor,
+            autor:               item.autor || (primerAutor ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim() : "Desconocido"),
             estante:             item.estante             || "",
             ano_libro:           item.ano_libro           || "",
             id_categoria:        item.id_categoria,
@@ -818,9 +817,7 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post('/api/auth/me/foto', formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      const res = await axiosInstance.post('/api/auth/me/foto', formData);
       return { url: res.data?.url || res.data?.data?.url || "" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");

@@ -457,6 +457,17 @@ layer(base);
   color: #f1f3f9 !important;
 }
 
+.dark select option {
+  background-color: #141822 !important;
+  color: #f1f3f9 !important;
+}
+
+.dark select option:hover,
+.dark select option:checked {
+  background-color: #800000 !important;
+  color: #ffffff !important;
+}
+
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus {

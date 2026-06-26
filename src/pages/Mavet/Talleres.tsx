@@ -186,38 +186,62 @@ export default function Talleres() {
                 </td>
                 <td className="px-3 py-2 text-center">
                   <div className="relative inline-block">
-                    <button onClick={() => {
+                    <button onClick={(e) => {
+                      e.stopPropagation();
                       const menu = document.getElementById(`actions-${t.id_taller}`);
-                      if (menu) { menu.classList.toggle('hidden'); menu.classList.toggle('flex'); }
+                      if (!menu) return;
+                      const isOpen = !menu.classList.contains('hidden');
+                      document.querySelectorAll('[id^="actions-"]').forEach(el => {
+                        el.classList.add('hidden'); el.classList.remove('flex');
+                        (el as HTMLElement).style.position = '';
+                        (el as HTMLElement).style.top = '';
+                        (el as HTMLElement).style.right = '';
+                      });
+                      if (!isOpen) {
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        menu.style.position = 'fixed';
+                        menu.style.top = `${rect.bottom + 4}px`;
+                        menu.style.right = `${window.innerWidth - rect.right}px`;
+                        menu.classList.remove('hidden');
+                        menu.classList.add('flex');
+                        const closeHandler = (ev: MouseEvent) => {
+                          if (!menu.contains(ev.target as Node) && ev.target !== e.currentTarget) {
+                            menu.classList.add('hidden'); menu.classList.remove('flex');
+                            menu.style.position = ''; menu.style.top = ''; menu.style.right = '';
+                            document.removeEventListener('click', closeHandler);
+                          }
+                        };
+                        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+                      }
                     }}
                       className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                       </svg>
                     </button>
-                    <div id={`actions-${t.id_taller}`} className="hidden absolute right-0 sm:right-0 left-auto top-full z-20 mt-1 min-w-[160px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
-                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnrolments(t); }}
+                    <div id={`actions-${t.id_taller}`} className="hidden z-50 min-w-[160px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnrolments(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Inscritos
                       </button>
-                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         Asistentes
                       </button>
-                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnroll(t); }}
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnroll(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                         Inscribir
                       </button>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleOpenPlanificar(t); }}
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleOpenPlanificar(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         Editar
                       </button>
-                      <button onClick={() => { document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleEliminarPlanificado(t); }}
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleEliminarPlanificado(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left">
                         <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         Eliminar

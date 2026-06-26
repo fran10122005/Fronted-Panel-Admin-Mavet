@@ -6,7 +6,6 @@ interface Props {
   onClose: () => void;
   isEditing: boolean;
   libroFormData: Libro;
-  autores: any[];
   categorias: any[];
   isSubmitting: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
@@ -16,7 +15,7 @@ interface Props {
 
 export default function LibroFormModal({
   isOpen, onClose, isEditing, libroFormData,
-  autores, categorias, isSubmitting,
+  categorias, isSubmitting,
   onChange, onSubmit, inputCls,
 }: Props) {
   return (
@@ -82,19 +81,13 @@ export default function LibroFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Autor <span className="text-red-500">*</span>
+                Autor(es) <span className="text-red-500">*</span>
               </label>
-              <select
-                name="id_autor" value={libroFormData.id_autor || ""}
-                onChange={onChange} className={inputCls} required
-              >
-                <option value="" disabled>Seleccione un autor...</option>
-                {autores.map((a: any) => (
-                  <option key={a.id_autor} value={a.id_autor}>
-                    {a.nombre} {a.apellido}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text" name="autor" value={libroFormData.autor || ""}
+                onChange={onChange} placeholder="Ej. Gabriel García Márquez, Mario Vargas Llosa"
+                className={inputCls} required
+              />
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

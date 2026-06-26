@@ -22,7 +22,6 @@ const initialLibroState: Libro = {
   cantidad_disponible: 1,
   estado: "Aprobado",
   fecha_ingreso: today,
-  id_autor: undefined,
 };
 
 export const ITEMS_PER_PAGE = 20;
@@ -182,7 +181,7 @@ export function useLibros() {
       [name]:
         name === "cantidad_total" || name === "cantidad_disponible"
           ? parseInt(value) || 0
-          : name === "id_autor" || name === "id_categoria"
+          : name === "id_categoria"
           ? parseInt(value) || undefined
           : value,
     }));
@@ -190,7 +189,7 @@ export function useLibros() {
 
   const handleLibroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!libroFormData.titulo || !libroFormData.id_autor || !libroFormData.id_categoria) {
+    if (!libroFormData.titulo || !libroFormData.autor || !libroFormData.id_categoria) {
       toast.error("Completa los campos obligatorios: Título, Autor y Categoría.");
       return;
     }
@@ -224,7 +223,7 @@ export function useLibros() {
         autorStr.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesEstado = filterEstado === "Todos" || libro.estado === filterEstado;
       const matchesCategoria = filterCategoria === "Todas" || catStr === filterCategoria;
-      const matchesAutor = filterAutor === "Todos" || autorStr === filterAutor;
+      const matchesAutor = filterAutor === "Todos" || autorStr.toLowerCase().includes(filterAutor.toLowerCase());
       return matchesSearch && matchesEstado && matchesCategoria && matchesAutor;
     });
   }, [libros, debouncedSearch, filterEstado, filterCategoria, filterAutor]);
