@@ -1,57 +1,69 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
-import { Libro } from "../../../types";
-import { limitNumericInput } from "../../../utils/validation";
-import toast from "react-hot-toast";
+
+const libroSchema = z.object({
+  titulo: z.string().min(1, "El título es obligatorio"),
+  cuota: z.string().optional(),
+  unidad: z.string().optional(),
+  estante: z.string().optional(),
+  autorNombre: z.string().min(1, "El nombre del autor es obligatorio"),
+  autorApellido: z.string().optional(),
+  id_categoria: z.preprocess((val) => Number(val), z.number()),
+  customCategoria: z.string().optional(),
+  ano_libro: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : Number(val)),
+    z.number().min(1000, "Mínimo 1000").max(2099, "Máximo 2099").optional()
+  ),
+  fecha_ingreso: z.string().optional(),
+  cantidad_total: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, "Debe ser al menos 1")
+  ),
+  estado: z.string().optional(),
+}).refine((data) => {
+  if (data.id_categoria === -1 && (!data.customCategoria || data.customCategoria.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Especifique la nueva categoría",
+  path: ["customCategoria"]
+});
+
+export type LibroFormValues = z.infer<typeof libroSchema>;
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   isEditing: boolean;
-  libroFormData: Libro;
+  initialData: any;
   categorias: any[];
   isSubmitting: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (data: LibroFormValues) => void;
   inputCls: string;
-  customCategoria?: string;
-  onCustomCategoriaChange?: (value: string) => void;
-  autorNombre?: string;
-  autorApellido?: string;
 }
 
 export default function LibroFormModal({
-  isOpen, onClose, isEditing, libroFormData,
-  categorias, isSubmitting,
-  onChange, onSubmit, inputCls,
-  customCategoria = "", onCustomCategoriaChange,
-  autorNombre = "", autorApellido = "",
+  isOpen, onClose, isEditing, initialData,
+  categorias, isSubmitting, onSubmit, inputCls,
 }: Props) {
-  const handleSubmit = (e: React.FormEvent) => {
-    if (!libroFormData.titulo?.trim()) {
-      toast.error("El título es obligatorio");
-      e.preventDefault();
-      return;
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<LibroFormValues>({
+    resolver: zodResolver(libroSchema),
+    defaultValues: initialData,
+  });
+
+  // Reset form when initialData changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      reset(initialData);
     }
-    if (!autorNombre.trim() && !autorApellido.trim()) {
-      toast.error("El nombre del autor es obligatorio");
-      e.preventDefault();
-      return;
-    }
-    if (libroFormData.ano_libro) {
-      const ano = Number(libroFormData.ano_libro);
-      if (isNaN(ano) || ano < 1000 || ano > 2099) {
-        toast.error("El año debe estar entre 1000 y 2099");
-        e.preventDefault();
-        return;
-      }
-    }
-    if (libroFormData.cantidad_total === undefined || libroFormData.cantidad_total < 1) {
-      toast.error("La cantidad total debe ser al menos 1");
-      e.preventDefault();
-      return;
-    }
-    onSubmit(e);
-  };
+  }, [isOpen, initialData, reset]);
+
+  const selectedCategoria = watch("id_categoria");
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[620px] p-5">
       <div>
@@ -60,31 +72,32 @@ export default function LibroFormModal({
         </h3>
         {isEditing && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-            Unidad: <span className="font-semibold text-brand-600">{libroFormData.unidad || libroFormData.id}</span>
+            Unidad: <span className="font-semibold text-brand-600">{initialData.unidad || initialData.id}</span>
           </p>
         )}
         {!isEditing && <div className="mb-4" />}
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Título <span className="text-red-500">*</span>
               </label>
               <input
-                type="text" name="titulo" value={libroFormData.titulo}
-                onChange={onChange} placeholder="Nombre del libro"
-                className={inputCls} required
+                type="text" placeholder="Nombre del libro"
+                className={`${inputCls} ${errors.titulo ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                {...register("titulo")}
               />
+              {errors.titulo && <p className="text-red-500 text-xs mt-1">{errors.titulo.message}</p>}
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Cuota (Nº Catalogación)
               </label>
               <input
-                type="text" name="cuota" value={libroFormData.cuota || ""}
-                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. 823.914 BEC"
-                className={inputCls}
+                type="text" readOnly tabIndex={-1}
+                className={inputCls + " bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-70"}
+                {...register("cuota")}
               />
             </div>
           </div>
@@ -95,9 +108,9 @@ export default function LibroFormModal({
                 Unidad (Código de unidad)
               </label>
               <input
-                type="text" name="unidad" value={libroFormData.unidad || ""}
-                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. BIB-001"
-                className={inputCls}
+                type="text" readOnly tabIndex={-1}
+                className={inputCls + " bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-70"}
+                {...register("unidad")}
               />
             </div>
             <div>
@@ -105,9 +118,9 @@ export default function LibroFormModal({
                 Estante / Ubicación Física
               </label>
               <input
-                type="text" name="estante" value={libroFormData.estante || ""}
-                onChange={onChange} placeholder="Ej. Estante A - Fila 2"
+                type="text" placeholder="Ej. Estante A - Fila 2"
                 className={inputCls}
+                {...register("estante")}
               />
             </div>
           </div>
@@ -118,30 +131,32 @@ export default function LibroFormModal({
                 Nombre del Autor <span className="text-red-500">*</span>
               </label>
               <input
-                type="text" name="autorNombre" value={autorNombre}
-                onChange={onChange} placeholder="Ej. Gabriel"
-                className={inputCls} required
+                type="text" placeholder="Ej. Gabriel"
+                className={`${inputCls} ${errors.autorNombre ? 'border-red-500' : ''}`}
+                {...register("autorNombre")}
               />
+              {errors.autorNombre && <p className="text-red-500 text-xs mt-1">{errors.autorNombre.message}</p>}
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Apellido del Autor
               </label>
               <input
-                type="text" name="autorApellido" value={autorApellido}
-                onChange={onChange} placeholder="Ej. García Márquez"
+                type="text" placeholder="Ej. García Márquez"
                 className={inputCls}
+                {...register("autorApellido")}
               />
             </div>
           </div>
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Categoría <span className="text-red-500">*</span>
               </label>
               <select
-                name="id_categoria" value={libroFormData.id_categoria ?? ""}
-                onChange={onChange} className={inputCls} required
+                className={`${inputCls} ${errors.id_categoria ? 'border-red-500' : ''}`}
+                {...register("id_categoria")}
               >
                 <option value="" disabled>Seleccione una categoría...</option>
                 {categorias.map((c: any) => (
@@ -151,15 +166,19 @@ export default function LibroFormModal({
                 ))}
                 <option value="-1">➕ Otra...</option>
               </select>
-              {libroFormData.id_categoria === -1 && (
-                <input
-                  type="text"
-                  value={customCategoria}
-                  onChange={(e) => onCustomCategoriaChange?.(e.target.value)}
-                  placeholder="Escriba el nombre de la nueva categoría..."
-                  className={`${inputCls} mt-2`}
-                  autoFocus
-                />
+              {errors.id_categoria && <p className="text-red-500 text-xs mt-1">{errors.id_categoria.message}</p>}
+              
+              {Number(selectedCategoria) === -1 && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    placeholder="Escriba el nombre de la nueva categoría..."
+                    className={`${inputCls} ${errors.customCategoria ? 'border-red-500' : ''}`}
+                    {...register("customCategoria")}
+                    autoFocus
+                  />
+                  {errors.customCategoria && <p className="text-red-500 text-xs mt-1">{errors.customCategoria.message}</p>}
+                </div>
               )}
             </div>
           </div>
@@ -170,18 +189,20 @@ export default function LibroFormModal({
                 Año del Libro
               </label>
               <input
-                type="number" name="ano_libro" value={libroFormData.ano_libro || ""}
-                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. 2023"
-                min={1000} max={2099} className={inputCls}
+                type="number" placeholder="Ej. 2023"
+                className={`${inputCls} ${errors.ano_libro ? 'border-red-500' : ''}`}
+                {...register("ano_libro")}
               />
+              {errors.ano_libro && <p className="text-red-500 text-xs mt-1">{errors.ano_libro.message}</p>}
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Fecha de Ingreso
               </label>
               <input
-                type="date" name="fecha_ingreso" value={libroFormData.fecha_ingreso || ""}
-                onChange={onChange} max={new Date().toISOString().split('T')[0]} className={inputCls}
+                type="date" max={new Date().toISOString().split('T')[0]}
+                className={inputCls}
+                {...register("fecha_ingreso")}
               />
             </div>
           </div>
@@ -192,17 +213,19 @@ export default function LibroFormModal({
                 Cantidad Total (Ejemplares) <span className="text-red-500">*</span>
               </label>
               <input
-                type="number" name="cantidad_total" value={libroFormData.cantidad_total}
-                onChange={onChange} onKeyDown={limitNumericInput} min={1} className={inputCls} required
+                type="number" min={1}
+                className={`${inputCls} ${errors.cantidad_total ? 'border-red-500' : ''}`}
+                {...register("cantidad_total")}
               />
+              {errors.cantidad_total && <p className="text-red-500 text-xs mt-1">{errors.cantidad_total.message}</p>}
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Estado
               </label>
               <select
-                name="estado" value={libroFormData.estado}
-                onChange={onChange} className={inputCls}
+                className={inputCls}
+                {...register("estado")}
               >
                 <option value="Aprobado">Aprobado</option>
                 <option value="Pendiente">Pendiente</option>

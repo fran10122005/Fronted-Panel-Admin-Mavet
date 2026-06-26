@@ -1,38 +1,40 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
-import { limitNumericInput } from "../../../utils/validation";
-import toast from "react-hot-toast";
+
+const prestamoSchema = z.object({
+  cedula: z.string().min(1, "La cédula del solicitante es obligatoria"),
+  nombre: z.string().min(1, "El nombre del solicitante es obligatorio"),
+});
+
+export type PrestamoFormValues = z.infer<typeof prestamoSchema>;
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   selectedLibroTitle: string;
-  cedula: string;
-  nombre: string;
   isSubmitting: boolean;
-  onCedulaChange: (v: string) => void;
-  onNombreChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (data: PrestamoFormValues) => void;
   inputCls: string;
 }
 
 export default function PrestamoFormModal({
   isOpen, onClose, selectedLibroTitle,
-  cedula, nombre, isSubmitting,
-  onCedulaChange, onNombreChange, onSubmit, inputCls,
+  isSubmitting, onSubmit, inputCls,
 }: Props) {
-  const handleSubmit = (e: React.FormEvent) => {
-    if (!cedula.trim()) {
-      toast.error("La cédula del solicitante es obligatoria");
-      e.preventDefault();
-      return;
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<PrestamoFormValues>({
+    resolver: zodResolver(prestamoSchema),
+    defaultValues: { cedula: "", nombre: "" },
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      reset({ cedula: "", nombre: "" });
     }
-    if (!nombre.trim()) {
-      toast.error("El nombre del solicitante es obligatorio");
-      e.preventDefault();
-      return;
-    }
-    onSubmit(e);
-  };
+  }, [isOpen, reset]);
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6">
       <div>
@@ -41,31 +43,32 @@ export default function PrestamoFormModal({
           Libro:{" "}
           <span className="font-semibold text-gray-800 dark:text-gray-200">{selectedLibroTitle}</span>
         </p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
               Cédula del Solicitante
             </label>
             <input
-              type="text" value={cedula}
-              onChange={(e) => onCedulaChange(e.target.value)}
-              onKeyDown={limitNumericInput}
+              type="text"
               disabled={isSubmitting}
-              className={inputCls + " disabled:opacity-50"}
-              placeholder="V-12345678" required
+              className={`${inputCls} ${errors.cedula ? 'border-red-500' : ''} disabled:opacity-50`}
+              placeholder="V-12345678"
+              {...register("cedula")}
             />
+            {errors.cedula && <p className="text-red-500 text-xs mt-1">{errors.cedula.message}</p>}
           </div>
           <div>
             <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
               Nombre del Solicitante
             </label>
             <input
-              type="text" value={nombre}
-              onChange={(e) => onNombreChange(e.target.value)}
+              type="text"
               disabled={isSubmitting}
-              className={inputCls + " disabled:opacity-50"}
-              placeholder="Ej. María López" required
+              className={`${inputCls} ${errors.nombre ? 'border-red-500' : ''} disabled:opacity-50`}
+              placeholder="Ej. María López"
+              {...register("nombre")}
             />
+            {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
           </div>
           <div className="flex justify-end gap-3 pt-5 border-t border-gray-100 dark:border-gray-700 mt-4">
             <button

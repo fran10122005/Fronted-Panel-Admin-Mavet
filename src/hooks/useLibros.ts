@@ -47,8 +47,6 @@ export function useLibros() {
 
   const [selectedLibroId, setSelectedLibroId] = useState<string>("");
   const [selectedLibroTitle, setSelectedLibroTitle] = useState<string>("");
-  const [cedula, setCedula] = useState("");
-  const [nombre, setNombre] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [libroFormData, setLibroFormData] = useState<Libro>(initialLibroState);
@@ -108,13 +106,12 @@ export function useLibros() {
     openPrestamo();
   };
 
-  const handlePrestamoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePrestamoSubmit = async (data: { cedula: string; nombre: string }) => {
     setIsSubmitting(true);
     const payload: PrestamoPayload = {
       libroId: selectedLibroId,
-      cedulaSolicitante: cedula,
-      nombreSolicitante: nombre,
+      cedulaSolicitante: data.cedula,
+      nombreSolicitante: data.nombre,
       horaPrestamo: new Date().toISOString(),
       estado: "ACTIVO",
     };
@@ -122,8 +119,6 @@ export function useLibros() {
       const response = await mavetApi.registrarPrestamo(payload);
       closePrestamo();
       toast.success(response.message);
-      setCedula("");
-      setNombre("");
       await fetchLibrosPaginated(currentPage);
       const prestamosRes = await mavetApi.getPrestamosBiblioteca();
       setPrestamos(prestamosRes);
@@ -161,28 +156,6 @@ export function useLibros() {
   const [autorNombre, setAutorNombre] = useState("");
   const [autorApellido, setAutorApellido] = useState("");
 
-  const handleLibroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === "id_categoria") {
-      const parsed = parseInt(value);
-      const clean = isNaN(parsed) ? undefined : parsed;
-      setLibroFormData((prev) => ({ ...prev, id_categoria: clean }));
-      if (clean !== -1) setCustomCategoria("");
-    } else if (name === "autorNombre") {
-      setAutorNombre(value);
-    } else if (name === "autorApellido") {
-      setAutorApellido(value);
-    } else {
-      setLibroFormData((prev) => ({
-        ...prev,
-        [name]:
-          name === "cantidad_total" || name === "cantidad_disponible"
-            ? parseInt(value) || 0
-            : value,
-      }));
-    }
-  };
-
   const handleOpenAddLibro = () => {
     const nextUnidad = generateNextCode(
       libros.map(l => l.unidad),
@@ -205,27 +178,14 @@ export function useLibros() {
     openLibro();
   };
 
-  const handleLibroSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!libroFormData.titulo) {
-      toast.error("El título es obligatorio.");
-      return;
-    }
-    if (!autorNombre.trim() && !autorApellido.trim()) {
-      toast.error("Completa el nombre y apellido del autor.");
-      return;
-    }
-    if (libroFormData.id_categoria === undefined || libroFormData.id_categoria === null) {
-      toast.error("Selecciona o añade una categoría.");
-      return;
-    }
+  const handleLibroSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      let payload: any = { ...libroFormData };
+      let payload: any = { ...data };
 
       // Crear o buscar el autor
-      const nombreAutor = autorNombre.trim();
-      const apellidoAutor = autorApellido.trim();
+      const nombreAutor = data.autorNombre.trim();
+      const apellidoAutor = (data.autorApellido || "").trim();
       const existente = autores.find(
         (a: any) =>
           a.nombre?.toLowerCase() === nombreAutor.toLowerCase() &&
@@ -241,16 +201,16 @@ export function useLibros() {
         payload.id_autor = nuevoAutor.id_autor ?? nuevoAutor.id;
         setAutores(prev => [...prev, nuevoAutor]);
       }
-      delete payload.autor;
-      delete payload.categoria;
+      delete payload.autorNombre;
+      delete payload.autorApellido;
 
       // Si seleccionó "Otra..." y hay texto, crear la categoría primero
-      if (libroFormData.id_categoria === -1 && customCategoria.trim()) {
-        const nuevaCat = await mavetApi.crearCategoriaLibro({ nombre_categoria: customCategoria.trim() });
+      if (payload.id_categoria === -1 && payload.customCategoria?.trim()) {
+        const nuevaCat = await mavetApi.crearCategoriaLibro({ nombre_categoria: payload.customCategoria.trim() });
         payload.id_categoria = nuevaCat.id_categoria ?? nuevaCat.id;
-        setCustomCategoria("");
         setCategorias(prev => [...prev, nuevaCat]);
       }
+      delete payload.customCategoria;
 
       if (isEditing) {
         await mavetApi.actualizarLibro(libroFormData.id, payload);
@@ -304,13 +264,13 @@ export function useLibros() {
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
     selectedLibroId, selectedLibroTitle,
-    cedula, setCedula, nombre, setNombre, isSubmitting,
+    isSubmitting,
     libroFormData, isEditing,
     selectedLibroForDetail, setSelectedLibroForDetail,
     confirm, setConfirm,
     goToPage, handleOpenPrestamo, handlePrestamoSubmit,
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
-    handleLibroChange, handleLibroSubmit,
+    handleLibroSubmit,
     initialLibroState,
     customCategoria, setCustomCategoria,
     autorNombre, setAutorNombre, autorApellido, setAutorApellido,

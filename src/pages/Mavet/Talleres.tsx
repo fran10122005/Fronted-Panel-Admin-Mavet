@@ -521,6 +521,36 @@ export default function Talleres() {
               ) : "Crear Instructor"}
             </button>
           </div>
+
+          <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">Instructores Registrados ({instructores.length})</h4>
+            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Nombre</th>
+                    <th className="px-3 py-2 font-medium">Profesión</th>
+                    <th className="px-3 py-2 font-medium">Especialidad</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {instructores.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-xs">No hay instructores registrados.</td>
+                    </tr>
+                  ) : (
+                    instructores.map(inst => (
+                      <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion_ocupacion || "—"}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.especialidad || "—"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </Modal>
 

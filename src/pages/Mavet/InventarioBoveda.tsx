@@ -176,22 +176,8 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< HEAD
-=======
-
->>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
     const isOtherTecnica = String(formData.id_tecnica) === "other";
 
-<<<<<<< HEAD
-    if (!formData.titulo || !formData.id_artista || !tecnicaValida || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
-      toast.error("Por favor complete todos los campos obligatorios.");
-      return;
-    }
-    if (isOtherTecnica && !customTecnica.trim()) {
-      toast.error("Por favor especifique la técnica.");
-      return;
-    }
-=======
     if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
     if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
     if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
@@ -206,7 +192,7 @@ export default function InventarioBoveda() {
     if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
     if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
     if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
->>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
+
     setIsSubmitting(true);
 
     try {
@@ -917,58 +903,7 @@ export default function InventarioBoveda() {
         className="max-w-3xl p-0 overflow-hidden"
       >
         {selectedObraForDetail && (
-          <div className="flex flex-col md:flex-row min-h-[420px]">
-            {/* Columna Izquierda: Ficha Visual */}
-            <div 
-              className="md:w-[280px] w-full bg-brand-950 p-5 flex flex-col items-center justify-between relative text-white"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
-                  linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
-                `,
-                backgroundSize: '20px 20px'
-              }}
-            >
-              {/* Encabezado Ficha */}
-              <div className="w-full flex justify-between text-[11px] font-semibold tracking-wider text-brand-300">
-                <span>{selectedObraForDetail.codigo_inventario || selectedObraForDetail.id}</span>
-                <span>BÓVEDA DE ARTE</span>
-              </div>
-
-              {/* Contenedor Ficha de Obra */}
-              <div className="w-44 h-56 my-6 border border-brand-800/60 bg-brand-950/40 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center relative p-4 group overflow-hidden">
-                {/* Esquinas Reforzadas */}
-                <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t border-l border-brand-400"></div>
-                <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t border-r border-brand-400"></div>
-                <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b border-l border-brand-400"></div>
-                <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b border-r border-brand-400"></div>
-
-                {selectedObraForDetail.imagen_url ? (
-                  <img 
-                    src={selectedObraForDetail.imagen_url} 
-                    alt={selectedObraForDetail.titulo}
-                    className="w-full h-full object-cover rounded-md"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase">Ficha de Obra</span>
-                    <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1">Colección MAVET</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Pie Ficha */}
-              <div className="text-center">
-                <p className="text-xs font-semibold tracking-widest text-brand-300">MAVET</p>
-                <p className="text-[9px] text-brand-400/60 mt-0.5">Museo de Artes Visuales y del Espacio</p>
-              </div>
-            </div>
-
-            {/* Columna Derecha: Datos */}
-            <div className="flex-1 p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between">
+          <div className="p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between min-h-[420px]">
               <div>
                 {/* Header info */}
                 <div className="flex justify-between items-start gap-4">
@@ -1157,7 +1092,6 @@ export default function InventarioBoveda() {
                 </button>
               </div>
             </div>
-          </div>
         )}
       </Modal>
       <ConfirmDialog

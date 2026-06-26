@@ -20,13 +20,13 @@ export default function Biblioteca() {
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
     selectedLibroTitle,
-    cedula, setCedula, nombre, setNombre, isSubmitting,
+    isSubmitting,
     libroFormData, isEditing,
     selectedLibroForDetail, setSelectedLibroForDetail,
     confirm, setConfirm,
     goToPage, handleOpenPrestamo, handlePrestamoSubmit,
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
-    handleLibroChange, handleLibroSubmit,
+    handleLibroSubmit,
     customCategoria, setCustomCategoria,
     autorNombre, autorApellido,
   } = useLibros();
@@ -360,27 +360,18 @@ export default function Biblioteca() {
         isOpen={isLibroOpen}
         onClose={closeLibro}
         isEditing={isEditing}
-        libroFormData={libroFormData}
+        initialData={{ ...libroFormData, autorNombre, autorApellido, customCategoria }}
         categorias={categorias}
         isSubmitting={isSubmitting}
-        onChange={handleLibroChange}
         onSubmit={handleLibroSubmit}
         inputCls={inputCls}
-        customCategoria={customCategoria}
-        onCustomCategoriaChange={setCustomCategoria}
-        autorNombre={autorNombre}
-        autorApellido={autorApellido}
       />
 
       <PrestamoFormModal
         isOpen={isPrestamoOpen}
         onClose={closePrestamo}
         selectedLibroTitle={selectedLibroTitle}
-        cedula={cedula}
-        nombre={nombre}
         isSubmitting={isSubmitting}
-        onCedulaChange={setCedula}
-        onNombreChange={setNombre}
         onSubmit={handlePrestamoSubmit}
         inputCls={inputCls}
       />

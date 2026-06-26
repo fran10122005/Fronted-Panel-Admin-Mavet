@@ -4,6 +4,7 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
+import { exportarCarnetReactPDF } from "../../services/pdfGenerator";
 
 const IconEdit = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +36,6 @@ export default function RRHH() {
     handleChangeTrabajador, handleChangeUsuario,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
-    handleCartaAval,
   } = useRRHH();
 
   return (
@@ -131,11 +131,11 @@ export default function RRHH() {
                         </td>
                         <td className="px-5 py-2 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleCartaAval(t)} title="Generar Carta de Aval" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                              PDF
-                            </button>
-                            <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                             <button onClick={() => exportarCarnetReactPDF(t)} title="Generar Credencial" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>
+                               Carnet
+                             </button>
+                             <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
                               <IconEdit /> Editar
                             </button>
                           </div>
