@@ -174,13 +174,14 @@ export const mavetApi = {
       const meta = json?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
       return {
         data: list.map((item: any) => {
-          const primerAutor = item.AutorLibros?.[0];
+          const primerAutor = item.AutorLibros?.[0] || item.AutorLibro?.[0] || item.autores_libros?.[0];
           return {
             id:                  item.id_libro.toString(),
             unidad:              item.unidad              || "",
             cuota:               item.cuota               || "",
             titulo:              item.titulo              || "",
             autor:               item.autor || (primerAutor ? `${primerAutor.nombre || ""} ${primerAutor.apellido || ""}`.trim() : "Desconocido"),
+            id_autor:            primerAutor?.id_autor,
             estante:             item.estante             || "",
             ano_libro:           item.ano_libro           || "",
             id_categoria:        item.id_categoria,
@@ -256,14 +257,14 @@ export const mavetApi = {
       const res = await axiosInstance.get('/api/biblioteca/consultas-sala');
       const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
       return list.map((item: any) => ({
-        id: item.id_prestamo?.toString() || item.id?.toString(),
+        id: item.id_consulta?.toString() || item.id_prestamo?.toString() || item.id?.toString(),
         libroId: item.id_libro?.toString() || item.libroId,
         libroTitulo: item.Libro?.titulo || item.libroTitulo || "",
         libroUnidad: item.Libro?.unidad || item.libroUnidad || "",
-        cedulaSolicitante: item.cedula || item.cedulaSolicitante || "",
-        nombreSolicitante: item.nombre || item.nombreSolicitante || "",
-        fechaPrestamo: item.fecha_prestamo || item.fechaPrestamo || "",
-        fechaDevolucion: item.fecha_devolucion || item.fechaDevolucion,
+        cedulaSolicitante: item.Persona?.cedula || item.cedula || item.cedulaSolicitante || "",
+        nombreSolicitante: item.Persona ? `${item.Persona.nombres || ""} ${item.Persona.apellidos || ""}`.trim() : item.nombre || item.nombreSolicitante || "",
+        fechaPrestamo: item.hora_entrega ? new Date(item.hora_entrega).toISOString() : item.fecha_prestamo || item.fechaPrestamo || "",
+        fechaDevolucion: item.hora_devolucion ? new Date(item.hora_devolucion).toISOString() : item.fecha_devolucion || item.fechaDevolucion,
         estado: item.estado?.toUpperCase() === "DEVUELTO" || item.estado === "Devuelto" ? "DEVUELTO" : "ACTIVO"
       }));
     } catch {
@@ -343,11 +344,19 @@ export const mavetApi = {
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
+  crearAutorLibro: async (payload: { nombre: string; apellido?: string }): Promise<any> => {
+    const res = await axiosInstance.post('/api/biblioteca/autores', payload);
+    return res.data?.data || res.data;
+  },
   getCategoriasLibro: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/biblioteca/categorias');
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
+  },
+  crearCategoriaLibro: async (payload: { nombre_categoria: string }): Promise<any> => {
+    const res = await axiosInstance.post('/api/biblioteca/categorias', payload);
+    return res.data?.data || res.data;
   },
 
   // === Asistencia y RRHH ===
