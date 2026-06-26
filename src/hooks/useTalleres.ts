@@ -70,6 +70,7 @@ export function useTalleres() {
   const [instructorLoading, setInstructorLoading] = useState(false);
   const [instructorError, setInstructorError] = useState("");
   const [instructorAuto, setInstructorAuto] = useState(false);
+  const [instructorId, setInstructorId] = useState<number | null>(null);
 
   const handleCedulaInstructorChange = (value: string) => {
     setCedulaInstructor(value);
@@ -202,12 +203,14 @@ export function useTalleres() {
     if (taller) {
       setIsEditingPlanificado(true);
       setSelectedTaller(taller);
-      const cedula = taller.Instructor?.Persona?.cedula || taller.cedula_instructor || "";
-      const nombre = taller.Instructor?.Persona
-        ? `${taller.Instructor.Persona.nombres || ""} ${taller.Instructor.Persona.apellidos || ""}`.trim()
+      const inst = taller.Instructor;
+      const cedula = inst?.Persona?.cedula || taller.cedula_instructor || "";
+      const nombre = inst?.Persona
+        ? `${inst.Persona.nombres || ""} ${inst.Persona.apellidos || ""}`.trim()
         : "";
       setCedulaInstructor(cedula);
       setInstructorNombre(nombre);
+      setInstructorId(inst?.id_instructor || taller.id_instructor || null);
       setInstructorAuto(!!cedula);
       setInstructorError("");
       setPlanificarForm({
@@ -229,6 +232,7 @@ export function useTalleres() {
       setPlanificarForm({ ...initialPlanificarForm });
       setCedulaInstructor("");
       setInstructorNombre("");
+      setInstructorId(null);
       setInstructorAuto(false);
       setInstructorError("");
     }
@@ -275,18 +279,20 @@ export function useTalleres() {
     setInstructorLoading(true);
     setInstructorError("");
     try {
-      const result = await mavetApi.checkVisitante(cedula);
-      if (result.existe && result.visitante) {
-        const p = result.visitante;
-        const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
+      const inst = instructores.find(
+        i => i.Persona?.cedula === cedula
+      );
+      if (inst) {
+        setInstructorId(inst.id_instructor);
+        const nombreCompleto = `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim();
         setInstructorNombre(nombreCompleto);
         setInstructorAuto(true);
         setInstructorError("");
-        setPlanificarForm(prev => ({ ...prev, cedula_instructor: cedula }));
       } else {
+        setInstructorId(null);
         setInstructorNombre("");
         setInstructorAuto(false);
-        setInstructorError("Persona no encontrada. Debe registrar su ingreso como visitante primero.");
+        setInstructorError("Instructor no encontrado para esa cédula.");
       }
     } catch {
       setInstructorError("Error al buscar la cédula. Intente de nuevo.");
@@ -302,7 +308,7 @@ export function useTalleres() {
       toast.error("Debe seleccionar un taller del inventario.");
       return;
     }
-    if (!cedulaInstructor || !instructorNombre) {
+    if (!instructorId) {
       toast.error("Debe buscar y seleccionar un instructor válido.");
       return;
     }
@@ -310,11 +316,21 @@ export function useTalleres() {
     try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
       const payload = {
-        ...planificarForm,
-        nombre_curso: selected?.nombre || ""
+        inventario_id: planificarForm.id_taller_inventario,
+        id_instructor: instructorId,
+        id_espacio: planificarForm.id_espacio || null,
+        nombre_curso: selected?.nombre || "",
+        sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
+        fecha: planificarForm.fecha || null,
+        hora_inicio: planificarForm.hora_inicio || null,
+        hora_fin: planificarForm.hora_fin || null,
+        horas_totales: planificarForm.horas_totales || null,
+        cupo_minimo: planificarForm.cupo_minimo || null,
+        cupo_maximo: planificarForm.cupo_maximo || null,
+        estado: planificarForm.estado ? "Activo" : "Inactivo"
       };
 
-      if (isEditingPlanificado && selectedTaller) {
+      if (isEditingPlanificado && selectedTaller?.id_taller) {
         await mavetApi.actualizarTaller(selectedTaller.id_taller, payload as any);
         toast.success("Taller planificado actualizado correctamente.");
       } else {
@@ -444,6 +460,7 @@ export function useTalleres() {
     instructorLoading,
     instructorError,
     instructorAuto,
+    instructorId,
     isSubmitting,
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
