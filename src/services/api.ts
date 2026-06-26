@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { 
+import {
   Artista,
-  Obra, 
-  Libro, 
-  PrestamoPayload, 
-  AsistenciaPayload, 
+  Obra,
+  Libro,
+  PrestamoPayload,
+  AsistenciaPayload,
   TallerInscripcionPayload,
   EventoAuditorio,
   Trabajador,
@@ -188,8 +188,8 @@ export const mavetApi = {
             categoria:           item.CategoriaLibro?.nombre_categoria || "",
             cantidad_total:      item.cantidad_total      ?? 0,
             cantidad_disponible: item.cantidad_disponible ?? 0,
-            estado:              item.estado              || "Aprobado",
-            fecha_ingreso:       item.fecha_ingreso       || ""
+            estado: item.estado || "Aprobado",
+            fecha_ingreso: item.fecha_ingreso || ""
           };
         }),
         totalItems: meta.totalItems,
@@ -494,8 +494,13 @@ export const mavetApi = {
     try {
       await axiosInstance.post('/api/visitantes/ingresos', payload);
       return { success: true, message: "Acceso registrado exitosamente." };
-    } catch {
-      throw new Error("Error al registrar ingreso");
+    } catch (error: any) {
+      console.error('=== registrarIngreso ERROR ===');
+      console.error('Status:', error.response?.status);
+      console.error('Response body:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Payload sent:', JSON.stringify(payload, null, 2));
+      const serverMsg = error.response?.data?.message || error.response?.data?.error || JSON.stringify(error.response?.data);
+      throw new Error(serverMsg || "Error al registrar ingreso");
     }
   },
 

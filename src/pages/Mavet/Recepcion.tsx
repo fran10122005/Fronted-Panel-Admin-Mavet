@@ -40,7 +40,7 @@ export default function Recepcion() {
 
   // Modal para menores
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
-  const [menorData, setMenorData] = useState({ nombres: "", apellidos: "", fecha_nacimiento: "" });
+  const [menorData, setMenorData] = useState({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
@@ -112,7 +112,7 @@ export default function Recepcion() {
       fecha_nacimiento: p.fecha_de_nac || ""
     }));
     setSearchResults([]);
-    
+
     if (p.require_cedula_update) {
       toast.error("⚠️ Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.");
     } else {
@@ -153,16 +153,20 @@ export default function Recepcion() {
       }
 
       // Lógica atómica de registro y creación de ingreso
-      await mavetApi.registrarIngreso({
+      const ingresoPayload: any = {
         cedula: formData.cedula,
         nombres: formData.nombres,
         apellidos: formData.apellidos,
         telefono: formData.telefono,
         fecha_de_nac: formData.fecha_nacimiento,
-        id_motivo: finalMotivo,
-        id_taller: finalTaller,
+        id_motivo: Number(finalMotivo),
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
-      });
+      };
+      // Solo incluir id_taller si tiene valor numérico válido
+      if (finalTaller && Number(finalTaller)) {
+        ingresoPayload.id_taller = Number(finalTaller);
+      }
+      await mavetApi.registrarIngreso(ingresoPayload);
       toast.success("Acceso registrado exitosamente.");
       setFormData({ cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
       setIsVisitaInstitucional(false);
@@ -180,16 +184,17 @@ export default function Recepcion() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await mavetApi.registrarIngreso({
+      const menorPayload: any = {
         nombres: menorData.nombres,
         apellidos: menorData.apellidos,
         fecha_de_nac: menorData.fecha_nacimiento,
-        id_motivo: formData.id_motivo || 1, // Por defecto
+        id_motivo: Number(formData.id_motivo) || 1,
         id_representante_persona: selectedPersona?.id_persona
-      });
+      };
+      await mavetApi.registrarIngreso(menorPayload);
       toast.success("Menor registrado e ingresado exitosamente.");
       setIsMenorModalOpen(false);
-      setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "" });
+      setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
     } catch (error: any) {
       toast.error(error.message || "Error al registrar menor");
     } finally {
@@ -201,7 +206,7 @@ export default function Recepcion() {
     <div className="space-y-6 max-w-7xl mx-auto relative">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
-        <button 
+        <button
           onClick={() => setIsQrModalOpen(true)}
           className="bg-brand-100 text-brand-700 hover:bg-brand-200 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
         >
@@ -214,7 +219,7 @@ export default function Recepcion() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* Columna Izquierda (Buscador y Formulario) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Panel de Búsqueda Resiliente */}
@@ -226,15 +231,15 @@ export default function Recepcion() {
               Buscador Global
             </h2>
             <div className="flex gap-2">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:border-brand-500 focus:outline-none" 
-                placeholder="Cédula, nombre, tel..." 
+                className="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:border-brand-500 focus:outline-none"
+                placeholder="Cédula, nombre, tel..."
               />
-              <button 
+              <button
                 onClick={handleSearch}
                 className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition flex items-center gap-1"
               >
@@ -245,8 +250,8 @@ export default function Recepcion() {
             {searchResults.length > 0 && (
               <div className="mt-4 space-y-2 max-h-64 overflow-y-auto pr-2">
                 {searchResults.map(p => (
-                  <div 
-                    key={p.id_persona} 
+                  <div
+                    key={p.id_persona}
                     onClick={() => selectPersona(p)}
                     className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   >
@@ -273,7 +278,7 @@ export default function Recepcion() {
                 Datos de Ingreso
               </h2>
               {selectedPersona && (!selectedPersona.edad || selectedPersona.edad >= 18) && (
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsMenorModalOpen(true)}
                   className="bg-green-100 text-green-700 hover:bg-green-200 font-semibold py-1.5 px-3 rounded-lg text-sm transition flex items-center gap-1"
@@ -283,7 +288,7 @@ export default function Recepcion() {
                 </button>
               )}
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -308,7 +313,7 @@ export default function Recepcion() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">Motivo *</label>
-                    <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
+                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
                     <option value="">Seleccione...</option>
                     {motivos.map(m => (
                       <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
@@ -317,7 +322,7 @@ export default function Recepcion() {
                       <optgroup label="Eventos y Talleres de Hoy">
                         {eventosHoy.map((e, idx) => (
                           <option key={`e_${idx}`} value={`evento_${e.id.split('-')[1]}`}>
-                            {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0,5)})` : ''}
+                            {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
                           </option>
                         ))}
                       </optgroup>
@@ -326,10 +331,10 @@ export default function Recepcion() {
                 </div>
                 <div className="sm:col-span-2 flex flex-col gap-2">
                   <div className="flex items-center gap-2 mt-2">
-                    <input 
-                      type="checkbox" 
-                      id="visitaInst" 
-                      checked={isVisitaInstitucional} 
+                    <input
+                      type="checkbox"
+                      id="visitaInst"
+                      checked={isVisitaInstitucional}
                       onChange={(e) => setIsVisitaInstitucional(e.target.checked)}
                       className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
                     />
@@ -340,15 +345,15 @@ export default function Recepcion() {
                   {isVisitaInstitucional && (
                     <div className="w-full sm:w-1/2 mt-1 animate-fade-in">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad de Acompañantes / Niños</label>
-                      <input 
-                        type="number" 
-                        min={0} 
-                        name="cantidad_acompanantes" 
-                        value={formData.cantidad_acompanantes} 
-                        onChange={handleChange} 
+                      <input
+                        type="number"
+                        min={0}
+                        name="cantidad_acompanantes"
+                        value={formData.cantidad_acompanantes}
+                        onChange={handleChange}
                         onKeyDown={limitNumericInput}
-                        className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" 
-                        placeholder="Ej. 30" 
+                        className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white"
+                        placeholder="Ej. 30"
                       />
                     </div>
                   )}
@@ -367,7 +372,7 @@ export default function Recepcion() {
                   </div>
                 </div>
               )}
-              
+
               <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <span className="text-gray-500 dark:text-gray-400 font-mono text-sm tracking-wider flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -383,7 +388,7 @@ export default function Recepcion() {
 
         {/* Columna Derecha (Dashboard Lateral) */}
         <div className="lg:col-span-4 space-y-6">
-          
+
           {/* Panel Agenda del Día */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-brand-100 dark:bg-brand-900/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
@@ -402,7 +407,7 @@ export default function Recepcion() {
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{evt.institucion || 'MAVET'}</p>
                     <p className="text-xs font-mono text-brand-600 dark:text-brand-400 mt-1.5 flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                      {evt.hora_inicio ? evt.hora_inicio.substring(0,5) : 'Todo el día'} - {evt.hora_fin ? evt.hora_fin.substring(0,5) : ''}
+                      {evt.hora_inicio ? evt.hora_inicio.substring(0, 5) : 'Todo el día'} - {evt.hora_fin ? evt.hora_fin.substring(0, 5) : ''}
                     </p>
                   </li>
                 ))}
@@ -460,18 +465,53 @@ export default function Recepcion() {
           <form onSubmit={handleRegistrarMenor} className="space-y-4">
             <div>
               <label className="block text-sm mb-1">Nombres del Menor</label>
-              <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({...menorData, nombres: e.target.value})} className="w-full border rounded-lg px-3 py-2" />
+              <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm mb-1">Apellidos del Menor</label>
-              <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({...menorData, apellidos: e.target.value})} className="w-full border rounded-lg px-3 py-2" />
+              <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm mb-1">Fecha de Nacimiento</label>
-              <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({...menorData, fecha_nacimiento: e.target.value})} className="show-date-picker w-full border rounded-lg px-3 py-2" />
+              <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2" />
             </div>
+            {/* Advertencia si el menor tiene entre 9 y 13 años */}
+            {menorData.fecha_nacimiento && (() => {
+              const birth = new Date(menorData.fecha_nacimiento);
+              const today = new Date();
+              const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+              return age >= 9 && age <= 13;
+            })() && (
+              <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                <span>⚠️</span> Este menor tiene {(() => {
+                  const birth = new Date(menorData.fecha_nacimiento);
+                  const today = new Date();
+                  return today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+                })()} años. Se recomienda tramitar su cédula de identidad pronto.
+              </div>
+            )}
+            {/* Bloquear si el menor tiene 14 años o más */}
+            {menorData.fecha_nacimiento && (() => {
+              const birth = new Date(menorData.fecha_nacimiento);
+              const today = new Date();
+              const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+              return age >= 14;
+            })() && (
+              <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                <span>🚫</span> No se puede registrar como menor. A partir de 14 años debe registrarse como visitante regular.
+              </div>
+            )}
             <div className="flex justify-end pt-4">
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Guardar e Ingresar</button>
+              <button
+                type="submit"
+                disabled={menorData.fecha_nacimiento ? (() => {
+                  const birth = new Date(menorData.fecha_nacimiento);
+                  const today = new Date();
+                  const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+                  return age >= 14;
+                })() : false}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >Guardar e Ingresar</button>
             </div>
           </form>
         </div>
@@ -484,15 +524,15 @@ export default function Recepcion() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Imprima este código y colóquelo en la entrada. Los visitantes podrán escanearlo para registrar su acceso automáticamente.
           </p>
-          
+
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
-            <img 
-              src={qrImageUrl} 
-              alt="Código QR de Auto Ingreso" 
+            <img
+              src={qrImageUrl}
+              alt="Código QR de Auto Ingreso"
               className="w-64 h-64 object-contain"
             />
           </div>
-          
+
           <div className="w-full bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
             <p className="text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all">
               {publicRegistrationUrl}
@@ -500,15 +540,15 @@ export default function Recepcion() {
           </div>
 
           <div className="flex gap-3 w-full">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setIsQrModalOpen(false)}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium"
             >
               Cerrar
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => exportarQRPublico(qrImageUrl, publicRegistrationUrl)}
               className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-bold shadow-sm inline-flex items-center justify-center gap-2"
             >
