@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { mavetApi } from "../../services/api";
 import { exportarInventarioObras } from "../../services/pdf.service";
 import { Obra } from "../../types";
@@ -24,6 +24,13 @@ const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: numb
 };
 
 export default function InventarioBoveda() {
+  const previewUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
+
   const [obras, setObras] = useState<Obra[]>([]);
   const [artistas, setArtistas] = useState<any[]>([]);
   const [tecnicas, setTecnicas] = useState<any[]>([]);
@@ -38,6 +45,8 @@ export default function InventarioBoveda() {
   const { isOpen, openModal, closeModal } = useModal();
   const [formData, setFormData] = useState<any>(initialFormState);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
+  const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
+  const [customTecnica, setCustomTecnica] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
   
@@ -104,6 +113,10 @@ export default function InventarioBoveda() {
     );
     setFormData({ ...initialFormState, codigo_inventario: nextCode });
     setImagenFile(null);
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setImagenPreviewUrl(null);
+    setCustomTecnica("");
     setIsEditing(false);
     openModal();
   };
@@ -111,6 +124,10 @@ export default function InventarioBoveda() {
   const handleEdit = (obra: Obra) => {
     setFormData(obra);
     setImagenFile(null);
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setImagenPreviewUrl(null);
+    setCustomTecnica("");
     setIsEditing(true);
     openModal();
   };
@@ -141,46 +158,66 @@ export default function InventarioBoveda() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Parse immediate dropdown selection fields to numbers
     const dropdownFields = ['id_artista', 'id_tecnica', 'id_estado_actual', 'id_categoria_obra'];
     
     setFormData((prev: any) => ({ 
       ...prev, 
       [name]: dropdownFields.includes(name) 
-        ? (value ? parseInt(value, 10) : undefined)
+        ? (value === "other" ? "other" : (value ? parseInt(value, 10) : undefined))
         : value 
     }));
+    
+    if (name === "id_tecnica" && value !== "other") {
+      setCustomTecnica("");
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.titulo || !formData.id_artista || !formData.id_tecnica || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
+
+    const isOtherTecnica = String(formData.id_tecnica) === "other";
+    const tecnicaValida = isOtherTecnica ? customTecnica.trim() : formData.id_tecnica;
+
+    if (!formData.titulo || !formData.id_artista || !tecnicaValida || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
       toast.error("Por favor complete todos los campos obligatorios.");
+      return;
+    }
+    if (isOtherTecnica && !customTecnica.trim()) {
+      toast.error("Por favor especifique la técnica.");
       return;
     }
     setIsSubmitting(true);
 
-    const payload = {
-      ...formData,
-      ano: formData.ano !== undefined && formData.ano !== "" ? parseInt(formData.ano.toString(), 10) : null,
-      piezas: formData.piezas !== undefined && formData.piezas !== "" ? parseInt(formData.piezas.toString(), 10) : 1,
-      peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
-    };
-
-    let dataToSend: any = payload;
-
-    // Si hay una imagen nueva o estamos creando y se seleccionó una imagen
-    if (imagenFile) {
-      dataToSend = new FormData();
-      Object.keys(payload).forEach(key => {
-        if (payload[key] !== null && payload[key] !== undefined) {
-          dataToSend.append(key, payload[key]);
-        }
-      });
-      dataToSend.append("imagen", imagenFile);
-    }
-
     try {
+      let tecnicaId = formData.id_tecnica;
+
+      if (isOtherTecnica) {
+        const nuevaTecnica = await mavetApi.crearTecnica({ nombre_tecnica: customTecnica.trim() });
+        tecnicaId = nuevaTecnica.id_tecnica ?? nuevaTecnica.id;
+        const tecData = await mavetApi.getTecnicas();
+        setTecnicas(tecData);
+      }
+
+      const payloadBase = {
+        ...formData,
+        id_tecnica: tecnicaId,
+        ano: formData.ano !== undefined && formData.ano !== "" ? parseInt(formData.ano.toString(), 10) : null,
+        piezas: formData.piezas !== undefined && formData.piezas !== "" ? parseInt(formData.piezas.toString(), 10) : 1,
+        peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
+      };
+
+      let dataToSend: any = payloadBase;
+
+      if (imagenFile) {
+        dataToSend = new FormData();
+        Object.keys(payloadBase).forEach(key => {
+          if (payloadBase[key] !== null && payloadBase[key] !== undefined) {
+            dataToSend.append(key, payloadBase[key]);
+          }
+        });
+        dataToSend.append("imagen", imagenFile);
+      }
+
       if (isEditing) {
         await mavetApi.actualizarObra(formData.id, dataToSend);
         toast.success("Obra actualizada exitosamente");
@@ -473,18 +510,43 @@ export default function InventarioBoveda() {
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Técnica</label>
-                <select
-                  name="id_tecnica"
-                  value={formData.id_tecnica || ""}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
-                  required
-                >
-                  <option value="" disabled>Seleccione una técnica...</option>
-                  {tecnicas.map((t: any) => (
-                    <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre_tecnica}</option>
-                  ))}
-                </select>
+                {String(formData.id_tecnica) === "other" ? (
+                  <input
+                    type="text"
+                    value={customTecnica}
+                    onChange={(e) => setCustomTecnica(e.target.value)}
+                    placeholder="Especifique la técnica..."
+                    className="w-full rounded-lg border border-brand-500 dark:border-brand-400 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
+                    required
+                    autoFocus
+                  />
+                ) : (
+                  <select
+                    name="id_tecnica"
+                    value={formData.id_tecnica || ""}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                    required
+                  >
+                    <option value="" disabled>Seleccione una técnica...</option>
+                    {tecnicas.map((t: any) => (
+                      <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre_tecnica}</option>
+                    ))}
+                    <option value="other">Otra (especificar)...</option>
+                  </select>
+                )}
+                {String(formData.id_tecnica) === "other" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev: any) => ({ ...prev, id_tecnica: undefined }));
+                      setCustomTecnica("");
+                    }}
+                    className="mt-1 text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
+                  >
+                    &larr; Volver a seleccionar técnica
+                  </button>
+                )}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</label>
@@ -556,12 +618,26 @@ export default function InventarioBoveda() {
 
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen de la Obra</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImagenFile(e.target.files?.[0] || null)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setImagenFile(file);
+                    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+                    const url = file ? URL.createObjectURL(file) : null;
+                    previewUrlRef.current = url;
+                    setImagenPreviewUrl(url);
+                  }}
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                />
+                {imagenPreviewUrl && (
+                  <div className="w-14 h-14 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-800">
+                    <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
               {isEditing && formData.imagen_url && !imagenFile && (
                 <p className="mt-1 text-xs text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
               )}

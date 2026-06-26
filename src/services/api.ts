@@ -283,6 +283,10 @@ export const mavetApi = {
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
   },
+  crearTecnica: async (payload: { nombre_tecnica: string; descripcion?: string }): Promise<any> => {
+    const res = await axiosInstance.post('/api/obras/tecnicas', payload);
+    return res.data?.data || res.data;
+  },
   getEstadosObra: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/estados');
