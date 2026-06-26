@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { Obra, RegistroAsistencia, Trabajador } from "../types";
 import { axiosInstance } from "./api";
 

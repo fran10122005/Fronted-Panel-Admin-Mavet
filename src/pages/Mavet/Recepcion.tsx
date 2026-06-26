@@ -3,7 +3,7 @@ import { mavetApi, axiosInstance } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico } from "../../services/pdf.service";
 import toast from "react-hot-toast";
-import { limitNumericInput, validateEmail } from "../../utils/validation";
+import { limitNumericInput } from "../../utils/validation";
 
 export default function Recepcion() {
   const [searchQuery, setSearchQuery] = useState("");

@@ -7,7 +7,7 @@ import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
-import { limitNumericInput, validateEmail, validatePhone, validateNumber } from "../../utils/validation";
+import { limitNumericInput, validateEmail, validatePhone } from "../../utils/validation";
 import toast from "react-hot-toast";
 
 const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
