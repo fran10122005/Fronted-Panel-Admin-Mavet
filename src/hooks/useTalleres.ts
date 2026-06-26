@@ -9,7 +9,7 @@ export const initialInventarioForm = { nombre: "", descripcion: "" };
 
 export const initialPlanificarForm = {
   id_taller_inventario: 0,
-  id_instructor: 0,
+  cedula_instructor: "",
   id_espacio: 0,
   sesiones: "",
   fecha: "",
@@ -64,6 +64,21 @@ export function useTalleres() {
   const [inventarioForm, setInventarioForm] = useState(initialInventarioForm);
 
   const [planificarForm, setPlanificarForm] = useState(initialPlanificarForm);
+
+  const [cedulaInstructor, setCedulaInstructor] = useState("");
+  const [instructorNombre, setInstructorNombre] = useState("");
+  const [instructorLoading, setInstructorLoading] = useState(false);
+  const [instructorError, setInstructorError] = useState("");
+  const [instructorAuto, setInstructorAuto] = useState(false);
+
+  const handleCedulaInstructorChange = (value: string) => {
+    setCedulaInstructor(value);
+    if (instructorAuto) {
+      setInstructorNombre("");
+      setInstructorAuto(false);
+    }
+    setInstructorError("");
+  };
 
   const [enrollForm, setEnrollForm] = useState(initialEnrollForm);
 
@@ -187,9 +202,17 @@ export function useTalleres() {
     if (taller) {
       setIsEditingPlanificado(true);
       setSelectedTaller(taller);
+      const cedula = taller.Instructor?.Persona?.cedula || taller.cedula_instructor || "";
+      const nombre = taller.Instructor?.Persona
+        ? `${taller.Instructor.Persona.nombres || ""} ${taller.Instructor.Persona.apellidos || ""}`.trim()
+        : "";
+      setCedulaInstructor(cedula);
+      setInstructorNombre(nombre);
+      setInstructorAuto(!!cedula);
+      setInstructorError("");
       setPlanificarForm({
         id_taller_inventario: taller.inventario_id || 0,
-        id_instructor: taller.id_instructor || 0,
+        cedula_instructor: cedula,
         id_espacio: taller.id_espacio || 0,
         sesiones: taller.sesiones || "",
         fecha: taller.fecha || "",
@@ -204,6 +227,10 @@ export function useTalleres() {
       setIsEditingPlanificado(false);
       setSelectedTaller(null);
       setPlanificarForm({ ...initialPlanificarForm });
+      setCedulaInstructor("");
+      setInstructorNombre("");
+      setInstructorAuto(false);
+      setInstructorError("");
     }
     openPlanificar();
   };
@@ -231,17 +258,52 @@ export function useTalleres() {
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numFields = ["id_taller_inventario", "id_instructor", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
+    const numFields = ["id_taller_inventario", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
     setPlanificarForm(prev => ({
       ...prev,
       [name]: numFields.includes(name) ? Number(value) : value
     }));
   };
 
+  const handleInstructorCedulaSearch = async () => {
+    const cedula = cedulaInstructor.trim();
+    if (!cedula) {
+      setInstructorError("");
+      setInstructorAuto(false);
+      return;
+    }
+    setInstructorLoading(true);
+    setInstructorError("");
+    try {
+      const result = await mavetApi.checkVisitante(cedula);
+      if (result.existe && result.visitante) {
+        const p = result.visitante;
+        const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
+        setInstructorNombre(nombreCompleto);
+        setInstructorAuto(true);
+        setInstructorError("");
+        setPlanificarForm(prev => ({ ...prev, cedula_instructor: cedula }));
+      } else {
+        setInstructorNombre("");
+        setInstructorAuto(false);
+        setInstructorError("Persona no encontrada. Debe registrar su ingreso como visitante primero.");
+      }
+    } catch {
+      setInstructorError("Error al buscar la cédula. Intente de nuevo.");
+      setInstructorAuto(false);
+    } finally {
+      setInstructorLoading(false);
+    }
+  };
+
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planificarForm.id_taller_inventario) {
       toast.error("Debe seleccionar un taller del inventario.");
+      return;
+    }
+    if (!cedulaInstructor || !instructorNombre) {
+      toast.error("Debe buscar y seleccionar un instructor válido.");
       return;
     }
     setIsSubmitting(true);
@@ -377,6 +439,11 @@ export function useTalleres() {
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     enrollForm, setEnrollForm,
+    cedulaInstructor,
+    instructorNombre,
+    instructorLoading,
+    instructorError,
+    instructorAuto,
     isSubmitting,
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
@@ -399,6 +466,7 @@ export function useTalleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
+    handleInstructorCedulaSearch, handleCedulaInstructorChange,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes,
     exportInscripcionesFn,

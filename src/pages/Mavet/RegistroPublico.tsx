@@ -83,6 +83,8 @@ export default function RegistroPublico() {
         finalTaller = formData.id_motivo.split('_')[1];
         const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
         finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
+      } else if (formData.id_motivo === 'motivo_entrega_obra' || formData.id_motivo === 'motivo_otro') {
+        finalMotivo = formData.id_motivo;
       } else {
         finalMotivo = formData.id_motivo.split('_')[1];
       }
@@ -329,6 +331,8 @@ export default function RegistroPublico() {
                   {motivos.map(m => (
                     <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
                   ))}
+                  <option value="motivo_entrega_obra">Entrega de Obra</option>
+                  <option value="motivo_otro">Otro</option>
                   {eventosHoy.length > 0 && (
                     <optgroup label="Eventos y Talleres de Hoy">
                       {eventosHoy.map((e, idx) => (
