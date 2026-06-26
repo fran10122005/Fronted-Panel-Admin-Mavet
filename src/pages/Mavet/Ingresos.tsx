@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
+import { limitNumericInput } from "../../utils/validation";
 
 const Ingresos: React.FC = () => {
   const [pestanaActiva, setPestanaActiva] = useState<"visitantes" | "trabajadores">("visitantes");
@@ -125,7 +126,7 @@ const Ingresos: React.FC = () => {
           <div className="flex flex-col gap-4 max-w-lg mx-auto">
             <div>
               <label className="mb-2.5 block text-black dark:text-white">Cédula del Trabajador</label>
-              <input type="text" placeholder="Ingrese número de cédula" className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary" />
+              <input type="text" placeholder="Ingrese número de cédula" onKeyDown={limitNumericInput} className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary" />
             </div>
             <div className="flex gap-4 mt-2">
               <button className="flex w-1/2 justify-center rounded bg-success p-3 font-medium text-white hover:bg-opacity-90 transition">

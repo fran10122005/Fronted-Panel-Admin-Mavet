@@ -1,5 +1,7 @@
 import { Modal } from "../../../components/ui/modal";
 import { Libro } from "../../../types";
+import { limitNumericInput } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -18,6 +20,32 @@ export default function LibroFormModal({
   categorias, isSubmitting,
   onChange, onSubmit, inputCls,
 }: Props) {
+  const handleSubmit = (e: React.FormEvent) => {
+    if (!libroFormData.titulo?.trim()) {
+      toast.error("El título es obligatorio");
+      e.preventDefault();
+      return;
+    }
+    if (!libroFormData.autor?.trim()) {
+      toast.error("El autor es obligatorio");
+      e.preventDefault();
+      return;
+    }
+    if (libroFormData.ano_libro) {
+      const ano = Number(libroFormData.ano_libro);
+      if (isNaN(ano) || ano < 1000 || ano > 2099) {
+        toast.error("El año debe estar entre 1000 y 2099");
+        e.preventDefault();
+        return;
+      }
+    }
+    if (libroFormData.cantidad_total === undefined || libroFormData.cantidad_total < 1) {
+      toast.error("La cantidad total debe ser al menos 1");
+      e.preventDefault();
+      return;
+    }
+    onSubmit(e);
+  };
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[620px] p-5">
       <div>
@@ -31,7 +59,7 @@ export default function LibroFormModal({
         )}
         {!isEditing && <div className="mb-4" />}
 
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -49,7 +77,7 @@ export default function LibroFormModal({
               </label>
               <input
                 type="text" name="cuota" value={libroFormData.cuota || ""}
-                onChange={onChange} placeholder="Ej. 823.914 BEC"
+                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. 823.914 BEC"
                 className={inputCls}
               />
             </div>
@@ -62,7 +90,7 @@ export default function LibroFormModal({
               </label>
               <input
                 type="text" name="unidad" value={libroFormData.unidad || ""}
-                onChange={onChange} placeholder="Ej. BIB-001"
+                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. BIB-001"
                 className={inputCls}
               />
             </div>
@@ -114,7 +142,7 @@ export default function LibroFormModal({
               </label>
               <input
                 type="number" name="ano_libro" value={libroFormData.ano_libro || ""}
-                onChange={onChange} placeholder="Ej. 2023"
+                onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. 2023"
                 min={1000} max={2099} className={inputCls}
               />
             </div>
@@ -124,7 +152,7 @@ export default function LibroFormModal({
               </label>
               <input
                 type="date" name="fecha_ingreso" value={libroFormData.fecha_ingreso || ""}
-                onChange={onChange} className={inputCls}
+                onChange={onChange} max={new Date().toISOString().split('T')[0]} className={inputCls}
               />
             </div>
           </div>
@@ -136,7 +164,7 @@ export default function LibroFormModal({
               </label>
               <input
                 type="number" name="cantidad_total" value={libroFormData.cantidad_total}
-                onChange={onChange} min={1} className={inputCls} required
+                onChange={onChange} onKeyDown={limitNumericInput} min={1} className={inputCls} required
               />
             </div>
             <div>

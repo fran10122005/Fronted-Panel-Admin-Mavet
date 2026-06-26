@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mavetApi } from '../../services/api';
+import { limitNumericInput, validateEmail, validatePhone } from '../../utils/validation';
 
 export default function RegistroPublico() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -62,13 +63,28 @@ export default function RegistroPublico() {
 
   const handleRegistrar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.id_motivo) {
-      setError("Por favor seleccione el motivo de su visita.");
-      return;
+
+    if (!existe) {
+      if (!formData.nombres || !formData.nombres.trim()) {
+        setError("El campo Nombres es obligatorio.");
+        return;
+      }
+      if (!formData.apellidos || !formData.apellidos.trim()) {
+        setError("El campo Apellidos es obligatorio.");
+        return;
+      }
     }
 
-    if (!existe && (!formData.nombres || !formData.apellidos)) {
-      setError("Por favor complete sus nombres y apellidos.");
+    if (formData.telefono && formData.telefono.trim()) {
+      const phoneError = validatePhone(formData.telefono, "El teléfono");
+      if (phoneError) {
+        setError(phoneError);
+        return;
+      }
+    }
+
+    if (!formData.id_motivo) {
+      setError("Por favor seleccione el motivo de su visita.");
       return;
     }
 
@@ -186,6 +202,7 @@ export default function RegistroPublico() {
                   required
                   value={cedula}
                   onChange={(e) => setCedula(e.target.value)}
+                  onKeyDown={limitNumericInput}
                   className="w-full border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl pl-11 pr-4 py-3.5 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 text-base shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
                   placeholder="Escribe tu cédula aquí"
                   autoFocus
@@ -291,6 +308,7 @@ export default function RegistroPublico() {
                           type="tel"
                           value={formData.telefono}
                           onChange={e => setFormData({ ...formData, telefono: e.target.value })}
+                          onKeyDown={limitNumericInput}
                           className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg pl-9 pr-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm placeholder:text-gray-400"
                           placeholder="Opcional"
                         />

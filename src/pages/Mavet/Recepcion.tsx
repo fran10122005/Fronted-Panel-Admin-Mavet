@@ -3,6 +3,7 @@ import { mavetApi, axiosInstance } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico } from "../../services/pdf.service";
 import toast from "react-hot-toast";
+import { limitNumericInput, validateEmail } from "../../utils/validation";
 
 export default function Recepcion() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +126,14 @@ export default function Recepcion() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.nombres || !formData.nombres.trim()) {
+      toast.error("El campo Nombres es obligatorio.");
+      return;
+    }
+    if (!formData.apellidos || !formData.apellidos.trim()) {
+      toast.error("El campo Apellidos es obligatorio.");
+      return;
+    }
     if (!formData.id_motivo) {
       toast.error("El motivo de visita es obligatorio.");
       return;
@@ -281,7 +290,7 @@ export default function Recepcion() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
-                  <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. V-12345678" />
+                  <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} onKeyDown={limitNumericInput} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. V-12345678" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres *</label>
@@ -297,7 +306,7 @@ export default function Recepcion() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
+                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onKeyDown={limitNumericInput} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">Motivo *</label>
@@ -337,10 +346,11 @@ export default function Recepcion() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad de Acompañantes / Niños</label>
                       <input 
                         type="number" 
-                        min="1" 
+                        min={0} 
                         name="cantidad_acompanantes" 
                         value={formData.cantidad_acompanantes} 
                         onChange={handleChange} 
+                        onKeyDown={limitNumericInput}
                         className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" 
                         placeholder="Ej. 30" 
                       />

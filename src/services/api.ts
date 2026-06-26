@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { 
+  Artista,
   Obra, 
   Libro, 
   PrestamoPayload, 
@@ -271,10 +272,47 @@ export const mavetApi = {
   },
 
   // === Catálogos (rutas públicas — no requieren token) ===
-  getArtistas: async (): Promise<any[]> => {
+  getArtistas: async (): Promise<Artista[]> => {
     try {
       const res = await axiosInstance.get('/api/obras/artistas');
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+    } catch { return []; }
+  },
+  crearArtista: async (payload: any): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post('/api/obras/artistas', payload);
+      return { success: true, message: "Artista registrado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear artista");
+    }
+  },
+  actualizarArtista: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/obras/artistas/${id}`, payload);
+      return { success: true, message: "Artista actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar artista");
+    }
+  },
+  eliminarArtista: async (id: number): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/obras/artistas/${id}`);
+      return { success: true, message: "Artista eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar artista");
+    }
+  },
+  buscarArtista: async (query: string): Promise<Artista[]> => {
+    try {
+      const res = await axiosInstance.get('/api/obras/artistas/buscar', { params: { q: query } });
+      const data = res.data?.data || [];
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
+  },
+  buscarPersona: async (query: string): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get('/api/personas/buscar', { params: { q: query } });
+      return res.data?.data || [];
     } catch { return []; }
   },
   getTecnicas: async (): Promise<any[]> => {
