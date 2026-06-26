@@ -7,7 +7,7 @@ import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
-import { limitNumericInput, validateEmail, validatePhone, validateNumber } from "../../utils/validation";
+import { limitNumericInput, validateEmail, validatePhone } from "../../utils/validation";
 import toast from "react-hot-toast";
 
 const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
@@ -176,9 +176,13 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isOtherTecnica = String(formData.id_tecnica) === "other";
-    const tecnicaValida = isOtherTecnica ? customTecnica.trim() : formData.id_tecnica;
+<<<<<<< HEAD
+=======
 
+>>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
+    const isOtherTecnica = String(formData.id_tecnica) === "other";
+
+<<<<<<< HEAD
     if (!formData.titulo || !formData.id_artista || !tecnicaValida || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
       toast.error("Por favor complete todos los campos obligatorios.");
       return;
@@ -187,6 +191,22 @@ export default function InventarioBoveda() {
       toast.error("Por favor especifique la técnica.");
       return;
     }
+=======
+    if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
+    if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
+    if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
+    if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
+      toast.error("El año debe ser un número válido entre 1000 y " + (new Date().getFullYear() + 5) + ".");
+      return;
+    }
+    if (!formData.id_estado_actual) { toast.error("Debe seleccionar un estado de conservación."); return; }
+    if (!formData.id_categoria_obra) { toast.error("Debe seleccionar una categoría/modalidad."); return; }
+    if (!formData.id_tecnica) { toast.error("Debe seleccionar una técnica."); return; }
+    if (isOtherTecnica && !customTecnica.trim()) { toast.error("Por favor especifique la técnica."); return; }
+    if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
+    if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
+    if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
+>>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
     setIsSubmitting(true);
 
     try {

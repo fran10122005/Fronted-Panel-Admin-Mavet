@@ -16,7 +16,7 @@ const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 
 
 export default function RRHH() {
   const {
-    trabajadores, usuarios, asistencias, cargos, roles,
+    trabajadores, _usuarios, _asistencias, cargos, roles,
     isLoading, activeTab, setActiveTab,
     searchTerm, setSearchTerm,
     formData, formUsuario, isSubmitting,

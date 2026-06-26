@@ -1,5 +1,4 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { Obra, RegistroAsistencia, Trabajador } from "../types";
 import { axiosInstance } from "./api";
 
@@ -20,6 +19,91 @@ const C = {
 };
 
 const LOGO_PATH = "/images/logo/mavet2.png";
+const MARGIN = 18;
+
+// ─── Helper: apply opacity via GState ─────────────────────────────────────────
+const G = (doc: jsPDF) => (doc as any).GState as any;
+function setOpacity(doc: jsPDF, opacity: number) {
+  (doc as any).setGState(new (G(doc))({ opacity }));
+}
+
+// ─── Decorative: page gradient background ─────────────────────────────────────
+// Mimics `aside-gradient` from login: linear-gradient(180deg, rgba(128,0,0,0.15)→transparent)
+function addGradientOverlay(doc: jsPDF) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const steps = 20;
+  const stepH = ph / steps;
+  const peakAlpha = 0.16;
+  for (let i = 0; i < steps; i++) {
+    const alpha = peakAlpha * (1 - i / steps);
+    doc.setFillColor(...C.brand);
+    setOpacity(doc, alpha);
+    doc.rect(0, i * stepH, pw, stepH + 1, "F");
+  }
+  setOpacity(doc, 1);
+}
+
+// ─── Decorative: grid pattern ────────────────────────────────────────────────
+// Mimics grid-01.svg: subtle grid lines + small rectangles at intersections
+function addDecorativeGrid(doc: jsPDF) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const m = 20;
+
+  doc.setDrawColor(178, 178, 178);
+  doc.setLineWidth(0.1);
+  setOpacity(doc, 0.12);
+
+  const hCount = 5;
+  const vCount = 6;
+  const hStep = (ph - m * 2) / hCount;
+  const vStep = (pw - m * 2) / vCount;
+
+  for (let i = 0; i <= hCount; i++) {
+    const y = m + i * hStep;
+    doc.line(m, y, pw - m, y);
+  }
+  for (let i = 0; i <= vCount; i++) {
+    const x = m + i * vStep;
+    doc.line(x, m, x, ph - m);
+  }
+
+  setOpacity(doc, 0.05);
+  doc.setFillColor(178, 178, 178);
+  const dotSize = 4;
+  const pattern: [number, number][] = [
+    [m + vStep * 0, m + hStep * 0], [m + vStep * 2, m + hStep * 1],
+    [m + vStep * 4, m + hStep * 2], [m + vStep * 1, m + hStep * 3],
+    [m + vStep * 3, m + hStep * 4], [m + vStep * 5, m + hStep * 0],
+    [m + vStep * 0, m + hStep * 2], [m + vStep * 3, m + hStep * 5],
+  ];
+  pattern.forEach(([x, y]) => {
+    doc.rect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, "F");
+  });
+
+  setOpacity(doc, 1);
+}
+
+// ─── Decorative: corner accents ──────────────────────────────────────────────
+function addCornerAccents(doc: jsPDF) {
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const s = 10;
+
+  setOpacity(doc, 0.35);
+  doc.setDrawColor(...C.gold);
+  doc.setLineWidth(0.4);
+
+  // Bottom-left corner flourish
+  doc.line(MARGIN, ph - MARGIN, MARGIN, ph - MARGIN - s);
+  doc.line(MARGIN, ph - MARGIN, MARGIN + s, ph - MARGIN);
+  // Bottom-right corner flourish
+  doc.line(pw - MARGIN, ph - MARGIN, pw - MARGIN, ph - MARGIN - s);
+  doc.line(pw - MARGIN, ph - MARGIN, pw - MARGIN - s, ph - MARGIN);
+
+  setOpacity(doc, 1);
+}
 
 let logoPromise: Promise<string> | null = null;
 
@@ -41,6 +125,11 @@ function getLogo(): Promise<string> {
 }
 
 async function addHeader(doc: jsPDF, title: string) {
+  // Page background: gradient + grid + corner accents
+  addGradientOverlay(doc);
+  addDecorativeGrid(doc);
+  addCornerAccents(doc);
+
   const logo = await getLogo();
   const pw = doc.internal.pageSize.getWidth();
 
@@ -75,6 +164,13 @@ function addFooter(doc: jsPDF) {
   for (let i = 1; i <= pc; i++) {
     doc.setPage(i);
     const h = doc.internal.pageSize.getHeight();
+
+    // Background decorations for pages after the first
+    if (i > 1) {
+      addGradientOverlay(doc);
+      addDecorativeGrid(doc);
+      addCornerAccents(doc);
+    }
 
     doc.setDrawColor(...C.gold);
     doc.setLineWidth(0.4);

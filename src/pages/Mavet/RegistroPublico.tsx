@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mavetApi } from '../../services/api';
-import { limitNumericInput, validateEmail, validatePhone } from '../../utils/validation';
+import { limitNumericInput, validatePhone } from '../../utils/validation';
 
 export default function RegistroPublico() {
   const [step, setStep] = useState<1 | 2 | 3>(1);

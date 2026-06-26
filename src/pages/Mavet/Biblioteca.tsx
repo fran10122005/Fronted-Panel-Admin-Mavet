@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useLibros, ITEMS_PER_PAGE } from "../../hooks/useLibros";
@@ -9,7 +8,7 @@ import LibroDetailModal from "./biblioteca/LibroDetailModal";
 
 export default function Biblioteca() {
   const {
-    autores, categorias, isLoading,
+    _autores, categorias, isLoading,
     searchTerm, setSearchTerm,
     filterEstado, setFilterEstado,
     filterCategoria, setFilterCategoria,
