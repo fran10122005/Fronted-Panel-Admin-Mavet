@@ -1,4 +1,4 @@
-import { useTalleres, ITEMS_PER_PAGE } from "../../hooks/useTalleres";
+import { useTalleres } from "../../hooks/useTalleres";
 import ComponentCard from "../../components/common/ComponentCard";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
@@ -8,7 +8,6 @@ import TallerDetailModal from "./talleres/TallerDetailModal";
 import InscripcionModal from "./talleres/InscripcionModal";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
-const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
@@ -27,17 +26,19 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
 
 export default function Talleres() {
   const {
-    talleres, inventario, instructores, espacios, inscripciones,
+    talleres, inventario, instructores, espacios,
     isLoading,
     searchTerm, setSearchTerm,
     filterInstructor, setFilterInstructor,
     currentPage, setCurrentPage,
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
-    enrollForm, setEnrollForm,
+    enrollForm,
+    cedulaInstructor,
+    instructorNombre, instructorLoading, instructorError, instructorAuto,
     isSubmitting,
     esMenor, inscripcionesAgrupadas,
-    filteredTalleres, totalPages, paginatedTalleres,
+    totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
     selectedTaller,
     isEditingPlanificado,
@@ -56,6 +57,7 @@ export default function Talleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
+    handleInstructorCedulaSearch, handleCedulaInstructorChange,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes,
     exportInscripcionesFn,
@@ -431,7 +433,6 @@ export default function Talleres() {
         isEditing={isEditingPlanificado}
         formData={planificarForm}
         inventario={inventario}
-        instructores={instructores}
         espacios={espacios}
         isSubmitting={isSubmitting}
         onChange={handlePlanificarChange}
@@ -439,6 +440,13 @@ export default function Talleres() {
         onSubmit={handleSubmitPlanificar}
         inputCls={inputCls}
         selectCls={selectCls}
+        cedulaInstructor={cedulaInstructor}
+        instructorNombre={instructorNombre}
+        instructorLoading={instructorLoading}
+        instructorError={instructorError}
+        instructorAuto={instructorAuto}
+        onCedulaChange={handleCedulaInstructorChange}
+        onCedulaSearch={handleInstructorCedulaSearch}
       />
 
       <InscripcionModal

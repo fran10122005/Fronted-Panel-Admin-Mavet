@@ -1,5 +1,7 @@
 import { Modal } from "../../../components/ui/modal";
 import { Cargo } from "../../../types";
+import { limitNumericInput, validateEmail, validatePhone } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -31,6 +33,19 @@ export default function TrabajadorFormModal({
   isOpen, onClose, editingTrabajadorId, formData,
   cargos, isSubmitting, onChange, onSubmit, inputCls,
 }: Props) {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (formData.correo_personal.trim()) {
+      const err = validateEmail(formData.correo_personal, "Correo personal");
+      if (err) { toast.error(err); return; }
+    }
+    if (formData.telefono.trim()) {
+      const err = validatePhone(formData.telefono, "Teléfono");
+      if (err) { toast.error(err); return; }
+    }
+    onSubmit(e);
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-5">
       <div>
@@ -40,7 +55,7 @@ export default function TrabajadorFormModal({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           Complete los datos del trabajador. Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
         </p>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Datos Personales</h5>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -54,7 +69,7 @@ export default function TrabajadorFormModal({
               </div>
               <div>
                 <label className={labelCls}>Cédula <span className="text-red-500">*</span></label>
-                <input type="text" name="cedula" value={formData.cedula} onChange={onChange} placeholder="V-12345678" className={inputCls} required
+                <input type="text" name="cedula" value={formData.cedula} onChange={onChange} onKeyDown={limitNumericInput} placeholder="V-12345678" className={inputCls} required
                   readOnly={editingTrabajadorId !== null} />
               </div>
               <div>
@@ -69,7 +84,7 @@ export default function TrabajadorFormModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Teléfono</label>
-                <input type="tel" name="telefono" value={formData.telefono} onChange={onChange} placeholder="0414-1234567" className={inputCls} />
+                <input type="tel" name="telefono" value={formData.telefono} onChange={onChange} onKeyDown={limitNumericInput} placeholder="0414-1234567" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Correo Personal</label>
@@ -96,7 +111,7 @@ export default function TrabajadorFormModal({
               </div>
               <div>
                 <label className={labelCls}>Horas Semanales</label>
-                <input type="number" name="horas_semanales" value={formData.horas_semanales} onChange={onChange} placeholder="Ej. 40" min={0} className={inputCls} />
+                <input type="number" name="horas_semanales" value={formData.horas_semanales} onChange={onChange} onKeyDown={limitNumericInput} placeholder="Ej. 40" min={0} max={168} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Fecha de Ingreso</label>

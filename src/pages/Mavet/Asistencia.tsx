@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router"; // Fixed import from 'react-router' as seen in App.tsx
 import { mavetApi } from "../../services/api";
 import { AsistenciaPayload } from "../../types";
+import { limitNumericInput } from "../../utils/validation";
 
 type TipoMovimiento = AsistenciaPayload["tipoMovimiento"];
 
@@ -129,6 +130,7 @@ export default function Asistencia() {
                 autoFocus
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}
+                onKeyDown={limitNumericInput}
                 disabled={isSubmitting}
                 className="block w-full pl-12 pr-4 py-2 text-center text-2xl font-bold text-gray-900 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500 outline-none placeholder:text-gray-300 placeholder:font-normal"
                 placeholder="Ej. V-12345678"

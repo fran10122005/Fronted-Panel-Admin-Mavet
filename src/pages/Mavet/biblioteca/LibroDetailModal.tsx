@@ -26,44 +26,7 @@ export default function LibroDetailModal({ libro, onClose, onEdit }: Props) {
       className="max-w-3xl p-0 overflow-hidden"
     >
       {l && (
-        <div className="flex flex-col md:flex-row min-h-[420px]">
-          <div
-            className="md:w-[280px] w-full bg-brand-950 p-5 flex flex-col items-center justify-between relative text-white"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px',
-            }}
-          >
-            <div className="w-full flex justify-between text-[11px] font-semibold tracking-wider text-brand-300">
-              <span>{l.unidad || l.id}</span>
-              <span>BIBLIOTECA</span>
-            </div>
-
-            <div className="w-44 h-56 my-6 border border-brand-800/60 bg-brand-950/40 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center relative p-4 group overflow-hidden">
-              <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t border-l border-brand-400"></div>
-              <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t border-r border-brand-400"></div>
-              <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b border-l border-brand-400"></div>
-              <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b border-r border-brand-400"></div>
-
-              <div className="flex flex-col items-center justify-center">
-                <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase text-center">Ficha de Libro</span>
-                <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1 text-center font-serif">Colección MAVET</span>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <p className="text-xs font-semibold tracking-widest text-brand-300">MAVET</p>
-              <p className="text-[9px] text-brand-400/60 mt-0.5">Museo de Artes Visuales y del Espacio</p>
-            </div>
-          </div>
-
-          <div className="flex-1 p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between">
+        <div className="p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-start gap-4">
                 <div>
@@ -219,7 +182,6 @@ export default function LibroDetailModal({ libro, onClose, onEdit }: Props) {
                 Editar Libro
               </button>
             </div>
-          </div>
         </div>
       )}
     </Modal>

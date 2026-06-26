@@ -1,4 +1,6 @@
 import { Modal } from "../../../components/ui/modal";
+import { limitNumericInput } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -29,6 +31,36 @@ export default function InscripcionModal({
   enrollForm, esMenor, isSubmitting,
   onChange, onSubmit, inputCls, selectCls,
 }: Props) {
+  const handleSubmit = (e: React.FormEvent) => {
+    if (!enrollForm.tallerId) {
+      toast.error("Debe seleccionar un taller");
+      e.preventDefault();
+      return;
+    }
+    if (!enrollForm.alumnoNombre.trim()) {
+      toast.error("El nombre del alumno es obligatorio");
+      e.preventDefault();
+      return;
+    }
+    if (!enrollForm.alumnoEdad.trim()) {
+      toast.error("La edad del alumno es obligatoria");
+      e.preventDefault();
+      return;
+    }
+    if (esMenor) {
+      if (!enrollForm.repNombre.trim()) {
+        toast.error("El nombre del representante es obligatorio");
+        e.preventDefault();
+        return;
+      }
+      if (!enrollForm.repCedula.trim()) {
+        toast.error("La cédula del representante es obligatoria");
+        e.preventDefault();
+        return;
+      }
+    }
+    onSubmit(e);
+  };
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl p-6">
       <div>
@@ -36,7 +68,7 @@ export default function InscripcionModal({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
           Taller: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTallerEnroll?.nombre_curso || ""}</span>
         </p>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={labelCls}>Taller o Curso</label>
             <select name="tallerId" value={enrollForm.tallerId} onChange={onChange} className={selectCls} required>
@@ -51,7 +83,8 @@ export default function InscripcionModal({
             </div>
             <div>
               <label className={labelCls}>Edad <span className="text-red-500">*</span></label>
-              <input type="number" name="alumnoEdad" value={enrollForm.alumnoEdad} onChange={onChange}
+              <input type="number" name="alumnoEdad" value={enrollForm.alumnoEdad}
+                onChange={onChange} onKeyDown={limitNumericInput}
                 className={inputCls} required disabled={isSubmitting} placeholder="Ej. 12" />
               {enrollForm.alumnoEdad && !esMenor && (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">Mayor de edad — no requiere representante.</p>
@@ -75,7 +108,8 @@ export default function InscripcionModal({
               </div>
               <div>
                 <label className={labelCls}>Teléfono</label>
-                <input type="text" name="repTelefono" value={enrollForm.repTelefono} onChange={onChange}
+                <input type="text" name="repTelefono" value={enrollForm.repTelefono}
+                  onChange={onChange} onKeyDown={limitNumericInput}
                   className={inputCls} disabled={isSubmitting} placeholder="0414-1234567" />
               </div>
             </div>

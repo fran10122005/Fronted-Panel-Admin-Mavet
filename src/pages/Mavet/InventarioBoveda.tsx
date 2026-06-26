@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { mavetApi } from "../../services/api";
 import { exportarInventarioObras } from "../../services/pdf.service";
-import { Obra } from "../../types";
+import { Artista, Obra } from "../../types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
+import { limitNumericInput, validateEmail, validatePhone, validateNumber } from "../../utils/validation";
 import toast from "react-hot-toast";
 
 const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
@@ -84,6 +85,7 @@ export default function InventarioBoveda() {
       try {
         const artData = await mavetApi.getArtistas().catch(e => { console.error("Error Artistas:", e); return []; });
         setArtistas(artData);
+        setArtistsList(artData);
 
         const tecData = await mavetApi.getTecnicas().catch(e => { console.error("Error Tecnicas:", e); return []; });
         setTecnicas(tecData);
@@ -174,6 +176,7 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
 
     const isOtherTecnica = String(formData.id_tecnica) === "other";
     const tecnicaValida = isOtherTecnica ? customTecnica.trim() : formData.id_tecnica;
@@ -186,6 +189,21 @@ export default function InventarioBoveda() {
       toast.error("Por favor especifique la técnica.");
       return;
     }
+=======
+    if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
+    if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
+    if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
+    if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
+      toast.error("El año debe ser un número válido entre 1000 y " + (new Date().getFullYear() + 5) + ".");
+      return;
+    }
+    if (!formData.id_estado_actual) { toast.error("Debe seleccionar un estado de conservación."); return; }
+    if (!formData.id_categoria_obra) { toast.error("Debe seleccionar una categoría/modalidad."); return; }
+    if (!formData.id_tecnica) { toast.error("Debe seleccionar una técnica."); return; }
+    if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
+    if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
+    if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
+>>>>>>> c94526db30f2027081c958458d5774f206f04219
     setIsSubmitting(true);
 
     try {
@@ -234,6 +252,147 @@ export default function InventarioBoveda() {
     }
   };
 
+  // === Gestión de artistas (inventario directo en página) ===
+  const [artistsList, setArtistsList] = useState<Artista[]>([]);
+  const [artistSearch, setArtistSearch] = useState("");
+  const [artistFormOpen, setArtistFormOpen] = useState(false);
+  const [artistFormData, setArtistFormData] = useState<any>({ nombres: "", apellidos: "", ci: "", fecha_nacimiento: "", telefono: "", correo: "", direccion: "", nacionalidad: "" });
+  const [artistSearchQuery, setArtistSearchQuery] = useState("");
+  const [artistSearchResults, setArtistSearchResults] = useState<Artista[]>([]);
+  const [isSearchingArtist, setIsSearchingArtist] = useState(false);
+  const [isEditingArtist, setIsEditingArtist] = useState(false);
+  const [isArtistPreloaded, setIsArtistPreloaded] = useState(false);
+  const [isArtistSubmitting, setIsArtistSubmitting] = useState(false);
+
+  const fetchArtistsList = async () => {
+    const data = await mavetApi.getArtistas().catch(() => []);
+    setArtistsList(data);
+    setArtistas(data);
+  };
+
+  const handleArtistSearch = async () => {
+    const q = artistSearchQuery.trim();
+    if (!q || q.length < 2) return;
+    setIsSearchingArtist(true);
+    try {
+      const localResults = artistsList.filter(a =>
+        a.ci && a.ci.toLowerCase().includes(q.toLowerCase())
+      );
+      if (localResults.length > 0) {
+        setArtistSearchResults(localResults);
+        return;
+      }
+      const apiResults = await mavetApi.buscarArtista(q);
+      if (apiResults.length > 0) {
+        setArtistSearchResults(apiResults);
+        return;
+      }
+      const personaResults = await mavetApi.buscarPersona(q);
+      if (personaResults.length > 0) {
+        setArtistSearchResults(personaResults.map((p: any) => ({
+          id_artista: 0,
+          nombres: p.nombres || "",
+          apellidos: p.apellidos || "",
+          ci: p.cedula || "",
+          fecha_nacimiento: p.fecha_de_nac || "",
+          telefono: p.telefono || "",
+          correo: p.correo || "",
+          direccion: p.direccion || "",
+          nacionalidad: "",
+        })));
+        return;
+      }
+      setArtistSearchResults([]);
+      toast.error("No se encontró ninguna persona con ese dato.");
+    } catch {
+      setArtistSearchResults([]);
+    } finally {
+      setIsSearchingArtist(false);
+    }
+  };
+
+  const selectArtistSearchResult = (result: Artista) => {
+    setArtistFormData(result);
+    setIsEditingArtist(!!result.id_artista);
+    setIsArtistPreloaded(true);
+    setArtistSearchResults([]);
+    setArtistSearchQuery("");
+  };
+
+  const handleArtistFormOpen = (artista?: Artista) => {
+    setArtistSearchResults([]);
+    setArtistSearchQuery("");
+    setIsArtistPreloaded(false);
+    if (artista) {
+      setArtistFormData(artista);
+      setIsEditingArtist(true);
+    } else {
+      setArtistFormData({ nombres: "", apellidos: "", ci: "", fecha_nacimiento: "", telefono: "", correo: "", direccion: "", nacionalidad: "" });
+      setIsEditingArtist(false);
+    }
+    setArtistFormOpen(true);
+  };
+
+  const handleArtistDelete = (id: number) => {
+    setConfirm({
+      open: true,
+      title: "Eliminar artista",
+      message: "¿Está seguro de que desea eliminar este artista?",
+      variant: "danger",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          await mavetApi.eliminarArtista(id);
+          await fetchArtistsList();
+          toast.success("Artista eliminado");
+        } catch (error: any) {
+          toast.error(error.message || "Error al eliminar artista");
+        }
+      },
+    });
+  };
+
+  const handleArtistSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!artistFormData.nombres?.trim()) { toast.error("El nombre del artista es obligatorio."); return; }
+    if (!artistFormData.apellidos?.trim()) { toast.error("Los apellidos del artista son obligatorios."); return; }
+    if (artistFormData.correo?.trim()) {
+      const emailErr = validateEmail(artistFormData.correo, "El correo");
+      if (emailErr) { toast.error(emailErr); return; }
+    }
+    if (artistFormData.telefono?.trim()) {
+      const phoneErr = validatePhone(artistFormData.telefono, "El teléfono");
+      if (phoneErr) { toast.error(phoneErr); return; }
+    }
+    setIsArtistSubmitting(true);
+    try {
+      if (isEditingArtist) {
+        await mavetApi.actualizarArtista(artistFormData.id_artista, artistFormData);
+        toast.success("Artista actualizado");
+      } else {
+        await mavetApi.crearArtista(artistFormData);
+        toast.success("Artista registrado");
+      }
+      await fetchArtistsList();
+      setArtistFormOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Error al guardar artista");
+    } finally {
+      setIsArtistSubmitting(false);
+    }
+  };
+
+  const filteredArtistsList = useMemo(() => {
+    if (!artistSearch) return artistsList;
+    const t = artistSearch.toLowerCase();
+    return artistsList.filter(a =>
+      a.nombres.toLowerCase().includes(t) ||
+      a.apellidos.toLowerCase().includes(t) ||
+      (a.ci && a.ci.toLowerCase().includes(t))
+    );
+  }, [artistsList, artistSearch]);
+
   // Filtrado reactivo de las obras
   const filteredObras = useMemo(() => {
     return obras.filter((obra) => {
@@ -266,6 +425,13 @@ export default function InventarioBoveda() {
           >
             <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Exportar PDF
+          </button>
+          <button
+            onClick={() => handleArtistFormOpen()}
+            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            Agregar Artista
           </button>
           <button 
             onClick={handleOpenAdd}
@@ -402,6 +568,76 @@ export default function InventarioBoveda() {
         )}
       </div>
 
+      {/* Inventario de Artistas */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Artistas</h2>
+            <span className="text-xs text-gray-500">({artistsList.length} registrados)</span>
+          </div>
+          <div className="relative w-full sm:max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar artista..."
+              value={artistSearch}
+              onChange={(e) => setArtistSearch(e.target.value)}
+              className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 uppercase text-xs font-semibold border-b border-gray-200 dark:border-gray-700">
+                <th className="px-5 py-2">Nombres</th>
+                <th className="px-5 py-2">Apellidos</th>
+                <th className="px-5 py-2">Cédula</th>
+                <th className="px-5 py-2">Teléfono</th>
+                <th className="px-5 py-2">Nacionalidad</th>
+                <th className="px-5 py-2 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredArtistsList.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
+                    <svg className="mx-auto h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <p className="text-sm font-medium">No hay artistas registrados.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredArtistsList.map((a) => (
+                  <tr key={a.id_artista} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-5 py-2 font-semibold">{a.nombres}</td>
+                    <td className="px-5 py-2">{a.apellidos}</td>
+                    <td className="px-5 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{a.ci || '—'}</td>
+                    <td className="px-5 py-2">{a.telefono || '—'}</td>
+                    <td className="px-5 py-2">
+                      {a.nacionalidad ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400">{a.nacionalidad}</span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-5 py-2 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => handleArtistFormOpen(a)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="Editar">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button onClick={() => handleArtistDelete(a.id_artista)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Eliminar">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Modal de Formulario Administrativo */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[620px] p-5">
         <div>
@@ -417,10 +653,9 @@ export default function InventarioBoveda() {
                   type="text"
                   name="codigo_inventario"
                   value={formData.codigo_inventario || ""}
-                  onChange={handleChange}
-                  placeholder="Ej. MVT-001"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
-                  required
+                  readOnly
+                  tabIndex={-1}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed select-none"
                 />
               </div>
               <div>
@@ -471,6 +706,9 @@ export default function InventarioBoveda() {
                   name="ano"
                   value={formData.ano}
                   onChange={handleChange}
+                  onKeyDown={limitNumericInput}
+                  min={1000}
+                  max={new Date().getFullYear() + 5}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
@@ -572,6 +810,7 @@ export default function InventarioBoveda() {
                   min={1}
                   value={formData.piezas ?? 1}
                   onChange={handleChange}
+                  onKeyDown={limitNumericInput}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required
                 />
@@ -927,6 +1166,128 @@ export default function InventarioBoveda() {
         onConfirm={confirm.onConfirm}
         onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
       />
+
+
+
+      {/* Modal de Formulario de Artista */}
+      <Modal isOpen={artistFormOpen} onClose={() => { setArtistFormOpen(false); setArtistSearchResults([]); setArtistSearchQuery(""); }} className="max-w-[540px] p-5">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            {isEditingArtist ? "Editar Artista" : "Nuevo Artista"}
+          </h3>
+
+          {/* Buscador por cédula/nombre */}
+          {!isEditingArtist && (
+            <div className="mb-4 p-3 bg-brand-50/50 dark:bg-gray-800/50 border border-brand-100 dark:border-gray-700 rounded-lg">
+              <label className="block mb-1.5 text-[11px] font-semibold text-brand-700 dark:text-brand-400 uppercase tracking-wider">Buscar persona existente</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cédula, nombres o apellidos..."
+                    value={artistSearchQuery}
+                    onChange={(e) => setArtistSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleArtistSearch())}
+                    className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleArtistSearch}
+                  disabled={isSearchingArtist}
+                  className="px-3 py-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 text-xs font-semibold transition-colors disabled:opacity-60 flex items-center gap-1"
+                >
+                  {isSearchingArtist ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  )}
+                  Buscar
+                </button>
+              </div>
+
+              {/* Resultados de búsqueda */}
+              {artistSearchResults.length > 0 && (
+                <div className="mt-2 space-y-1 max-h-36 overflow-y-auto">
+                  {artistSearchResults.map((r, i) => (
+                    <div
+                      key={r.id_artista || i}
+                      onClick={() => selectArtistSearchResult(r)}
+                      className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800 dark:text-white">{r.nombres} {r.apellidos}</p>
+                        <p className="text-[11px] text-gray-500">{r.ci || 'Sin cédula'}</p>
+                      </div>
+                      {r.id_artista ? (
+                        <span className="text-[10px] font-semibold text-brand-600 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded">Artista</span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">Visitante</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleArtistSave} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres</label>
+                <input type="text" name="nombres" value={artistFormData.nombres || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, nombres: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+              </div>
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos</label>
+                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, apellidos: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula</label>
+                <input type="text" name="ci" value={artistFormData.ci || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, ci: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+              </div>
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nacionalidad</label>
+                <input type="text" name="nacionalidad" value={artistFormData.nacionalidad || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, nacionalidad: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+              </div>
+            </div>
+            {!artistFormData.id_artista && (
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento</label>
+                <input type="date" name="fecha_nacimiento" value={artistFormData.fecha_nacimiento || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, fecha_nacimiento: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono</label>
+                <input type="tel" name="telefono" value={artistFormData.telefono || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, telefono: e.target.value }))} onKeyDown={limitNumericInput} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+              </div>
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo</label>
+                <input type="email" name="correo" value={artistFormData.correo || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, correo: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</label>
+              <textarea name="direccion" value={artistFormData.direccion || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, direccion: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 resize-y" />
+            </div>
+            <div className="flex justify-end gap-2.5 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={() => { setArtistFormOpen(false); setArtistSearchResults([]); setArtistSearchQuery(""); }} className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button type="submit" disabled={isArtistSubmitting} className="flex items-center justify-center min-w-[110px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-70 disabled:cursor-wait">
+                {isArtistSubmitting ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  isEditingArtist ? "Actualizar" : "Guardar"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 }

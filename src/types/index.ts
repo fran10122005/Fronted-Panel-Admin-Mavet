@@ -1,3 +1,15 @@
+export interface Artista {
+  id_artista: number;
+  nombres: string;
+  apellidos: string;
+  ci?: string;
+  fecha_nacimiento?: string;
+  telefono?: string;
+  correo?: string;
+  direccion?: string;
+  nacionalidad?: string;
+}
+
 export interface Obra {
   id: string;
   codigo_inventario?: string;
