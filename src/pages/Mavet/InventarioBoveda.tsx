@@ -176,20 +176,9 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< HEAD
 
     const isOtherTecnica = String(formData.id_tecnica) === "other";
-    const tecnicaValida = isOtherTecnica ? customTecnica.trim() : formData.id_tecnica;
 
-    if (!formData.titulo || !formData.id_artista || !tecnicaValida || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
-      toast.error("Por favor complete todos los campos obligatorios.");
-      return;
-    }
-    if (isOtherTecnica && !customTecnica.trim()) {
-      toast.error("Por favor especifique la técnica.");
-      return;
-    }
-=======
     if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
     if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
     if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
@@ -200,10 +189,10 @@ export default function InventarioBoveda() {
     if (!formData.id_estado_actual) { toast.error("Debe seleccionar un estado de conservación."); return; }
     if (!formData.id_categoria_obra) { toast.error("Debe seleccionar una categoría/modalidad."); return; }
     if (!formData.id_tecnica) { toast.error("Debe seleccionar una técnica."); return; }
+    if (isOtherTecnica && !customTecnica.trim()) { toast.error("Por favor especifique la técnica."); return; }
     if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
     if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
     if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
->>>>>>> c94526db30f2027081c958458d5774f206f04219
     setIsSubmitting(true);
 
     try {
