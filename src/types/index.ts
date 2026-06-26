@@ -42,6 +42,7 @@ export interface Libro {
   ano_libro: string | number;
   id_categoria?: number;
   categoria?: string;
+  id_autor?: number;
   cantidad_total: number;
   cantidad_disponible: number;
   estado: string;

@@ -176,9 +176,22 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
+=======
 
+>>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
     const isOtherTecnica = String(formData.id_tecnica) === "other";
 
+<<<<<<< HEAD
+    if (!formData.titulo || !formData.id_artista || !tecnicaValida || !formData.id_estado_actual || !formData.id_categoria_obra || !formData.tipo_ingreso) {
+      toast.error("Por favor complete todos los campos obligatorios.");
+      return;
+    }
+    if (isOtherTecnica && !customTecnica.trim()) {
+      toast.error("Por favor especifique la técnica.");
+      return;
+    }
+=======
     if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
     if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
     if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
@@ -193,6 +206,7 @@ export default function InventarioBoveda() {
     if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
     if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
     if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
+>>>>>>> b500ba35b852aeaa8f13c4deaa3c3582febfd8cf
     setIsSubmitting(true);
 
     try {

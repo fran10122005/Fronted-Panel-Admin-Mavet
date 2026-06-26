@@ -16,6 +16,7 @@ export default function Biblioteca() {
     searchCedula, setSearchCedula,
     currentPage, totalPages, totalItems,
     filteredLibros, filteredPrestamos,
+    prestamos, setPrestamos,
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
     selectedLibroTitle,
@@ -26,6 +27,8 @@ export default function Biblioteca() {
     goToPage, handleOpenPrestamo, handlePrestamoSubmit,
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
     handleLibroChange, handleLibroSubmit,
+    customCategoria, setCustomCategoria,
+    autorNombre, autorApellido,
   } = useLibros();
 
   const inputCls =
@@ -41,6 +44,8 @@ export default function Biblioteca() {
       const result = await mavetApi.devolverLibro(libroId);
       toastMessage("success", result.message);
       goToPage(currentPage);
+      const prestamosRes = await mavetApi.getPrestamosBiblioteca();
+      setPrestamos(prestamosRes);
     } catch (e: any) {
       toastMessage("error", e.message || "Error al devolver.");
     }
@@ -82,36 +87,32 @@ export default function Biblioteca() {
 
         {/* Barra búsqueda / filtros */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full sm:max-w-md">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Buscar por unidad, título o autor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              />
+          <div className="relative w-full sm:max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
-              <select
-                value={filterEstado}
-                onChange={(e) => setFilterEstado(e.target.value)}
-                className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
-              >
-                <option value="Todos">Todos</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Descartado/Venta">Descartado/Venta</option>
-              </select>
-            </div>
+            <input
+              type="text"
+              placeholder="Buscar por unidad, título o autor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+            <select
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value)}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Descartado/Venta">Descartado/Venta</option>
+            </select>
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
             <select
               value={filterCategoria}
@@ -307,14 +308,13 @@ export default function Biblioteca() {
                 <th className="px-3 py-3">Solicitante</th>
                 <th className="px-3 py-3">Libro</th>
                 <th className="px-3 py-3">Unidad</th>
-                <th className="px-3 py-3">Fecha Préstamo</th>
                 <th className="px-3 py-3 text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
               {filteredPrestamos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
+                  <td colSpan={5} className="px-5 py-6 text-center text-gray-500">
                     <p className="text-sm font-medium">
                       {searchCedula.trim() ? "No se encontraron préstamos para esta cédula." : "No hay préstamos activos."}
                     </p>
@@ -328,9 +328,6 @@ export default function Biblioteca() {
                     <span className="block truncate" title={p.libroTitulo}>{p.libroTitulo}</span>
                   </td>
                   <td className="px-3 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
-                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                    {p.fechaPrestamo ? new Date(p.fechaPrestamo).toLocaleDateString('es-ES') : "—"}
-                  </td>
                   <td className="px-3 py-3 text-center">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                       p.estado === "ACTIVO"
@@ -369,6 +366,10 @@ export default function Biblioteca() {
         onChange={handleLibroChange}
         onSubmit={handleLibroSubmit}
         inputCls={inputCls}
+        customCategoria={customCategoria}
+        onCustomCategoriaChange={setCustomCategoria}
+        autorNombre={autorNombre}
+        autorApellido={autorApellido}
       />
 
       <PrestamoFormModal

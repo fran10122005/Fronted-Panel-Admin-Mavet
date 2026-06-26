@@ -134,23 +134,6 @@ export function useLibros() {
     }
   };
 
-  const handleOpenAddLibro = () => {
-    const nextUnidad = generateNextCode(
-      libros.map(l => l.unidad),
-      "BIB",
-      3
-    );
-    setLibroFormData({ ...initialLibroState, unidad: nextUnidad, fecha_ingreso: today });
-    setIsEditing(false);
-    openLibro();
-  };
-
-  const handleEditLibro = (libro: Libro) => {
-    setLibroFormData({ ...libro });
-    setIsEditing(true);
-    openLibro();
-  };
-
   const handleDeleteLibro = (id: string) => {
     setConfirm({
       open: true,
@@ -174,32 +157,106 @@ export function useLibros() {
     });
   };
 
+  const [customCategoria, setCustomCategoria] = useState("");
+  const [autorNombre, setAutorNombre] = useState("");
+  const [autorApellido, setAutorApellido] = useState("");
+
   const handleLibroChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setLibroFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "cantidad_total" || name === "cantidad_disponible"
-          ? parseInt(value) || 0
-          : name === "id_categoria"
-          ? parseInt(value) || undefined
-          : value,
-    }));
+    if (name === "id_categoria") {
+      const parsed = parseInt(value);
+      const clean = isNaN(parsed) ? undefined : parsed;
+      setLibroFormData((prev) => ({ ...prev, id_categoria: clean }));
+      if (clean !== -1) setCustomCategoria("");
+    } else if (name === "autorNombre") {
+      setAutorNombre(value);
+    } else if (name === "autorApellido") {
+      setAutorApellido(value);
+    } else {
+      setLibroFormData((prev) => ({
+        ...prev,
+        [name]:
+          name === "cantidad_total" || name === "cantidad_disponible"
+            ? parseInt(value) || 0
+            : value,
+      }));
+    }
+  };
+
+  const handleOpenAddLibro = () => {
+    const nextUnidad = generateNextCode(
+      libros.map(l => l.unidad),
+      "BIB",
+      3
+    );
+    setLibroFormData({ ...initialLibroState, unidad: nextUnidad, fecha_ingreso: today });
+    setAutorNombre("");
+    setAutorApellido("");
+    setIsEditing(false);
+    openLibro();
+  };
+
+  const handleEditLibro = (libro: Libro) => {
+    setLibroFormData({ ...libro });
+    const autorEncontrado = autores.find((a: any) => a.id_autor === libro.id_autor);
+    setAutorNombre(autorEncontrado?.nombre || libro.autor.split(" ")[0] || "");
+    setAutorApellido(autorEncontrado?.apellido || libro.autor.split(" ").slice(1).join(" ") || "");
+    setIsEditing(true);
+    openLibro();
   };
 
   const handleLibroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!libroFormData.titulo || !libroFormData.autor || !libroFormData.id_categoria) {
-      toast.error("Completa los campos obligatorios: Título, Autor y Categoría.");
+    if (!libroFormData.titulo) {
+      toast.error("El título es obligatorio.");
+      return;
+    }
+    if (!autorNombre.trim() && !autorApellido.trim()) {
+      toast.error("Completa el nombre y apellido del autor.");
+      return;
+    }
+    if (libroFormData.id_categoria === undefined || libroFormData.id_categoria === null) {
+      toast.error("Selecciona o añade una categoría.");
       return;
     }
     setIsSubmitting(true);
     try {
+      let payload: any = { ...libroFormData };
+
+      // Crear o buscar el autor
+      const nombreAutor = autorNombre.trim();
+      const apellidoAutor = autorApellido.trim();
+      const existente = autores.find(
+        (a: any) =>
+          a.nombre?.toLowerCase() === nombreAutor.toLowerCase() &&
+          a.apellido?.toLowerCase() === apellidoAutor.toLowerCase()
+      );
+      if (existente) {
+        payload.id_autor = existente.id_autor;
+      } else {
+        const nuevoAutor = await mavetApi.crearAutorLibro({
+          nombre: nombreAutor,
+          apellido: apellidoAutor || undefined,
+        });
+        payload.id_autor = nuevoAutor.id_autor ?? nuevoAutor.id;
+        setAutores(prev => [...prev, nuevoAutor]);
+      }
+      delete payload.autor;
+      delete payload.categoria;
+
+      // Si seleccionó "Otra..." y hay texto, crear la categoría primero
+      if (libroFormData.id_categoria === -1 && customCategoria.trim()) {
+        const nuevaCat = await mavetApi.crearCategoriaLibro({ nombre_categoria: customCategoria.trim() });
+        payload.id_categoria = nuevaCat.id_categoria ?? nuevaCat.id;
+        setCustomCategoria("");
+        setCategorias(prev => [...prev, nuevaCat]);
+      }
+
       if (isEditing) {
-        await mavetApi.actualizarLibro(libroFormData.id, libroFormData);
+        await mavetApi.actualizarLibro(libroFormData.id, payload);
         toast.success("Libro actualizado correctamente.");
       } else {
-        await mavetApi.crearLibro(libroFormData);
+        await mavetApi.crearLibro(payload);
         toast.success("Nuevo libro registrado exitosamente.");
       }
       await fetchLibrosPaginated(currentPage || 1);
@@ -236,7 +293,7 @@ export function useLibros() {
   }, [prestamos, searchCedula]);
 
   return {
-    libros, autores, categorias, prestamos, isLoading,
+    libros, autores, categorias, prestamos, setPrestamos, isLoading,
     searchTerm, setSearchTerm, debouncedSearch,
     filterEstado, setFilterEstado,
     filterCategoria, setFilterCategoria,
@@ -255,6 +312,8 @@ export function useLibros() {
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
     handleLibroChange, handleLibroSubmit,
     initialLibroState,
+    customCategoria, setCustomCategoria,
+    autorNombre, setAutorNombre, autorApellido, setAutorApellido,
     fetchDatos,
   };
 }

@@ -13,12 +13,18 @@ interface Props {
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   inputCls: string;
+  customCategoria?: string;
+  onCustomCategoriaChange?: (value: string) => void;
+  autorNombre?: string;
+  autorApellido?: string;
 }
 
 export default function LibroFormModal({
   isOpen, onClose, isEditing, libroFormData,
   categorias, isSubmitting,
   onChange, onSubmit, inputCls,
+  customCategoria = "", onCustomCategoriaChange,
+  autorNombre = "", autorApellido = "",
 }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     if (!libroFormData.titulo?.trim()) {
@@ -26,8 +32,8 @@ export default function LibroFormModal({
       e.preventDefault();
       return;
     }
-    if (!libroFormData.autor?.trim()) {
-      toast.error("El autor es obligatorio");
+    if (!autorNombre.trim() && !autorApellido.trim()) {
+      toast.error("El nombre del autor es obligatorio");
       e.preventDefault();
       return;
     }
@@ -59,7 +65,7 @@ export default function LibroFormModal({
         )}
         {!isEditing && <div className="mb-4" />}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} noValidate className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -109,20 +115,32 @@ export default function LibroFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Autor(es) <span className="text-red-500">*</span>
+                Nombre del Autor <span className="text-red-500">*</span>
               </label>
               <input
-                type="text" name="autor" value={libroFormData.autor || ""}
-                onChange={onChange} placeholder="Ej. Gabriel García Márquez, Mario Vargas Llosa"
+                type="text" name="autorNombre" value={autorNombre}
+                onChange={onChange} placeholder="Ej. Gabriel"
                 className={inputCls} required
               />
             </div>
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Apellido del Autor
+              </label>
+              <input
+                type="text" name="autorApellido" value={autorApellido}
+                onChange={onChange} placeholder="Ej. García Márquez"
+                className={inputCls}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Categoría <span className="text-red-500">*</span>
               </label>
               <select
-                name="id_categoria" value={libroFormData.id_categoria || ""}
+                name="id_categoria" value={libroFormData.id_categoria ?? ""}
                 onChange={onChange} className={inputCls} required
               >
                 <option value="" disabled>Seleccione una categoría...</option>
@@ -131,7 +149,18 @@ export default function LibroFormModal({
                     {c.nombre_categoria}
                   </option>
                 ))}
+                <option value="-1">➕ Otra...</option>
               </select>
+              {libroFormData.id_categoria === -1 && (
+                <input
+                  type="text"
+                  value={customCategoria}
+                  onChange={(e) => onCustomCategoriaChange?.(e.target.value)}
+                  placeholder="Escriba el nombre de la nueva categoría..."
+                  className={`${inputCls} mt-2`}
+                  autoFocus
+                />
+              )}
             </div>
           </div>
 
