@@ -1,4 +1,6 @@
 import { Modal } from "../../../components/ui/modal";
+import { limitNumericInput } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -18,6 +20,19 @@ export default function PrestamoFormModal({
   cedula, nombre, isSubmitting,
   onCedulaChange, onNombreChange, onSubmit, inputCls,
 }: Props) {
+  const handleSubmit = (e: React.FormEvent) => {
+    if (!cedula.trim()) {
+      toast.error("La cédula del solicitante es obligatoria");
+      e.preventDefault();
+      return;
+    }
+    if (!nombre.trim()) {
+      toast.error("El nombre del solicitante es obligatorio");
+      e.preventDefault();
+      return;
+    }
+    onSubmit(e);
+  };
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6">
       <div>
@@ -26,7 +41,7 @@ export default function PrestamoFormModal({
           Libro:{" "}
           <span className="font-semibold text-gray-800 dark:text-gray-200">{selectedLibroTitle}</span>
         </p>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
               Cédula del Solicitante
@@ -34,6 +49,7 @@ export default function PrestamoFormModal({
             <input
               type="text" value={cedula}
               onChange={(e) => onCedulaChange(e.target.value)}
+              onKeyDown={limitNumericInput}
               disabled={isSubmitting}
               className={inputCls + " disabled:opacity-50"}
               placeholder="V-12345678" required

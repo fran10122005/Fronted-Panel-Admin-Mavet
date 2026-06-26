@@ -1,4 +1,6 @@
 import { Modal } from "../../../components/ui/modal";
+import { validateRequired } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -17,6 +19,15 @@ export default function TallerFormModal({
   isOpen, onClose, isEditing, formData,
   isSubmitting, onChange, onSubmit, inputCls,
 }: Props) {
+  const handleSubmit = (e: React.FormEvent) => {
+    const error = validateRequired(formData.nombre, "Nombre del taller");
+    if (error) {
+      toast.error(error);
+      e.preventDefault();
+      return;
+    }
+    onSubmit(e);
+  };
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-md p-6">
       <div>
@@ -28,7 +39,7 @@ export default function TallerFormModal({
             ? "Modifique los datos del taller en el inventario."
             : "Agregue un taller al inventario maestro."}
         </p>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={labelCls}>Nombre del Taller <span className="text-red-500">*</span></label>
             <input

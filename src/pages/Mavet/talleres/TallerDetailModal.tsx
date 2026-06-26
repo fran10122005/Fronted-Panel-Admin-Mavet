@@ -1,4 +1,5 @@
 import { Modal } from "../../../components/ui/modal";
+import { limitNumericInput } from "../../../utils/validation";
 
 interface Props {
   isOpen: boolean;
@@ -82,17 +83,17 @@ export default function TallerDetailModal({
             <div>
               <label className={labelCls}>Sesiones</label>
               <input type="number" name="sesiones" value={formData.sesiones}
-                onChange={onChange} className={inputCls} min={1} />
+                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={1} />
             </div>
             <div>
               <label className={labelCls}>Cupo Mínimo</label>
               <input type="number" name="cupo_minimo" value={formData.cupo_minimo}
-                onChange={onChange} className={inputCls} min={0} />
+                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={0} />
             </div>
             <div>
               <label className={labelCls}>Cupo Máximo</label>
               <input type="number" name="cupo_maximo" value={formData.cupo_maximo}
-                onChange={onChange} className={inputCls} min={1} />
+                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={1} />
             </div>
           </div>
           <div>
@@ -116,7 +117,7 @@ export default function TallerDetailModal({
             <div>
               <label className={labelCls}>Horas Totales</label>
               <input type="number" name="horas_totales" value={formData.horas_totales}
-                onChange={onChange} className={inputCls} min={0} />
+                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={0} />
             </div>
             <div>
               <label className={labelCls}>Estado</label>

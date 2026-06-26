@@ -25,6 +25,7 @@ import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
+import { limitNumericInput, validateRequired } from "../../utils/validation";
 
 const Auditorio: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
@@ -172,6 +173,24 @@ const Auditorio: React.FC = () => {
   const handleAddOrUpdateEvent = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setFormError("");
+
+    const titleError = validateRequired(eventTitle, "El título de la reserva");
+    if (titleError) { setFormError(titleError); return; }
+
+    const tipoError = validateRequired(tipoEvento, "El tipo de evento");
+    if (tipoError) { setFormError(tipoError); return; }
+
+    if (!eventDate) {
+      setFormError("La fecha del evento es obligatoria.");
+      return;
+    }
+    const selectedDate = new Date(eventDate + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      setFormError("La fecha del evento debe ser hoy o una fecha futura.");
+      return;
+    }
 
     if (!cedulaOrganizador || !organizador) {
       setFormError("Debe buscar y seleccionar un organizador válido.");
@@ -604,6 +623,7 @@ const Auditorio: React.FC = () => {
                           setOrganizadorError("");
                         }}
                         onKeyDown={(e) => {
+                          limitNumericInput(e);
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             handleCedulaBlur();

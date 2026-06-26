@@ -1,5 +1,7 @@
 import { Modal } from "../../../components/ui/modal";
 import { Trabajador } from "../../../types";
+import { validateEmail } from "../../../utils/validation";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -27,13 +29,26 @@ export default function UsuarioFormModal({
   trabajadores, roles, isSubmitting,
   onChange, onSubmit, inputCls,
 }: Props) {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (formUsuario.correo.trim()) {
+      const err = validateEmail(formUsuario.correo, "Correo");
+      if (err) { toast.error(err); return; }
+    }
+    if (editingUsuarioId === null && formUsuario.password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    onSubmit(e);
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[420px] p-5">
       <div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
           {editingUsuarioId !== null ? "Editar Usuario" : "Registrar Nuevo Usuario"}
         </h3>
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className={labelCls}>Trabajador Vinculado</label>
             <select name="id_trabajador" value={formUsuario.id_trabajador} onChange={onChange} className={inputCls}>
