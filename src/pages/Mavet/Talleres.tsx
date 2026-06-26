@@ -34,8 +34,6 @@ export default function Talleres() {
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     enrollForm,
-    cedulaInstructor,
-    instructorNombre, instructorLoading, instructorError, instructorAuto,
     isSubmitting,
     esMenor, inscripcionesAgrupadas,
     totalPages, paginatedTalleres,
@@ -57,7 +55,16 @@ export default function Talleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
-    handleInstructorCedulaSearch, handleCedulaInstructorChange,
+    showCrearInstructor,
+    nuevaCedula, setNuevaCedula,
+    personaEncontrada,
+    buscandoPersona,
+    nuevaProfesion, setNuevaProfesion,
+    nuevaEspecialidad, setNuevaEspecialidad,
+    openCrearInstructor,
+    closeCrearInstructor,
+    handleBuscarPersona,
+    handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes,
     exportInscripcionesFn,
@@ -144,13 +151,22 @@ export default function Talleres() {
               ))}
             </select>
           </div>
-          <button onClick={handleOpenPlanificar}
-            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap w-full sm:w-auto">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Planificar Taller
-          </button>
+          <div className="flex gap-2">
+            <button onClick={openCrearInstructor}
+              className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-4 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Gestionar Instructores
+            </button>
+            <button onClick={handleOpenPlanificar}
+              className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Planificar Taller
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
         <table className="w-full text-left min-w-[600px] sm:min-w-0">
@@ -433,6 +449,7 @@ export default function Talleres() {
         isEditing={isEditingPlanificado}
         formData={planificarForm}
         inventario={inventario}
+        instructores={instructores}
         espacios={espacios}
         isSubmitting={isSubmitting}
         onChange={handlePlanificarChange}
@@ -440,14 +457,72 @@ export default function Talleres() {
         onSubmit={handleSubmitPlanificar}
         inputCls={inputCls}
         selectCls={selectCls}
-        cedulaInstructor={cedulaInstructor}
-        instructorNombre={instructorNombre}
-        instructorLoading={instructorLoading}
-        instructorError={instructorError}
-        instructorAuto={instructorAuto}
-        onCedulaChange={handleCedulaInstructorChange}
-        onCedulaSearch={handleInstructorCedulaSearch}
       />
+
+      {/* --- Instructor Management Modal --- */}
+      <Modal isOpen={showCrearInstructor} onClose={closeCrearInstructor} className="max-w-lg p-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Gestionar Instructores</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Busque una persona por cédula para registrarla como instructor.</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Buscar por Cédula *</label>
+            <div className="flex gap-2">
+              <input type="text" value={nuevaCedula} onChange={e => setNuevaCedula(e.target.value)}
+                className={inputCls} placeholder="Ej. V-12345678" />
+              <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
+                className="bg-brand-500 hover:bg-brand-600 text-white px-3 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="text-xs">Buscar</span>
+              </button>
+            </div>
+          </div>
+
+          {buscandoPersona && (
+            <p className="text-xs text-brand-600 font-medium flex items-center gap-2">
+              <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></span>
+              Buscando persona...
+            </p>
+          )}
+
+          {personaEncontrada && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-sm">
+              <p className="font-medium text-green-800 dark:text-green-300">
+                {personaEncontrada.nombres} {personaEncontrada.apellidos}
+              </p>
+              <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Cédula: {personaEncontrada.cedula}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
+              <input type="text" value={nuevaProfesion} onChange={e => setNuevaProfesion(e.target.value)}
+                className={inputCls} placeholder="Ej. Arquitecto" />
+            </div>
+            <div>
+              <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
+              <input type="text" value={nuevaEspecialidad} onChange={e => setNuevaEspecialidad(e.target.value)}
+                className={inputCls} placeholder="Ej. Historia del Arte" />
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" onClick={closeCrearInstructor} disabled={isSubmitting}
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+              Cerrar
+            </button>
+            <button type="button" onClick={handleCrearInstructor} disabled={isSubmitting || !personaEncontrada}
+              className="w-full sm:w-auto flex items-center justify-center px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : "Crear Instructor"}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <InscripcionModal
         isOpen={isOpenEnroll}

@@ -9,7 +9,7 @@ export const initialInventarioForm = { nombre: "", descripcion: "" };
 
 export const initialPlanificarForm = {
   id_taller_inventario: 0,
-  cedula_instructor: "",
+  selectedInstructorId: 0,
   id_espacio: 0,
   sesiones: "",
   fecha: "",
@@ -62,24 +62,15 @@ export function useTalleres() {
   });
 
   const [inventarioForm, setInventarioForm] = useState(initialInventarioForm);
-
   const [planificarForm, setPlanificarForm] = useState(initialPlanificarForm);
 
-  const [cedulaInstructor, setCedulaInstructor] = useState("");
-  const [instructorNombre, setInstructorNombre] = useState("");
-  const [instructorLoading, setInstructorLoading] = useState(false);
-  const [instructorError, setInstructorError] = useState("");
-  const [instructorAuto, setInstructorAuto] = useState(false);
-  const [instructorId, setInstructorId] = useState<number | null>(null);
-
-  const handleCedulaInstructorChange = (value: string) => {
-    setCedulaInstructor(value);
-    if (instructorAuto) {
-      setInstructorNombre("");
-      setInstructorAuto(false);
-    }
-    setInstructorError("");
-  };
+  // --- Instructor creation inside modal ---
+  const [showCrearInstructor, setShowCrearInstructor] = useState(false);
+  const [nuevaCedula, setNuevaCedula] = useState("");
+  const [personaEncontrada, setPersonaEncontrada] = useState<any>(null);
+  const [buscandoPersona, setBuscandoPersona] = useState(false);
+  const [nuevaProfesion, setNuevaProfesion] = useState("");
+  const [nuevaEspecialidad, setNuevaEspecialidad] = useState("");
 
   const [enrollForm, setEnrollForm] = useState(initialEnrollForm);
 
@@ -203,19 +194,9 @@ export function useTalleres() {
     if (taller) {
       setIsEditingPlanificado(true);
       setSelectedTaller(taller);
-      const inst = taller.Instructor;
-      const cedula = inst?.Persona?.cedula || taller.cedula_instructor || "";
-      const nombre = inst?.Persona
-        ? `${inst.Persona.nombres || ""} ${inst.Persona.apellidos || ""}`.trim()
-        : "";
-      setCedulaInstructor(cedula);
-      setInstructorNombre(nombre);
-      setInstructorId(inst?.id_instructor || taller.id_instructor || null);
-      setInstructorAuto(!!cedula);
-      setInstructorError("");
       setPlanificarForm({
         id_taller_inventario: taller.inventario_id || 0,
-        cedula_instructor: cedula,
+        selectedInstructorId: taller.id_instructor || 0,
         id_espacio: taller.id_espacio || 0,
         sesiones: taller.sesiones || "",
         fecha: taller.fecha || "",
@@ -230,11 +211,6 @@ export function useTalleres() {
       setIsEditingPlanificado(false);
       setSelectedTaller(null);
       setPlanificarForm({ ...initialPlanificarForm });
-      setCedulaInstructor("");
-      setInstructorNombre("");
-      setInstructorId(null);
-      setInstructorAuto(false);
-      setInstructorError("");
     }
     openPlanificar();
   };
@@ -262,44 +238,86 @@ export function useTalleres() {
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numFields = ["id_taller_inventario", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
+    const numFields = ["id_taller_inventario", "selectedInstructorId", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
     setPlanificarForm(prev => ({
       ...prev,
       [name]: numFields.includes(name) ? Number(value) : value
     }));
   };
 
-  const handleInstructorCedulaSearch = async () => {
-    const cedula = cedulaInstructor.trim();
-    if (!cedula) {
-      setInstructorError("");
-      setInstructorAuto(false);
+  // --- Quick-create instructor ---
+  const handleBuscarPersona = async () => {
+    if (!nuevaCedula.trim()) {
+      toast.error("Ingrese una cédula para buscar");
       return;
     }
-    setInstructorLoading(true);
-    setInstructorError("");
+    setBuscandoPersona(true);
     try {
-      const inst = instructores.find(
-        i => i.Persona?.cedula === cedula
-      );
-      if (inst) {
-        setInstructorId(inst.id_instructor);
-        const nombreCompleto = `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim();
-        setInstructorNombre(nombreCompleto);
-        setInstructorAuto(true);
-        setInstructorError("");
+      const results = await mavetApi.buscarPersona(nuevaCedula.trim());
+      if (results.length === 0) {
+        toast.error("No se encontró ninguna persona con esa cédula");
+        setPersonaEncontrada(null);
       } else {
-        setInstructorId(null);
-        setInstructorNombre("");
-        setInstructorAuto(false);
-        setInstructorError("Instructor no encontrado para esa cédula.");
+        const p = results[0];
+        const yaEsInstructor = instructores.some(i => i.id_persona === p.id_persona);
+        if (yaEsInstructor) {
+          toast.error("Esa persona ya está registrada como instructor");
+          setPersonaEncontrada(null);
+          return;
+        }
+        setPersonaEncontrada(p);
       }
     } catch {
-      setInstructorError("Error al buscar la cédula. Intente de nuevo.");
-      setInstructorAuto(false);
+      toast.error("Error al buscar la persona");
+      setPersonaEncontrada(null);
     } finally {
-      setInstructorLoading(false);
+      setBuscandoPersona(false);
     }
+  };
+
+  const handleCrearInstructor = async () => {
+    if (!personaEncontrada) {
+      toast.error("Debe buscar una persona primero");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await mavetApi.crearInstructor({
+        id_persona: personaEncontrada.id_persona,
+        profesion: nuevaProfesion,
+        especialidad: nuevaEspecialidad
+      });
+      toast.success("Instructor creado");
+      const refreshed = await mavetApi.getInstructores();
+      setInstructores(refreshed);
+      const nuevoInst = refreshed.find(i => i.id_persona === personaEncontrada.id_persona);
+      if (nuevoInst) {
+        setPlanificarForm(prev => ({ ...prev, selectedInstructorId: nuevoInst.id_instructor }));
+      }
+      setShowCrearInstructor(false);
+      resetCrearInstructorForm();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetCrearInstructorForm = () => {
+    setNuevaCedula("");
+    setPersonaEncontrada(null);
+    setNuevaProfesion("");
+    setNuevaEspecialidad("");
+  };
+
+  const openCrearInstructor = () => {
+    resetCrearInstructorForm();
+    setShowCrearInstructor(true);
+  };
+
+  const closeCrearInstructor = () => {
+    setShowCrearInstructor(false);
+    resetCrearInstructorForm();
   };
 
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
@@ -308,8 +326,8 @@ export function useTalleres() {
       toast.error("Debe seleccionar un taller del inventario.");
       return;
     }
-    if (!instructorId) {
-      toast.error("Debe buscar y seleccionar un instructor válido.");
+    if (!planificarForm.selectedInstructorId) {
+      toast.error("Debe seleccionar un instructor.");
       return;
     }
     setIsSubmitting(true);
@@ -317,7 +335,7 @@ export function useTalleres() {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
       const payload = {
         inventario_id: planificarForm.id_taller_inventario,
-        id_instructor: instructorId,
+        id_instructor: planificarForm.selectedInstructorId,
         id_espacio: planificarForm.id_espacio || null,
         nombre_curso: selected?.nombre || "",
         sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
@@ -455,12 +473,6 @@ export function useTalleres() {
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     enrollForm, setEnrollForm,
-    cedulaInstructor,
-    instructorNombre,
-    instructorLoading,
-    instructorError,
-    instructorAuto,
-    instructorId,
     isSubmitting,
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
@@ -483,7 +495,17 @@ export function useTalleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
-    handleInstructorCedulaSearch, handleCedulaInstructorChange,
+    // Instructor quick-create
+    showCrearInstructor,
+    nuevaCedula, setNuevaCedula,
+    personaEncontrada,
+    buscandoPersona,
+    nuevaProfesion, setNuevaProfesion,
+    nuevaEspecialidad, setNuevaEspecialidad,
+    openCrearInstructor,
+    closeCrearInstructor,
+    handleBuscarPersona,
+    handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes,
     exportInscripcionesFn,

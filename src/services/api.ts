@@ -602,6 +602,30 @@ export const mavetApi = {
       return [];
     }
   },
+  crearInstructor: async (payload: { id_persona: number; profesion?: string; especialidad?: string }): Promise<any> => {
+    try {
+      const res = await axiosInstance.post('/api/educacion/instructores', payload);
+      return res.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear instructor");
+    }
+  },
+  actualizarInstructor: async (id: number, payload: { profesion?: string; especialidad?: string }): Promise<any> => {
+    try {
+      const res = await axiosInstance.put(`/api/educacion/instructores/${id}`, payload);
+      return res.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar instructor");
+    }
+  },
+  eliminarInstructor: async (id: number): Promise<any> => {
+    try {
+      const res = await axiosInstance.delete(`/api/educacion/instructores/${id}`);
+      return res.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar instructor");
+    }
+  },
 
   getEspaciosMuseo: async (): Promise<any[]> => {
     try {
