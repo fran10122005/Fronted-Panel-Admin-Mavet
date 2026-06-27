@@ -6,8 +6,10 @@ const C = {
   maroon: "#800000",
   maroonDark: "#240000",
   gold: "#c4985a",
+  goldLight: "#e8d5b0",
   white: "#ffffff",
   textGray: "#4b5563",
+  textSoft: "#6b7280",
   lightBg: "#fdf8f6"
 };
 
@@ -17,137 +19,164 @@ const styles = StyleSheet.create({
     height: 242,
     backgroundColor: C.lightBg,
     fontFamily: "Helvetica",
-    display: "flex",
-    flexDirection: "column",
   },
-  headerBg: {
-    backgroundColor: C.maroon,
-    height: 90,
+  rootContainer: {
     width: "100%",
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    height: "100%",
+    position: "relative",
+  },
+  borderFrame: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    width: 145,
+    height: 234,
+    borderWidth: 1.2,
+    borderColor: C.gold,
+    borderRadius: 4,
+  },
+  watermarkImage: {
+    position: "absolute",
+    top: 76,
+    left: 31.5,
+    width: 90,
+    height: 90,
+    opacity: 0.06,
+    objectFit: "contain",
+  },
+  headerSection: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 10,
     paddingTop: 10,
-    zIndex: 1
+    height: 32,
   },
-  logoPlaceholder: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: C.gold,
-    alignItems: "center",
+  logoImage: {
+    width: 20,
+    height: 20,
+    objectFit: "contain",
+  },
+  headerTextContainer: {
+    marginLeft: 6,
     justifyContent: "center",
-    marginBottom: 4
-  },
-  logoText: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: C.maroonDark
   },
   institucion: {
-    fontSize: 7,
-    fontWeight: 600,
-    color: C.white,
-    letterSpacing: 0.5,
-    textAlign: "center"
+    fontSize: 6.5,
+    fontWeight: 700,
+    color: C.maroon,
+    letterSpacing: 0.3,
   },
   estado: {
     fontSize: 5,
-    color: "#e8d5b0",
-    textAlign: "center",
+    fontWeight: 600,
+    color: C.gold,
+    letterSpacing: 0.5,
     marginTop: 1,
-    textTransform: "uppercase",
-    letterSpacing: 1
+  },
+  headerLine: {
+    width: 133,
+    height: 0.5,
+    backgroundColor: C.gold,
+    alignSelf: "center",
+    marginTop: 4,
   },
   photoWrapper: {
-    marginTop: -25, // Pulls the avatar up to overlap the header cleanly
     alignSelf: "center",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    marginTop: 8,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 2,
     borderColor: C.gold,
-    borderStyle: "solid",
     backgroundColor: C.white,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10
+    // Sombra sutil
+    shadowColor: "#000000",
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 }
   },
   photo: {
     width: "100%",
     height: "100%",
+    borderRadius: 27,
     objectFit: "cover"
   },
   fallbackText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 700,
-    color: C.maroon,
-    marginTop: 3 // visual centering fix for text inside circles
+    color: C.maroon
   },
   infoSection: {
     marginTop: 6,
     alignItems: "center",
     paddingHorizontal: 8
   },
-  name: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: C.maroon,
-    textAlign: "center",
-    marginBottom: 2
-  },
   cargo: {
-    fontSize: 6.5,
-    fontWeight: 600,
+    fontSize: 6,
+    fontWeight: 700,
     color: C.gold,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    textAlign: "center"
+    letterSpacing: 0.8,
+    textAlign: "center",
   },
-  divider: {
-    width: 40,
-    height: 1,
-    backgroundColor: "#e5e7eb",
-    marginVertical: 6,
-    alignSelf: "center"
+  name: {
+    fontSize: 10.5,
+    fontWeight: 700,
+    color: C.maroonDark,
+    textAlign: "center",
+    marginTop: 2
   },
   idText: {
-    fontSize: 6,
+    fontSize: 6.5,
     color: C.textGray,
-    fontWeight: 600
-  },
-  // Footer
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    width: "100%",
-    height: 40,
-    backgroundColor: C.maroonDark,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12
+    fontWeight: 600,
+    letterSpacing: 0.3,
+    marginTop: 2
   },
   qrContainer: {
-    width: 28,
-    height: 28,
+    width: 58,
+    height: 58,
     backgroundColor: C.white,
-    padding: 2,
-    borderRadius: 2
+    padding: 3,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: C.goldLight,
+    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "center"
   },
   qrImage: {
     width: "100%",
     height: "100%"
   },
+  validityText: {
+    fontSize: 6,
+    color: C.textSoft,
+    marginTop: 6,
+    letterSpacing: 0.3,
+    fontWeight: 500
+  },
+  footer: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    width: 145,
+    height: 18,
+    backgroundColor: C.maroon,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+  },
   footerText: {
-    fontSize: 5,
-    color: C.gold,
-    textAlign: "right",
-    flex: 1,
-    marginLeft: 4,
-    lineHeight: 1.4
+    fontSize: 6.5,
+    color: C.white,
+    fontWeight: 700,
+    letterSpacing: 0.5,
+    textAlign: "center"
   }
 });
 
@@ -169,56 +198,64 @@ export default function CarnetTrabajadorPDF({ trabajador }: Props) {
   const cargo = trabajador.Cargo?.nombre_cargo || (trabajador as any).cargo || "TRABAJADOR";
   const idEmpleado = p.cedula || (trabajador as any).cedula || `ID-${trabajador.id_trabajador || 'X'}`;
   
-  // URL for the photo (from backend) or fallback initials
+  // URL para la foto o iniciales de fallback
   const urlFoto = trabajador.foto_url ? trabajador.foto_url : null;
   const iniciales = getInitiales(nombre.split(" ")[0], apellido.split(" ")[0]);
   
-  // Free API for QR code generation
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(idEmpleado)}&color=800000`;
+  // API para generar el código QR centrado y en color granate usando qr_uuid por seguridad
+  const qrData = (trabajador as any).qr_uuid || idEmpleado;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}&color=800000`;
 
   return (
     <Document>
       <Page size={[153, 242]} style={styles.page}>
-        
-        {/* Background Header */}
-        <View style={styles.headerBg}>
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>M</Text>
-          </View>
-          <Text style={styles.institucion}>MUSEO DE ARTES VISUALES</Text>
-          <Text style={styles.estado}>Estado Táchira</Text>
-        </View>
-
-        {/* Profile Photo */}
-        <View style={styles.photoWrapper}>
-          {urlFoto ? (
-            <Image style={styles.photo} src={urlFoto} />
-          ) : (
-            <Text style={styles.fallbackText}>{iniciales}</Text>
-          )}
-        </View>
-
-        {/* Worker Information */}
-        <View style={styles.infoSection}>
-          <Text style={styles.name}>{`${nombre.split(" ")[0]} ${apellido.split(" ")[0]}`.toUpperCase()}</Text>
-          <Text style={styles.cargo}>{cargo}</Text>
+        <View style={styles.rootContainer}>
           
-          <View style={styles.divider} />
+          {/* Marco dorado elegante */}
+          <View style={styles.borderFrame} />
           
-          <Text style={styles.idText}>C.I: {idEmpleado}</Text>
-        </View>
-
-        {/* Footer with QR */}
-        <View style={styles.footer}>
-          <View style={styles.qrContainer}>
-            <Image style={styles.qrImage} src={qrUrl} />
+          {/* Marca de agua de fondo */}
+          <Image style={styles.watermarkImage} src="/images/logo/mavet2.png" />
+          
+          {/* Membrete con Logo en la esquina */}
+          <View style={styles.headerSection}>
+            <Image style={styles.logoImage} src="/images/logo/mavet2.png" />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.institucion}>MUSEO DE ARTES VISUALES</Text>
+              <Text style={styles.estado}>ESTADO TÁCHIRA</Text>
+            </View>
           </View>
-          <View style={styles.footerText}>
-            <Text>VÁLIDO</Text>
-            <Text>2026 - 2027</Text>
-          </View>
-        </View>
+          <View style={styles.headerLine} />
 
+          {/* Foto de Perfil / Iniciales de Fallback (En flujo normal, sin cabecera) */}
+          <View style={styles.photoWrapper}>
+            {urlFoto ? (
+              <Image style={styles.photo} src={urlFoto} />
+            ) : (
+              <Text style={styles.fallbackText}>{iniciales}</Text>
+            )}
+          </View>
+
+          {/* Información del Trabajador y Código QR Centralizado */}
+          <View style={styles.infoSection}>
+            <Text style={styles.cargo}>{cargo}</Text>
+            <Text style={styles.name}>{`${nombre.split(" ")[0]} ${apellido.split(" ")[0]}`.toUpperCase()}</Text>
+            <Text style={styles.idText}>C.I: {idEmpleado}</Text>
+            
+            {/* Código QR Principal para Escaneo */}
+            <View style={styles.qrContainer}>
+              <Image style={styles.qrImage} src={qrUrl} />
+            </View>
+            
+            <Text style={styles.validityText}>VÁLIDO 2026 - 2027</Text>
+          </View>
+
+          {/* Barra de Footer Sólida en la base */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>MUSEO DE ARTES VISUALES</Text>
+          </View>
+
+        </View>
       </Page>
     </Document>
   );

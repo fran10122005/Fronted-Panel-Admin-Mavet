@@ -4,6 +4,7 @@ import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico } from "../../services/pdf.service";
 import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
+import AsistenciaModal from "../../components/AsistenciaModal";
 
 export default function Recepcion() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,7 +31,6 @@ export default function Recepcion() {
 
   // Dashboard state
   const [eventosHoy, setEventosHoy] = useState<any[]>([]);
-  const [visitantesFrecuentes, setVisitantesFrecuentes] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
 
   // Modal de Código QR Público
@@ -41,6 +41,9 @@ export default function Recepcion() {
   // Modal para menores
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
   const [menorData, setMenorData] = useState({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
+
+  // Modal Asistencia Personal
+  const [isAsistenciaModalOpen, setIsAsistenciaModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
@@ -66,10 +69,6 @@ export default function Recepcion() {
       const hoyStr = new Date().toISOString().split('T')[0];
       const filtrados = eventos.filter((e: any) => e.fecha?.startsWith(hoyStr));
       setEventosHoy(filtrados);
-
-      const now = new Date();
-      const topVisitantes = await mavetApi.getTopVisitantes(now.getMonth() + 1, now.getFullYear());
-      setVisitantesFrecuentes(topVisitantes.slice(0, 10)); // Top 10
     } catch (error) {
       console.error("Error cargando dashboard", error);
     } finally {
@@ -206,16 +205,27 @@ export default function Recepcion() {
     <div className="space-y-6 max-w-7xl mx-auto relative">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
-        <button
-          onClick={() => setIsQrModalOpen(true)}
-          className="bg-brand-100 text-brand-700 hover:bg-brand-200 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
-          </svg>
-          Generar QR Público
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAsistenciaModalOpen(true)}
+            className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Asistencia Personal
+          </button>
+          <button
+            onClick={() => setIsQrModalOpen(true)}
+            className="bg-brand-100 text-brand-700 hover:bg-brand-200 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+            </svg>
+            Generar QR Público
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -417,42 +427,6 @@ export default function Recepcion() {
             )}
           </div>
 
-          {/* Panel Visitantes Frecuentes */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🌟</span> Visitantes Frecuentes
-              </div>
-            </h2>
-            {isLoadingDashboard ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-              </div>
-            ) : visitantesFrecuentes.length > 0 ? (
-              <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
-                {visitantesFrecuentes.map((v, idx) => (
-                  <div key={idx} className="flex flex-col p-3 border border-gray-100 dark:border-gray-700/60 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                    <div className="flex justify-between items-start">
-                      <p className="font-semibold text-gray-800 dark:text-gray-200 text-sm truncate pr-2">
-                        {v.nombre}
-                      </p>
-                      <span className="text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded shadow-sm shrink-0">
-                        {v.totalVisitas} visitas
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Última vez: {new Date(v.ultimaVisita).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">No hay datos suficientes.</p>
-            )}
-          </div>
         </div>
 
       </div>
@@ -560,6 +534,12 @@ export default function Recepcion() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Asistencia Personal (Empleados) */}
+      <AsistenciaModal 
+        isOpen={isAsistenciaModalOpen} 
+        onClose={() => setIsAsistenciaModalOpen(false)} 
+      />
 
     </div>
   );

@@ -33,7 +33,6 @@ export default function RRHH() {
     handleOpenCrearTrabajador, handleOpenEditarTrabajador,
     handleOpenCrearUsuario, handleOpenEditarUsuario,
     handleResetPassword,
-    handleChangeTrabajador, handleChangeUsuario,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
   } = useRRHH();
@@ -257,10 +256,9 @@ export default function RRHH() {
         isOpen={isOpenTrabajador}
         onClose={closeTrabajador}
         editingTrabajadorId={editingTrabajadorId}
-        formData={formData}
+        initialData={formData}
         cargos={cargos}
         isSubmitting={isSubmitting}
-        onChange={handleChangeTrabajador}
         onSubmit={handleSubmitTrabajador}
         inputCls={inputCls}
       />
@@ -269,11 +267,10 @@ export default function RRHH() {
         isOpen={isOpenUsuario}
         onClose={closeUsuario}
         editingUsuarioId={editingUsuarioId}
-        formUsuario={formUsuario}
+        initialData={formUsuario}
         trabajadores={trabajadores}
         roles={roles}
         isSubmitting={isSubmitting}
-        onChange={handleChangeUsuario}
         onSubmit={handleSubmitUsuario}
         inputCls={inputCls}
       />

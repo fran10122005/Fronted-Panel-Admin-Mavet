@@ -378,7 +378,9 @@ export const mavetApi = {
           cargo: item.CargoTrabajador?.nombre_cargo || "Sin cargo",
           horas_semanales: item.horas_semanales || 0,
           estado: (item.estado === true || item.estado === "Activo") ? "Activo" : "Inactivo",
-          id: item.id_trabajador
+          id: item.id_trabajador,
+          qr_uuid: item.qr_uuid || undefined,
+          foto_url: item.foto_url || undefined
         })),
         totalItems: meta.totalItems,
         totalPages: meta.totalPages,
@@ -424,7 +426,7 @@ export const mavetApi = {
     }
   },
 
-  registrarTrabajador: async (payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
+  registrarTrabajador: async (payload: TrabajadorPayload): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
       const body: any = {
         cedula: payload.cedula,
@@ -440,10 +442,23 @@ export const mavetApi = {
       if (payload.fecha_nacimiento !== undefined) body.fecha_nacimiento = payload.fecha_nacimiento;
       if (payload.fecha_ingreso !== undefined) body.fecha_ingreso = payload.fecha_ingreso;
 
-      await axiosInstance.post('/api/rrhh/trabajadores', body);
-      return { success: true, message: "Trabajador registrado exitosamente. QR Generado." };
+      const res = await axiosInstance.post('/api/rrhh/trabajadores', body);
+      return { success: true, message: "Trabajador registrado exitosamente.", data: res.data?.data };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al registrar trabajador");
+    }
+  },
+
+  subirFotoTrabajador: async (id: number | string, file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append("foto", file);
+      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return res.data?.url || res.data?.data?.url || "";
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al subir la foto");
     }
   },
 

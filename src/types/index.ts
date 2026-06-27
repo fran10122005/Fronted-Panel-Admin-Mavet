@@ -107,7 +107,16 @@ export interface Trabajador {
   cargo: string;
   horas_semanales?: number;
   estado: "Activo" | "Inactivo";
+  qr_uuid?: string;
   foto_url?: string;
+  Persona?: {
+    nombres: string;
+    apellidos: string;
+    cedula: string;
+  };
+  Cargo?: {
+    nombre_cargo: string;
+  };
 }
 
 export interface Usuario {

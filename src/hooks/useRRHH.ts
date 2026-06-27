@@ -166,65 +166,72 @@ export function useRRHH() {
     });
   };
 
-  const handleChangeTrabajador = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const val = (e.target.name === "id_cargo" || e.target.name === "horas_semanales")
-      ? Number(e.target.value) : e.target.value;
-    setFormData({ ...formData, [e.target.name]: val });
-  };
 
-  const handleChangeUsuario = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === "id_rol" || name === "id_trabajador") {
-      setFormUsuario({ ...formUsuario, [name]: Number(value) });
-    } else if (name === "estado") {
-      setFormUsuario({ ...formUsuario, estado: value === "true" });
-    } else {
-      setFormUsuario({ ...formUsuario, [name]: value });
-    }
-  };
 
-  const handleSubmitTrabajador = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.cedula || !formData.nombres || !formData.apellidos || formData.id_cargo === 0) {
-      toast.error("Por favor complete todos los campos obligatorios.");
-      return;
-    }
+  const handleSubmitTrabajador = async (data: any, photoFile?: File | null) => {
     setIsSubmitting(true);
     try {
+      let trabajadorId = editingTrabajadorId;
+      
       if (editingTrabajadorId !== null) {
-        await mavetApi.actualizarTrabajador(editingTrabajadorId, formData);
+        await mavetApi.actualizarTrabajador(editingTrabajadorId, data);
         toast.success("Trabajador actualizado exitosamente.");
       } else {
-        await mavetApi.registrarTrabajador(formData);
+        const res = await mavetApi.registrarTrabajador(data);
+        trabajadorId = res.data?.id_trabajador || res.data?.id;
         toast.success("Trabajador registrado exitosamente.");
       }
+      
+      if (photoFile && trabajadorId) {
+        toast.loading("Subiendo foto...", { id: "upload-photo" });
+        await mavetApi.subirFotoTrabajador(trabajadorId, photoFile);
+        toast.success("Foto subida correctamente.", { id: "upload-photo" });
+      }
+
       closeTrabajador();
       await refreshData();
       setActiveTab("trabajadores");
+
+      if (editingTrabajadorId === null && trabajadorId) {
+        // Show confirm dialog to print carnet
+        setConfirm({
+          open: true,
+          title: "Imprimir Carnet",
+          message: "El trabajador ha sido registrado exitosamente. ¿Deseas imprimir su carnet ahora?",
+          confirmLabel: "Imprimir",
+          variant: "info",
+          onConfirm: async () => {
+            setConfirm(prev => ({ ...prev, open: false }));
+            try {
+              const res = await mavetApi.getTrabajadores(1, 100);
+              const t = res.data.find(x => x.id === trabajadorId);
+              if (t) {
+                const { exportarCarnetReactPDF } = await import('../services/pdf.service');
+                await exportarCarnetReactPDF(t);
+              }
+            } catch (err) {
+              console.error(err);
+              toast.error("Error al generar carnet");
+            }
+          }
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || "Error al guardar el trabajador.");
+      toast.dismiss("upload-photo");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSubmitUsuario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formUsuario.correo || formUsuario.id_rol === 0) {
-      toast.error("Por favor complete todos los campos obligatorios.");
-      return;
-    }
-    if (editingUsuarioId === null && !formUsuario.password) {
-      toast.error("La contraseña inicial es requerida.");
-      return;
-    }
+  const handleSubmitUsuario = async (data: any) => {
     setIsSubmitting(true);
     try {
       if (editingUsuarioId !== null) {
-        await mavetApi.actualizarUsuario(editingUsuarioId, formUsuario);
+        await mavetApi.actualizarUsuario(editingUsuarioId, data);
         toast.success("Usuario actualizado exitosamente.");
       } else {
-        await mavetApi.registrarUsuario(formUsuario);
+        await mavetApi.registrarUsuario(data);
         toast.success("Usuario creado exitosamente.");
       }
       closeUsuario();
@@ -303,7 +310,6 @@ export function useRRHH() {
     handleOpenCrearTrabajador, handleOpenEditarTrabajador,
     handleOpenCrearUsuario, handleOpenEditarUsuario,
     handleResetPassword,
-    handleChangeTrabajador, handleChangeUsuario,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleCartaAval,

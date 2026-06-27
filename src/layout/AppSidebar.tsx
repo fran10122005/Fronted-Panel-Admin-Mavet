@@ -81,6 +81,7 @@ const routePermissions: Record<string, string[]> = {
   "/inventario-obras": ["Administrador", "admin", "Curador"],
   "/biblioteca": ["Administrador", "admin", "Bibliotecario", "Guía"],
   "/rrhh": ["Administrador", "admin", "Recursos Humanos"],
+  "/asistencia": ["*"],
 };
 
 const AppSidebar: React.FC = () => {

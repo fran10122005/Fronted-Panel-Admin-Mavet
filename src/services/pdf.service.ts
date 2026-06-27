@@ -44,46 +44,7 @@ function addGradientOverlay(doc: jsPDF) {
   setOpacity(doc, 1);
 }
 
-// ─── Decorative: grid pattern ────────────────────────────────────────────────
-// Mimics grid-01.svg: subtle grid lines + small rectangles at intersections
-function addDecorativeGrid(doc: jsPDF) {
-  const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
-  const m = 20;
 
-  doc.setDrawColor(178, 178, 178);
-  doc.setLineWidth(0.1);
-  setOpacity(doc, 0.12);
-
-  const hCount = 5;
-  const vCount = 6;
-  const hStep = (ph - m * 2) / hCount;
-  const vStep = (pw - m * 2) / vCount;
-
-  for (let i = 0; i <= hCount; i++) {
-    const y = m + i * hStep;
-    doc.line(m, y, pw - m, y);
-  }
-  for (let i = 0; i <= vCount; i++) {
-    const x = m + i * vStep;
-    doc.line(x, m, x, ph - m);
-  }
-
-  setOpacity(doc, 0.05);
-  doc.setFillColor(178, 178, 178);
-  const dotSize = 4;
-  const pattern: [number, number][] = [
-    [m + vStep * 0, m + hStep * 0], [m + vStep * 2, m + hStep * 1],
-    [m + vStep * 4, m + hStep * 2], [m + vStep * 1, m + hStep * 3],
-    [m + vStep * 3, m + hStep * 4], [m + vStep * 5, m + hStep * 0],
-    [m + vStep * 0, m + hStep * 2], [m + vStep * 3, m + hStep * 5],
-  ];
-  pattern.forEach(([x, y]) => {
-    doc.rect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize, "F");
-  });
-
-  setOpacity(doc, 1);
-}
 
 // ─── Decorative: corner accents ──────────────────────────────────────────────
 function addCornerAccents(doc: jsPDF) {
@@ -125,37 +86,36 @@ function getLogo(): Promise<string> {
 }
 
 async function addHeader(doc: jsPDF, title: string) {
-  // Page background: gradient + grid + corner accents
+  // Page background: gradient + corner accents
   addGradientOverlay(doc);
-  addDecorativeGrid(doc);
   addCornerAccents(doc);
 
   const logo = await getLogo();
   const pw = doc.internal.pageSize.getWidth();
 
   doc.setFillColor(...C.brandDark);
-  doc.rect(0, 0, pw, 78, "F");
+  doc.rect(0, 0, pw, 32, "F");
   doc.setFillColor(...C.gold);
-  doc.rect(0, 76, pw, 4, "F");
+  doc.rect(0, 30, pw, 2, "F");
 
   if (logo) {
     try {
-      doc.addImage(logo, "PNG", 18, 10, 48, 48);
+      doc.addImage(logo, "PNG", 10, 3, 26, 26);
     } catch { /* */ }
   }
 
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", 78, 16);
+  doc.setFontSize(11);
+  doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", 42, 9);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("MAVET – Sistema de Gestión Interna", 78, 34);
+  doc.setFontSize(8);
+  doc.text("MAVET – Sistema de Gestión Interna", 42, 16);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(title, 78, 54);
+  doc.setFontSize(10);
+  doc.text(title, 42, 24);
 }
 
 function addFooter(doc: jsPDF) {
@@ -168,7 +128,6 @@ function addFooter(doc: jsPDF) {
     // Background decorations for pages after the first
     if (i > 1) {
       addGradientOverlay(doc);
-      addDecorativeGrid(doc);
       addCornerAccents(doc);
     }
 
@@ -231,7 +190,7 @@ export async function exportarCatalogoBiblioteca() {
 // ─── PDF: Constancia de Trabajo ──────────────────────────────────────────────
 export async function exportarCartaAvalHoras(
   trabajador: Trabajador,
-  asistencias: RegistroAsistencia[]
+  _asistencias: RegistroAsistencia[]
 ) {
   if (!trabajador.cedula) {
     alert("No se puede generar la constancia: el trabajador no tiene una cédula asignada.");
@@ -239,169 +198,9 @@ export async function exportarCartaAvalHoras(
   }
 
   try {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    await addHeader(doc, "CARTA DE AVAL");
-
-    const pw = doc.internal.pageSize.getWidth();
-    const ph = doc.internal.pageSize.getHeight();
-
-    const fechaHoy = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit", month: "long", year: "numeric",
-    });
-
-    doc.setTextColor(...C.textSoft);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Emitida el: ${fechaHoy}`, 78, 82);
-
-    // Línea decorativa gold
-    doc.setDrawColor(...C.gold);
-    doc.setLineWidth(0.4);
-    doc.line(40, 97, pw - 40, 97);
-
-    doc.y = 112;
-    doc.setTextColor(...C.text);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      "Quien suscribe, Director del Museo de Artes Visuales del Estado Táchira (MAVET), hace constar mediante la presente que:",
-      { align: "justify" }
-    );
-    doc.y += 16;
-
-    // Recuadro del trabajador
-    const cy = doc.y;
-    const boxH = 80;
-
-    doc.setFillColor(...C.line);
-    doc.rect(42, cy + 1, pw - 80, boxH, "F");
-    doc.setFillColor(...C.accent);
-    doc.rect(40, cy, pw - 80, boxH, "F");
-    doc.setFillColor(...C.gold);
-    doc.rect(40, cy, 4, boxH, "F");
-
-    const cargo = trabajador.cargo || "—";
-    const nombre = `${trabajador.nombre} ${trabajador.apellido}`.trim().toUpperCase();
-
-    doc.setTextColor(...C.brand);
-    doc.setFontSize(15);
-    doc.setFont("helvetica", "bold");
-    doc.text(nombre, 56, cy + 14);
-
-    doc.setTextColor(...C.text);
-    doc.setFontSize(9.5);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Cédula: ${trabajador.cedula || "—"}    Cargo: ${cargo}`, 56, cy + 34);
-    doc.text(
-      `Estado: ${trabajador.estado || "Activo"}    Correo: ${trabajador.correo || "—"}    Tel: ${trabajador.telefono || "—"}`,
-      56,
-      cy + 48,
-      { maxWidth: pw - 110 }
-    );
-
-    doc.y = cy + boxH + 22;
-
-    doc.setTextColor(...C.text);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      "Ha cumplido sus horas de servicio en esta institución de manera satisfactoria, de acuerdo con los registros de asistencia que se detallan a continuación:",
-      { align: "justify" }
-    );
-    doc.y += 16;
-
-    // Tabla de asistencias
-    const th = ["Fecha", "Entrada Mañana", "Salida Mañana", "Entrada Tarde", "Salida Tarde"];
-    const trows = asistencias.length > 0
-      ? asistencias.map((a) => {
-          const fmt = (dt: string | null | undefined) =>
-            dt
-              ? new Date(dt).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })
-              : "—";
-          return [a.fecha || "—", fmt(a.entradaManana), fmt(a.salidaTarde), fmt(a.entradaTarde), fmt(a.salidaTarde)];
-        })
-      : [["Sin registros", "", "", "", ""]];
-
-    const cw = (pw - 80) / 5;
-    let y = doc.y;
-
-    // Encabezado de tabla
-    doc.setFillColor(...C.line);
-    doc.rect(42, y + 1, pw - 80, 22, "F");
-    doc.setFillColor(...C.brand);
-    doc.rect(40, y, pw - 80, 22, "F");
-    doc.setFillColor(...C.brandDark);
-    doc.rect(40, y + 20, pw - 80, 2, "F");
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "bold");
-    th.forEach((h, i) => doc.text(h, 46 + i * cw, y + 6, { maxWidth: cw - 10 }));
-    y += 22;
-
-    trows.forEach((row, ri) => {
-      if (y > ph - 110) { doc.addPage(); y = 50; }
-      const bg = ri % 2 === 0 ? C.rowEven : C.rowOdd;
-      doc.setFillColor(...bg);
-      doc.rect(40, y, pw - 80, 18, "F");
-      doc.setTextColor(...C.text);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      row.forEach((text, i) => doc.text(String(text), 46 + i * cw, y + 5, { maxWidth: cw - 10 }));
-      if (ri < trows.length - 1) {
-        doc.setDrawColor(...C.line);
-        doc.setLineWidth(0.2);
-        doc.line(40, y + 18, pw - 40, y + 18);
-      }
-      y += 18;
-    });
-
-    // Borde exterior tabla
-    doc.setDrawColor(...C.brandLight);
-    doc.setLineWidth(0.4);
-    doc.rect(40, y - trows.length * 18, pw - 80, trows.length * 18);
-
-    // Totales
-    const totalDias = asistencias.length;
-    const totalHoras = asistencias.reduce((s, a) => s + (a.horasCumplidas || 0), 0);
-    y = Math.max(y + 5, doc.y + 5);
-    doc.setTextColor(...C.brand);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total: ${totalDias} días  ·  ${totalHoras} horas cumplidas`, 40, y);
-
-    // Firma
-    y += 30;
-    if (y > ph - 130) { doc.addPage(); y = 60; }
-
-    doc.setDrawColor(...C.text);
-    doc.setLineWidth(0.5);
-    doc.line(40, y, 200, y);
-    doc.setTextColor(...C.text);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Director(a) MAVET", 40, y + 6);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text("Firma Autorizada", 40, y + 20);
-
-    // Sello
-    const sx = pw - 65, sy = y - 8;
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.6);
-    doc.circle(sx, sy, 18);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(...C.brand);
-    doc.text("MAVET", sx, sy - 3, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.text("MUSEO DE", sx, sy + 4, { align: "center" });
-    doc.text("ARTES VISUALES", sx, sy + 9, { align: "center" });
-    doc.text("DEL TÁCHIRA", sx, sy + 14, { align: "center" });
-
-    addFooter(doc);
-    doc.output('dataurlnewwindow');
+    const res = await axiosInstance.get(`/api/reportes/carta-aval/${trabajador.cedula}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarCartaAvalHoras]", e);
     alert("Error al generar la constancia de trabajo. Verifique su conexión.");
@@ -452,10 +251,6 @@ export async function exportarQRPublico(qrImageUrl: string, publicUrl: string) {
 
     const pw = doc.internal.pageSize.getWidth();
 
-    doc.setDrawColor(...C.gold);
-    doc.setLineWidth(0.4);
-    doc.line(20, 84, pw - 20, 84);
-
     const resp = await fetch(qrImageUrl);
     const blob = await resp.blob();
     const qrBase64 = await new Promise<string>((resolve) => {
@@ -466,7 +261,7 @@ export async function exportarQRPublico(qrImageUrl: string, publicUrl: string) {
 
     const qrSize = 100;
     const xPos = (pw - qrSize) / 2;
-    const yPos = 50;
+    const yPos = 55;
 
     // Sombra
     doc.setFillColor(...C.line);
@@ -484,12 +279,12 @@ export async function exportarQRPublico(qrImageUrl: string, publicUrl: string) {
     doc.setTextColor(...C.textSoft);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text("O escanee el código QR o visite:", pw / 2, yPos + qrSize + 20, { align: "center" });
+    doc.text("O escanee el código QR o visite:", pw / 2, yPos + qrSize + 14, { align: "center" });
 
     doc.setTextColor(...C.brand);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(publicUrl, pw / 2, yPos + qrSize + 28, { align: "center" });
+    doc.text(publicUrl, pw / 2, yPos + qrSize + 22, { align: "center" });
 
     doc.setTextColor(...C.text);
     doc.setFontSize(9);
@@ -500,7 +295,7 @@ export async function exportarQRPublico(qrImageUrl: string, publicUrl: string) {
       "3. Complete sus datos personales y seleccione el motivo de su visita.",
       "4. ¡Listo! Su ingreso quedará registrado automáticamente.",
     ];
-    let iy = yPos + qrSize + 42;
+    let iy = yPos + qrSize + 36;
     instructions.forEach((line) => {
       doc.text(line, 28, iy);
       iy += 7;

@@ -19,7 +19,6 @@ const RegistroPublico = lazy(() => import("./pages/Mavet/RegistroPublico"));
 const RRHH = lazy(() => import("./pages/Mavet/RRHH"));
 const Recepcion = lazy(() => import("./pages/Mavet/Recepcion"));
 const Biblioteca = lazy(() => import("./pages/Mavet/Biblioteca"));
-const Asistencia = lazy(() => import("./pages/Mavet/Asistencia"));
 const InventarioBoveda = lazy(() => import("./pages/Mavet/InventarioBoveda"));
 const Talleres = lazy(() => import("./pages/Mavet/Talleres"));
 const Auditorio = lazy(() => import("./pages/Mavet/Auditorio"));
@@ -102,7 +101,6 @@ export default function App() {
 
             {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
             <Route path="/registro-visitante" element={<ErrorBoundary><RegistroPublico /></ErrorBoundary>} />
-            <Route path="/asistencia" element={<ErrorBoundary><Asistencia /></ErrorBoundary>} />
 
             {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}
             <Route path="/signin" element={<SignIn />} />
