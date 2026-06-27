@@ -26,8 +26,13 @@ import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { limitNumericInput, validateRequired } from "../../utils/validation";
+import { useAuth } from "../../context/AuthContext";
 
 const Auditorio: React.FC = () => {
+  const { user } = useAuth();
+  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const isGerente = userRole === "Gerente";
+
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -416,13 +421,15 @@ const Auditorio: React.FC = () => {
             </button>
           </div>
           
-          <button
-            onClick={() => { resetModalFields(); openModal(); }}
-            className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nueva Reserva</span>
-          </button>
+          {!isGerente && (
+            <button
+              onClick={() => { resetModalFields(); openModal(); }}
+              className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nueva Reserva</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -495,11 +502,13 @@ const Auditorio: React.FC = () => {
                       <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
                         {ev.extendedProps.tipoEvento || "Conferencia"}
                       </div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors" title="Editar evento">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      </div>
+                      {!isGerente && (
+                        <div className="flex gap-1.5">
+                          <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors" title="Editar evento">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-1">{ev.title}</h3>
@@ -552,7 +561,8 @@ const Auditorio: React.FC = () => {
                   type="text"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                  disabled={isGerente}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                   placeholder="Ej. Conferencia de Historia del Arte"
                 />
               </div>
@@ -564,7 +574,8 @@ const Auditorio: React.FC = () => {
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                  disabled={isGerente}
+                  className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                 />
               </div>
 
@@ -574,7 +585,8 @@ const Auditorio: React.FC = () => {
                   required
                   value={tipoEvento}
                   onChange={(e) => setTipoEvento(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                  disabled={isGerente}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                 >
                   <option value="Conferencia">Conferencia</option>
                   <option value="Exposición">Exposición</option>
@@ -590,7 +602,8 @@ const Auditorio: React.FC = () => {
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark]"
+                  disabled={isGerente}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
                 />
               </div>
 
@@ -601,7 +614,8 @@ const Auditorio: React.FC = () => {
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark]"
+                  disabled={isGerente}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
                 />
               </div>
 
@@ -629,13 +643,14 @@ const Auditorio: React.FC = () => {
                             handleCedulaBlur();
                           }
                         }}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                        disabled={isGerente}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                         placeholder="Ej. V-12345678"
                       />
                       <button
                         type="button"
                         onClick={handleCedulaBlur}
-                        disabled={organizadorLoading || !cedulaOrganizador}
+                        disabled={isGerente || organizadorLoading || !cedulaOrganizador}
                         className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
                       >
                         <Search className="w-5 h-5" />
@@ -667,6 +682,7 @@ const Auditorio: React.FC = () => {
                         setOrganizadorAuto(false);
                       }}
                       readOnly={organizadorAuto}
+                      disabled={isGerente}
                       className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-60"
                       placeholder="Se autocompleta con cédula"
                     />
@@ -683,35 +699,49 @@ const Auditorio: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-              <div>
-                {selectedEvent && (
-                  <button 
-                    onClick={handleDeleteEvent}
-                    className="text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 dark:border-red-900/50 dark:hover:bg-red-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                    title="Eliminar evento"
+              {isGerente ? (
+                <div className="flex items-center justify-end w-full">
+                  <button
                     type="button"
+                    onClick={closeModal}
+                    className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Eliminar</span>
+                    Cerrar
                   </button>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
-                </button>
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    {selectedEvent && (
+                      <button 
+                        onClick={handleDeleteEvent}
+                        className="text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 dark:border-red-900/50 dark:hover:bg-red-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                        title="Eliminar evento"
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Eliminar</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </form>
         </div>

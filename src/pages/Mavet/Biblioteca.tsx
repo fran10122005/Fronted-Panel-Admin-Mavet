@@ -5,8 +5,17 @@ import { exportarCatalogoBiblioteca } from "../../services/pdf.service";
 import LibroFormModal from "./biblioteca/LibroFormModal";
 import PrestamoFormModal from "./biblioteca/PrestamoFormModal";
 import LibroDetailModal from "./biblioteca/LibroDetailModal";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Biblioteca() {
+  const { user } = useAuth();
+  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const isGerente = userRole === "Gerente";
+
+  const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
+  const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
+  const canDeleteLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+
   const {
     _autores, categorias, isLoading,
     searchTerm, setSearchTerm,
@@ -70,15 +79,17 @@ export default function Biblioteca() {
             </svg>
             Exportar PDF
           </button>
-          <button
-            onClick={handleOpenAddLibro}
-            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Registrar Nuevo Libro
-          </button>
+          {canEditLibro && (
+            <button
+              onClick={handleOpenAddLibro}
+              className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Registrar Nuevo Libro
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,55 +208,66 @@ export default function Biblioteca() {
                         </td>
                         <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
-                            {libro.cantidad_disponible > 0 && (
+                            {canPrestarDevolver && (
+                              <>
+                                {libro.cantidad_disponible > 0 && (
+                                  <button
+                                    onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
+                                    disabled={libro.estado === "Descartado/Venta"}
+                                    className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
+                                      libro.estado === "Descartado/Venta"
+                                        ? "text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50"
+                                        : "text-brand-600 border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                                    }`}
+                                  >Prestar</button>
+                                )}
+                                {libro.cantidad_disponible < libro.cantidad_total && (
+                                  <button
+                                    onClick={() => setConfirm({
+                                      open: true,
+                                      title: "Devolver libro",
+                                      message: "¿Marcar como devuelto?",
+                                      variant: "info",
+                                      confirmLabel: "Devolver",
+                                      onConfirm: async () => {
+                                        setConfirm(prev => ({ ...prev, open: false }));
+                                        handleReturnBook(libro.id);
+                                      },
+                                    })}
+                                    disabled={libro.estado === "Descartado/Venta"}
+                                    className="font-semibold text-xs border px-2 py-1 rounded transition w-18 text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >Devolver</button>
+                                )}
+                                {(libro.cantidad_disponible > 0 || libro.cantidad_disponible < libro.cantidad_total) && (canEditLibro || canDeleteLibro) && (
+                                  <div className="h-4 w-[1px] bg-gray-250 dark:bg-gray-700 mx-1"></div>
+                                )}
+                              </>
+                            )}
+                            {canEditLibro && (
                               <button
-                                onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
-                                disabled={libro.estado === "Descartado/Venta"}
-                                className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
-                                  libro.estado === "Descartado/Venta"
-                                    ? "text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50"
-                                    : "text-brand-600 border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-                                }`}
-                              >Prestar</button>
+                                onClick={() => handleEditLibro(libro)}
+                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors"
+                                title="Editar libro"
+                              >
+                                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
                             )}
-                            {libro.cantidad_disponible < libro.cantidad_total && (
+                            {canDeleteLibro && (
                               <button
-                                onClick={() => setConfirm({
-                                  open: true,
-                                  title: "Devolver libro",
-                                  message: "¿Marcar como devuelto?",
-                                  variant: "info",
-                                  confirmLabel: "Devolver",
-                                  onConfirm: async () => {
-                                    setConfirm(prev => ({ ...prev, open: false }));
-                                    handleReturnBook(libro.id);
-                                  },
-                                })}
-                                disabled={libro.estado === "Descartado/Venta"}
-                                className="font-semibold text-xs border px-2 py-1 rounded transition w-18 text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                              >Devolver</button>
+                                onClick={() => handleDeleteLibro(libro.id)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                                title="Eliminar libro"
+                              >
+                                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
                             )}
-                            {(libro.cantidad_disponible > 0 || libro.cantidad_disponible < libro.cantidad_total) && (
-                              <div className="h-4 w-[1px] bg-gray-250 dark:bg-gray-700 mx-1"></div>
+                            {!canPrestarDevolver && !canEditLibro && !canDeleteLibro && (
+                              <span className="text-xs text-gray-400 italic font-semibold">Solo Lectura</span>
                             )}
-                            <button
-                              onClick={() => handleEditLibro(libro)}
-                              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors"
-                              title="Editar libro"
-                            >
-                              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteLibro(libro.id)}
-                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
-                              title="Eliminar libro"
-                            >
-                              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
                           </div>
                         </td>
                       </tr>

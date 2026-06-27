@@ -75,12 +75,12 @@ const othersItems: NavItem[] = [
 
 const routePermissions: Record<string, string[]> = {
   "/": ["*"],
-  "/auditorio": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
-  "/recepcion": ["Administrador", "admin", "Recepcionista", "Seguridad"],
-  "/talleres": ["Administrador", "admin", "Gestor de Eventos y Talleres", "Educación"],
-  "/inventario-obras": ["Administrador", "admin", "Curador"],
-  "/biblioteca": ["Administrador", "admin", "Bibliotecario", "Guía"],
-  "/rrhh": ["Administrador", "admin", "Recursos Humanos"],
+  "/auditorio": ["Administrador", "admin", "Gerente", "Educación"],
+  "/recepcion": ["Administrador", "admin", "Gerente", "Recepcionista"],
+  "/talleres": ["Administrador", "admin", "Gerente", "Educación"],
+  "/inventario-obras": ["Administrador", "admin", "Gerente", "Curador"],
+  "/biblioteca": ["Administrador", "admin", "Gerente", "Bibliotecario"],
+  "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["*"],
 };
 
@@ -93,7 +93,7 @@ const AppSidebar: React.FC = () => {
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
 
   const filteredNavItems = useCallback(() => {
-    if (userRole === "Administrador" || userRole === "admin") return navItems;
+    if (userRole === "Administrador" || userRole === "admin" || userRole === "Gerente") return navItems;
     return navItems.filter((item) => {
       const allowedRoles = routePermissions[item.path || ""] || [];
       if (allowedRoles.includes("*")) return true;

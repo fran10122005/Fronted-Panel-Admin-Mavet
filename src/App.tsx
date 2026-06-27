@@ -7,6 +7,7 @@ import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import { AuthProvider } from "./context/AuthContext";
 import AuthRoute from "./components/auth/AuthRoute";
+import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
@@ -88,14 +89,24 @@ export default function App() {
                 <Route path="/profile" element={<ErrorBoundary><UserProfiles /></ErrorBoundary>} />
 
                 {/* Módulos específicos del MAVET */}
-                <Route path="/biblioteca" element={<ErrorBoundary><Biblioteca /></ErrorBoundary>} />
-                <Route path="/rrhh" element={<ErrorBoundary><RRHH /></ErrorBoundary>} />
-                <Route path="/recepcion" element={<ErrorBoundary><Recepcion /></ErrorBoundary>} />
-                <Route path="/educacion" element={<ErrorBoundary><Educacion /></ErrorBoundary>} />
-                <Route path="/ingresos" element={<ErrorBoundary><Ingresos /></ErrorBoundary>} />
-                <Route path="/inventario-obras" element={<ErrorBoundary><InventarioBoveda /></ErrorBoundary>} />
-                <Route path="/talleres" element={<ErrorBoundary><Talleres /></ErrorBoundary>} />
-                <Route path="/auditorio" element={<ErrorBoundary><Auditorio /></ErrorBoundary>} />
+                <Route element={<RoleProtectedRoute allowedRoles={["Bibliotecario"]} />}>
+                  <Route path="/biblioteca" element={<ErrorBoundary><Biblioteca /></ErrorBoundary>} />
+                </Route>
+                <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
+                  <Route path="/rrhh" element={<ErrorBoundary><RRHH /></ErrorBoundary>} />
+                </Route>
+                <Route element={<RoleProtectedRoute allowedRoles={["Recepcionista"]} />}>
+                  <Route path="/recepcion" element={<ErrorBoundary><Recepcion /></ErrorBoundary>} />
+                  <Route path="/ingresos" element={<ErrorBoundary><Ingresos /></ErrorBoundary>} />
+                </Route>
+                <Route element={<RoleProtectedRoute allowedRoles={["Educación"]} />}>
+                  <Route path="/educacion" element={<ErrorBoundary><Educacion /></ErrorBoundary>} />
+                  <Route path="/talleres" element={<ErrorBoundary><Talleres /></ErrorBoundary>} />
+                  <Route path="/auditorio" element={<ErrorBoundary><Auditorio /></ErrorBoundary>} />
+                </Route>
+                <Route element={<RoleProtectedRoute allowedRoles={["Curador"]} />}>
+                  <Route path="/inventario-obras" element={<ErrorBoundary><InventarioBoveda /></ErrorBoundary>} />
+                </Route>
               </Route>
             </Route>
 
