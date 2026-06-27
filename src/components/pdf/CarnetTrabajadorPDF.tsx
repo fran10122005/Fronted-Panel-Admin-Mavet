@@ -1,4 +1,3 @@
-import React from "react";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { Trabajador } from "../../types";
 
@@ -190,13 +189,13 @@ interface Props {
 }
 
 export default function CarnetTrabajadorPDF({ trabajador }: Props) {
-  const p = trabajador.Persona || {};
+  const p = trabajador.Persona || { nombres: "", apellidos: "", cedula: "" };
   
   // Soporta tanto la estructura anidada de la DB como la aplanada de la tabla
   const nombre = p.nombres || (trabajador as any).nombre || "";
   const apellido = p.apellidos || (trabajador as any).apellido || "";
   const cargo = trabajador.Cargo?.nombre_cargo || (trabajador as any).cargo || "TRABAJADOR";
-  const idEmpleado = p.cedula || (trabajador as any).cedula || `ID-${trabajador.id_trabajador || 'X'}`;
+  const idEmpleado = p.cedula || (trabajador as any).cedula || `ID-${(trabajador as any).id_trabajador || trabajador.id || 'X'}`;
   
   // URL para la foto o iniciales de fallback
   const urlFoto = trabajador.foto_url ? trabajador.foto_url : null;

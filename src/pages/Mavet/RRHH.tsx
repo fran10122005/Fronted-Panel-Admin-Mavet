@@ -22,7 +22,7 @@ export default function RRHH() {
   const isGerente = userRole === "Gerente";
 
   const {
-    trabajadores, _usuarios, _asistencias, cargos, roles,
+    trabajadores, cargos, roles,
     isLoading, activeTab, setActiveTab,
     searchTerm, setSearchTerm,
     formData, formUsuario, isSubmitting,

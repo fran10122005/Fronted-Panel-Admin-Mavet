@@ -51,7 +51,7 @@ export default function LibroFormModal({
   categorias, isSubmitting, onSubmit, inputCls,
 }: Props) {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<LibroFormValues>({
-    resolver: zodResolver(libroSchema),
+    resolver: zodResolver(libroSchema) as any,
     defaultValues: initialData,
   });
 

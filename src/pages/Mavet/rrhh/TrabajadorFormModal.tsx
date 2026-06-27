@@ -41,7 +41,7 @@ export default function TrabajadorFormModal({
   cargos, isSubmitting, onSubmit, inputCls,
 }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TrabajadorFormValues>({
-    resolver: zodResolver(trabajadorSchema),
+    resolver: zodResolver(trabajadorSchema) as any,
     defaultValues: initialData,
   });
 

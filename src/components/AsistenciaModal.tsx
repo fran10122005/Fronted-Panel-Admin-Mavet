@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Modal } from "./ui/modal";
 import { mavetApi } from "../services/api";
 import { limitNumericInput } from "../utils/validation";
@@ -45,7 +45,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
               scannerRef.current.clear().catch(console.error);
             }
           },
-          (error) => { /* Ignorar errores de no-detección */ }
+          (_error) => { /* Ignorar errores de no-detección */ }
         );
       }, 100);
 
@@ -107,7 +107,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-2xl">
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
       <div className="p-2">
         <div className="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
           <div>

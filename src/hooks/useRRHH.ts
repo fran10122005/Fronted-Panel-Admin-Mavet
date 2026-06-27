@@ -206,8 +206,8 @@ export function useRRHH() {
               const res = await mavetApi.getTrabajadores(1, 100);
               const t = res.data.find(x => x.id === trabajadorId);
               if (t) {
-                const { exportarCarnetReactPDF } = await import('../services/pdf.service');
-                await exportarCarnetReactPDF(t);
+                const { exportarCarnetTrabajador } = await import('../services/pdf.service');
+                await exportarCarnetTrabajador(t);
               }
             } catch (err) {
               console.error(err);

@@ -430,10 +430,10 @@ export const mavetApi = {
     try {
       const body: any = {
         cedula: payload.cedula,
-        nombres: payload.nombres || payload.nombre,
-        apellidos: payload.apellidos || payload.apellido,
+        nombres: payload.nombres || (payload as any).nombre,
+        apellidos: payload.apellidos || (payload as any).apellido,
         telefono: payload.telefono,
-        correo_personal: payload.correo_personal || payload.correo,
+        correo_personal: payload.correo_personal || (payload as any).correo,
         id_cargo: payload.id_cargo,
         horas_semanales: payload.horas_semanales,
         estado: payload.estado === "Activo"
@@ -858,10 +858,10 @@ export const mavetApi = {
   actualizarTrabajador: async (id: number, payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
     try {
       const body: any = {
-        nombres: payload.nombres || payload.nombre,
-        apellidos: payload.apellidos || payload.apellido,
+        nombres: payload.nombres || (payload as any).nombre,
+        apellidos: payload.apellidos || (payload as any).apellido,
         telefono: payload.telefono,
-        correo_personal: payload.correo_personal || payload.correo,
+        correo_personal: payload.correo_personal || (payload as any).correo,
         id_cargo: payload.id_cargo,
         horas_semanales: payload.horas_semanales,
         estado: payload.estado === "Activo"

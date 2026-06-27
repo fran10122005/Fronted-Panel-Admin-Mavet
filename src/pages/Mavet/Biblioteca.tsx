@@ -10,14 +10,13 @@ import { useAuth } from "../../context/AuthContext";
 export default function Biblioteca() {
   const { user } = useAuth();
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
-  const isGerente = userRole === "Gerente";
 
   const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
   const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
   const canDeleteLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const {
-    _autores, categorias, isLoading,
+    categorias, isLoading,
     searchTerm, setSearchTerm,
     filterEstado, setFilterEstado,
     filterCategoria, setFilterCategoria,
@@ -25,7 +24,7 @@ export default function Biblioteca() {
     searchCedula, setSearchCedula,
     currentPage, totalPages, totalItems,
     filteredLibros, filteredPrestamos,
-    prestamos, setPrestamos,
+    setPrestamos,
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
     selectedLibroTitle,
@@ -36,7 +35,7 @@ export default function Biblioteca() {
     goToPage, handleOpenPrestamo, handlePrestamoSubmit,
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
     handleLibroSubmit,
-    customCategoria, setCustomCategoria,
+    customCategoria,
     autorNombre, autorApellido,
   } = useLibros();
 

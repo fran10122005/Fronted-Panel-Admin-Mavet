@@ -42,7 +42,7 @@ export default function UsuarioFormModal({
   trabajadores, roles, isSubmitting, onSubmit, inputCls,
 }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UsuarioFormValues>({
-    resolver: zodResolver(usuarioSchema),
+    resolver: zodResolver(usuarioSchema) as any,
     defaultValues: initialData,
   });
 
