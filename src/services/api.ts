@@ -410,8 +410,8 @@ export const mavetApi = {
             cedula: t.cedula || "",
             trabajadorNombre: `${t.nombres || ""} ${t.apellidos || ""}`.trim(),
             cargo: c.nombre_cargo || "Sin cargo",
-            entradaManana: item.entrada_manana ? new Date(item.entrada_manana).toLocaleTimeString() : "-",
-            salidaTarde: item.salida_tarde ? new Date(item.salida_tarde).toLocaleTimeString() : "-",
+            entrada: item.entrada_manana ? new Date(item.entrada_manana).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : "-",
+            salida: item.salida_manana ? new Date(item.salida_manana).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : "-",
             horasCumplidas: item.horas_cumplidas_dia ?? null,
             observaciones: item.observaciones || ""
           };
@@ -462,8 +462,30 @@ export const mavetApi = {
     }
   },
 
+  getEstadoAsistencia: async (params: { qr_uuid?: string; cedulaTrabajador?: string }): Promise<{
+    trabajador: { nombres: string; apellidos: string; cedula: string };
+    siguienteMovimiento: string | null;
+    entradaActual: string | null;
+    horasTranscurridas: number | null;
+    asistencia: {
+      entrada_manana: string | null;
+      salida_manana: string | null;
+      horas_cumplidas_dia: number | null;
+    } | null;
+  }> => {
+    const query = new URLSearchParams();
+    if (params.qr_uuid) query.set('qr_uuid', params.qr_uuid);
+    if (params.cedulaTrabajador) query.set('cedulaTrabajador', params.cedulaTrabajador);
+    try {
+      const res = await axiosInstance.get(`/api/rrhh/asistencias/estado?${query.toString()}`);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error consultando estado de asistencia');
+    }
+  },
+
   registrarAsistencia: async (payload: AsistenciaPayload): Promise<{ success: boolean; message: string }> => {
-    if (!payload.cedulaTrabajador) throw new Error("Cédula requerida");
+    if (!payload.cedulaTrabajador && !payload.qr_uuid) throw new Error("Debe proveer cédula o QR UUID");
     try {
       await axiosInstance.post('/api/rrhh/asistencias', payload);
       return { success: true, message: `Asistencia de ${payload.tipoMovimiento} registrada con éxito.` };

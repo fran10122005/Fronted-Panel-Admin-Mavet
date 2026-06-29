@@ -16,6 +16,15 @@ const IconEdit = () => (
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
 
+function formatHoras(h: number): string {
+  const totalMinutos = Math.floor(h * 60);
+  const hrs = Math.floor(totalMinutos / 60);
+  const min = totalMinutos % 60;
+  if (hrs === 0) return `${min} min`;
+  if (min === 0) return `${hrs}h`;
+  return `${hrs}h ${min}min`;
+}
+
 export default function RRHH() {
   const { user } = useAuth();
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
@@ -206,14 +215,14 @@ export default function RRHH() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                      <th className="px-5 py-2">Fecha</th>
-                      <th className="px-5 py-2">Cédula</th>
-                      <th className="px-5 py-2">Nombre y Apellido</th>
-                      <th className="px-5 py-2">Cargo</th>
-                      <th className="px-5 py-2 text-center border-l border-gray-200 dark:border-gray-700">Ent. Mañana</th>
-                      <th className="px-5 py-2 text-center">Sal. Tarde</th>
-                      <th className="px-5 py-2 text-center">Horas Cumplidas</th>
-                      <th className="px-5 py-2">Observaciones</th>
+                      <th className="px-4 py-2">Fecha</th>
+                      <th className="px-4 py-2">Cédula</th>
+                      <th className="px-4 py-2">Nombre y Apellido</th>
+                      <th className="px-4 py-2">Cargo</th>
+                      <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
+                      <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
+                      <th className="px-4 py-2 text-center">Horas</th>
+                      <th className="px-4 py-2">Observaciones</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
@@ -221,14 +230,18 @@ export default function RRHH() {
                       <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
                     ) : filteredAsistencias.map((a) => (
                       <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-5 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
-                        <td className="px-5 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
-                        <td className="px-5 py-2 font-semibold">{a.trabajadorNombre}</td>
-                        <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{a.cargo}</td>
-                        <td className="px-5 py-2 text-center font-mono text-xs text-brand-700 dark:text-brand-400 font-medium border-l border-gray-100 dark:border-gray-700">{a.entradaManana}</td>
-                        <td className="px-5 py-2 text-center font-mono text-xs text-gray-600">{a.salidaTarde}</td>
-                        <td className="px-5 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? `${a.horasCumplidas}h` : "—"}</td>
-                        <td className="px-5 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={a.observaciones}>{a.observaciones || "—"}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
+                        <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
+                        <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
+                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
+                        <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
+                          <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
+                        </td>
+                        <td className="px-4 py-2 text-center font-mono text-xs">
+                          <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
+                        </td>
+                        <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
+                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 max-w-[160px] truncate text-xs" title={a.observaciones}>{a.observaciones || "—"}</td>
                       </tr>
                     ))}
                   </tbody>

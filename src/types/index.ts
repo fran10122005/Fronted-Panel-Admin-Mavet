@@ -58,9 +58,9 @@ export interface PrestamoPayload {
 }
 
 export interface AsistenciaPayload {
-  cedulaTrabajador: string;
+  cedulaTrabajador?: string;
+  qr_uuid?: string;
   tipoMovimiento: "Entrada Mañana" | "Salida Mañana" | "Entrada Tarde" | "Salida Tarde";
-  timestamp: string;
 }
 
 export interface RegistroVisitantePayload {
@@ -137,8 +137,8 @@ export interface RegistroAsistencia {
   cedula: string;
   trabajadorNombre: string;
   cargo: string;
-  entradaManana: string;
-  salidaTarde: string;
+  entrada: string;
+  salida: string;
   horasCumplidas: number | null;
   observaciones: string;
 }
