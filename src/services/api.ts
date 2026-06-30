@@ -144,12 +144,12 @@ export const mavetApi = {
     }
   },
 
-  checkVisitantePublico: async (cedula: string): Promise<{ existe: boolean, nombre: string | null }> => {
+  checkVisitantePublico: async (cedula: string): Promise<{ existe: boolean, nombre: string | null, talleres?: any[] }> => {
     try {
       const res = await axios.get(`${API_BASE}/api/publico/visitantes/check/${cedula}`);
       return res.data;
     } catch {
-      return { existe: false, nombre: null };
+      return { existe: false, nombre: null, talleres: [] };
     }
   },
 
@@ -568,6 +568,32 @@ export const mavetApi = {
     }
   },
 
+  // === Papelera ===
+  getPapeleraGlobal: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get('/api/papelera');
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    } catch {
+      return [];
+    }
+  },
+  restaurarDePapelera: async (tipo: string, id: number | string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.post('/api/papelera/restaurar', { tipo, id });
+      return { success: true, message: res.data.message || "Registro restaurado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al restaurar de la papelera");
+    }
+  },
+  eliminarDefinitivo: async (tipo: string, id: number | string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete('/api/papelera/eliminar', { data: { tipo, id } });
+      return { success: true, message: res.data.message || "Registro eliminado definitivamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar definitivamente");
+    }
+  },
+
   // === Talleres ===
   getTalleres: async (): Promise<any[]> => {
     try {
@@ -604,6 +630,37 @@ export const mavetApi = {
   },
 
   // === Inventario de Talleres ===
+  getSesionesTaller: async (id_taller: number | string): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/sesiones/taller/${id_taller}`);
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    } catch { return []; }
+  },
+  crearSesionTaller: async (id_taller: number | string, payload: { fecha: string; tema_impartido: string }): Promise<any> => {
+    try {
+      const res = await axiosInstance.post(`/api/educacion/sesiones/taller/${id_taller}`, payload);
+      return res.data;
+    } catch (e: any) { throw new Error(e.response?.data?.message || "Error al crear sesión"); }
+  },
+  getAsistenciaSesion: async (id_sesion: number | string): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/sesiones/${id_sesion}/asistencia`);
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    } catch { return []; }
+  },
+  guardarAsistenciaSesion: async (id_sesion: number | string, asistencias: { id_alumno: number; asistio: boolean }[]): Promise<any> => {
+    try {
+      const res = await axiosInstance.put(`/api/educacion/sesiones/${id_sesion}/asistencia`, { asistencias });
+      return res.data;
+    } catch (e: any) { throw new Error(e.response?.data?.message || "Error al guardar asistencia"); }
+  },
+  getMetricasTaller: async (id_taller: number | string): Promise<any> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/sesiones/taller/${id_taller}/metricas`);
+      return res.data?.data;
+    } catch { return null; }
+  },
+
   getInventarioTalleres: async (page?: number, limit?: number): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
       const params: any = {};
@@ -681,9 +738,53 @@ export const mavetApi = {
   getEspaciosMuseo: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get('/api/educacion/espacios');
-      return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+      return list.map((item: any) => ({
+        id_espacio: item.id_espacio,
+        codigo_espacio: item.codigo_espacio || "",
+        nombre_espacio: item.nombre || item.nombre_espacio,
+        capacidad_maxima: item.capacidad || item.capacidad_maxima,
+        descripcion: item.descripcion || ""
+      }));
     } catch {
       return [];
+    }
+  },
+
+  crearEspacio: async (payload: { nombre_espacio: string; capacidad_maxima?: number; descripcion?: string; codigo_espacio?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post('/api/educacion/espacios', {
+        codigo_espacio: payload.codigo_espacio,
+        nombre: payload.nombre_espacio,
+        capacidad: payload.capacidad_maxima,
+        descripcion: payload.descripcion
+      });
+      return { success: true, message: "Espacio creado correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear espacio");
+    }
+  },
+
+  actualizarEspacio: async (id: number, payload: { nombre_espacio?: string; capacidad_maxima?: number; descripcion?: string; codigo_espacio?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/educacion/espacios/${id}`, {
+        codigo_espacio: payload.codigo_espacio,
+        nombre: payload.nombre_espacio,
+        capacidad: payload.capacidad_maxima,
+        descripcion: payload.descripcion
+      });
+      return { success: true, message: "Espacio actualizado correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar espacio");
+    }
+  },
+
+  eliminarEspacio: async (id: number): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/educacion/espacios/${id}`);
+      return { success: true, message: "Espacio eliminado correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar espacio");
     }
   },
 
@@ -743,6 +844,7 @@ export const mavetApi = {
         const orgName = item.nombre_responsable || [p.nombres, p.apellidos].filter(Boolean).join(' ') || '';
         return {
           id: item.id_solicitud.toString(),
+          codigo_reserva: item.codigo_reserva || "",
           title: item.motivo || "Evento",
           start: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_inicio || "00:00:00"}`,
           end: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_fin || "23:59:59"}`,

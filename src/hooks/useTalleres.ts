@@ -23,6 +23,7 @@ export const initialPlanificarForm = {
 
 export const initialEnrollForm = {
   tallerId: "",
+  alumnoCedula: "",
   alumnoNombre: "",
   alumnoEdad: "",
   repNombre: "",
@@ -55,7 +56,10 @@ export function useTalleres() {
   const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
   const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
   const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
+  const [tallerSesiones, setTallerSesiones] = useState<any[]>([]);
+  const [metricasTaller, setMetricasTaller] = useState<any>(null);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
+  const { isOpen: isOpenSesiones, openModal: openSesionesModal, closeModal: closeSesionesModal } = useModal();
 
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
     open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
@@ -336,16 +340,16 @@ export function useTalleres() {
       const payload = {
         inventario_id: planificarForm.id_taller_inventario,
         id_instructor: planificarForm.selectedInstructorId,
-        id_espacio: planificarForm.id_espacio || null,
+        id_espacio: planificarForm.id_espacio ? Number(planificarForm.id_espacio) : null,
         nombre_curso: selected?.nombre || "",
         sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
         fecha: planificarForm.fecha || null,
         hora_inicio: planificarForm.hora_inicio || null,
         hora_fin: planificarForm.hora_fin || null,
-        horas_totales: planificarForm.horas_totales || null,
-        cupo_minimo: planificarForm.cupo_minimo || null,
-        cupo_maximo: planificarForm.cupo_maximo || null,
-        estado: planificarForm.estado ? "Activo" : "Inactivo"
+        horas_totales: planificarForm.horas_totales ? Number(planificarForm.horas_totales) : null,
+        cupo_minimo: planificarForm.cupo_minimo ? Number(planificarForm.cupo_minimo) : null,
+        cupo_maximo: planificarForm.cupo_maximo ? Number(planificarForm.cupo_maximo) : null,
+        estado: planificarForm.estado
       };
 
       if (isEditingPlanificado && selectedTaller?.id_taller) {
@@ -390,7 +394,11 @@ export function useTalleres() {
     try {
       const payload: any = {
         tallerId: enrollForm.tallerId,
-        alumno: { nombre: enrollForm.alumnoNombre, edad: enrollForm.alumnoEdad }
+        alumno: { 
+          cedula: enrollForm.alumnoCedula,
+          nombre: enrollForm.alumnoNombre, 
+          edad: enrollForm.alumnoEdad 
+        }
       };
       if (esMenor) {
         payload.representante = {
@@ -401,7 +409,7 @@ export function useTalleres() {
       }
       await mavetApi.inscribirTaller(payload);
       toast.success("Alumno inscrito correctamente.");
-      setEnrollForm(prev => ({ ...prev, alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
+      setEnrollForm(prev => ({ ...prev, alumnoCedula: "", alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
       const refreshed = await mavetApi.getInscripcionesTaller();
       setInscripciones(refreshed);
     } catch (error: any) {
@@ -426,12 +434,28 @@ export function useTalleres() {
     setSelectedTaller(taller);
     try {
       const result = await mavetApi.getTodosIngresos();
-      const asistentes = result.data.filter(i => String(i.id_taller) === String(taller.id_taller));
+      const asistentes = result.data.filter((i: any) => String(i.id_taller) === String(taller.id_taller));
       setTallerAsistentes(asistentes);
     } catch {
       setTallerAsistentes([]);
     }
     openAsistentesModal();
+  };
+
+  const openSesiones = async (taller: any) => {
+    setSelectedTaller(taller);
+    try {
+      const [sesionesData, metricasData] = await Promise.all([
+        mavetApi.getSesionesTaller(taller.id_taller),
+        mavetApi.getMetricasTaller(taller.id_taller)
+      ]);
+      setTallerSesiones(sesionesData);
+      setMetricasTaller(metricasData);
+    } catch {
+      setTallerSesiones([]);
+      setMetricasTaller(null);
+    }
+    openSesionesModal();
   };
 
   const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
@@ -483,12 +507,15 @@ export function useTalleres() {
     selectedTallerEnroll, setSelectedTallerEnroll,
     tallerInscripciones, setTallerInscripciones,
     tallerAsistentes, setTallerAsistentes,
+    tallerSesiones, setTallerSesiones,
+    metricasTaller, setMetricasTaller,
     isOpenCrear, closeCrear,
     isOpenEditar, closeEditar,
     isOpenPlanificar, closePlanificar,
     isOpenInscr, closeInscrModal,
     isOpenEnroll, closeEnrollModal,
     isOpenAsistentes, closeAsistentesModal,
+    isOpenSesiones, closeSesionesModal,
     confirm, setConfirm,
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
@@ -507,7 +534,7 @@ export function useTalleres() {
     handleBuscarPersona,
     handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
-    openEnrolments, openAsistentes,
+    openEnrolments, openAsistentes, openSesiones,
     exportInscripcionesFn,
   };
 }

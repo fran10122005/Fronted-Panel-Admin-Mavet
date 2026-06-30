@@ -79,7 +79,7 @@ export default function TallerDetailModal({
                 onChange={onChange} className={selectCls}>
                 <option value={0}>Seleccione...</option>
                 {espacios.map(e => (
-                  <option key={e.id_espacio} value={e.id_espacio}>{e.nombre}</option>
+                  <option key={e.id_espacio} value={e.id_espacio}>{e.nombre_espacio || e.nombre}</option>
                 ))}
               </select>
             </div>

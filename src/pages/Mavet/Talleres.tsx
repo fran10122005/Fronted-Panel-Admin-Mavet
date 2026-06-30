@@ -6,6 +6,7 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import TallerFormModal from "./talleres/TallerFormModal";
 import TallerDetailModal from "./talleres/TallerDetailModal";
 import InscripcionModal from "./talleres/InscripcionModal";
+import SesionesTallerModal from "./talleres/SesionesTallerModal";
 import { useAuth } from "../../context/AuthContext";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
@@ -48,12 +49,15 @@ export default function Talleres() {
     selectedTallerEnroll,
     tallerInscripciones,
     tallerAsistentes,
+    tallerSesiones,
+    metricasTaller,
     isOpenCrear, closeCrear,
     isOpenEditar, closeEditar,
     isOpenPlanificar, closePlanificar,
     isOpenInscr, closeInscrModal,
     isOpenEnroll, closeEnrollModal,
     isOpenAsistentes, closeAsistentesModal,
+    isOpenSesiones, closeSesionesModal,
     confirm, setConfirm,
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
@@ -71,7 +75,7 @@ export default function Talleres() {
     handleBuscarPersona,
     handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
-    openEnrolments, openAsistentes,
+    openEnrolments, openAsistentes, openSesiones,
     exportInscripcionesFn,
   } = useTalleres();
 
@@ -245,15 +249,15 @@ export default function Talleres() {
                       </svg>
                     </button>
                     <div id={`actions-${t.id_taller}`} className="hidden z-50 min-w-[160px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
-                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnrolments(t); }}
-                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Inscritos
-                      </button>
                       <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                        Asistentes
+                        Recepción
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openSesiones(t); }}
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                        Asistencia
                       </button>
                       {!isGerente && (
                         <>
@@ -710,6 +714,15 @@ export default function Talleres() {
           </div>
         </div>
       </Modal>
+
+      <SesionesTallerModal
+        isOpen={isOpenSesiones}
+        onClose={closeSesionesModal}
+        taller={selectedTaller}
+        sesiones={tallerSesiones}
+        metricas={metricasTaller}
+        onRefresh={(taller) => openSesiones(taller)}
+      />
 
       <ConfirmDialog
         open={confirm.open}

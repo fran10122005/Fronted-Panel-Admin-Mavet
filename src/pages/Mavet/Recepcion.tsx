@@ -188,7 +188,8 @@ export default function Recepcion() {
         apellidos: menorData.apellidos,
         fecha_de_nac: menorData.fecha_nacimiento,
         id_motivo: Number(formData.id_motivo) || 1,
-        id_representante_persona: selectedPersona?.id_persona
+        id_representante_persona: selectedPersona?.id_persona,
+        cedula: menorData.cedula ? menorData.cedula : undefined
       };
       await mavetApi.registrarIngreso(menorPayload);
       toast.success("Menor registrado e ingresado exitosamente.");
@@ -438,16 +439,38 @@ export default function Recepcion() {
           <p className="text-sm text-gray-600 mb-4">Representante: {selectedPersona?.nombres} {selectedPersona?.apellidos}</p>
           <form onSubmit={handleRegistrarMenor} className="space-y-4">
             <div>
-              <label className="block text-sm mb-1">Nombres del Menor</label>
+              <label className="block text-sm mb-1">Nombres del Menor *</label>
               <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm mb-1">Apellidos del Menor</label>
+              <label className="block text-sm mb-1">Apellidos del Menor *</label>
               <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
             </div>
             <div>
-              <label className="block text-sm mb-1">Fecha de Nacimiento</label>
+              <label className="block text-sm mb-1">Fecha de Nacimiento *</label>
               <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Cédula {menorData.fecha_nacimiento && (() => {
+                const birth = new Date(menorData.fecha_nacimiento);
+                const today = new Date();
+                const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+                return age >= 9;
+              })() ? "*" : "(Opcional si es < 9 años)"}</label>
+              <input 
+                type="text" 
+                value={menorData.cedula} 
+                onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })} 
+                onKeyDown={limitNumericInput}
+                className="w-full border rounded-lg px-3 py-2" 
+                placeholder="Ej. 12345678" 
+                required={menorData.fecha_nacimiento ? (() => {
+                  const birth = new Date(menorData.fecha_nacimiento);
+                  const today = new Date();
+                  const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+                  return age >= 9;
+                })() : false}
+              />
             </div>
             {/* Advertencia si el menor tiene entre 9 y 13 años */}
             {menorData.fecha_nacimiento && (() => {
@@ -464,15 +487,15 @@ export default function Recepcion() {
                 })()} años. Se recomienda tramitar su cédula de identidad pronto.
               </div>
             )}
-            {/* Bloquear si el menor tiene 14 años o más */}
+            {/* Bloquear si el menor tiene 12 años o más */}
             {menorData.fecha_nacimiento && (() => {
               const birth = new Date(menorData.fecha_nacimiento);
               const today = new Date();
               const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-              return age >= 14;
+              return age >= 12;
             })() && (
               <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                <span>🚫</span> No se puede registrar como menor. A partir de 14 años debe registrarse como visitante regular.
+                <span>🚫</span> No se puede registrar como menor. A partir de 12 años debe registrarse como visitante regular.
               </div>
             )}
             <div className="flex justify-end pt-4">
@@ -482,7 +505,7 @@ export default function Recepcion() {
                   const birth = new Date(menorData.fecha_nacimiento);
                   const today = new Date();
                   const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-                  return age >= 14;
+                  return age >= 12;
                 })() : false}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >Guardar e Ingresar</button>

@@ -21,6 +21,8 @@ export default function RegistroPublico() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [talleresInscritos, setTalleresInscritos] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchDatos = async () => {
       const [mots, ag] = await Promise.all([
@@ -53,6 +55,14 @@ export default function RegistroPublico() {
       } else {
         setExiste(false);
       }
+      
+      if (res.talleres && res.talleres.length > 0) {
+        setTalleresInscritos(res.talleres);
+        setFormData(prev => ({ ...prev, id_motivo: `evento_${res.talleres![0].id_taller}` }));
+      } else {
+        setTalleresInscritos([]);
+      }
+      
       setStep(2);
     } catch {
       setError("Error al conectar con el sistema. Intente de nuevo.");
@@ -95,17 +105,24 @@ export default function RegistroPublico() {
       let finalMotivo = '';
       let finalTaller: string | undefined = undefined;
 
-      if (formData.id_motivo.startsWith('evento_')) {
+      if (formData.id_motivo.startsWith('taller_')) {
         finalTaller = formData.id_motivo.split('_')[1];
         const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
         finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
+      } else if (formData.id_motivo.startsWith('evento_')) {
+        // Es un evento de auditorio, no debe enviarse id_taller para evitar error 500
+        const motivoEvento = motivos.find(m => m.descripcion.toLowerCase().includes('evento') || m.descripcion.toLowerCase().includes('conferencia') || m.descripcion.toLowerCase().includes('auditorio'));
+        finalMotivo = motivoEvento ? motivoEvento.id_motivo : (motivos[0]?.id_motivo || '');
       } else {
         finalMotivo = formData.id_motivo.split('_')[1];
       }
 
       await mavetApi.registrarAutoIngreso({
         cedula,
-        ...formData,
+        nombres: formData.nombres,
+        apellidos: formData.apellidos,
+        telefono: formData.telefono,
+        fecha_de_nac: formData.fecha_nacimiento || undefined,
         id_motivo: finalMotivo,
         id_taller: finalTaller
       });
@@ -344,18 +361,36 @@ export default function RegistroPublico() {
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
                 >
                   <option value="">Selecciona una opción...</option>
-                  {motivos.map(m => (
-                    <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
-                  ))}
-                  {eventosHoy.length > 0 && (
-                    <optgroup label="Eventos y Talleres de Hoy">
-                      {eventosHoy.map((e, idx) => (
-                        <option key={`e_${idx}`} value={`evento_${e.id.split('-')[1]}`}>
-                          {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
+                  
+                  {talleresInscritos.length > 0 && (
+                    <optgroup label="✨ Mis Clases (Alumno Matriculado)">
+                      {talleresInscritos.map((t, idx) => (
+                        <option key={`t_${idx}`} value={`taller_${t.id_taller}`}>
+                          Clase de Taller: {t.nombre}
                         </option>
                       ))}
                     </optgroup>
                   )}
+
+                  {eventosHoy.length > 0 && (
+                    <optgroup label="Eventos y Talleres de Hoy">
+                      {eventosHoy.map((e, idx) => {
+                        const type = e.id.split('-')[0]; // "evento" o "taller"
+                        const numId = e.id.split('-')[1];
+                        return (
+                          <option key={`e_${idx}`} value={`${type}_${numId}`}>
+                            {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  )}
+
+                  <optgroup label="Motivos Generales">
+                    {motivos.map(m => (
+                      <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
 

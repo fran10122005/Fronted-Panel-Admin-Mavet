@@ -27,6 +27,8 @@ import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { limitNumericInput, validateRequired } from "../../utils/validation";
 import { useAuth } from "../../context/AuthContext";
+import Salas from "./Salas";
+import { generateNextCode } from "../../utils/codeGenerator";
 
 const Auditorio: React.FC = () => {
   const { user } = useAuth();
@@ -34,6 +36,8 @@ const Auditorio: React.FC = () => {
   const isGerente = userRole === "Gerente";
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
+  
+  const [codigoReserva, setCodigoReserva] = useState("");
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [horaInicio, setHoraInicio] = useState("08:00");
@@ -122,6 +126,15 @@ const Auditorio: React.FC = () => {
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     resetModalFields();
+    
+    // Generate next code
+    const nextCode = generateNextCode(
+      events.map(e => e.codigo_reserva),
+      "RES",
+      3
+    );
+    setCodigoReserva(nextCode);
+
     setEventDate(selectInfo.startStr.split("T")[0]);
     setHoraInicio("08:00");
     setHoraFin("18:00");
@@ -139,8 +152,10 @@ const Auditorio: React.FC = () => {
       extendedProps: {
         organizador: event.extendedProps.organizador,
         tipoEvento: event.extendedProps.tipoEvento,
+        cedula: event.extendedProps.cedula
       }
     });
+    setCodigoReserva(event.extendedProps.codigo_reserva || event.id || "");
     setEventTitle(event.title);
     setEventDate(event.startStr?.split("T")[0] || "");
     setHoraInicio((event.startStr?.split("T")[1]?.substring(0, 5)) || "08:00");
@@ -232,6 +247,7 @@ const Auditorio: React.FC = () => {
     try {
       setSaving(true);
       const payload = {
+        codigo_reserva: codigoReserva,
         id_espacio: 1,
         cedula: cedulaOrganizador,
         nombre_responsable: organizador,
@@ -288,6 +304,7 @@ const Auditorio: React.FC = () => {
   };
 
   const resetModalFields = () => {
+    setCodigoReserva("");
     setEventTitle("");
     setEventDate("");
     setHoraInicio("08:00");
@@ -350,10 +367,10 @@ const Auditorio: React.FC = () => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-            Reservas de Auditorio
+            Auditorio y Espacios
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Gestión administrativa de agenda y ocupación de espacios.
+            Gestión de agenda del auditorio e inventario de espacios del museo.
           </p>
         </div>
         
@@ -544,6 +561,10 @@ const Auditorio: React.FC = () => {
         )}
       </div>
 
+      <div className="mt-8">
+        <Salas />
+      </div>
+
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
@@ -555,7 +576,17 @@ const Auditorio: React.FC = () => {
           <form onSubmit={handleAddOrUpdateEvent} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="col-span-2 space-y-2">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Motivo / Título de la Reserva</label>
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Código de Reserva</label>
+                <input
+                  type="text"
+                  value={codigoReserva}
+                  readOnly
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm font-mono text-gray-500 focus:outline-none cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                />
+              </div>
+
+              <div className="col-span-2 space-y-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Motivo / Título de la Reserva *</label>
                 <input
                   required
                   type="text"

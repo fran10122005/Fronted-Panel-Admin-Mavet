@@ -162,7 +162,12 @@ export function useLibros() {
       "BIB",
       3
     );
-    setLibroFormData({ ...initialLibroState, unidad: nextUnidad, fecha_ingreso: today });
+    const nextCuota = generateNextCode(
+      libros.map(l => l.cuota),
+      "LIB",
+      3
+    );
+    setLibroFormData({ ...initialLibroState, unidad: nextUnidad, cuota: nextCuota, fecha_ingreso: today });
     setAutorNombre("");
     setAutorApellido("");
     setIsEditing(false);

@@ -87,6 +87,7 @@ export interface TallerInscripcionPayload {
 
 export interface EventoAuditorio {
   id: string;
+  codigo_reserva?: string;
   title: string;
   start: string;
   end: string;

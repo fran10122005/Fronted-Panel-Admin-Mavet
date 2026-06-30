@@ -24,6 +24,7 @@ const InventarioBoveda = lazy(() => import("./pages/Mavet/InventarioBoveda"));
 const Talleres = lazy(() => import("./pages/Mavet/Talleres"));
 const Auditorio = lazy(() => import("./pages/Mavet/Auditorio"));
 const Educacion = lazy(() => import("./pages/Mavet/Educacion"));
+const Papelera = lazy(() => import("./pages/Mavet/Papelera"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 
 // Fallback loader for Suspense
@@ -106,6 +107,10 @@ export default function App() {
                 </Route>
                 <Route element={<RoleProtectedRoute allowedRoles={["Curador"]} />}>
                   <Route path="/inventario-obras" element={<ErrorBoundary><InventarioBoveda /></ErrorBoundary>} />
+                </Route>
+                {/* Ruta de Papelera (solo Admin) */}
+                <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
+                  <Route path="/papelera" element={<ErrorBoundary><Papelera /></ErrorBoundary>} />
                 </Route>
               </Route>
             </Route>

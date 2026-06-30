@@ -9,6 +9,7 @@ interface Props {
   selectedTallerEnroll: any;
   enrollForm: {
     tallerId: string;
+    alumnoCedula: string;
     alumnoNombre: string;
     alumnoEdad: string;
     repNombre: string;
@@ -34,6 +35,11 @@ export default function InscripcionModal({
   const handleSubmit = (e: React.FormEvent) => {
     if (!enrollForm.tallerId) {
       toast.error("Debe seleccionar un taller");
+      e.preventDefault();
+      return;
+    }
+    if (!enrollForm.alumnoCedula.trim()) {
+      toast.error("La cédula del alumno es obligatoria");
       e.preventDefault();
       return;
     }
@@ -75,7 +81,12 @@ export default function InscripcionModal({
               {talleres.map(t => <option key={t.id_taller} value={t.id_taller}>{t.nombre_curso}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className={labelCls}>Cédula Alumno <span className="text-red-500">*</span></label>
+              <input type="text" name="alumnoCedula" value={enrollForm.alumnoCedula} onChange={onChange}
+                className={inputCls} required disabled={isSubmitting} placeholder="V-12345678" />
+            </div>
             <div>
               <label className={labelCls}>Nombre del Alumno <span className="text-red-500">*</span></label>
               <input type="text" name="alumnoNombre" value={enrollForm.alumnoNombre} onChange={onChange}
