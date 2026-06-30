@@ -93,10 +93,8 @@ export const mavetApi = {
 
   crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      const isFormData = payload instanceof FormData;
-      await axiosInstance.post('/api/obras/obras', payload, {
-        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {}
-      });
+      const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+      await axiosInstance.post('/api/obras/obras', payload, config);
       return { success: true, message: "Obra agregada exitosamente al inventario." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear la obra");
@@ -105,10 +103,8 @@ export const mavetApi = {
 
   actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      const isFormData = payload instanceof FormData;
-      await axiosInstance.put(`/api/obras/obras/${id}`, payload, {
-        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {}
-      });
+      const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+      await axiosInstance.put(`/api/obras/obras/${id}`, payload, config);
       return { success: true, message: "Obra actualizada exitosamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar la obra");
@@ -453,9 +449,7 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData);
       return res.data?.url || res.data?.data?.url || "";
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");
