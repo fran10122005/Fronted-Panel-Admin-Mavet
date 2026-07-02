@@ -186,7 +186,7 @@ export function useLibros() {
   const handleLibroSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      let payload: any = { ...data };
+      const payload: any = { ...data };
 
       // Crear o buscar el autor
       const nombreAutor = data.autorNombre.trim();

@@ -6,8 +6,6 @@ import { Html5Qrcode } from "html5-qrcode";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
-type TipoMovimiento = "Entrada" | "Salida";
-
 interface EstadoAsistencia {
   trabajador: { nombres: string; apellidos: string; cedula: string };
   siguienteMovimiento: string | null;

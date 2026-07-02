@@ -4,7 +4,7 @@ import { mavetApi } from "../../services/api";
 import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import Skeleton from "../../components/ui/Skeleton";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function Home() {
   const { user } = useAuth();
