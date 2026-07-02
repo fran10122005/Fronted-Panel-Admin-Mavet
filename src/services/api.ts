@@ -827,6 +827,14 @@ export const mavetApi = {
     }
   },
 
+  eliminarInscripcion: async (idInscripcion: number): Promise<void> => {
+    try {
+      await axiosInstance.delete(`/api/educacion/inscripciones-talleres/${idInscripcion}`);
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar inscripción");
+    }
+  },
+
   // === Auditorio ===
   getEventos: async (): Promise<EventoAuditorio[]> => {
     try {

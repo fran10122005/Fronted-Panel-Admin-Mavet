@@ -77,6 +77,9 @@ export default function Talleres() {
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes, openSesiones,
     exportInscripcionesFn,
+    handleDesinscribir,
+    searchInventario, setSearchInventario,
+    filteredInventario,
   } = useTalleres();
 
   const handleInventarioFormChange = (e: any) => {
@@ -343,6 +346,7 @@ export default function Talleres() {
                         <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">C&eacute;dula</th>
                         <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Fecha</th>
                         <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20 whitespace-nowrap">Estado</th>
+                        <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-14"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-900/20">
@@ -361,6 +365,15 @@ export default function Talleres() {
                               <span className="w-1 h-1 rounded-full bg-green-500" />
                               {ins.estado_inscripcion || "Activo"}
                             </span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center whitespace-nowrap">
+                            <button
+                              onClick={() => handleDesinscribir(ins)}
+                              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                              title="Desinscribir"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -386,6 +399,17 @@ export default function Talleres() {
           </button>
         ) : undefined}
       >
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative w-full sm:w-64">
+            <input type="text" placeholder="Buscar en inventario..."
+              value={searchInventario}
+              onChange={e => setSearchInventario(e.target.value)}
+              className={inputCls + " pl-10 text-sm"} />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+          </div>
+        </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
         <table className="w-full text-left min-w-[500px] sm:min-w-0">
           <thead>
@@ -396,11 +420,13 @@ export default function Talleres() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {inventario.length === 0 ? (
+            {filteredInventario.length === 0 ? (
               <tr><td colSpan={3} className="px-3 py-8 text-center text-gray-500">
-                <p className="text-sm">No hay talleres en el inventario. Cree uno con el bot&oacute;n &quot;Crear Taller&quot;.</p>
+                <p className="text-sm">
+                  {searchInventario ? "No se encontraron talleres en el inventario con ese criterio." : "No hay talleres en el inventario. Cree uno con el bot&oacute;n &quot;Crear Taller&quot;."}
+                </p>
               </td></tr>
-            ) : inventario.map((item: any) => (
+            ) : filteredInventario.map((item: any) => (
               <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                 <td className={`${tdCls} font-medium`}>
                   <div className="flex items-center gap-2">
@@ -619,11 +645,12 @@ export default function Talleres() {
                   <th className={thCls}>Representante</th>
                   <th className={thCls}>Fecha</th>
                   <th className={thCls}>Estado</th>
+                  <th className={`${thCls} w-14`}></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {tallerInscripciones.length === 0 ? (
-                  <tr><td colSpan={4} className="px-5 py-6 text-center text-gray-500">No hay inscripciones para este taller.</td></tr>
+                  <tr><td colSpan={5} className="px-5 py-6 text-center text-gray-500">No hay inscripciones para este taller.</td></tr>
                 ) : tallerInscripciones.map((ins, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                     <td className={`${tdCls} font-medium`}>
@@ -640,6 +667,15 @@ export default function Talleres() {
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                         {ins.estado_inscripcion || "Activo"}
                       </span>
+                    </td>
+                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                      <button
+                        onClick={() => handleDesinscribir(ins)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                        title="Desinscribir"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </td>
                   </tr>
                 ))}

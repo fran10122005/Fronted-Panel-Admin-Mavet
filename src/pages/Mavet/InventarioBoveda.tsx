@@ -872,28 +872,31 @@ export default function InventarioBoveda() {
 
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen de la Obra</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setImagenFile(file);
-                    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-                    const url = file ? URL.createObjectURL(file) : null;
-                    previewUrlRef.current = url;
-                    setImagenPreviewUrl(url);
-                  }}
-                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-                />
-                {imagenPreviewUrl && (
-                  <div className="w-14 h-14 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-800">
-                    <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
-              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImagenFile(file);
+                  if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+                  const url = file ? URL.createObjectURL(file) : null;
+                  previewUrlRef.current = url;
+                  setImagenPreviewUrl(url);
+                }}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+              />
+              {imagenPreviewUrl && (
+                <div className="mt-3 w-full max-w-xs h-48 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center mx-auto sm:mx-0">
+                  <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-contain p-2" />
+                </div>
+              )}
               {isEditing && formData.imagen_url && !imagenFile && (
                 <p className="mt-1 text-xs text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
+              )}
+              {!imagenPreviewUrl && formData.imagen_url && !imagenFile && (
+                <div className="mt-3 w-full max-w-xs h-48 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center mx-auto sm:mx-0">
+                  <img src={formData.imagen_url} alt="Imagen actual" className="w-full h-full object-contain p-2" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                </div>
               )}
             </div>
 
