@@ -2,11 +2,14 @@ import { useState } from "react";
 
 import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
-import NotificationDropdown from "../components/header/NotificationDropdown";
+import { useAuth } from "../context/AuthContext";
 import UserDropdown from "../components/header/UserDropdown";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 
 const AppHeader: React.FC = () => {
+  const { user } = useAuth();
+  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const isSuper = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
@@ -107,8 +110,13 @@ const AppHeader: React.FC = () => {
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
             <ThemeToggleButton />
-            <NotificationDropdown />
-            {/* <!-- Notification Menu Area --> */}
+            {isSuper && <Link
+              to="/papelera"
+              className="flex items-center justify-center w-10 h-10 text-red-500 hover:text-red-700 bg-white/90 dark:bg-gray-950/60 border border-gray-300 dark:border-gray-700 rounded-lg transition-all duration-300 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 hover:scale-105 active:scale-95 shadow-theme-xs"
+              title="Papelera"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </Link>}
           </div>
           {/* <!-- User Area --> */}
           <UserDropdown />

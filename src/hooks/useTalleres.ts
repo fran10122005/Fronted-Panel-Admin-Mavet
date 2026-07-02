@@ -43,6 +43,7 @@ export function useTalleres() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterInstructor, setFilterInstructor] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchInventario, setSearchInventario] = useState("");
 
   const { isOpen: isOpenCrear, openModal: openCrear, closeModal: closeCrear } = useModal();
   const { isOpen: isOpenEditar, openModal: openEditar, closeModal: closeEditar } = useModal();
@@ -458,6 +459,27 @@ export function useTalleres() {
     openSesionesModal();
   };
 
+  const handleDesinscribir = (inscripcion: any) => {
+    setConfirm({
+      open: true,
+      title: "Desinscribir alumno",
+      message: `¿Estás seguro de desinscribir a "${inscripcion.Alumno?.nombres || ""} ${inscripcion.Alumno?.apellidos || ""}" del taller "${inscripcion.Taller?.nombre_curso || ""}"? El registro pasará a la papelera.`,
+      variant: "danger",
+      confirmLabel: "Desinscribir",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          await mavetApi.eliminarInscripcion(inscripcion.id_inscripcion || inscripcion.id);
+          toast.success("Alumno desinscrito correctamente. Puede restaurarlo desde la Papelera.");
+          const refreshed = await mavetApi.getInscripcionesTaller();
+          setInscripciones(refreshed);
+        } catch (error: any) {
+          toast.error(error.message || "Error al desinscribir alumno.");
+        }
+      },
+    });
+  };
+
   const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
     if (!selectedTaller) return;
     try {
@@ -488,10 +510,19 @@ export function useTalleres() {
   const totalInscritos = inscripciones.length;
   const totalInventario = inventario.length;
 
+  const filteredInventario = inventario.filter(item => {
+    const term = searchInventario.toLowerCase();
+    return (
+      item.nombre?.toLowerCase().includes(term) ||
+      item.descripcion?.toLowerCase().includes(term)
+    );
+  });
+
   return {
     talleres, inventario, instructores, espacios, inscripciones,
     isLoading,
     searchTerm, setSearchTerm,
+    searchInventario, setSearchInventario,
     filterInstructor, setFilterInstructor,
     currentPage, setCurrentPage,
     inventarioForm, setInventarioForm,
@@ -501,6 +532,7 @@ export function useTalleres() {
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
+    filteredInventario,
     selectedInventario, setSelectedInventario,
     selectedTaller, setSelectedTaller,
     isEditingPlanificado, setIsEditingPlanificado,
@@ -536,5 +568,6 @@ export function useTalleres() {
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
     openEnrolments, openAsistentes, openSesiones,
     exportInscripcionesFn,
+    handleDesinscribir,
   };
 }
