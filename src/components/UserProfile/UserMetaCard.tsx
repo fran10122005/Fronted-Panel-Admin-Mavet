@@ -1,23 +1,15 @@
-import { useState, useEffect } from "react";
-
 export default function UserMetaCard({ profile }: { profile: any }) {
   const trabajador = profile?.Trabajador || {};
   const nombreCompleto = trabajador.nombres ? `${trabajador.nombres} ${trabajador.apellidos}` : "Usuario MAVET";
-  const fotoUrl = profile?.foto_url || trabajador.foto_url || null;
-  const [imgError, setImgError] = useState(false);
-  useEffect(() => { setImgError(false); }, [fotoUrl]);
-  const inicial = (trabajador.nombres || "U")[0]?.toUpperCase() || "U";
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
-          <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-brand-100 text-brand-600 shrink-0">
-            {fotoUrl && !imgError ? (
-              <img src={fotoUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setImgError(true)} />
-            ) : (
-              <span className="text-2xl font-bold text-brand-700 dark:text-brand-400">{inicial}</span>
-            )}
+          <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 flex items-center justify-center bg-gray-100 dark:bg-gray-800 shrink-0">
+            <svg className="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
           </div>
           <div className="order-3 xl:order-2">
             <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">

@@ -68,7 +68,7 @@ const AppHeader: React.FC = () => {
             )}
           </button>
 
-          <Link to="/" className="lg:hidden flex items-center gap-2">
+          <button onClick={() => window.location.reload()} className="lg:hidden flex items-center gap-2 cursor-pointer">
             <img
               src="/images/logo/mavet2.png"
               alt="Logo MAVET"
@@ -77,7 +77,7 @@ const AppHeader: React.FC = () => {
             <span className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-bold leading-tight max-w-[150px]">
               museo de artes visuales y del estado táchira
             </span>
-          </Link>
+          </button>
 
           <button
             onClick={toggleApplicationMenu}

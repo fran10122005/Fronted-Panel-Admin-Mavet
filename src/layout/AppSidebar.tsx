@@ -237,11 +237,11 @@ const AppSidebar: React.FC = () => {
                   </span>
                   {(isExpanded || isHovered || isMobileOpen) && (
                     <span className="menu-item-text">{nav.name}</span>
-                  )}
-                </Link>
-              )
-            )
           )}
+          </Link>
+               )
+             )
+           )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
               ref={(el) => {
@@ -288,7 +288,7 @@ const AppSidebar: React.FC = () => {
                           </span>
                         )}
                       </span>
-                    </Link>
+        </Link>
                   </li>
                 ))}
               </ul>
@@ -316,7 +316,7 @@ const AppSidebar: React.FC = () => {
       <div
         className="py-6 flex flex-col items-center justify-center w-full border-b border-gray-200 dark:border-gray-800"
       >
-        <Link to="/" onClick={() => { if (isMobileOpen) toggleMobileSidebar(); }} className="flex flex-col items-center justify-center w-full px-2">
+        <button onClick={() => { if (isMobileOpen) toggleMobileSidebar(); window.location.reload(); }} className="flex flex-col items-center justify-center w-full px-2 cursor-pointer">
           {isExpanded || isHovered || isMobileOpen ? (
             <div className="flex flex-col items-center justify-center w-full text-center">
               <img
@@ -338,7 +338,7 @@ const AppSidebar: React.FC = () => {
               className="w-10 h-10 object-contain mx-auto"
             />
           )}
-        </Link>
+        </button>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mt-4 mb-6">

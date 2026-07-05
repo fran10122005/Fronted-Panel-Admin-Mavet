@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import { mavetApi } from "../../services/api";
@@ -14,7 +14,7 @@ interface UserInfoCardProps {
 
 export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) {
   const { isOpen, openModal, closeModal } = useModal();
-  const [activeTab, setActiveTab] = useState<"datos" | "seguridad" | "foto">("datos");
+  const [activeTab, setActiveTab] = useState<"datos" | "seguridad">("datos");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -29,10 +29,6 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
     password_nuevo: "",
     password_confirmar: ""
   });
-
-  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile && profile.Trabajador) {
@@ -85,31 +81,6 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
     }
   };
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFotoFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setFotoPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleUploadFoto = async () => {
-    if (!fotoFile) return;
-    setIsSubmitting(true);
-    try {
-      await mavetApi.subirFotoPerfil(fotoFile);
-      toast.success("Foto de perfil actualizada");
-      setFotoFile(null);
-      setFotoPreview(null);
-      onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Error al subir la foto");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const t = profile?.Trabajador || {};
 
   const detailRow = (label: string, value: string) => (
@@ -119,7 +90,7 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
     </div>
   );
 
-  const tabBtn = (tab: "datos" | "seguridad" | "foto", label: string) => (
+  const tabBtn = (tab: "datos" | "seguridad", label: string) => (
     <button
       type="button"
       onClick={() => setActiveTab(tab)}
@@ -169,7 +140,6 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
           <div className="flex gap-2 mb-5">
             {tabBtn("datos", "Datos Personales")}
             {tabBtn("seguridad", "Seguridad")}
-            {tabBtn("foto", "Foto de Perfil")}
           </div>
 
           {activeTab === "datos" && (
@@ -253,43 +223,7 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
             </form>
           )}
 
-          {activeTab === "foto" && (
-            <div className="space-y-5">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                  {fotoPreview ? (
-                    <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG hasta 2MB</p>
-              </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg"
-                onChange={handleFotoChange}
-                className="hidden"
-              />
-
-              <div className="flex justify-center gap-3">
-                <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  Seleccionar Foto
-                </button>
-                {fotoFile && (
-                  <button type="button" onClick={handleUploadFoto} disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70">
-                    {isSubmitting ? "Subiendo..." : "Subir Foto"}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </Modal>
     </div>

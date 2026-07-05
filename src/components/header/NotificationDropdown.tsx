@@ -7,7 +7,7 @@ const notificationsData: any[] = [];
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifying, setNotifying] = useState(true);
+  const [notifying, setNotifying] = useState(false);
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
