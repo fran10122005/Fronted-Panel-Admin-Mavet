@@ -93,8 +93,13 @@ export const mavetApi = {
 
   crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
-      await axiosInstance.post('/api/obras/obras', payload, config);
+      if (payload instanceof FormData) {
+        await axios.post(`${API_BASE}/api/obras/obras`, payload, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+      } else {
+        await axiosInstance.post('/api/obras/obras', payload);
+      }
       return { success: true, message: "Obra agregada exitosamente al inventario." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear la obra");
@@ -103,8 +108,13 @@ export const mavetApi = {
 
   actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
-      await axiosInstance.put(`/api/obras/obras/${id}`, payload, config);
+      if (payload instanceof FormData) {
+        await axios.put(`${API_BASE}/api/obras/obras/${id}`, payload, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+      } else {
+        await axiosInstance.put(`/api/obras/obras/${id}`, payload);
+      }
       return { success: true, message: "Obra actualizada exitosamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar la obra");

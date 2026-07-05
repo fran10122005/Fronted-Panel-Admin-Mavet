@@ -186,7 +186,7 @@ export default function InventarioBoveda() {
     const isOtherTecnica = String(formData.id_tecnica) === "other";
 
     if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
-    if (!formData.id_artista) { toast.error("Debe seleccionar un autor/artista."); return; }
+    if (formData.id_artista == null) { toast.error("Debe seleccionar un autor/artista."); return; }
     if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
     if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
       toast.error("El año debe ser un número válido entre 1000 y " + (new Date().getFullYear() + 5) + ".");
@@ -212,22 +212,30 @@ export default function InventarioBoveda() {
         setTecnicas(tecData);
       }
 
+      const { id: _omitId, ubicacion, ano, ...restForm } = formData;
       const payloadBase = {
-        ...formData,
+        ...restForm,
+        ubicacion_actual: ubicacion,
+        anio: ano !== undefined && ano !== "" ? parseInt(ano.toString(), 10) : null,
         id_tecnica: tecnicaId,
-        ano: formData.ano !== undefined && formData.ano !== "" ? parseInt(formData.ano.toString(), 10) : null,
         piezas: formData.piezas !== undefined && formData.piezas !== "" ? parseInt(formData.piezas.toString(), 10) : 1,
         peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
       };
 
-      let dataToSend: any = payloadBase;
+      const cleanPayload: any = {};
+      Object.keys(payloadBase).forEach(key => {
+        const value = (payloadBase as any)[key];
+        if (value !== null && value !== undefined && value !== "") {
+          cleanPayload[key] = value;
+        }
+      });
+
+      let dataToSend: any = cleanPayload;
 
       if (imagenFile) {
         dataToSend = new FormData();
-        Object.keys(payloadBase).forEach(key => {
-          if (payloadBase[key] !== null && payloadBase[key] !== undefined) {
-            dataToSend.append(key, payloadBase[key]);
-          }
+        Object.keys(cleanPayload).forEach(key => {
+          dataToSend.append(key, cleanPayload[key]);
         });
         dataToSend.append("imagen", imagenFile);
       }
@@ -687,7 +695,7 @@ export default function InventarioBoveda() {
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Autor / Artista</label>
                 <select
                   name="id_artista"
-                  value={formData.id_artista || ""}
+                  value={formData.id_artista ?? ""}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                   required

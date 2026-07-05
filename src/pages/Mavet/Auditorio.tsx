@@ -48,8 +48,10 @@ const Auditorio: React.FC = () => {
   const [organizadorError, setOrganizadorError] = useState("");
   const [organizadorAuto, setOrganizadorAuto] = useState(false);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
+  const [customTipoEvento, setCustomTipoEvento] = useState("");
   
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
+  const [espacios, setEspacios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -61,6 +63,20 @@ const Auditorio: React.FC = () => {
 
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
+
+  const isFormValid = useMemo(() => {
+    const tipoOk = tipoEvento === "other" ? customTipoEvento.trim() !== "" : tipoEvento !== "";
+    return (
+      eventTitle.trim() !== "" &&
+      tipoOk &&
+      eventDate !== "" &&
+      cedulaOrganizador.trim() !== "" &&
+      organizador.trim() !== "" &&
+      horaInicio !== "" &&
+      horaFin !== "" &&
+      horaInicio < horaFin
+    );
+  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, horaInicio, horaFin]);
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
@@ -80,8 +96,14 @@ const Auditorio: React.FC = () => {
     }
   };
 
+  const loadEspacios = async () => {
+    const data = await mavetApi.getEspaciosMuseo();
+    setEspacios(data);
+  };
+
   useEffect(() => {
     loadEventos();
+    loadEspacios();
   }, []);
 
   const filteredEvents = useMemo(() => {
@@ -246,12 +268,14 @@ const Auditorio: React.FC = () => {
 
     try {
       setSaving(true);
+      const tipoFinal = tipoEvento === "other" ? customTipoEvento.trim() : tipoEvento;
+      const espacioId = espacios.length > 0 ? espacios[0].id_espacio : 1;
       const payload = {
         codigo_reserva: codigoReserva,
-        id_espacio: 1,
+        id_espacio: espacioId,
         cedula: cedulaOrganizador,
         nombre_responsable: organizador,
-        institucion: tipoEvento,
+        institucion: tipoFinal,
         fecha_uso: eventDate,
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
@@ -270,8 +294,8 @@ const Auditorio: React.FC = () => {
       closeModal();
       resetModalFields();
     } catch (error) {
-      console.error("Error al guardar reserva:", error);
-      toast.error("Error al guardar la reserva");
+      const msg = error instanceof Error ? error.message : "Error al guardar la reserva";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -315,6 +339,7 @@ const Auditorio: React.FC = () => {
     setOrganizadorError("");
     setOrganizadorAuto(false);
     setTipoEvento("Conferencia");
+    setCustomTipoEvento("");
     setSelectedEvent(null);
     setFormError("");
   };
@@ -324,7 +349,7 @@ const Auditorio: React.FC = () => {
       case "Exposición": return "bg-blue-500 text-white border-blue-600";
       case "Taller": return "bg-green-500 text-white border-green-600";
       case "Reunión": return "bg-orange-500 text-white border-orange-600";
-      default: return "bg-brand-500 text-white border-brand-600"; // Conferencia u otros
+      default: return "bg-purple-500 text-white border-purple-600";
     }
   };
 
@@ -333,7 +358,7 @@ const Auditorio: React.FC = () => {
       case "Exposición": return "bg-blue-500";
       case "Taller": return "bg-green-500";
       case "Reunión": return "bg-orange-500";
-      default: return "bg-brand-500"; // Conferencia u otros
+      default: return "bg-purple-500";
     }
   };
 
@@ -440,7 +465,16 @@ const Auditorio: React.FC = () => {
           
           {!isGerente && (
             <button
-              onClick={() => { resetModalFields(); openModal(); }}
+              onClick={() => {
+                resetModalFields();
+                const nextCode = generateNextCode(
+                  events.map(e => e.codigo_reserva),
+                  "RES",
+                  3
+                );
+                setCodigoReserva(nextCode);
+                openModal();
+              }}
               className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-4 w-4" />
@@ -506,7 +540,16 @@ const Auditorio: React.FC = () => {
                 <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas que coincidan con la búsqueda.</p>
-                <button onClick={() => { resetModalFields(); openModal(); }} className="mt-4 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all">
+                <button onClick={() => {
+                  resetModalFields();
+                  const nextCode = generateNextCode(
+                    events.map(e => e.codigo_reserva),
+                    "RES",
+                    3
+                  );
+                  setCodigoReserva(nextCode);
+                  openModal();
+                }} className="mt-4 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all">
                   Crear primera reserva
                 </button>
               </div>
@@ -612,18 +655,40 @@ const Auditorio: React.FC = () => {
 
               <div className="col-span-2 md:col-span-1 space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Tipo de Evento</label>
-                <select
-                  required
-                  value={tipoEvento}
-                  onChange={(e) => setTipoEvento(e.target.value)}
-                  disabled={isGerente}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
-                >
-                  <option value="Conferencia">Conferencia</option>
-                  <option value="Exposición">Exposición</option>
-                  <option value="Taller">Taller / Curso</option>
-                  <option value="Reunión">Reunión Interna</option>
-                </select>
+                {tipoEvento === "other" ? (
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={customTipoEvento}
+                      onChange={(e) => setCustomTipoEvento(e.target.value)}
+                      placeholder="Especifique el tipo de evento..."
+                      className="w-full rounded-lg border border-brand-500 dark:border-brand-400 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      required
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setTipoEvento("Conferencia"); setCustomTipoEvento(""); }}
+                      className="text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
+                    >
+                      &larr; Volver a seleccionar tipo
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={tipoEvento}
+                    onChange={(e) => setTipoEvento(e.target.value)}
+                    disabled={isGerente}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
+                  >
+                    <option value="Conferencia">Conferencia</option>
+                    <option value="Exposición">Exposición</option>
+                    <option value="Taller">Taller / Curso</option>
+                    <option value="Reunión">Reunión Interna</option>
+                    <option value="other">Otros (especificar)...</option>
+                  </select>
+                )}
               </div>
 
               <div className="col-span-2 md:col-span-1 space-y-2">
@@ -765,7 +830,7 @@ const Auditorio: React.FC = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={saving}
+                      disabled={saving || !isFormValid}
                       className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
