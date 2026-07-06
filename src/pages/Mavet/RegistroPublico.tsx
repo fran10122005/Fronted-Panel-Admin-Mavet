@@ -45,7 +45,9 @@ export default function RegistroPublico() {
 
   const handleVerificarCedula = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cedula || cedula.length < 5) {
+    const cleanCedula = cedula.replace(/^[VEve]-?/g, '').replace(/\D/g, '');
+    
+    if (!cleanCedula || cleanCedula.length < 5) {
       setError("Cédula inválida");
       return;
     }
@@ -123,7 +125,7 @@ export default function RegistroPublico() {
       }
 
       const payload: any = {
-        cedula,
+        cedula: cedula.replace(/^[VEve]-?/g, '').replace(/\D/g, ''),
         nombres: formData.nombres,
         apellidos: formData.apellidos,
         telefono: formData.telefono,
@@ -352,6 +354,8 @@ export default function RegistroPublico() {
                           type="date"
                           value={formData.fecha_nacimiento}
                           onChange={e => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
+                          max={new Date().toISOString().split("T")[0]}
+                          min="1900-01-01"
                           className="show-date-picker w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg pl-9 pr-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
                         />
                       </div>
