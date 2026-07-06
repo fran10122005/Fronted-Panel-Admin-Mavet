@@ -12,6 +12,7 @@ export default function Recepcion() {
   const [selectedPersona, setSelectedPersona] = useState<any>(null);
 
   const [formData, setFormData] = useState({
+    nacionalidad: "V-",
     cedula: "",
     nombres: "",
     apellidos: "",
@@ -104,7 +105,8 @@ export default function Recepcion() {
     setSelectedPersona(p);
     setFormData(prev => ({
       ...prev,
-      cedula: p.cedula || "",
+      nacionalidad: p.cedula ? (p.cedula.startsWith("E-") ? "E-" : "V-") : "V-",
+      cedula: p.cedula ? p.cedula.replace(/^[VE]-/, "") : "",
       nombres: p.nombres || "",
       apellidos: p.apellidos || "",
       telefono: p.telefono || "",
@@ -120,7 +122,14 @@ export default function Recepcion() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === "cedula") {
+      let value = e.target.value.replace(/\D/g, "");
+      if (value.length > 8) value = value.slice(0, 8);
+      const formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      setFormData({ ...formData, cedula: formatted });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,12 +162,12 @@ export default function Recepcion() {
 
       // Lógica atómica de registro y creación de ingreso
       const ingresoPayload: any = {
-        cedula: formData.cedula,
+        cedula: formData.cedula ? `${formData.nacionalidad}${formData.cedula}` : "",
         nombres: formData.nombres,
         apellidos: formData.apellidos,
         telefono: formData.telefono,
         fecha_de_nac: formData.fecha_nacimiento,
-        id_motivo: Number(finalMotivo),
+        id_motivo: finalMotivo,
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
       };
       // Solo incluir id_taller si tiene valor numérico válido
@@ -167,7 +176,7 @@ export default function Recepcion() {
       }
       await mavetApi.registrarIngreso(ingresoPayload);
       toast.success("Acceso registrado exitosamente.");
-      setFormData({ cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
+      setFormData({ nacionalidad: "V-", cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
       setIsVisitaInstitucional(false);
       setSelectedPersona(null);
       setSearchQuery("");
@@ -187,7 +196,7 @@ export default function Recepcion() {
         nombres: menorData.nombres,
         apellidos: menorData.apellidos,
         fecha_de_nac: menorData.fecha_nacimiento,
-        id_motivo: Number(formData.id_motivo) || 1,
+        id_motivo: formData.id_motivo.replace('motivo_', '') || "MVI-00001",
         id_representante_persona: selectedPersona?.id_persona,
         cedula: menorData.cedula ? menorData.cedula : undefined
       };
@@ -304,7 +313,18 @@ export default function Recepcion() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
-                  <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} onKeyDown={limitNumericInput} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. V-12345678" />
+                  <div className="flex">
+                    <select
+                      name="nacionalidad"
+                      value={formData.nacionalidad}
+                      onChange={handleChange}
+                      className="border rounded-l-lg px-2 py-2 bg-gray-50 dark:bg-gray-600 dark:border-gray-600 focus:outline-none dark:text-white"
+                    >
+                      <option value="V-">V-</option>
+                      <option value="E-">E-</option>
+                    </select>
+                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} className="w-full border-y border-r rounded-r-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. 31.243.332" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres *</label>
