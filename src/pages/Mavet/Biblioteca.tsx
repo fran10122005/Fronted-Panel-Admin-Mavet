@@ -27,7 +27,7 @@ export default function Biblioteca() {
     setPrestamos,
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
-    selectedLibroTitle,
+    selectedLibroTitle, selectedLibroCantidad,
     isSubmitting,
     libroFormData, isEditing,
     selectedLibroForDetail, setSelectedLibroForDetail,
@@ -159,6 +159,7 @@ export default function Biblioteca() {
                     <th className="px-3 py-3">Autor</th>
                     <th className="px-3 py-3">Estante</th>
                     <th className="px-3 py-3">Categoría</th>
+                    <th className="px-3 py-3 text-center">Cant. Disp.</th>
                     <th className="px-3 py-3 text-center">Estado</th>
                     <th className="px-3 py-3 text-center">Acciones</th>
                   </tr>
@@ -166,7 +167,7 @@ export default function Biblioteca() {
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredLibros.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-14 text-center text-gray-500">
+                      <td colSpan={8} className="px-5 py-14 text-center text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
@@ -197,6 +198,13 @@ export default function Biblioteca() {
                           ) : "—"}
                         </td>
                         <td className="px-3 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1 font-mono text-xs font-semibold ${
+                            Number(libro.cantidad_disponible) === 0 ? "text-red-600" : "text-gray-700 dark:text-gray-300"
+                          }`}>
+                            {libro.cantidad_disponible}/{libro.cantidad_total}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
                           <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                             libro.estado === "Aprobado"
                               ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
@@ -211,7 +219,7 @@ export default function Biblioteca() {
                               <>
                                 {libro.cantidad_disponible > 0 && (
                                   <button
-                                    onClick={() => handleOpenPrestamo(libro.id, libro.titulo)}
+                                    onClick={() => handleOpenPrestamo(libro.id, libro.titulo, Number(libro.cantidad_disponible))}
                                     disabled={libro.estado === "Descartado/Venta"}
                                     className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
                                       libro.estado === "Descartado/Venta"
@@ -330,18 +338,19 @@ export default function Biblioteca() {
                 <th className="px-3 py-3">Libro</th>
                 <th className="px-3 py-3">Unidad</th>
                 <th className="px-3 py-3 text-center">Estado</th>
+                <th className="px-3 py-3 text-center">Acción</th>
               </tr>
             </thead>
             <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
               {filteredPrestamos.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-6 text-center text-gray-500">
+                  <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
                     <p className="text-sm font-medium">
                       {searchCedula.trim() ? "No se encontraron préstamos para esta cédula." : "No hay préstamos activos."}
                     </p>
                   </td>
                 </tr>
-              ) : filteredPrestamos.map((p) => (
+                ) : filteredPrestamos.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                   <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">{p.cedulaSolicitante}</td>
                   <td className="px-3 py-3 font-medium">{p.nombreSolicitante}</td>
@@ -358,6 +367,28 @@ export default function Biblioteca() {
                       <span className={`w-1.5 h-1.5 rounded-full ${p.estado === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}></span>
                       {p.estado === "ACTIVO" ? "Activo" : "Devuelto"}
                     </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {p.estado === "ACTIVO" && canPrestarDevolver ? (
+                      <button
+                        onClick={() => setConfirm({
+                          open: true,
+                          title: "Devolver libro",
+                          message: `¿Marcar como devuelto el préstamo de "${p.libroTitulo}" por ${p.nombreSolicitante}?`,
+                          variant: "info",
+                          confirmLabel: "Devolver",
+                          onConfirm: async () => {
+                            setConfirm(prev => ({ ...prev, open: false }));
+                            handleReturnBook(p.libroId);
+                          },
+                        })}
+                        className="font-semibold text-xs border px-2 py-1 rounded transition text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10"
+                      >
+                        Devolver
+                      </button>
+                    ) : p.estado === "DEVUELTO" ? (
+                      <span className="text-xs text-gray-400">—</span>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -392,6 +423,7 @@ export default function Biblioteca() {
         isOpen={isPrestamoOpen}
         onClose={closePrestamo}
         selectedLibroTitle={selectedLibroTitle}
+        maxCantidad={selectedLibroCantidad}
         isSubmitting={isSubmitting}
         onSubmit={handlePrestamoSubmit}
         inputCls={inputCls}

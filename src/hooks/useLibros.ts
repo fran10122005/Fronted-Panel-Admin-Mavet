@@ -47,6 +47,7 @@ export function useLibros() {
 
   const [selectedLibroId, setSelectedLibroId] = useState<string>("");
   const [selectedLibroTitle, setSelectedLibroTitle] = useState<string>("");
+  const [selectedLibroCantidad, setSelectedLibroCantidad] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [libroFormData, setLibroFormData] = useState<Libro>(initialLibroState);
@@ -100,30 +101,40 @@ export function useLibros() {
     fetchDatos();
   }, []);
 
-  const handleOpenPrestamo = (id: string, titulo: string) => {
+  const handleOpenPrestamo = (id: string, titulo: string, cantidadDisponible: number) => {
     setSelectedLibroId(id);
     setSelectedLibroTitle(titulo);
+    setSelectedLibroCantidad(cantidadDisponible);
     openPrestamo();
   };
 
-  const handlePrestamoSubmit = async (data: { cedula: string; nombre: string }) => {
+  const handlePrestamoSubmit = async (prestadores: { cedula: string; nombre: string }[]) => {
     setIsSubmitting(true);
-    const payload: PrestamoPayload = {
-      libroId: selectedLibroId,
-      cedulaSolicitante: data.cedula,
-      nombreSolicitante: data.nombre,
-      horaPrestamo: new Date().toISOString(),
-      estado: "ACTIVO",
-    };
     try {
-      const response = await mavetApi.registrarPrestamo(payload);
+      let successCount = 0;
+      for (const p of prestadores) {
+        try {
+          await mavetApi.registrarPrestamo({
+            libroId: selectedLibroId,
+            cedulaSolicitante: p.cedula,
+            nombreSolicitante: p.nombre,
+            horaPrestamo: new Date().toISOString(),
+            estado: "ACTIVO",
+          });
+          successCount++;
+        } catch (e: any) {
+          toast.error(`Error con ${p.nombre}: ${e.message}`);
+        }
+      }
       closePrestamo();
-      toast.success(response.message);
+      if (successCount > 0) {
+        toast.success(`${successCount} préstamo(s) registrado(s) exitosamente.`);
+      }
       await fetchLibrosPaginated(currentPage);
       const prestamosRes = await mavetApi.getPrestamosBiblioteca();
       setPrestamos(prestamosRes);
     } catch {
-      toast.error("Ocurrió un error al registrar el préstamo.");
+      toast.error("Ocurrió un error al procesar los préstamos.");
     } finally {
       setIsSubmitting(false);
     }
@@ -210,7 +221,7 @@ export function useLibros() {
       delete payload.autorApellido;
 
       // Si seleccionó "Otra..." y hay texto, crear la categoría primero
-      if (payload.id_categoria === -1 && payload.customCategoria?.trim()) {
+      if (payload.id_categoria === "-1" && payload.customCategoria?.trim()) {
         const nuevaCat = await mavetApi.crearCategoriaLibro({ nombre_categoria: payload.customCategoria.trim() });
         payload.id_categoria = nuevaCat.id_categoria ?? nuevaCat.id;
         setCategorias(prev => [...prev, nuevaCat]);
@@ -268,7 +279,7 @@ export function useLibros() {
     filteredLibros, filteredPrestamos,
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
-    selectedLibroId, selectedLibroTitle,
+    selectedLibroId, selectedLibroTitle, selectedLibroCantidad,
     isSubmitting,
     libroFormData, isEditing,
     selectedLibroForDetail, setSelectedLibroForDetail,

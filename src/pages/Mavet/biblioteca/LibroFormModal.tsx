@@ -11,7 +11,7 @@ const libroSchema = z.object({
   estante: z.string().optional(),
   autorNombre: z.string().min(1, "El nombre del autor es obligatorio"),
   autorApellido: z.string().optional(),
-  id_categoria: z.preprocess((val) => Number(val), z.number()),
+  id_categoria: z.string().min(1, "Seleccione una categoría"),
   customCategoria: z.string().optional(),
   ano_libro: z.preprocess(
     (val) => (val === "" || val === null ? undefined : Number(val)),
@@ -24,7 +24,7 @@ const libroSchema = z.object({
   ),
   estado: z.string().optional(),
 }).refine((data) => {
-  if (data.id_categoria === -1 && (!data.customCategoria || data.customCategoria.trim() === "")) {
+  if (data.id_categoria === "-1" && (!data.customCategoria || data.customCategoria.trim() === "")) {
     return false;
   }
   return true;
@@ -168,7 +168,7 @@ export default function LibroFormModal({
               </select>
               {errors.id_categoria && <p className="text-red-500 text-xs mt-1">{errors.id_categoria.message}</p>}
               
-              {Number(selectedCategoria) === -1 && (
+              {selectedCategoria === "-1" && (
                 <div className="mt-2">
                   <input
                     type="text"
