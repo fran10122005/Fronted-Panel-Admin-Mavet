@@ -37,7 +37,7 @@ export default function UserProfiles() {
       />
       <PageBreadcrumb pageTitle="Mi Perfil" />
       <div className="space-y-6">
-        <UserMetaCard profile={profile} />
+        <UserMetaCard profile={profile} onRefresh={fetchProfile} />
         {loading ? (
           <div className="text-center text-gray-500 py-10">Cargando perfil...</div>
         ) : (

@@ -1,13 +1,37 @@
+import { useRef, useState } from "react";
 import { Modal } from "../../../components/ui/modal";
 import { Trabajador } from "../../../types";
+import { mavetApi } from "../../../services/api";
+import toast from "react-hot-toast";
 
 interface Props {
   trabajador: Trabajador | null;
   onClose: () => void;
   onEdit: (t: Trabajador) => void;
+  onRefresh?: () => void;
 }
 
-export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit }: Props) {
+export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, onRefresh }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [localFotoUrl, setLocalFotoUrl] = useState<string | null>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !t?.id) return;
+    try {
+      toast.loading("Subiendo foto...", { id: "detail-photo" });
+      const url = await mavetApi.subirFotoTrabajador(t.id, file);
+      setLocalFotoUrl(url);
+      toast.success("Foto actualizada", { id: "detail-photo" });
+      onRefresh?.();
+    } catch (err: any) {
+      toast.error(err.message || "Error al subir la foto", { id: "detail-photo" });
+    }
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const fotoUrl = localFotoUrl || t?.foto_url;
+
   return (
     <Modal
       isOpen={t !== null}
@@ -38,13 +62,30 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit }
               <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b border-l border-brand-400"></div>
               <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b border-r border-brand-400"></div>
 
-              <div className="flex flex-col items-center justify-center">
-                <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              {fotoUrl ? (
+                <img
+                  src={fotoUrl}
+                  alt="Foto del trabajador"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center">
+                  <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase text-center">Ficha de Personal</span>
+                  <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1 text-center font-serif">MAVET RRHH</span>
+                </div>
+              )}
+
+              <label className="absolute inset-0 bg-black/60 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white text-[10px] font-bold uppercase text-center transition-all">
+                <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase text-center">Ficha de Personal</span>
-                <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1 text-center font-serif">MAVET RRHH</span>
-              </div>
+                <span>Cambiar<br/>Foto</span>
+                <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
             </div>
 
             <div className="text-center">

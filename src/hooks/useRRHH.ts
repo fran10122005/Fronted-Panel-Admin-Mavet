@@ -20,6 +20,7 @@ export const initialTrabajadorState = {
   fecha_nacimiento: "",
   direccion: "",
   fecha_ingreso: "",
+  foto_url: "",
 };
 
 export const initialUsuarioState = {
@@ -120,6 +121,7 @@ export function useRRHH() {
       fecha_nacimiento: (t as any).fecha_nacimiento || "",
       direccion: (t as any).direccion || "",
       fecha_ingreso: (t as any).fecha_ingreso || "",
+      foto_url: (t as any).foto_url || "",
     });
     openTrabajador();
   };
@@ -303,7 +305,7 @@ export function useRRHH() {
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     trabajPage, trabajTotalPages, trabajTotalItems,
     asistPage, asistTotalPages, asistTotalItems,
-    refreshTrabajadores, refreshAsistencias,
+    refreshTrabajadores, refreshAsistencias, refreshData,
     filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
