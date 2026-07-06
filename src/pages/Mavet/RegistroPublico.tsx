@@ -31,8 +31,13 @@ export default function RegistroPublico() {
       ]);
       setMotivos(mots);
 
-      const hoyStr = new Date().toISOString().split('T')[0];
-      const eventosDeHoy = ag.filter((e: any) => e.fecha?.startsWith(hoyStr));
+      // Use local date (not UTC) to avoid timezone shift issues
+      const now = new Date();
+      const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const eventosDeHoy = ag.filter((e: any) => {
+        const fecha = e.fecha || e.fecha_uso || e.fecha_solicitada || e.start || e.date || "";
+        return fecha.startsWith(hoyStr);
+      });
       setEventosHoy(eventosDeHoy);
     };
     fetchDatos();
@@ -110,22 +115,28 @@ export default function RegistroPublico() {
         const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
         finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
       } else if (formData.id_motivo.startsWith('evento_')) {
-        // Es un evento de auditorio, no debe enviarse id_taller para evitar error 500
+        // Es un evento de auditorio, no debe enviarse id_taller para evitar error 500 de FK
         const motivoEvento = motivos.find(m => m.descripcion.toLowerCase().includes('evento') || m.descripcion.toLowerCase().includes('conferencia') || m.descripcion.toLowerCase().includes('auditorio'));
         finalMotivo = motivoEvento ? motivoEvento.id_motivo : (motivos[0]?.id_motivo || '');
       } else {
         finalMotivo = formData.id_motivo.split('_')[1];
       }
 
-      await mavetApi.registrarAutoIngreso({
+      const payload: any = {
         cedula,
         nombres: formData.nombres,
         apellidos: formData.apellidos,
         telefono: formData.telefono,
         fecha_de_nac: formData.fecha_nacimiento || undefined,
         id_motivo: finalMotivo,
-        id_taller: finalTaller
-      });
+      };
+      
+      // Solo enviar id_taller si es un taller
+      if (finalTaller && formData.id_motivo.startsWith('taller_') && Number(finalTaller)) {
+        payload.id_taller = Number(finalTaller);
+      }
+
+      await mavetApi.registrarAutoIngreso(payload);
       setStep(3);
     } catch (err: any) {
       setError(err.message || "No se pudo registrar. Acuda a recepción.");
@@ -375,8 +386,10 @@ export default function RegistroPublico() {
                   {eventosHoy.length > 0 && (
                     <optgroup label="Eventos y Talleres de Hoy">
                       {eventosHoy.map((e, idx) => {
-                        const type = e.id.split('-')[0]; // "evento" o "taller"
-                        const numId = e.id.split('-')[1];
+                        const parts = e.id.split('-');
+                        const type = parts[0]; // "evento" o "taller"
+                        // Handle format "evento-SES-00004" or "evento-4"
+                        const numId = parts.length > 2 ? parts[2] : parts[1];
                         return (
                           <option key={`e_${idx}`} value={`${type}_${numId}`}>
                             {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}

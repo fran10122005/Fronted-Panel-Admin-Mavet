@@ -67,8 +67,13 @@ export default function Recepcion() {
     setIsLoadingDashboard(true);
     try {
       const eventos = await mavetApi.getAgendaPublica();
-      const hoyStr = new Date().toISOString().split('T')[0];
-      const filtrados = eventos.filter((e: any) => e.fecha?.startsWith(hoyStr));
+      // Use local date (not UTC) to avoid timezone shift issues
+      const now = new Date();
+      const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const filtrados = eventos.filter((e: any) => {
+        const fecha = e.fecha || e.fecha_uso || e.fecha_solicitada || e.start || e.date || "";
+        return fecha.startsWith(hoyStr);
+      });
       setEventosHoy(filtrados);
     } catch (error) {
       console.error("Error cargando dashboard", error);
@@ -170,10 +175,12 @@ export default function Recepcion() {
         id_motivo: finalMotivo,
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
       };
-      // Solo incluir id_taller si tiene valor numérico válido
-      if (finalTaller && Number(finalTaller)) {
+      
+      // Solo incluir id_taller si es un taller válido (para evitar errores FK con eventos)
+      if (finalTaller && formData.id_motivo.startsWith('taller_') && Number(finalTaller)) {
         ingresoPayload.id_taller = Number(finalTaller);
       }
+
       await mavetApi.registrarIngreso(ingresoPayload);
       toast.success("Acceso registrado exitosamente.");
       setFormData({ nacionalidad: "V-", cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
@@ -351,11 +358,15 @@ export default function Recepcion() {
                     ))}
                     {eventosHoy.length > 0 && (
                       <optgroup label="Eventos y Talleres de Hoy">
-                        {eventosHoy.map((e, idx) => (
-                          <option key={`e_${idx}`} value={`evento_${e.id.split('-')[1]}`}>
-                            {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
-                          </option>
-                        ))}
+                        {eventosHoy.map((e, idx) => {
+                          const parts = e.id.split('-');
+                          const numId = parts.length > 2 ? parts[2] : parts[1];
+                          return (
+                            <option key={`e_${idx}`} value={`evento_${numId}`}>
+                              {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
+                            </option>
+                          );
+                        })}
                       </optgroup>
                     )}
                   </select>

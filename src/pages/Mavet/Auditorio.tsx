@@ -25,10 +25,22 @@ import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
-import { limitNumericInput, validateRequired } from "../../utils/validation";
+import { validateRequired } from "../../utils/validation";
 import { useAuth } from "../../context/AuthContext";
 import Salas from "./Salas";
 import { generateNextCode } from "../../utils/codeGenerator";
+
+const formatCedula = (input: string): string => {
+  if (!input) return "";
+  
+  // Keep only digits
+  let digits = input.replace(/\D/g, "");
+  if (digits.length > 8) {
+    digits = digits.slice(0, 8);
+  }
+  
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
 const Auditorio: React.FC = () => {
   const { user } = useAuth();
@@ -126,13 +138,45 @@ const Auditorio: React.FC = () => {
     setOrganizadorLoading(true);
     setOrganizadorError("");
     try {
-      const result = await mavetApi.checkVisitante(cedula);
+      let result = await mavetApi.checkVisitante(cedula);
+      
+      // Fallback search formats if not found on the first try
+      if (!result.existe) {
+        const cleanDigits = cedula.replace(/\D/g, "");
+        
+        // Format 1: V-XX.XXX.XXX
+        const vDotted = `V-${cedula}`;
+        // Format 2: Just clean digits (e.g. 31619791)
+        const cleanVal = cleanDigits;
+        // Format 3: V-XXXXXXXX (clean digits with V-)
+        const vClean = `V-${cleanDigits}`;
+        
+        const formatsToTry = [vDotted, cleanVal, vClean];
+        
+        for (const fmt of formatsToTry) {
+          if (fmt && fmt !== cedula) {
+            try {
+              const res = await mavetApi.checkVisitante(fmt);
+              if (res.existe && res.visitante) {
+                result = res;
+                break;
+              }
+            } catch {
+              // Ignore failure for individual format try
+            }
+          }
+        }
+      }
+
       if (result.existe && result.visitante) {
         const p = result.visitante;
         const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
         setOrganizador(nombreCompleto);
         setOrganizadorAuto(true);
         setOrganizadorError("");
+        if (p.cedula) {
+          setCedulaOrganizador(p.cedula);
+        }
       } else {
         setOrganizador("");
         setOrganizadorAuto(false);
@@ -203,8 +247,54 @@ const Auditorio: React.FC = () => {
   const handleVerAsistentes = async (ev: EventoAuditorio) => {
     setSelectedEvent(ev);
     try {
-      const result = await mavetApi.getTodosIngresos();
-      const asistentes = result.data.filter(i => String(i.id_taller) === String(ev.id));
+      const eventDateStr = ev.start?.split("T")[0] || "";
+
+      // Fetch all ingresos and today's agenda to find the matching public ID
+      const [result, agenda] = await Promise.all([
+        mavetApi.getTodosIngresos(1, 500),
+        mavetApi.getAgendaPublica()
+      ]);
+
+      const eventTitleLower = (ev.title || "").toLowerCase().trim();
+      const titleWords = eventTitleLower.split(/\s+/).filter(w => w.length > 3);
+      
+      // Find possible agenda IDs for this event by matching title or date
+      const possibleAgendaIds = agenda
+        .filter(a => {
+          const aDate = (a.fecha || a.fecha_uso || a.start || "").split("T")[0];
+          if (aDate && eventDateStr && aDate !== eventDateStr) return false;
+          
+          const aTitle = (a.titulo || "").toLowerCase();
+          return aTitle.includes(eventTitleLower) || titleWords.some(w => aTitle.includes(w));
+        })
+        .map(a => {
+          const parts = String(a.id).split('-');
+          return parts.length > 2 ? Number(parts[2]).toString() : parts[1];
+        });
+
+      const asistentes = result.data.filter(i => {
+        // Fallback genérico: como el backend prohíbe guardar id_taller para eventos (error 500 de FK),
+        // dependemos de que la fecha coincida y el motivo sea de tipo evento.
+        if (eventDateStr) {
+          const checkInDate = (i.fecha_hora_entrada || "").split("T")[0];
+          if (checkInDate === eventDateStr) {
+            const motivoDesc = (i.Motivo?.descripcion || "").toLowerCase();
+            if (
+              motivoDesc.includes("evento") ||
+              motivoDesc.includes("conferencia") ||
+              motivoDesc.includes("auditorio") ||
+              motivoDesc.includes("charla") ||
+              motivoDesc.includes("reunión") ||
+              motivoDesc.includes("reunion")
+            ) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+      });
+
       setEventoAsistentes(asistentes);
     } catch {
       setEventoAsistentes([]);
@@ -725,7 +815,7 @@ const Auditorio: React.FC = () => {
                         type="text"
                         value={cedulaOrganizador}
                         onChange={(e) => {
-                          setCedulaOrganizador(e.target.value);
+                          setCedulaOrganizador(formatCedula(e.target.value));
                           if (organizadorAuto) {
                             setOrganizador("");
                             setOrganizadorAuto(false);
@@ -733,7 +823,6 @@ const Auditorio: React.FC = () => {
                           setOrganizadorError("");
                         }}
                         onKeyDown={(e) => {
-                          limitNumericInput(e);
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             handleCedulaBlur();
@@ -741,7 +830,7 @@ const Auditorio: React.FC = () => {
                         }}
                         disabled={isGerente}
                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
-                        placeholder="Ej. V-12345678"
+                        placeholder="Ej. 31.619.791"
                       />
                       <button
                         type="button"
