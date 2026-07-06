@@ -12,7 +12,7 @@ const trabajadorSchema = z.object({
   apellidos: z.string().min(1, "Los apellidos son obligatorios"),
   telefono: z.string().optional(),
   correo_personal: z.string().email("Debe ser un correo válido").optional().or(z.literal('')),
-  id_cargo: z.preprocess((val) => Number(val), z.number().min(1, "El cargo es obligatorio")),
+  id_cargo: z.string().min(1, "El cargo es obligatorio"),
   horas_semanales: z.preprocess((val) => Number(val), z.number().min(0, "Mínimo 0 horas").optional()),
   estado: z.enum(["Activo", "Inactivo"]).optional(),
   fecha_nacimiento: z.string().optional(),

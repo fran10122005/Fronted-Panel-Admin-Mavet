@@ -14,7 +14,7 @@ export const initialTrabajadorState = {
   apellidos: "",
   telefono: "",
   correo_personal: "",
-  id_cargo: 0,
+  id_cargo: "",
   horas_semanales: 0,
   estado: "Activo" as "Activo" | "Inactivo",
   fecha_nacimiento: "",
@@ -25,8 +25,8 @@ export const initialTrabajadorState = {
 export const initialUsuarioState = {
   correo: "",
   password: "",
-  id_rol: 0,
-  id_trabajador: 0,
+  id_rol: "",
+  id_trabajador: "",
   estado: true,
 };
 
@@ -101,7 +101,7 @@ export function useRRHH() {
 
   const handleOpenCrearTrabajador = () => {
     setEditingTrabajadorId(null);
-    setFormData({ ...initialTrabajadorState, id_cargo: cargos[0]?.id_cargo || 0 });
+    setFormData({ ...initialTrabajadorState, id_cargo: cargos[0]?.id_cargo || "" });
     openTrabajador();
   };
 
@@ -114,7 +114,7 @@ export function useRRHH() {
       apellidos: t.apellido,
       telefono: t.telefono || "",
       correo_personal: t.correo || "",
-      id_cargo: cargoObj?.id_cargo || 0,
+      id_cargo: cargoObj?.id_cargo || "",
       horas_semanales: t.horas_semanales || 0,
       estado: (t.estado === "Activo" ? "Activo" : "Inactivo"),
       fecha_nacimiento: (t as any).fecha_nacimiento || "",
@@ -126,7 +126,7 @@ export function useRRHH() {
 
   const handleOpenCrearUsuario = () => {
     setEditingUsuarioId(null);
-    setFormUsuario({ ...initialUsuarioState, id_rol: roles[0]?.id_rol || 0 });
+    setFormUsuario({ ...initialUsuarioState, id_rol: roles[0]?.id_rol || "" });
     openUsuario();
   };
 
@@ -137,8 +137,8 @@ export function useRRHH() {
     setFormUsuario({
       correo: u.correo,
       password: "",
-      id_rol: rolObj?.id_rol || 0,
-      id_trabajador: trabObj?.id || u.id_trabajador || 0,
+      id_rol: rolObj?.id_rol || "",
+      id_trabajador: trabObj?.id || u.id_trabajador || "",
       estado: u.estado === true,
     });
     openUsuario();

@@ -99,13 +99,15 @@ export interface EventoAuditorio {
 }
 
 export interface Trabajador {
-  id?: number;
+  id?: number | string;
   cedula: string;
   nombre: string;
   apellido: string;
   telefono: string;
   correo: string;
   cargo: string;
+  id_cargo: string;
+  fecha_ingreso: string;
   horas_semanales?: number;
   estado: "Activo" | "Inactivo";
   qr_uuid?: string;
