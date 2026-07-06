@@ -1,4 +1,3 @@
-import jsPDF from "jspdf";
 import { Obra, RegistroAsistencia, Trabajador } from "../types";
 import { axiosInstance } from "./api";
 
@@ -244,328 +243,212 @@ export async function exportarReporteUsuarios() {
 }
 
 // ─── PDF: QR Público de Auto-Ingreso ─────────────────────────────────────────
-export async function exportarQRPublico(qrImageUrl: string, publicUrl: string) {
+export async function exportarQRPublico(_qrImageUrl: string, publicUrl: string) {
   try {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    await addHeader(doc, "Código QR — Auto Ingreso");
-
-    const pw = doc.internal.pageSize.getWidth();
-
-    const resp = await fetch(qrImageUrl);
-    const blob = await resp.blob();
-    const qrBase64 = await new Promise<string>((resolve) => {
-      const rd = new FileReader();
-      rd.onloadend = () => resolve(rd.result as string);
-      rd.readAsDataURL(blob);
+    const res = await axiosInstance.get('/api/reportes/qr', { 
+      params: { publicUrl },
+      responseType: 'blob' 
     });
-
-    const qrSize = 100;
-    const xPos = (pw - qrSize) / 2;
-    const yPos = 55;
-
-    // Sombra
-    doc.setFillColor(...C.line);
-    doc.rect(xPos - 6, yPos + 1, qrSize + 12, qrSize + 12, "F");
-
-    // Fondo blanco + borde
-    doc.setFillColor(255, 255, 255);
-    doc.rect(xPos - 6, yPos - 6, qrSize + 12, qrSize + 12, "F");
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.5);
-    doc.rect(xPos - 6, yPos - 6, qrSize + 12, qrSize + 12, "S");
-
-    doc.addImage(qrBase64, "PNG", xPos, yPos, qrSize, qrSize);
-
-    doc.setTextColor(...C.textSoft);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text("O escanee el código QR o visite:", pw / 2, yPos + qrSize + 14, { align: "center" });
-
-    doc.setTextColor(...C.brand);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text(publicUrl, pw / 2, yPos + qrSize + 22, { align: "center" });
-
-    doc.setTextColor(...C.text);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    const instructions = [
-      "1. Abra la cámara de su teléfono y apunte al código QR.",
-      "2. Toque el enlace que aparece en la pantalla.",
-      "3. Complete sus datos personales y seleccione el motivo de su visita.",
-      "4. ¡Listo! Su ingreso quedará registrado automáticamente.",
-    ];
-    let iy = yPos + qrSize + 36;
-    instructions.forEach((line) => {
-      doc.text(line, 28, iy);
-      iy += 7;
-    });
-
-    addFooter(doc);
-    doc.output('dataurlnewwindow');
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarQRPublico]", e);
-    alert("Error al generar el PDF del código QR. Verifique su conexión a internet.");
+    alert("Error al generar el PDF del código QR. Verifique su conexión.");
+  }
+}
+
+// ─── Helper: load image as base64 data URL ───────────────────────────────────
+async function loadImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
   }
 }
 
 // ─── PDF: Credencial de Trabajador (Carnet tipo ID Card) ─────────────────────
-
-// Paleta de colores institucional MAVET para credenciales
-const CRED = {
-  // Granates institucionales (del login bg-brand-950)
-  maroonDark: [36, 0, 0] as [number, number, number],      // #240000 — brand-950
-  maroon: [128, 0, 0] as [number, number, number],          // #800000 — brand-500
-  maroonMid: [112, 0, 0] as [number, number, number],       // #700000 — brand-600
-  maroonLight: [163, 61, 61] as [number, number, number],   // #a33d3d — brand-400
-  maroonSoft: [191, 107, 107] as [number, number, number],  // #bf6b6b — brand-300
-
-  // Dorados (acentos de la UI actual)
-  gold: [196, 152, 90] as [number, number, number],
-  goldLight: [232, 213, 176] as [number, number, number],
-
-  // Neutros
-  white: [255, 255, 255] as [number, number, number],
-  offWhite: [253, 248, 246] as [number, number, number],
-  textDark: [45, 45, 45] as [number, number, number],
-  textMuted: [140, 140, 140] as [number, number, number],
-  line: [228, 228, 228] as [number, number, number],
-};
-
-/**
- * Dibuja un carnet individual en una posición dada del documento.
- * Diseño horizontal moderno tipo ID card (inspirado en plataformas
- * digitales de carnetización): foto a la izquierda, datos a la derecha,
- * QR en esquina inferior derecha, barra de color en la parte inferior.
- */
-async function dibujarCarnet(
-  doc: jsPDF,
-  trabajador: Trabajador,
-  originX: number,
-  originY: number,
-  cardW: number,
-  cardH: number
-) {
-  // ── 1. Fondo blanco con sombra sutil ────────────────────────────────
-  doc.setFillColor(...CRED.offWhite);
-  doc.roundedRect(originX, originY, cardW, cardH, 4, 4, "F");
-
-  // ── 2. Barra lateral izquierda (franja de color institucional) ──────
-  const sideW = cardW * 0.35;
-  doc.setFillColor(...CRED.maroon);
-  doc.roundedRect(originX, originY, sideW, cardH, 4, 4, "F");
-  // Cubrir el borde redondeado derecho de la barra (queda recto contra el contenido)
-  doc.rect(originX + sideW - 4, originY, 4, cardH, "F");
-
-  // ── 3. Logo MAVET en la esquina superior izquierda ──────────────────
-  const logo = await getLogo();
-  if (logo) {
-    try {
-      const logoSize = sideW * 0.30;
-      doc.addImage(logo, "PNG", originX + (sideW - logoSize) / 2, originY + 3, logoSize, logoSize);
-    } catch { /* */ }
-  }
-
-  // ── 4. Foto circular centrada en la barra izquierda ─────────────────
-  const photoCenterX = originX + sideW / 2;
-  const photoSize = sideW * 0.60;
-  const photoY = originY + cardH / 2 - photoSize / 2 - 4;
-
-  doc.setFillColor(...CRED.gold);
-  doc.circle(photoCenterX, photoY + photoSize / 2, photoSize / 2 + 1.5, "F");
-  doc.setFillColor(240, 240, 240);
-  doc.circle(photoCenterX, photoY + photoSize / 2, photoSize / 2, "F");
-
-  let fotoCargada = false;
-  if (trabajador.foto_url) {
-    try {
-      const resp = await fetch(trabajador.foto_url);
-      if (resp.ok) {
-        const blob = await resp.blob();
-        const b64 = await new Promise<string>((resolve) => {
-          const rd = new FileReader();
-          rd.onloadend = () => resolve(rd.result as string);
-          rd.readAsDataURL(blob);
-        });
-        doc.saveGraphicsState();
-        doc.circle(photoCenterX, photoY + photoSize / 2, photoSize / 2, "s");
-        doc.clip();
-        doc.addImage(b64, "PNG", photoCenterX - photoSize / 2, photoY, photoSize, photoSize);
-        doc.restoreGraphicsState();
-        fotoCargada = true;
-      }
-    } catch { /* */ }
-  }
-  if (!fotoCargada) {
-    const iniciales = `${trabajador.nombre?.charAt(0) || ""}${trabajador.apellido?.charAt(0) || ""}`.toUpperCase();
-    doc.setTextColor(...CRED.white);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(photoSize * 0.40);
-    doc.text(iniciales || "?", photoCenterX, photoY + photoSize / 2 + photoSize * 0.15, { align: "center" });
-  }
-
-  // ── 5. Sección derecha: datos del trabajador ────────────────────────
-  const leftEdge = originX + sideW + 3;
-  const rightW = cardW - sideW - 6;
-  const textX = leftEdge + 1;
-  let y = originY + 7;
-
-  // ── 5a. Nombre completo (más prominente) ────────────────────────────
-  const nombreCompleto = `${trabajador.nombre || ""} ${trabajador.apellido || ""}`.trim();
-  doc.setTextColor(...CRED.maroon);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(cardW * 0.065);
-  doc.text(nombreCompleto, textX, y, { maxWidth: rightW });
-  y += 4.5;
-
-  // ── 5b. Cargo ───────────────────────────────────────────────────────
-  doc.setTextColor(...CRED.gold);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(cardW * 0.048);
-  doc.text((trabajador.cargo || "TRABAJADOR").toUpperCase(), textX, y, { maxWidth: rightW });
-  y += 5;
-
-  // ── 5c. Línea separadora sutil ──────────────────────────────────────
-  doc.setDrawColor(...CRED.goldLight);
-  doc.setLineWidth(0.3);
-  doc.line(textX, y, originX + cardW - 3, y);
-  y += 3.5;
-
-  // ── 5d. Campos de datos ─────────────────────────────────────────────
-  const fields = [
-    { label: "Cédula", value: trabajador.cedula || "—" },
-    { label: "Teléfono", value: trabajador.telefono || "—" },
-    { label: "Correo", value: trabajador.correo || "—" },
-  ];
-
-  doc.setFontSize(cardW * 0.038);
-  fields.forEach((f) => {
-    doc.setTextColor(...CRED.textMuted);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${f.label}:`, textX, y);
-    const labelW = doc.getTextWidth(`${f.label}:`);
-    doc.setTextColor(...CRED.textDark);
-    doc.setFont("helvetica", "normal");
-    doc.text(f.value, textX + labelW + 1, y, { maxWidth: rightW - labelW - 1 });
-    y += 3.8;
-  });
-
-  // ── 6. QR + fechas en la parte inferior derecha ─────────────────────
-  const qrData = `MAVET|${trabajador.cedula || ""}|${nombreCompleto}|${trabajador.cargo || ""}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
-  const qrSize = cardW * 0.12;
-  const qrX = originX + cardW - qrSize - 3;
-  const qrY = originY + cardH - qrSize - 3;
-
-  let qrBase64 = "";
-  try {
-    const resp = await fetch(qrUrl);
-    if (resp.ok) {
-      const blob = await resp.blob();
-      qrBase64 = await new Promise<string>((resolve) => {
-        const rd = new FileReader();
-        rd.onloadend = () => resolve(rd.result as string);
-        rd.readAsDataURL(blob);
-      });
-    }
-  } catch { /* */ }
-
-  if (qrBase64) {
-    doc.setDrawColor(...CRED.gold);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 2, 2, "S");
-    doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize);
-  }
-
-  // ── 7. Fechas al lado izquierdo del QR ──────────────────────────────
-  const today = new Date();
-  const fechaStr = today.toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
-  doc.setTextColor(...CRED.textMuted);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(cardW * 0.036);
-  const fechasX = textX;
-  const fechasY = originY + cardH - 4;
-  doc.text(`Emitido: ${fechaStr}`, fechasX, fechasY - 3);
-  doc.text("Válido: mientras dure la relación laboral", fechasX, fechasY);
-
-  // ── 8. Borde exterior del carnet ────────────────────────────────────
-  doc.setDrawColor(...CRED.gold);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(originX, originY, cardW, cardH, 4, 4, "S");
-}
-
 export async function exportarCarnetTrabajador(trabajador: Trabajador) {
   try {
-    const doc = new jsPDF("p", "mm", "a4");
-    const pw = doc.internal.pageSize.getWidth();
-    const ph = doc.internal.pageSize.getHeight();
+    const { jsPDF } = await import("jspdf");
 
+    // Card dimensions in mm (ISO ID-1 style: 88 × 56 mm)
     const cardW = 88;
     const cardH = 56;
-    const originX = (pw - cardW) / 2;
-    const originY = (ph - cardH) / 2;
+    const pageW = cardW + 20;
+    const pageH = cardH + 20;
 
-    await dibujarCarnet(doc, trabajador, originX, originY, cardW, cardH);
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [pageH, pageW] });
 
-    doc.output("dataurlnewwindow");
+    const originX = (pageW - cardW) / 2;
+    const originY = (pageH - cardH) / 2;
+    const sideW = cardW * 0.35;
+
+    // ── 1. Card background ──
+    doc.setFillColor(253, 248, 246);
+    doc.roundedRect(originX, originY, cardW, cardH, 4, 4, "F");
+
+    // ── 2. Left sidebar (maroon) ──
+    doc.setFillColor(128, 0, 0);
+    doc.roundedRect(originX, originY, sideW, cardH, 4, 4, "F");
+    // Fill right edge of sidebar to keep it flat
+    doc.rect(originX + sideW - 4, originY, 4, cardH, "F");
+
+    // ── 3. Logo MAVET ──
+    const logo = await getLogo();
+    if (logo) {
+      try {
+        const logoSize = sideW * 0.30;
+        doc.addImage(logo, "PNG", originX + (sideW - logoSize) / 2, originY + 3, logoSize, logoSize);
+      } catch { /* ignore */ }
+    }
+
+    // ── 4. Photo (circular via clip or fallback initials) ──
+    const photoCenterX = originX + sideW / 2;
+    const photoSize = sideW * 0.50;
+    const photoY = originY + cardH / 2 - photoSize / 2 - 3;
+
+    // Gold border circle
+    doc.setFillColor(196, 152, 90);
+    doc.circle(photoCenterX, photoY + photoSize / 2, photoSize / 2 + 1.5, "F");
+    // Light grey circle background
+    doc.setFillColor(240, 240, 240);
+    doc.circle(photoCenterX, photoY + photoSize / 2, photoSize / 2, "F");
+
+    // Try to load and draw photo
+    let photoDrawn = false;
+    if (trabajador.foto_url && trabajador.foto_url.startsWith("http")) {
+      const photoData = await loadImageAsDataUrl(trabajador.foto_url);
+      if (photoData) {
+        try {
+          // Draw photo as square clipped visually inside the circle area
+          doc.addImage(photoData, "JPEG",
+            photoCenterX - photoSize / 2, photoY,
+            photoSize, photoSize
+          );
+          photoDrawn = true;
+        } catch { /* ignore */ }
+      }
+    }
+
+    if (!photoDrawn) {
+      // Draw initials
+      const initials = `${(trabajador.nombre || "").charAt(0)}${(trabajador.apellido || "").charAt(0)}`.toUpperCase();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(photoSize * 1.1);
+      doc.setTextColor(255, 255, 255);
+      doc.text(initials || "?", photoCenterX, photoY + photoSize / 2 + 2, { align: "center" });
+    }
+
+    // ── 5. "MAVET" text at bottom of sidebar ──
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(5);
+    doc.setTextColor(232, 213, 176);
+    doc.text("MAVET", photoCenterX, originY + cardH - 3, { align: "center" });
+
+    // ── 6. Right side — Worker data ──
+    const textX = originX + sideW + 4;
+    const rightW = cardW - sideW - 7;
+    let y = originY + 7;
+
+    // Name
+    const nombreCompleto = `${trabajador.nombre || ""} ${trabajador.apellido || ""}`.trim();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(cardW * 0.065);
+    doc.setTextColor(128, 0, 0);
+    doc.text(nombreCompleto, textX, y, { maxWidth: rightW });
+
+    y += 5;
+
+    // Cargo
+    const cargoStr = (trabajador.cargo || "TRABAJADOR").toUpperCase();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(cardW * 0.048);
+    doc.setTextColor(196, 152, 90);
+    doc.text(cargoStr, textX, y, { maxWidth: rightW });
+
+    y += 4.5;
+
+    // Separator line
+    doc.setDrawColor(232, 213, 176);
+    doc.setLineWidth(0.3);
+    doc.line(textX, y, originX + cardW - 3, y);
+
+    y += 3.5;
+
+    // Fields
+    const fields = [
+      { label: "Cédula", value: trabajador.cedula || "—" },
+      { label: "Teléfono", value: trabajador.telefono || "—" },
+      { label: "Correo", value: trabajador.correo || "—" },
+    ];
+
+    doc.setFontSize(cardW * 0.038);
+    for (const f of fields) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(140, 140, 140);
+      const labelW = doc.getTextWidth(`${f.label}: `);
+      doc.text(`${f.label}: `, textX, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(45, 45, 45);
+      doc.text(f.value, textX + labelW, y, { maxWidth: rightW - labelW });
+      y += 3.8;
+    }
+
+    // ── 7. QR Code ──
+    const qrData = `MAVET|${trabajador.cedula || ""}|${nombreCompleto}|${cargoStr}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+    const qrDataUrl = await loadImageAsDataUrl(qrUrl);
+    const qrSize = cardW * 0.12;
+    const qrX = originX + cardW - qrSize - 3;
+    const qrY = originY + cardH - qrSize - 3;
+
+    if (qrDataUrl) {
+      try {
+        // Gold border around QR
+        doc.setDrawColor(196, 152, 90);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 0.8, 0.8, "S");
+        doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+      } catch { /* ignore */ }
+    }
+
+    // ── 8. Dates ──
+    const today = new Date();
+    const fechaStr = today.toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(cardW * 0.034);
+    doc.setTextColor(140, 140, 140);
+    doc.text(`Emitido: ${fechaStr}`, textX, originY + cardH - 6);
+    doc.text("Válido: mientras dure la relación laboral", textX, originY + cardH - 3);
+
+    // ── 9. Outer gold border ──
+    doc.setDrawColor(196, 152, 90);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(originX, originY, cardW, cardH, 4, 4, "S");
+
+    // ── Open PDF ──
+    const pdfBlob = doc.output("blob");
+    const url = URL.createObjectURL(pdfBlob);
+    window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarCarnetTrabajador]", e);
-    alert("Error al generar la credencial. Verifique su conexión.");
+    alert("Error al generar la credencial.");
   }
 }
 
 // ─── PDF: Credenciales Masivas (múltiples trabajadores) ──────────────────────
-export async function exportarCredencialesMasivas(trabajadores: Trabajador[]) {
+export async function exportarCredencialesMasivas(_trabajadores: Trabajador[]) {
   try {
-    if (trabajadores.length === 0) {
-      alert("No hay trabajadores para generar credenciales.");
-      return;
-    }
-
-    const doc = new jsPDF("p", "mm", "a4");
-    const pw = doc.internal.pageSize.getWidth();
-    const ph = doc.internal.pageSize.getHeight();
-
-    // Layout: 2 columnas × 2 filas = 4 carnets por página
-    const cardW = 75;
-    const cardH = 120;
-    const gapX = (pw - cardW * 2) / 3;  // margen entre columnas
-    const gapY = (ph - cardH * 2) / 3;  // margen entre filas
-    const positions = [
-      { x: gapX, y: gapY },                          // Superior izquierda
-      { x: gapX * 2 + cardW, y: gapY },              // Superior derecha
-      { x: gapX, y: gapY * 2 + cardH },              // Inferior izquierda
-      { x: gapX * 2 + cardW, y: gapY * 2 + cardH },  // Inferior derecha
-    ];
-
-    for (let i = 0; i < trabajadores.length; i++) {
-      const posIndex = i % 4;
-
-      if (i > 0 && posIndex === 0) {
-        doc.addPage();
-      }
-
-      if (posIndex === 0) {
-        // Fondo de página
-        doc.setFillColor(250, 248, 246);
-        doc.rect(0, 0, pw, ph, "F");
-
-        // Líneas de corte centrales (punteadas)
-        doc.setDrawColor(200, 200, 200);
-        doc.setLineWidth(0.15);
-        doc.setLineDashPattern([3, 3], 0);
-        // Línea horizontal central
-        doc.line(10, ph / 2, pw - 10, ph / 2);
-        // Línea vertical central
-        doc.line(pw / 2, 10, pw / 2, ph - 10);
-        doc.setLineDashPattern([], 0);
-      }
-
-      const pos = positions[posIndex];
-      await dibujarCarnet(doc, trabajadores[i], pos.x, pos.y, cardW, cardH);
-    }
-
-    doc.output("dataurlnewwindow");
+    const res = await axiosInstance.get('/api/reportes/credenciales-masivas', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
   } catch (e) {
     console.error("[exportarCredencialesMasivas]", e);
     alert("Error al generar las credenciales masivas. Verifique su conexión.");
