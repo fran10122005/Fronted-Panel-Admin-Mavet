@@ -6,9 +6,9 @@ interface Props {
   onClose: () => void;
   isEditing: boolean;
   formData: {
-    id_taller_inventario: number;
-    selectedInstructorId: number;
-    id_espacio: number;
+    id_taller_inventario: string;
+    selectedInstructorId: string;
+    id_espacio: string;
     sesiones: string;
     fecha: string;
     hora_inicio: string;
@@ -49,7 +49,7 @@ export default function TallerDetailModal({
             <label className={labelCls}>Taller <span className="text-red-500">*</span></label>
             <select name="id_taller_inventario" value={formData.id_taller_inventario}
               onChange={onChange} className={selectCls} required>
-              <option value={0}>Seleccione un taller del inventario...</option>
+              <option value="">Seleccione un taller del inventario...</option>
               {inventario.map((i: any) => (
                 <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
               ))}
@@ -60,7 +60,7 @@ export default function TallerDetailModal({
             <label className={labelCls}>Instructor <span className="text-red-500">*</span></label>
             <select name="selectedInstructorId" value={formData.selectedInstructorId}
               onChange={onChange} className={selectCls} required>
-              <option value={0}>Seleccione un instructor...</option>
+              <option value="">Seleccione un instructor...</option>
               {instructores.map((inst: any) => (
                 <option key={inst.id_instructor} value={inst.id_instructor}>
                   {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""} {inst.Persona?.cedula ? `(${inst.Persona.cedula})` : ""}
@@ -77,7 +77,7 @@ export default function TallerDetailModal({
               <label className={labelCls}>Espacio / Sala</label>
               <select name="id_espacio" value={formData.id_espacio}
                 onChange={onChange} className={selectCls}>
-                <option value={0}>Seleccione...</option>
+                <option value="">Seleccione...</option>
                 {espacios.map(e => (
                   <option key={e.id_espacio} value={e.id_espacio}>{e.nombre_espacio || e.nombre}</option>
                 ))}

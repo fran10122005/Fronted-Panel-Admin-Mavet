@@ -8,9 +8,9 @@ export const ITEMS_PER_PAGE = 10;
 export const initialInventarioForm = { nombre: "", descripcion: "" };
 
 export const initialPlanificarForm = {
-  id_taller_inventario: 0,
-  selectedInstructorId: 0,
-  id_espacio: 0,
+  id_taller_inventario: "",
+  selectedInstructorId: "",
+  id_espacio: "",
   sesiones: "",
   fecha: "",
   hora_inicio: "",
@@ -200,9 +200,9 @@ export function useTalleres() {
       setIsEditingPlanificado(true);
       setSelectedTaller(taller);
       setPlanificarForm({
-        id_taller_inventario: taller.inventario_id || 0,
-        selectedInstructorId: taller.id_instructor || 0,
-        id_espacio: taller.id_espacio || 0,
+        id_taller_inventario: taller.inventario_id || "",
+        selectedInstructorId: taller.id_instructor || "",
+        id_espacio: taller.id_espacio || "",
         sesiones: taller.sesiones || "",
         fecha: taller.fecha || "",
         hora_inicio: taller.hora_inicio || "",
@@ -243,7 +243,7 @@ export function useTalleres() {
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numFields = ["id_taller_inventario", "selectedInstructorId", "id_espacio", "sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
+    const numFields = ["sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
     setPlanificarForm(prev => ({
       ...prev,
       [name]: numFields.includes(name) ? Number(value) : value
@@ -339,9 +339,9 @@ export function useTalleres() {
     try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
       const payload = {
-        inventario_id: planificarForm.id_taller_inventario,
-        id_instructor: planificarForm.selectedInstructorId,
-        id_espacio: planificarForm.id_espacio ? Number(planificarForm.id_espacio) : null,
+        inventario_id: planificarForm.id_taller_inventario || null,
+        id_instructor: planificarForm.selectedInstructorId || null,
+        id_espacio: planificarForm.id_espacio || null,
         nombre_curso: selected?.nombre || "",
         sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
         fecha: planificarForm.fecha || null,
