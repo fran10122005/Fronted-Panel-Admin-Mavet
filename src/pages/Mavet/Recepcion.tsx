@@ -343,7 +343,7 @@ export default function Recepcion() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
+                  <input type="date" name="fecha_nacimiento" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
@@ -354,7 +354,7 @@ export default function Recepcion() {
                   <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
                     <option value="">Seleccione...</option>
                     {motivos.map(m => (
-                      <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
+                      <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.nombre}</option>
                     ))}
                     {eventosHoy.length > 0 && (
                       <optgroup label="Eventos y Talleres de Hoy">
@@ -420,9 +420,23 @@ export default function Recepcion() {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                   {time}
                 </span>
-                <button type="submit" disabled={isSubmitting} className="bg-brand-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-brand-700 transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
-                  {isSubmitting ? "Registrando..." : "Registrar Ingreso"}
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setFormData({ nacionalidad: "V-", cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
+                      setSelectedPersona(null);
+                      setSearchQuery("");
+                      setIsVisitaInstitucional(false);
+                    }} 
+                    className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-bold py-2.5 px-6 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
+                  >
+                    Limpiar Formulario
+                  </button>
+                  <button type="submit" disabled={isSubmitting} className="bg-brand-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-brand-700 transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
+                    {isSubmitting ? "Registrando..." : "Registrar Ingreso"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -479,7 +493,7 @@ export default function Recepcion() {
             </div>
             <div>
               <label className="block text-sm mb-1">Fecha de Nacimiento *</label>
-              <input required type="date" value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2" />
+              <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm mb-1">Cédula {menorData.fecha_nacimiento && (() => {

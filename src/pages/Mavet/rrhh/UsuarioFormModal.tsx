@@ -1,32 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
 import { Trabajador } from "../../../types";
 
-const usuarioSchema = z.object({
-  id_trabajador: z.preprocess((val) => Number(val), z.number().optional()),
-  correo: z.string().email("Debe ser un correo válido"),
-  password: z.string().optional(),
-  id_rol: z.preprocess((val) => Number(val), z.number().min(1, "El rol es obligatorio")),
-  estado: z.preprocess((val) => val === "true" || val === true, z.boolean().optional()),
-}).superRefine((data, ctx) => {
-  if (data.password && data.password.length > 0 && data.password.length < 6) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "La contraseña debe tener al menos 6 caracteres",
-      path: ["password"],
-    });
-  }
-});
+const buildUsuarioSchema = (isCreation: boolean) =>
+  z.object({
+    id_trabajador: z.preprocess(
+      (val) => (val === 0 || val === "0" || val === "" || val === null || val === undefined ? undefined : String(val)),
+      z.string().optional()
+    ),
+    correo: z.string().email("Debe ser un correo válido"),
+    password: z.string().optional(),
+    id_rol: z.string().min(1, "El rol del sistema es obligatorio"),
+    estado: z.preprocess((val) => val === "true" || val === true, z.boolean().optional()),
+  }).superRefine((data, ctx) => {
+    if (isCreation && (!data.password || data.password.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La contraseña es obligatoria para nuevos usuarios",
+        path: ["password"],
+      });
+    }
+    if (data.password && data.password.length > 0 && data.password.length < 6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La contraseña debe tener al menos 6 caracteres",
+        path: ["password"],
+      });
+    }
+  });
 
-export type UsuarioFormValues = z.infer<typeof usuarioSchema>;
+export type UsuarioFormValues = z.infer<ReturnType<typeof buildUsuarioSchema>>;
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  editingUsuarioId: number | null;
+  editingUsuarioId: string | null;
   initialData: UsuarioFormValues;
   trabajadores: Trabajador[];
   roles: any[];
@@ -41,8 +52,9 @@ export default function UsuarioFormModal({
   isOpen, onClose, editingUsuarioId, initialData,
   trabajadores, roles, isSubmitting, onSubmit, inputCls,
 }: Props) {
+  const schema = useMemo(() => buildUsuarioSchema(editingUsuarioId === null), [editingUsuarioId]);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UsuarioFormValues>({
-    resolver: zodResolver(usuarioSchema) as any,
+    resolver: zodResolver(schema) as any,
     defaultValues: initialData,
   });
 
@@ -65,7 +77,7 @@ export default function UsuarioFormModal({
               className={inputCls}
               {...register("id_trabajador")}
             >
-              <option value={0}>Ninguno (Opcional)</option>
+              <option value="">Ninguno (Opcional)</option>
               {trabajadores.map((t) => (
                 <option key={t.id || t.cedula} value={t.id}>{t.nombre} {t.apellido}</option>
               ))}
@@ -102,7 +114,7 @@ export default function UsuarioFormModal({
               className={`${inputCls} ${errors.id_rol ? 'border-red-500' : ''}`}
               {...register("id_rol")}
             >
-              <option value={0} disabled>Seleccione un rol...</option>
+              <option value="" disabled>Seleccione un rol...</option>
               {roles.map((r: any) => (
                 <option key={r.id_rol} value={r.id_rol}>{r.nombre_rol}</option>
               ))}

@@ -468,7 +468,11 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData);
+      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       return res.data?.url || res.data?.data?.url || "";
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");
@@ -964,7 +968,7 @@ export const mavetApi = {
         password: payload.password,
         id_rol: payload.id_rol
       };
-      if (payload.id_trabajador && payload.id_trabajador !== 0) {
+      if (payload.id_trabajador && payload.id_trabajador !== "") {
         body.id_trabajador = payload.id_trabajador;
       }
       await axiosInstance.post('/api/auth/register', body);
@@ -974,14 +978,14 @@ export const mavetApi = {
     }
   },
 
-  actualizarUsuario: async (id: number, payload: UsuarioPayload): Promise<{ success: boolean; message: string }> => {
+  actualizarUsuario: async (id: string, payload: UsuarioPayload): Promise<{ success: boolean; message: string }> => {
     try {
       const body: any = {
         correo: payload.correo,
         id_rol: payload.id_rol,
         estado: payload.estado
       };
-      if (payload.id_trabajador && payload.id_trabajador !== 0) {
+      if (payload.id_trabajador && payload.id_trabajador !== "") {
         body.id_trabajador = payload.id_trabajador;
       }
       await axiosInstance.put(`/api/auth/${id}`, body);
@@ -991,16 +995,16 @@ export const mavetApi = {
     }
   },
 
-  resetPasswordUsuario: async (id: number): Promise<{ success: boolean; message: string }> => {
+  resetPasswordUsuario: async (correo: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const res = await axiosInstance.post(`/api/auth/reset-password/${id}`);
+      const res = await axiosInstance.post('/api/auth/forgot-password', { correo });
       return { success: true, message: res.data?.message || "Correo de restablecimiento enviado" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al restablecer contraseña");
     }
   },
 
-  actualizarTrabajador: async (id: number, payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
+  actualizarTrabajador: async (id: string, payload: TrabajadorPayload): Promise<{ success: boolean; message: string }> => {
     try {
       const body: any = {
         nombres: payload.nombres || (payload as any).nombre,
@@ -1057,7 +1061,11 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post('/api/auth/me/foto', formData);
+      const res = await axiosInstance.post('/api/auth/me/foto', formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       return { url: res.data?.url || res.data?.data?.url || "" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");

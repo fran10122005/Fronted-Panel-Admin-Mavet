@@ -40,7 +40,7 @@ export default function RRHH() {
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     trabajPage, trabajTotalPages, trabajTotalItems,
     asistPage, asistTotalPages, asistTotalItems,
-    refreshTrabajadores, refreshAsistencias,
+    refreshTrabajadores, refreshAsistencias, refreshData,
     filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
@@ -126,6 +126,7 @@ export default function RRHH() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
+                      <th className="px-3 py-2 w-10"></th>
                       <th className="px-5 py-2">Cédula</th>
                       <th className="px-5 py-2">Nombres</th>
                       <th className="px-5 py-2">Apellidos</th>
@@ -136,9 +137,18 @@ export default function RRHH() {
                   </thead>
                   <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredTrabajadores.length === 0 ? (
-                      <tr><td colSpan={6} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron trabajadores</p></td></tr>
+                      <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron trabajadores</p></td></tr>
                     ) : filteredTrabajadores.map((t) => (
                       <tr key={t.cedula} onClick={() => setSelectedTrabajadorForDetail(t)} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
+                        <td className="px-3 py-2">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                            {t.foto_url ? (
+                              <img src={t.foto_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-2 font-mono text-xs font-semibold">{t.cedula}</td>
                         <td className="px-5 py-2 font-semibold">{t.nombre}</td>
                         <td className="px-5 py-2 font-semibold">{t.apellido}</td>
@@ -308,6 +318,7 @@ export default function RRHH() {
           handleOpenEditarTrabajador(t);
           setSelectedTrabajadorForDetail(null);
         }}
+        onRefresh={refreshData}
       />
 
       <ConfirmDialog

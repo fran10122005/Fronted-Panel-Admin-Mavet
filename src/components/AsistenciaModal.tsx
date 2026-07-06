@@ -56,6 +56,14 @@ function formatHoras(h: number): string {
   return `${hrs}h ${min}min`;
 }
 
+function parsearQRData(text: string): { cedula: string } | null {
+  const partes = text.split("|");
+  if (partes.length >= 2 && partes[0] === "MAVET") {
+    return { cedula: partes[1] };
+  }
+  return null;
+}
+
 // ─── Sub-componente escáner ───────────────────────────────────────────────────
 // Se monta con un id único cada vez para evitar que Html5Qrcode reutilice
 // un elemento DOM corrupto de una sesión anterior.
@@ -164,7 +172,12 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
   // Cuando se escanea el QR, consultar estado automáticamente
   const handleScan = useCallback((text: string) => {
     setScanned(text);
-    consultarEstado({ qr_uuid: text });
+    const parsed = parsearQRData(text);
+    if (parsed) {
+      consultarEstado({ cedulaTrabajador: parsed.cedula });
+    } else {
+      consultarEstado({ qr_uuid: text });
+    }
   }, [consultarEstado]);
 
   const handleConsultarManual = useCallback(() => {
@@ -177,8 +190,16 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
     setIsSubmitting(true);
     try {
       const payload: any = { tipoMovimiento: estado.siguienteMovimiento };
-      if (mode === "manual") payload.cedulaTrabajador = cedula;
-      else payload.qr_uuid = scanned;
+      if (mode === "manual") {
+        payload.cedulaTrabajador = cedula;
+      } else if (scanned) {
+        const parsed = parsearQRData(scanned);
+        if (parsed) {
+          payload.cedulaTrabajador = parsed.cedula;
+        } else {
+          payload.qr_uuid = scanned;
+        }
+      }
 
       await mavetApi.registrarAsistencia(payload);
       const etiqueta = ETIQUETA[estado.siguienteMovimiento]?.label ?? estado.siguienteMovimiento;

@@ -9,6 +9,8 @@ export default function UserDropdown() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
+  const fotoUrl = user?.foto_url || user?.Trabajador?.foto_url;
+
   function handleLogout() {
     logout();
     navigate("/signin");
@@ -29,9 +31,13 @@ export default function UserDropdown() {
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400 focus:outline-none"
       >
         <span className="mr-3 overflow-hidden rounded-full h-11 w-11 border-2 border-gray-200 dark:border-gray-700 transition-colors duration-300 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-          </svg>
+          {fotoUrl ? (
+            <img src={fotoUrl} alt="Foto" className="w-full h-full object-cover" />
+          ) : (
+            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          )}
         </span>
 
         <span className="block mr-1 font-medium text-theme-sm text-left">
@@ -67,9 +73,13 @@ export default function UserDropdown() {
       >
         <div className="flex items-center gap-3 px-3 py-2.5 border-b border-gray-100 dark:border-gray-800/60 pb-3">
           <span className="overflow-hidden rounded-full h-11 w-11 border border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
+            {fotoUrl ? (
+              <img src={fotoUrl} alt="Foto" className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            )}
           </span>
           <div>
             <span className="block font-semibold text-gray-800 text-theme-sm dark:text-gray-200">

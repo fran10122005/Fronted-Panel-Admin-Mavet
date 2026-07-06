@@ -20,6 +20,7 @@ export const initialTrabajadorState = {
   fecha_nacimiento: "",
   direccion: "",
   fecha_ingreso: "",
+  foto_url: "",
 };
 
 export const initialUsuarioState = {
@@ -59,8 +60,8 @@ export function useRRHH() {
   const [asistTotalPages, setAsistTotalPages] = useState(1);
   const [asistTotalItems, setAsistTotalItems] = useState(0);
 
-  const [editingTrabajadorId, setEditingTrabajadorId] = useState<number | null>(null);
-  const [editingUsuarioId, setEditingUsuarioId] = useState<number | null>(null);
+  const [editingTrabajadorId, setEditingTrabajadorId] = useState<string | null>(null);
+  const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
   const [selectedTrabajadorForDetail, setSelectedTrabajadorForDetail] = useState<Trabajador | null>(null);
 
   const refreshData = async () => {
@@ -120,6 +121,7 @@ export function useRRHH() {
       fecha_nacimiento: (t as any).fecha_nacimiento || "",
       direccion: (t as any).direccion || "",
       fecha_ingreso: (t as any).fecha_ingreso || "",
+      foto_url: (t as any).foto_url || "",
     });
     openTrabajador();
   };
@@ -144,7 +146,7 @@ export function useRRHH() {
     openUsuario();
   };
 
-  const handleResetPassword = (userId: number, correo: string) => {
+  const handleResetPassword = (userId: string, correo: string) => {
     setConfirm({
       open: true,
       title: "Restablecer contraseña",
@@ -155,7 +157,7 @@ export function useRRHH() {
         setConfirm(prev => ({ ...prev, open: false }));
         setIsSubmitting(true);
         try {
-          await mavetApi.resetPasswordUsuario(userId);
+          await mavetApi.resetPasswordUsuario(correo);
           toast.success("Correo de restablecimiento enviado exitosamente.");
         } catch (err: any) {
           toast.error(err.message || "Error al enviar correo de restablecimiento.");
@@ -303,7 +305,7 @@ export function useRRHH() {
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     trabajPage, trabajTotalPages, trabajTotalItems,
     asistPage, asistTotalPages, asistTotalItems,
-    refreshTrabajadores, refreshAsistencias,
+    refreshTrabajadores, refreshAsistencias, refreshData,
     filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,

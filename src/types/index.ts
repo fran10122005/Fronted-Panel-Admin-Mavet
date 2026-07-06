@@ -123,11 +123,11 @@ export interface Trabajador {
 }
 
 export interface Usuario {
-  id: number;
+  id: string;
   correo: string;
   rol: string;
   estado: boolean;
-  id_trabajador?: number;
+  id_trabajador?: string;
   trabajador?: {
     nombre: string;
     cargo: string;
@@ -166,20 +166,20 @@ export interface TopVisitante {
 }
 
 export interface Rol {
-  id_rol: number;
+  id_rol: string;
   nombre_rol: string;
 }
 
 export interface Cargo {
-  id_cargo: number;
+  id_cargo: string;
   nombre_cargo: string;
 }
 
 export interface UsuarioPayload {
   correo: string;
   password?: string;
-  id_rol: number;
-  id_trabajador?: number;
+  id_rol: string;
+  id_trabajador?: string;
   estado?: boolean;
 }
 
@@ -189,7 +189,7 @@ export interface TrabajadorPayload {
   apellidos?: string;
   telefono?: string;
   correo_personal?: string;
-  id_cargo?: number;
+  id_cargo?: string;
   horas_semanales?: number;
   estado?: string | boolean;
   direccion?: string;
