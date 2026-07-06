@@ -102,6 +102,7 @@ export const mavetApi = {
       }
       return { success: true, message: "Obra agregada exitosamente al inventario." };
     } catch (e: any) {
+      console.error('[crearObra] Error response:', e.response?.data);
       throw new Error(e.response?.data?.message || "Error al crear la obra");
     }
   },
@@ -343,6 +344,14 @@ export const mavetApi = {
       const res = await axiosInstance.get('/api/obras/categorias');
       return Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { return []; }
+  },
+  crearEstado: async (payload: { nombre_estado: string; descripcion?: string }): Promise<any> => {
+    const res = await axiosInstance.post('/api/obras/estados', payload);
+    return res.data?.data || res.data;
+  },
+  crearCategoria: async (payload: { nombre_categoria: string; descripcion?: string }): Promise<any> => {
+    const res = await axiosInstance.post('/api/obras/categorias', payload);
+    return res.data?.data || res.data;
   },
   getAutoresLibro: async (): Promise<any[]> => {
     try {

@@ -148,11 +148,97 @@ function addFooter(doc: jsPDF) {
 }
 
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
-export async function exportarInventarioObras(_obras: Obra[]) {
+export async function exportarInventarioObras(obras: Obra[]) {
   try {
-    const res = await axiosInstance.get('/api/reportes/obras', { responseType: 'blob' });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    if (!obras.length) return;
+
+    const { jsPDF } = await import("jspdf");
+    const { applyPlugin } = await import("jspdf-autotable");
+    applyPlugin(jsPDF);
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+
+    await addHeader(doc, "INVENTARIO DE BÓVEDA – OBRAS DE ARTE");
+
+    const tableData = obras.map((o) => [
+      o.codigo_inventario || o.id?.toString() || "—",
+      o.titulo || "—",
+      o.autor || "—",
+      o.ano?.toString() || "—",
+      o.tecnica || "—",
+      o.estado || "—",
+      o.ubicacion || "—",
+    ]);
+
+    (doc as any).autoTable({
+      head: [["Código", "Título", "Autor", "Año", "Técnica", "Estado", "Ubicación"]],
+      body: tableData,
+      startY: 44,
+      theme: "grid",
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [128, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 7.5,
+      },
+      alternateRowStyles: {
+        fillColor: [253, 248, 246],
+      },
+      columnStyles: {
+        0: { cellWidth: 24, halign: "center" },
+        1: { cellWidth: "auto" },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 14, halign: "center" },
+        4: { cellWidth: 34 },
+        5: { cellWidth: 24, halign: "center" },
+        6: { cellWidth: 34 },
+      },
+      margin: { left: 18, right: 18 },
+      didDrawPage: (data: any) => {
+        if (data.pageNumber > 1) {
+          addGradientOverlay(doc);
+          addCornerAccents(doc);
+          doc.setFillColor(...C.brandDark);
+          doc.rect(0, 0, pw, 22, "F");
+          doc.setFillColor(...C.gold);
+          doc.rect(0, 20, pw, 2, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text("INVENTARIO DE BÓVEDA – OBRAS DE ARTE", 18, 13);
+        }
+      },
+    });
+
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    const today = new Date().toLocaleDateString("es-VE", {
+      day: "2-digit", month: "long", year: "numeric",
+    });
+
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      const ph = doc.internal.pageSize.getHeight();
+
+      doc.setDrawColor(...C.gold);
+      doc.setLineWidth(0.4);
+      doc.line(30, ph - 14, pw - 30, ph - 14);
+
+      doc.setFontSize(6.5);
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "normal");
+      doc.text(today, 30, ph - 8);
+      doc.text(`Pág. ${i} de ${totalPages}`, pw / 2, ph - 8, { align: "center" });
+      doc.text("Documento de uso interno", pw - 30, ph - 8, { align: "right" });
+    }
+
+    doc.save(`MAVET_Inventario_Obras_${new Date().toISOString().split('T')[0]}.pdf`);
   } catch (e) {
     console.error("[exportarInventarioObras]", e);
     alert("Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.");

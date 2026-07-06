@@ -55,10 +55,13 @@ export default function InventarioBoveda() {
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
   const [customTecnica, setCustomTecnica] = useState("");
+  const [customEstado, setCustomEstado] = useState("");
+  const [customCategoria, setCustomCategoria] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
     open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
@@ -126,6 +129,9 @@ export default function InventarioBoveda() {
     previewUrlRef.current = null;
     setImagenPreviewUrl(null);
     setCustomTecnica("");
+    setCustomEstado("");
+    setCustomCategoria("");
+    setFormErrors({});
     setIsEditing(false);
     openModal();
   };
@@ -137,6 +143,9 @@ export default function InventarioBoveda() {
     previewUrlRef.current = null;
     setImagenPreviewUrl(null);
     setCustomTecnica("");
+    setCustomEstado("");
+    setCustomCategoria("");
+    setFormErrors({});
     setIsEditing(true);
     openModal();
   };
@@ -164,46 +173,73 @@ export default function InventarioBoveda() {
     });
   };
 
+  const selectedCategoryName = useMemo(() => {
+    if (!formData.id_categoria_obra) return null;
+    const cat = categorias.find((c: any) => c.id_categoria_obra === formData.id_categoria_obra);
+    return cat?.nombre_categoria || null;
+  }, [formData.id_categoria_obra, categorias]);
+
+  const isPintura = selectedCategoryName?.toLowerCase() === 'pintura';
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    const dropdownFields = ['id_artista', 'id_tecnica', 'id_estado_actual', 'id_categoria_obra'];
-    
-    setFormData((prev: any) => ({ 
-      ...prev, 
-      [name]: dropdownFields.includes(name) 
-        ? (value === "other" ? "other" : (value ? parseInt(value, 10) : undefined))
-        : value 
-    }));
+    setFormData((prev: any) => {
+      const newData = { ...prev, [name]: value === "" ? undefined : value };
+      
+      if (name === "id_categoria_obra" && value) {
+        const newCat = categorias.find((c: any) => c.id_categoria_obra === value);
+        if (newCat && newCat.nombre_categoria?.toLowerCase() !== 'pintura') {
+          delete newData.id_tecnica;
+        }
+      }
+      
+      return newData;
+    });
     
     if (name === "id_tecnica" && value !== "other") {
       setCustomTecnica("");
+    }
+    if (name === "id_estado_actual" && value !== "other") {
+      setCustomEstado("");
+    }
+    if (name === "id_categoria_obra" && value !== "other") {
+      setCustomCategoria("");
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const isOtherTecnica = String(formData.id_tecnica) === "other";
+    const isOtherEstado = String(formData.id_estado_actual) === "other";
+    const isOtherCategoria = String(formData.id_categoria_obra) === "other";
 
-    if (!formData.titulo?.trim()) { toast.error("El título de la obra es obligatorio."); return; }
-    if (formData.id_artista == null) { toast.error("Debe seleccionar un autor/artista."); return; }
-    if (!formData.medidas?.trim()) { toast.error("Las medidas de la obra son obligatorias."); return; }
+    const errors: Record<string, string> = {};
+    if (!formData.titulo?.trim()) errors.titulo = "El título es obligatorio";
+    if (formData.id_artista == null) errors.id_artista = "Debe seleccionar un autor/artista";
+    if (!formData.medidas?.trim()) errors.medidas = "Las medidas son obligatorias";
     if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
-      toast.error("El año debe ser un número válido entre 1000 y " + (new Date().getFullYear() + 5) + ".");
-      return;
+      errors.ano = "Año inválido (1000-" + (new Date().getFullYear() + 5) + ")";
     }
-    if (!formData.id_estado_actual) { toast.error("Debe seleccionar un estado de conservación."); return; }
-    if (!formData.id_categoria_obra) { toast.error("Debe seleccionar una categoría/modalidad."); return; }
-    if (!formData.id_tecnica) { toast.error("Debe seleccionar una técnica."); return; }
-    if (isOtherTecnica && !customTecnica.trim()) { toast.error("Por favor especifique la técnica."); return; }
-    if (!formData.tipo_ingreso) { toast.error("Debe seleccionar un tipo de ingreso."); return; }
-    if (!formData.ubicacion?.trim()) { toast.error("La ubicación es obligatoria."); return; }
-    if (!formData.piezas || formData.piezas < 1) { toast.error("La cantidad de piezas debe ser al menos 1."); return; }
+    if (!formData.id_estado_actual && !isOtherEstado) errors.id_estado_actual = "Seleccione un estado";
+    if (isOtherEstado && !customEstado.trim()) errors.customEstado = "Especifique el estado";
+    if (!formData.id_categoria_obra && !isOtherCategoria) errors.id_categoria_obra = "Seleccione una categoría";
+    if (isOtherCategoria && !customCategoria.trim()) errors.customCategoria = "Especifique la categoría";
+    if (isPintura && !formData.id_tecnica && !isOtherTecnica) errors.id_tecnica = "Seleccione una técnica";
+    if (isPintura && isOtherTecnica && !customTecnica.trim()) errors.customTecnica = "Especifique la técnica";
+    if (!formData.tipo_ingreso) errors.tipo_ingreso = "Seleccione tipo de ingreso";
+    if (!formData.ubicacion?.trim()) errors.ubicacion = "La ubicación es obligatoria";
+    if (!formData.piezas || formData.piezas < 1) errors.piezas = "Debe ser al menos 1";
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setIsSubmitting(true);
 
     try {
       let tecnicaId = formData.id_tecnica;
+      let estadoId = formData.id_estado_actual;
+      let categoriaId = formData.id_categoria_obra;
 
       if (isOtherTecnica) {
         const nuevaTecnica = await mavetApi.crearTecnica({ nombre_tecnica: customTecnica.trim() });
@@ -212,12 +248,28 @@ export default function InventarioBoveda() {
         setTecnicas(tecData);
       }
 
+      if (isOtherEstado) {
+        const nuevoEstado = await mavetApi.crearEstado({ nombre_estado: customEstado.trim() });
+        estadoId = nuevoEstado.id_estado ?? nuevoEstado.id;
+        const estData = await mavetApi.getEstadosObra();
+        setEstados(estData);
+      }
+
+      if (isOtherCategoria) {
+        const nuevaCategoria = await mavetApi.crearCategoria({ nombre_categoria: customCategoria.trim() });
+        categoriaId = nuevaCategoria.id_categoria_obra ?? nuevaCategoria.id;
+        const catData = await mavetApi.getCategoriasObra();
+        setCategorias(catData);
+      }
+
       const { id: _omitId, ubicacion, ano, ...restForm } = formData;
       const payloadBase = {
         ...restForm,
         ubicacion_actual: ubicacion,
         anio: ano !== undefined && ano !== "" ? parseInt(ano.toString(), 10) : null,
         id_tecnica: tecnicaId,
+        id_estado_actual: estadoId,
+        id_categoria_obra: categoriaId,
         piezas: formData.piezas !== undefined && formData.piezas !== "" ? parseInt(formData.piezas.toString(), 10) : 1,
         peso: formData.peso !== undefined && formData.peso !== "" && formData.peso !== null ? parseFloat(formData.peso.toString()) : null,
       };
@@ -250,6 +302,7 @@ export default function InventarioBoveda() {
       await fetchObrasPaginated(1);
       closeModal();
     } catch (error: any) {
+      console.error("Error al guardar obra:", error);
       toast.error(error.message || "Error al guardar obra");
     } finally {
       setIsSubmitting(false);
@@ -661,14 +714,14 @@ export default function InventarioBoveda() {
       </div>
 
       {/* Modal de Formulario Administrativo */}
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[620px] p-5">
+      <Modal isOpen={isOpen} onClose={() => { closeModal(); setFormErrors({}); }} className="max-w-[620px] p-5">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             {isEditing ? `Editar Obra: ${formData.id}` : "Registrar Nueva Obra"}
           </h3>
           
           <form onSubmit={handleSave} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código / Serial</label>
                 <input
@@ -687,9 +740,14 @@ export default function InventarioBoveda() {
                   name="titulo"
                   value={formData.titulo}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.titulo
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 />
+                {formErrors.titulo && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.titulo}</p>}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Autor / Artista</label>
@@ -697,7 +755,11 @@ export default function InventarioBoveda() {
                   name="id_artista"
                   value={formData.id_artista ?? ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.id_artista
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 >
                   <option value="" disabled>Seleccione un artista...</option>
@@ -705,10 +767,11 @@ export default function InventarioBoveda() {
                     <option key={a.id_artista} value={a.id_artista}>{a.nombres} {a.apellidos}</option>
                   ))}
                 </select>
+                {formErrors.id_artista && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_artista}</p>}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medidas</label>
                 <input
@@ -717,9 +780,14 @@ export default function InventarioBoveda() {
                   value={formData.medidas}
                   onChange={handleChange}
                   placeholder="Ej. 120x80 cm"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.medidas
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 />
+                {formErrors.medidas && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.medidas}</p>}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Año</label>
@@ -731,83 +799,167 @@ export default function InventarioBoveda() {
                   onKeyDown={limitNumericInput}
                   min={1000}
                   max={new Date().getFullYear() + 5}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.ano
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 />
+                {formErrors.ano && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ano}</p>}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado de Conservación</label>
-                <select
-                  name="id_estado_actual"
-                  value={formData.id_estado_actual || ""}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
-                  required
-                >
-                  <option value="" disabled>Seleccione un estado...</option>
-                  {estados.map((e: any) => (
-                    <option key={e.id_estado} value={e.id_estado}>{e.nombre_estado}</option>
-                  ))}
-                </select>
+                {String(formData.id_estado_actual) === "other" ? (
+                  <div className="flex gap-2 items-start">
+                    <input
+                      type="text"
+                      value={customEstado}
+                      onChange={(e) => setCustomEstado(e.target.value)}
+                      placeholder="Especifique el estado..."
+                      className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        formErrors.customEstado
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                      }`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev: any) => ({ ...prev, id_estado_actual: undefined }));
+                        setCustomEstado("");
+                      }}
+                      className="whitespace-nowrap text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium pt-[9px]"
+                    >
+                      &larr; Volver
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    name="id_estado_actual"
+                    value={formData.id_estado_actual || ""}
+                    onChange={handleChange}
+                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      formErrors.id_estado_actual
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                    }`}
+                    required
+                  >
+                    <option value="" disabled>Seleccione un estado...</option>
+                    {estados.map((e: any) => (
+                      <option key={e.id_estado} value={e.id_estado}>{e.nombre_estado}</option>
+                    ))}
+                    <option value="other">Otro (especificar)...</option>
+                  </select>
+                )}
+                {formErrors.id_estado_actual && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_estado_actual}</p>}
+                {formErrors.customEstado && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.customEstado}</p>}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={`grid grid-cols-1 gap-3 items-start ${isPintura ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría / Modalidad</label>
-                <select
-                  name="id_categoria_obra"
-                  value={formData.id_categoria_obra || ""}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
-                  required
-                >
-                  <option value="" disabled>Seleccione una categoría...</option>
-                  {categorias.map((c: any) => (
-                    <option key={c.id_categoria_obra} value={c.id_categoria_obra}>{c.nombre_categoria}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Técnica</label>
-                {String(formData.id_tecnica) === "other" ? (
-                  <input
-                    type="text"
-                    value={customTecnica}
-                    onChange={(e) => setCustomTecnica(e.target.value)}
-                    placeholder="Especifique la técnica..."
-                    className="w-full rounded-lg border border-brand-500 dark:border-brand-400 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
-                    required
-                    autoFocus
-                  />
+                {String(formData.id_categoria_obra) === "other" ? (
+                  <div className="flex gap-2 items-start">
+                    <input
+                      type="text"
+                      value={customCategoria}
+                      onChange={(e) => setCustomCategoria(e.target.value)}
+                      placeholder="Especifique la categoría..."
+                      className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        formErrors.customCategoria
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                      }`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev: any) => ({ ...prev, id_categoria_obra: undefined }));
+                        setCustomCategoria("");
+                      }}
+                      className="whitespace-nowrap text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium pt-[9px]"
+                    >
+                      &larr; Volver
+                    </button>
+                  </div>
                 ) : (
                   <select
-                    name="id_tecnica"
-                    value={formData.id_tecnica || ""}
+                    name="id_categoria_obra"
+                    value={formData.id_categoria_obra || ""}
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      formErrors.id_categoria_obra
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                    }`}
                     required
                   >
-                    <option value="" disabled>Seleccione una técnica...</option>
-                    {tecnicas.map((t: any) => (
-                      <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre_tecnica}</option>
+                    <option value="" disabled>Seleccione una categoría...</option>
+                    {categorias.map((c: any) => (
+                      <option key={c.id_categoria_obra} value={c.id_categoria_obra}>{c.nombre_categoria}</option>
                     ))}
                     <option value="other">Otra (especificar)...</option>
                   </select>
                 )}
-                {String(formData.id_tecnica) === "other" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev: any) => ({ ...prev, id_tecnica: undefined }));
-                      setCustomTecnica("");
-                    }}
-                    className="mt-1 text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
-                  >
-                    &larr; Volver a seleccionar técnica
-                  </button>
-                )}
+                {formErrors.id_categoria_obra && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_categoria_obra}</p>}
+                {formErrors.customCategoria && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.customCategoria}</p>}
               </div>
+              {isPintura && (
+                <div>
+                  <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Técnica</label>
+                  {String(formData.id_tecnica) === "other" ? (
+                    <div className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={customTecnica}
+                        onChange={(e) => setCustomTecnica(e.target.value)}
+                        placeholder="Especifique la técnica..."
+                        className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                          formErrors.customTecnica
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                        }`}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev: any) => ({ ...prev, id_tecnica: undefined }));
+                          setCustomTecnica("");
+                        }}
+                        className="whitespace-nowrap text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium pt-[9px]"
+                      >
+                        &larr; Volver
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      name="id_tecnica"
+                      value={formData.id_tecnica || ""}
+                      onChange={handleChange}
+                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        formErrors.id_tecnica
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                      }`}
+                      required
+                    >
+                      <option value="" disabled>Seleccione una técnica...</option>
+                      {tecnicas.map((t: any) => (
+                        <option key={t.id_tecnica} value={t.id_tecnica}>{t.nombre_tecnica}</option>
+                      ))}
+                      <option value="other">Otra (especificar)...</option>
+                    </select>
+                  )}
+                  {formErrors.id_tecnica && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_tecnica}</p>}
+                  {formErrors.customTecnica && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.customTecnica}</p>}
+                </div>
+              )}
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</label>
                 <input
@@ -816,14 +968,19 @@ export default function InventarioBoveda() {
                   value={formData.ubicacion}
                   onChange={handleChange}
                   placeholder="Ej. Bóveda, Sala Principal"
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.ubicacion
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 />
+                {formErrors.ubicacion && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ubicacion}</p>}
               </div>
             </div>
 
             {/* Fila: Cantidad de piezas, Tipo de ingreso, Peso */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cantidad de Piezas</label>
                 <input
@@ -833,9 +990,14 @@ export default function InventarioBoveda() {
                   value={formData.piezas ?? 1}
                   onChange={handleChange}
                   onKeyDown={limitNumericInput}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.piezas
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 />
+                {formErrors.piezas && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.piezas}</p>}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peso (kg)</label>
@@ -855,13 +1017,18 @@ export default function InventarioBoveda() {
                   name="tipo_ingreso"
                   value={formData.tipo_ingreso || ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.tipo_ingreso
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                   required
                 >
                   <option value="" disabled>Seleccione tipo de ingreso...</option>
                   <option value="Por donación">Por donación</option>
                   <option value="Por requisito de exposición">Por requisito de exposición del autor</option>
                 </select>
+                {formErrors.tipo_ingreso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.tipo_ingreso}</p>}
               </div>
             </div>
 
