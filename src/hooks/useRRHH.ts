@@ -59,8 +59,8 @@ export function useRRHH() {
   const [asistTotalPages, setAsistTotalPages] = useState(1);
   const [asistTotalItems, setAsistTotalItems] = useState(0);
 
-  const [editingTrabajadorId, setEditingTrabajadorId] = useState<number | null>(null);
-  const [editingUsuarioId, setEditingUsuarioId] = useState<number | null>(null);
+  const [editingTrabajadorId, setEditingTrabajadorId] = useState<string | null>(null);
+  const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
   const [selectedTrabajadorForDetail, setSelectedTrabajadorForDetail] = useState<Trabajador | null>(null);
 
   const refreshData = async () => {
@@ -144,7 +144,7 @@ export function useRRHH() {
     openUsuario();
   };
 
-  const handleResetPassword = (userId: number, correo: string) => {
+  const handleResetPassword = (userId: string, correo: string) => {
     setConfirm({
       open: true,
       title: "Restablecer contraseña",
@@ -155,7 +155,7 @@ export function useRRHH() {
         setConfirm(prev => ({ ...prev, open: false }));
         setIsSubmitting(true);
         try {
-          await mavetApi.resetPasswordUsuario(userId);
+          await mavetApi.resetPasswordUsuario(correo);
           toast.success("Correo de restablecimiento enviado exitosamente.");
         } catch (err: any) {
           toast.error(err.message || "Error al enviar correo de restablecimiento.");
