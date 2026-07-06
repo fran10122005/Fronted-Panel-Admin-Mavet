@@ -459,7 +459,11 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData);
+      const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id}/foto`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       return res.data?.url || res.data?.data?.url || "";
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");
@@ -1048,7 +1052,11 @@ export const mavetApi = {
     try {
       const formData = new FormData();
       formData.append("foto", file);
-      const res = await axiosInstance.post('/api/auth/me/foto', formData);
+      const res = await axiosInstance.post('/api/auth/me/foto', formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       return { url: res.data?.url || res.data?.data?.url || "" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al subir la foto");
