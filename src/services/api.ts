@@ -530,11 +530,13 @@ export const mavetApi = {
     }
   },
 
-  getTodosIngresos: async (page?: number, limit?: number): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
+  getTodosIngresos: async (page?: number, limit?: number, fecha?: string, id_solicitud?: string): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
       const params: any = {};
       if (page !== undefined) params.page = page;
       if (limit !== undefined) params.limit = limit;
+      if (fecha !== undefined) params.fecha = fecha;
+      if (id_solicitud !== undefined) params.id_solicitud = id_solicitud;
       const res = await axiosInstance.get('/api/visitantes/ingresos', { params });
       const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
       const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
@@ -1022,6 +1024,24 @@ export const mavetApi = {
       return { success: true, message: res.data.message || "Trabajador actualizado" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar trabajador");
+    }
+  },
+
+  eliminarTrabajador: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete(`/api/rrhh/trabajadores/${id}`);
+      return { success: true, message: res.data?.message || "Trabajador eliminado" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar trabajador");
+    }
+  },
+
+  eliminarUsuario: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete(`/api/auth/${id}`);
+      return { success: true, message: res.data?.message || "Usuario eliminado" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar usuario");
     }
   },
 

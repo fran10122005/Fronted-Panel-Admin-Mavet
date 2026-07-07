@@ -49,6 +49,7 @@ export default function RRHH() {
     handleResetPassword,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
+    handleDeleteTrabajador, handleDeleteUsuario,
   } = useRRHH();
 
   return (
@@ -170,9 +171,14 @@ export default function RRHH() {
                                Carnet
                              </button>
                              {!isGerente && (
-                                <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                                  <IconEdit /> Editar
-                                </button>
+                                <>
+                                   <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                                      <IconEdit /> Editar
+                                   </button>
+                                   <button onClick={() => handleDeleteTrabajador(t)} title="Eliminar trabajador" className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                   </button>
+                                </>
                              )}
                           </div>
                         </td>
@@ -211,14 +217,17 @@ export default function RRHH() {
                           </span>
                         </td>
                         <td className="px-5 py-2 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                              <IconEdit /> Editar
-                            </button>
-                            <button onClick={() => handleResetPassword(u.id, u.correo)} title="Enviar correo de restablecimiento de contraseña" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                              Resetear
-                            </button>
-                          </div>
+                           <div className="flex items-center justify-center gap-1.5">
+                             <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                               <IconEdit /> Editar
+                             </button>
+                             <button onClick={() => handleResetPassword(u.id, u.correo)} title="Enviar correo de restablecimiento de contraseña" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                               Resetear
+                             </button>
+                             <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors">
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                             </button>
+                           </div>
                         </td>
                       </tr>
                     ))}
