@@ -168,6 +168,46 @@ export function useRRHH() {
     });
   };
 
+  const handleDeleteTrabajador = (t: Trabajador) => {
+    setConfirm({
+      open: true,
+      title: "Eliminar trabajador",
+      message: `¿Está seguro de que desea eliminar a "${t.nombre} ${t.apellido}"? Se moverá a la papelera.`,
+      variant: "danger",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          await mavetApi.eliminarTrabajador(t.id);
+          toast.success("Trabajador eliminado. Se movió a la papelera.");
+          await refreshData();
+        } catch (err: any) {
+          toast.error(err.message || "Error al eliminar trabajador.");
+        }
+      },
+    });
+  };
+
+  const handleDeleteUsuario = (u: Usuario) => {
+    setConfirm({
+      open: true,
+      title: "Eliminar usuario",
+      message: `¿Está seguro de que desea eliminar al usuario "${u.correo}"? Esta acción no se puede deshacer.`,
+      variant: "danger",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        setConfirm(prev => ({ ...prev, open: false }));
+        try {
+          await mavetApi.eliminarUsuario(u.id);
+          toast.success("Usuario eliminado exitosamente.");
+          await refreshData();
+        } catch (err: any) {
+          toast.error(err.message || "Error al eliminar usuario.");
+        }
+      },
+    });
+  };
+
 
 
   const handleSubmitTrabajador = async (data: any, photoFile?: File | null) => {
@@ -314,7 +354,7 @@ export function useRRHH() {
     handleResetPassword,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
-    handleCartaAval,
+    handleCartaAval, handleDeleteTrabajador, handleDeleteUsuario,
     initialTrabajadorState, initialUsuarioState,
   };
 }

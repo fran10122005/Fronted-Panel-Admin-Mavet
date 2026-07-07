@@ -1025,6 +1025,24 @@ export const mavetApi = {
     }
   },
 
+  eliminarTrabajador: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete(`/api/rrhh/trabajadores/${id}`);
+      return { success: true, message: res.data?.message || "Trabajador eliminado" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar trabajador");
+    }
+  },
+
+  eliminarUsuario: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete(`/api/auth/${id}`);
+      return { success: true, message: res.data?.message || "Usuario eliminado" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar usuario");
+    }
+  },
+
   getMe: async (): Promise<any> => {
     try {
       const res = await axiosInstance.get('/api/auth/me');
