@@ -85,10 +85,6 @@ function getLogo(): Promise<string> {
 }
 
 async function addHeader(doc: jsPDF, title: string) {
-  // Page background: gradient + corner accents
-  addGradientOverlay(doc);
-  addCornerAccents(doc);
-
   const logo = await getLogo();
   const pw = doc.internal.pageSize.getWidth();
 
@@ -124,15 +120,11 @@ function addFooter(doc: jsPDF) {
     doc.setPage(i);
     const h = doc.internal.pageSize.getHeight();
 
-    // Background decorations for pages after the first
-    if (i > 1) {
-      addGradientOverlay(doc);
-      addCornerAccents(doc);
-    }
+    addCornerAccents(doc);
 
     doc.setDrawColor(...C.gold);
     doc.setLineWidth(0.4);
-    doc.line(30, h - 38, pw - 30, h - 38);
+    doc.line(30, h - 25, pw - 30, h - 25);
 
     const today = new Date().toLocaleDateString("es-VE", {
       day: "2-digit", month: "long", year: "numeric",
@@ -141,9 +133,9 @@ function addFooter(doc: jsPDF) {
     doc.setFontSize(7);
     doc.setTextColor(...C.textMuted);
     doc.setFont("helvetica", "normal");
-    doc.text(today, 30, h - 30);
-    doc.text(`Pág. ${i} de ${pc}`, pw / 2, h - 30, { align: "center" });
-    doc.text("Documento de uso interno", pw - 30, h - 30, { align: "right" });
+    doc.text(today, 30, h - 18);
+    doc.text(`Pág. ${i} de ${pc}`, pw / 2, h - 18, { align: "center" });
+    doc.text("Documento de uso interno", pw - 30, h - 18, { align: "right" });
   }
 }
 
@@ -203,8 +195,6 @@ export async function exportarInventarioObras(obras: Obra[]) {
       margin: { left: 18, right: 18 },
       didDrawPage: (data: any) => {
         if (data.pageNumber > 1) {
-          addGradientOverlay(doc);
-          addCornerAccents(doc);
           doc.setFillColor(...C.brandDark);
           doc.rect(0, 0, pw, 22, "F");
           doc.setFillColor(...C.gold);
@@ -228,14 +218,14 @@ export async function exportarInventarioObras(obras: Obra[]) {
 
       doc.setDrawColor(...C.gold);
       doc.setLineWidth(0.4);
-      doc.line(30, ph - 14, pw - 30, ph - 14);
+      doc.line(18, ph - 25, pw - 18, ph - 25);
 
-      doc.setFontSize(6.5);
+      doc.setFontSize(7);
       doc.setTextColor(...C.textMuted);
       doc.setFont("helvetica", "normal");
-      doc.text(today, 30, ph - 8);
-      doc.text(`Pág. ${i} de ${totalPages}`, pw / 2, ph - 8, { align: "center" });
-      doc.text("Documento de uso interno", pw - 30, ph - 8, { align: "right" });
+      doc.text(today, 18, ph - 18);
+      doc.text(`Pág. ${i} de ${totalPages}`, pw / 2, ph - 18, { align: "center" });
+      doc.text("Documento de uso interno", pw - 18, ph - 18, { align: "right" });
     }
 
     doc.save(`MAVET_Inventario_Obras_${new Date().toISOString().split('T')[0]}.pdf`);

@@ -44,6 +44,7 @@ export default function InventarioBoveda() {
   const [tecnicas, setTecnicas] = useState<any[]>([]);
   const [estados, setEstados] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
+  const [espacios, setEspacios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados para búsqueda y filtrado
@@ -105,6 +106,9 @@ export default function InventarioBoveda() {
 
         const catData = await mavetApi.getCategoriasObra().catch(e => { console.error("Error Categorias:", e); return []; });
         setCategorias(catData);
+
+        const espData = await mavetApi.getEspaciosMuseo().catch(e => { console.error("Error Espacios:", e); return []; });
+        setEspacios(Array.isArray(espData) ? espData : []);
 
         await fetchObrasPaginated(1);
       } catch (error) {
@@ -200,9 +204,7 @@ export default function InventarioBoveda() {
     if (name === "id_tecnica" && value !== "other") {
       setCustomTecnica("");
     }
-    if (name === "id_estado_actual" && value !== "other") {
-      setCustomEstado("");
-    }
+
     if (name === "id_categoria_obra" && value !== "other") {
       setCustomCategoria("");
     }
@@ -211,7 +213,6 @@ export default function InventarioBoveda() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const isOtherTecnica = String(formData.id_tecnica) === "other";
-    const isOtherEstado = String(formData.id_estado_actual) === "other";
     const isOtherCategoria = String(formData.id_categoria_obra) === "other";
 
     const errors: Record<string, string> = {};
@@ -221,8 +222,7 @@ export default function InventarioBoveda() {
     if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
       errors.ano = "Año inválido (1000-" + (new Date().getFullYear() + 5) + ")";
     }
-    if (!formData.id_estado_actual && !isOtherEstado) errors.id_estado_actual = "Seleccione un estado";
-    if (isOtherEstado && !customEstado.trim()) errors.customEstado = "Especifique el estado";
+    if (!formData.id_estado_actual) errors.id_estado_actual = "Seleccione un estado";
     if (!formData.id_categoria_obra && !isOtherCategoria) errors.id_categoria_obra = "Seleccione una categoría";
     if (isOtherCategoria && !customCategoria.trim()) errors.customCategoria = "Especifique la categoría";
     if (isPintura && !formData.id_tecnica && !isOtherTecnica) errors.id_tecnica = "Seleccione una técnica";
@@ -246,13 +246,6 @@ export default function InventarioBoveda() {
         tecnicaId = nuevaTecnica.id_tecnica ?? nuevaTecnica.id;
         const tecData = await mavetApi.getTecnicas();
         setTecnicas(tecData);
-      }
-
-      if (isOtherEstado) {
-        const nuevoEstado = await mavetApi.crearEstado({ nombre_estado: customEstado.trim() });
-        estadoId = nuevoEstado.id_estado ?? nuevoEstado.id;
-        const estData = await mavetApi.getEstadosObra();
-        setEstados(estData);
       }
 
       if (isOtherCategoria) {
@@ -813,52 +806,23 @@ export default function InventarioBoveda() {
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado de Conservación</label>
-                {String(formData.id_estado_actual) === "other" ? (
-                  <div className="flex gap-2 items-start">
-                    <input
-                      type="text"
-                      value={customEstado}
-                      onChange={(e) => setCustomEstado(e.target.value)}
-                      placeholder="Especifique el estado..."
-                      className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                        formErrors.customEstado
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                      }`}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData((prev: any) => ({ ...prev, id_estado_actual: undefined }));
-                        setCustomEstado("");
-                      }}
-                      className="whitespace-nowrap text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium pt-[9px]"
-                    >
-                      &larr; Volver
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    name="id_estado_actual"
-                    value={formData.id_estado_actual || ""}
-                    onChange={handleChange}
-                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                      formErrors.id_estado_actual
-                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                    }`}
-                    required
-                  >
-                    <option value="" disabled>Seleccione un estado...</option>
-                    {estados.map((e: any) => (
-                      <option key={e.id_estado} value={e.id_estado}>{e.nombre_estado}</option>
-                    ))}
-                    <option value="other">Otro (especificar)...</option>
-                  </select>
-                )}
+                <select
+                  name="id_estado_actual"
+                  value={formData.id_estado_actual || ""}
+                  onChange={handleChange}
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.id_estado_actual
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
+                  required
+                >
+                  <option value="" disabled>Seleccione un estado...</option>
+                  {estados.map((e: any) => (
+                    <option key={e.id_estado} value={e.id_estado}>{e.nombre_estado}</option>
+                  ))}
+                </select>
                 {formErrors.id_estado_actual && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_estado_actual}</p>}
-                {formErrors.customEstado && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.customEstado}</p>}
               </div>
             </div>
 
@@ -965,19 +929,24 @@ export default function InventarioBoveda() {
               )}
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</label>
-                <input
-                  type="text"
+                <select
                   name="ubicacion"
-                  value={formData.ubicacion}
+                  value={formData.ubicacion || ""}
                   onChange={handleChange}
-                  placeholder="Ej. Bóveda, Sala Principal"
                   className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.ubicacion
                       ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
-                />
+                >
+                  <option value="" disabled>Seleccione una ubicación...</option>
+                  {espacios.map((e: any) => (
+                    <option key={e.id_espacio} value={e.nombre_espacio}>
+                      {e.nombre_espacio}
+                    </option>
+                  ))}
+                </select>
                 {formErrors.ubicacion && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ubicacion}</p>}
               </div>
             </div>

@@ -1072,6 +1072,14 @@ export const mavetApi = {
     }
   },
 
+  eliminarFotoPerfil: async (): Promise<void> => {
+    try {
+      await axiosInstance.delete('/api/auth/me/foto');
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar la foto");
+    }
+  },
+
   // === Dashboard Stats ===
   getDashboardStats: async (): Promise<any> => {
     try {
