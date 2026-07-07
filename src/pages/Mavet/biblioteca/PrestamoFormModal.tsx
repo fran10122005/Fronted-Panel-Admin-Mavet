@@ -70,7 +70,7 @@ export default function PrestamoFormModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-6">
-      <div>
+      <div className="dark:bg-gray-800">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
           Registrar Préstamo
         </h3>
@@ -105,7 +105,7 @@ export default function PrestamoFormModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
                 Cancelar
               </button>
@@ -164,7 +164,7 @@ export default function PrestamoFormModal({
                 type="button"
                 onClick={() => setStep(1)}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition disabled:opacity-50 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 ← Atrás
               </button>
@@ -173,7 +173,7 @@ export default function PrestamoFormModal({
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 dark:text-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
                 >
                   Cancelar
                 </button>

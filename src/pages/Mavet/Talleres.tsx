@@ -14,13 +14,13 @@ const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-5 py-4 shadow-sm">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${color}`}>
+    <div className="flex items-center gap-2 sm:gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-3 py-3 sm:px-5 sm:py-4 shadow-sm">
+      <div className={`flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg ${color}`}>
         {icon}
       </div>
       <div>
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
-        <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+        <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className="text-base sm:text-xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -102,7 +102,7 @@ export default function Talleres() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administraci&oacute;n de talleres, planificaci&oacute;n y control de inscripciones.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           icon={
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,20 +164,22 @@ export default function Talleres() {
             </select>
           </div>
           {!isGerente && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={openCrearInstructor}
                 className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-4 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
-                Gestionar Instructores
+                <span className="hidden sm:inline">Gestionar Instructores</span>
+                <span className="sm:hidden">Instructores</span>
               </button>
               <button onClick={handleOpenPlanificar}
                 className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Planificar Taller
+                <span className="hidden sm:inline">Planificar Taller</span>
+                <span className="sm:hidden">Planificar</span>
               </button>
             </div>
           )}

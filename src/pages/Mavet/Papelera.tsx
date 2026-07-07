@@ -78,7 +78,7 @@ export default function Papelera() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -112,7 +112,7 @@ export default function Papelera() {
                   </tr>
                 ) : (
                   items.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <tr key={index} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide border ${
                           item.tipo === 'Obra' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:border-green-500/20' :

@@ -587,7 +587,7 @@ const Auditorio: React.FC = () => {
         )}
 
         {viewMode === "calendar" ? (
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-4 sm:p-6 shadow-theme-lg min-h-[500px]">
+          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-2 sm:p-6 shadow-theme-lg min-h-[350px] sm:min-h-[500px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-96">
                 <LoadingSkeleton variant="table" rows={8} cols={6} />

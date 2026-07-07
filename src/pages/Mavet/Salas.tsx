@@ -165,7 +165,7 @@ export default function Salas() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {espacios.map((esp) => (
-                  <tr key={esp.id_espacio || esp.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                  <tr key={esp.id_espacio || esp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                     <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{esp.id_espacio || esp.id}</td>
                     <td className="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{esp.codigo_espacio || "—"}</td>
                     <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-200">{esp.nombre_espacio}</td>

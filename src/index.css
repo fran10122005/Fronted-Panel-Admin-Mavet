@@ -1064,3 +1064,68 @@ span.flatpickr-weekday,
 .simplebar-scrollbar.simplebar-visible:before {
   @apply opacity-100;
 }
+
+/* Dark mode color-scheme for native form controls */
+.dark {
+  color-scheme: dark;
+}
+
+/* Dark mode select arrow override */
+.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23dac7ca' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  appearance: none;
+  padding-right: 30px;
+}
+
+/* Calendar icon visibility in dark mode */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+
+/* FullCalendar mobile overrides */
+@media (max-width: 767px) {
+  .fc .fc-toolbar.fc-header-toolbar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+  .fc .fc-toolbar-title {
+    font-size: 14px !important;
+  }
+  .fc .fc-col-header-cell-cushion {
+    padding: 4px 2px !important;
+    font-size: 10px !important;
+  }
+  .fc .fc-daygrid-day {
+    padding: 1px !important;
+    min-height: 40px !important;
+  }
+  .fc .fc-daygrid-day-number {
+    font-size: 10px !important;
+    padding: 2px !important;
+  }
+  .fc .fc-daygrid-event {
+    font-size: 8px !important;
+    padding: 0 2px !important;
+    margin: 0 0 1px 0 !important;
+  }
+  .fc-daygrid-event-dot {
+    display: none !important;
+  }
+  .fc-h-event .fc-event-title {
+    padding: 0 !important;
+    font-size: 8px !important;
+  }
+  .fc .fc-button-group .fc-button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .fc-addEventButton-button {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+  }
+}

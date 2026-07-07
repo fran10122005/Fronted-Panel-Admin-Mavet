@@ -283,7 +283,7 @@ export default function Recepcion() {
                     className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   >
                     <p className="font-semibold text-gray-800 dark:text-white">{p.nombres} {p.apellidos}</p>
-                    <p className="text-sm text-gray-500">{p.cedula || 'Sin cédula'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{p.cedula || 'Sin cédula'}</p>
                     {p.representante && (
                       <p className="text-xs mt-1 text-brand-600 bg-brand-50 dark:bg-brand-900/30 inline-block px-2 py-0.5 rounded">
                         Acompañado por: {p.representante.nombres} {p.representante.apellidos}
@@ -480,23 +480,23 @@ export default function Recepcion() {
       {/* Modal para Registrar Menor */}
       <Modal isOpen={isMenorModalOpen} onClose={() => setIsMenorModalOpen(false)}>
         <div className="p-2">
-          <h3 className="text-lg font-bold mb-4">Registrar Menor Acompañante</h3>
-          <p className="text-sm text-gray-600 mb-4">Representante: {selectedPersona?.nombres} {selectedPersona?.apellidos}</p>
+          <h3 className="text-lg font-bold mb-4 dark:text-gray-200">Registrar Menor Acompañante</h3>
+          <p className="text-sm text-gray-600 mb-4 dark:text-gray-200">Representante: {selectedPersona?.nombres} {selectedPersona?.apellidos}</p>
           <form onSubmit={handleRegistrarMenor} className="space-y-4">
             <div>
-              <label className="block text-sm mb-1">Nombres del Menor *</label>
-              <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
+              <label className="block text-sm mb-1 dark:text-gray-200">Nombres del Menor *</label>
+              <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm mb-1">Apellidos del Menor *</label>
-              <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2" />
+              <label className="block text-sm mb-1 dark:text-gray-200">Apellidos del Menor *</label>
+              <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm mb-1">Fecha de Nacimiento *</label>
-              <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2" />
+              <label className="block text-sm mb-1 dark:text-gray-200">Fecha de Nacimiento *</label>
+              <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm mb-1">Cédula {menorData.fecha_nacimiento && (() => {
+              <label className="block text-sm mb-1 dark:text-gray-200">Cédula {menorData.fecha_nacimiento && (() => {
                 const birth = new Date(menorData.fecha_nacimiento);
                 const today = new Date();
                 const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
@@ -507,7 +507,7 @@ export default function Recepcion() {
                 value={menorData.cedula} 
                 onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })} 
                 onKeyDown={limitNumericInput}
-                className="w-full border rounded-lg px-3 py-2" 
+                className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" 
                 placeholder="Ej. 12345678" 
                 required={menorData.fecha_nacimiento ? (() => {
                   const birth = new Date(menorData.fecha_nacimiento);
@@ -567,7 +567,7 @@ export default function Recepcion() {
             Imprima este código y colóquelo en la entrada. Los visitantes podrán escanearlo para registrar su acceso automáticamente.
           </p>
 
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 mb-6">
             <img
               src={qrImageUrl}
               alt="Código QR de Auto Ingreso"
