@@ -530,11 +530,13 @@ export const mavetApi = {
     }
   },
 
-  getTodosIngresos: async (page?: number, limit?: number): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
+  getTodosIngresos: async (page?: number, limit?: number, fecha?: string, id_solicitud?: string): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
       const params: any = {};
       if (page !== undefined) params.page = page;
       if (limit !== undefined) params.limit = limit;
+      if (fecha !== undefined) params.fecha = fecha;
+      if (id_solicitud !== undefined) params.id_solicitud = id_solicitud;
       const res = await axiosInstance.get('/api/visitantes/ingresos', { params });
       const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
       const meta = res.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };

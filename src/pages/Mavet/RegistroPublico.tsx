@@ -111,13 +111,19 @@ export default function RegistroPublico() {
     try {
       let finalMotivo = '';
       let finalTaller: string | undefined = undefined;
+      let finalSolicitud: string | undefined = undefined;
 
       if (formData.id_motivo.startsWith('taller_')) {
         finalTaller = formData.id_motivo.split('_')[1];
         const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
         finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
       } else if (formData.id_motivo.startsWith('evento_')) {
-        // Es un evento de auditorio, no debe enviarse id_taller para evitar error 500 de FK
+        const rawId = formData.id_motivo.split('_')[1];
+        if (rawId.startsWith('TAL-')) {
+          finalTaller = rawId;
+        } else {
+          finalSolicitud = rawId;
+        }
         const motivoEvento = motivos.find(m => m.descripcion.toLowerCase().includes('evento') || m.descripcion.toLowerCase().includes('conferencia') || m.descripcion.toLowerCase().includes('auditorio'));
         finalMotivo = motivoEvento ? motivoEvento.id_motivo : (motivos[0]?.id_motivo || '');
       } else {
@@ -133,9 +139,11 @@ export default function RegistroPublico() {
         id_motivo: finalMotivo,
       };
       
-      // Solo enviar id_taller si es un taller (TAL-xxxxx)
       if (finalTaller && finalTaller.startsWith('TAL-')) {
         payload.id_taller = finalTaller;
+      }
+      if (finalSolicitud) {
+        payload.id_solicitud = finalSolicitud;
       }
 
       await mavetApi.registrarAutoIngreso(payload);

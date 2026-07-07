@@ -34,6 +34,12 @@ export default function Recepcion() {
   const [eventosHoy, setEventosHoy] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
 
+  // Ingresos de hoy
+  const [ingresosHoy, setIngresosHoy] = useState<any[]>([]);
+  const [isLoadingIngresos, setIsLoadingIngresos] = useState(false);
+  const [showAllIngresos, setShowAllIngresos] = useState(false);
+  const INGRESOS_PAGE_SIZE = 5;
+
   // Modal de Código QR Público
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const publicRegistrationUrl = `${window.location.origin}/registro-visitante`;
@@ -91,11 +97,24 @@ export default function Recepcion() {
     }
   };
 
+  const fetchIngresosHoy = async () => {
+    setIsLoadingIngresos(true);
+    try {
+      const now = new Date();
+      const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const result = await mavetApi.getTodosIngresos(1, 200, hoyStr);
+      setIngresosHoy(result.data || []);
+    } catch {
+      setIngresosHoy([]);
+    } finally {
+      setIsLoadingIngresos(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    fetchIngresosHoy();
   }, []);
-
-  // Debounced search: busca automáticamente mientras escribes
   useEffect(() => {
     if (searchQuery.length < 3) {
       setSearchResults([]);
@@ -174,9 +193,15 @@ export default function Recepcion() {
     try {
       let finalMotivo = '';
       let finalTaller: string | undefined = undefined;
+      let finalSolicitud: string | undefined = undefined;
 
       if (formData.id_motivo.startsWith('evento_')) {
-        finalTaller = formData.id_motivo.split('_')[1];
+        const rawId = formData.id_motivo.split('_')[1];
+        if (rawId.startsWith('TAL-')) {
+          finalTaller = rawId;
+        } else {
+          finalSolicitud = rawId;
+        }
         const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
         finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
       } else {
@@ -194,9 +219,11 @@ export default function Recepcion() {
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
       };
       
-      // Solo incluir id_taller si es un taller válido (TAL-xxxxx), no un evento de auditorio
       if (finalTaller && finalTaller.startsWith('TAL-')) {
         ingresoPayload.id_taller = finalTaller;
+      }
+      if (finalSolicitud) {
+        ingresoPayload.id_solicitud = finalSolicitud;
       }
 
       await mavetApi.registrarIngreso(ingresoPayload);
@@ -205,7 +232,8 @@ export default function Recepcion() {
       setIsVisitaInstitucional(false);
       setSelectedPersona(null);
       setSearchQuery("");
-      fetchDashboardData(); // Refrescar ranking
+      fetchDashboardData();
+      fetchIngresosHoy();
     } catch (error: any) {
       toast.error(error.message || "Error al registrar ingreso");
     } finally {
@@ -229,6 +257,7 @@ export default function Recepcion() {
       toast.success("Menor registrado e ingresado exitosamente.");
       setIsMenorModalOpen(false);
       setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
+      fetchIngresosHoy();
     } catch (error: any) {
       toast.error(error.message || "Error al registrar menor");
     } finally {
@@ -255,6 +284,7 @@ export default function Recepcion() {
       };
       await mavetApi.registrarIngreso(payload);
       toast.success(`${menor.nombres} ingresado exitosamente.`);
+      fetchIngresosHoy();
     } catch (error: any) {
       toast.error(error.message || `Error al ingresar a ${menor.nombres}`);
     } finally {
@@ -302,24 +332,39 @@ export default function Recepcion() {
               Buscador Global
             </h2>
             <div className="flex gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:border-brand-500 focus:outline-none"
-                placeholder="Cédula, nombre, tel..."
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 pr-10 focus:border-brand-500 focus:outline-none transition"
+                  placeholder="Cédula, nombre, tel..."
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <svg className="animate-spin h-4 w-4 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleSearch}
-                className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition flex items-center gap-1"
+                disabled={searchQuery.length < 3}
+                className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSearching ? "..." : "Buscar"}
+                Buscar
               </button>
             </div>
+            {searchQuery.length > 0 && searchQuery.length < 3 && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Escribe al menos 3 caracteres para buscar automáticamente.</p>
+            )}
 
             {searchResults.length > 0 && (
-              <div className="mt-4 space-y-2 max-h-64 overflow-y-auto pr-2">
+              <div className="mt-4 space-y-2 max-h-64 overflow-y-auto pr-2 scroll-smooth">
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{searchResults.length} resultado(s) encontrado(s)</p>
                 {searchResults.map(p => (
                   <div
                     key={p.id_persona}
@@ -337,6 +382,9 @@ export default function Recepcion() {
                 ))}
               </div>
             )}
+            {searchQuery.length >= 3 && !isSearching && searchResults.length === 0 && (
+              <p className="text-sm text-gray-400 dark:text-gray-500 italic mt-3 text-center">Sin resultados. Puedes registrar una persona nueva en el formulario.</p>
+            )}
           </div>
 
           {/* Panel de Formulario */}
@@ -348,16 +396,23 @@ export default function Recepcion() {
                 </svg>
                 Datos de Ingreso
               </h2>
-              {selectedPersona && (!selectedPersona.edad || selectedPersona.edad >= 18) && (
-                <button
-                  type="button"
-                  onClick={() => setIsMenorModalOpen(true)}
-                  className="bg-green-100 text-green-700 hover:bg-green-200 font-semibold py-1.5 px-3 rounded-lg text-sm transition flex items-center gap-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  Registrar Menor Acompañante
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {selectedPersona && (
+                  <span className="text-xs bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-2.5 py-1 rounded-full font-medium">
+                    {selectedPersona.nombres} {selectedPersona.apellidos}
+                  </span>
+                )}
+                {selectedPersona && (!selectedPersona.edad || selectedPersona.edad >= 18) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMenorModalOpen(true)}
+                    className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 font-semibold py-1.5 px-3 rounded-lg text-sm transition flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Registrar Menor
+                  </button>
+                )}
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -498,11 +553,29 @@ export default function Recepcion() {
           {/* Panel Agenda del Día */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-brand-100 dark:bg-brand-900/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 flex items-center gap-2">
-              <span className="text-xl">📅</span> Agenda de Hoy
-            </h2>
+            <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <span className="text-xl">📅</span> Agenda de Hoy
+                {eventosHoy.length > 0 && (
+                  <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-mono">
+                    {eventosHoy.length}
+                  </span>
+                )}
+              </h2>
+              <button
+                onClick={fetchDashboardData}
+                disabled={isLoadingDashboard}
+                className="text-gray-400 hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400 transition p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Actualizar agenda"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-4 h-4 ${isLoadingDashboard ? 'animate-spin' : ''}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                </svg>
+              </button>
+            </div>
             {isLoadingDashboard ? (
               <div className="animate-pulse space-y-4">
+                <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                 <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
               </div>
             ) : eventosHoy.length > 0 ? (
@@ -519,12 +592,79 @@ export default function Recepcion() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-6">No hay eventos planificados para hoy.</p>
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">No hay eventos planificados para hoy.</p>
+                <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">Usa el módulo de Agenda para programar actividades.</p>
+              </div>
             )}
           </div>
 
         </div>
 
+      </div>
+
+      {/* Ingresos del día */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+            Ingresos de Hoy
+            {ingresosHoy.length > 0 && (
+              <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-mono">
+                {ingresosHoy.length}
+              </span>
+            )}
+          </h2>
+          {!isLoadingIngresos && ingresosHoy.length > INGRESOS_PAGE_SIZE && (
+            <button
+              onClick={() => setShowAllIngresos(!showAllIngresos)}
+              className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition"
+            >
+              {showAllIngresos ? 'Ver menos' : `Ver más (${ingresosHoy.length - INGRESOS_PAGE_SIZE} restantes)`}
+            </button>
+          )}
+        </div>
+
+        {isLoadingIngresos ? (
+          <div className="animate-pulse space-y-3">
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+          </div>
+        ) : ingresosHoy.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
+                  <th className="pb-2.5 pr-3 font-medium">Nombre</th>
+                  <th className="pb-2.5 pr-3 font-medium">Cédula</th>
+                  <th className="pb-2.5 pr-3 font-medium">Hora</th>
+                  <th className="pb-2.5 font-medium">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(showAllIngresos ? ingresosHoy : ingresosHoy.slice(0, INGRESOS_PAGE_SIZE)).map((i: any, idx: number) => (
+                  <tr key={i.id_ingreso || idx} className="border-b border-gray-50 dark:border-gray-700/40 last:border-0">
+                    <td className="py-2.5 pr-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                      {i.Persona?.nombres || ''} {i.Persona?.apellidos || ''}
+                    </td>
+                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{i.Persona?.cedula || '-'}</td>
+                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
+                      {i.fecha_hora_entrada
+                        ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                        : '-'}
+                    </td>
+                    <td className="py-2.5 text-gray-500 dark:text-gray-400">{i.Motivo?.descripcion || i.motivo || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-6">No se han registrado ingresos hoy.</p>
+        )}
       </div>
 
       {/* Modal para Registrar Menor */}
@@ -546,12 +686,7 @@ export default function Recepcion() {
               <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-              <label className="block text-sm mb-1 dark:text-gray-200">Cédula {menorData.fecha_nacimiento && (() => {
-                const birth = new Date(menorData.fecha_nacimiento);
-                const today = new Date();
-                const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-                return age >= 9;
-              })() ? "*" : "(Opcional si es < 9 años)"}</label>
+              <label className="block text-sm mb-1 dark:text-gray-200">Cédula {menorData.fecha_nacimiento && ageMenor >= 9 ? "*" : "(Opcional si es < 9 años)"}</label>
               <input 
                 type="text" 
                 value={menorData.cedula} 
@@ -559,36 +694,15 @@ export default function Recepcion() {
                 onKeyDown={limitNumericInput}
                 className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" 
                 placeholder="Ej. 12345678" 
-                required={menorData.fecha_nacimiento ? (() => {
-                  const birth = new Date(menorData.fecha_nacimiento);
-                  const today = new Date();
-                  const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-                  return age >= 9;
-                })() : false}
+                required={!!menorData.fecha_nacimiento && ageMenor >= 9}
               />
             </div>
-            {/* Advertencia si el menor tiene entre 9 y 13 años */}
-            {menorData.fecha_nacimiento && (() => {
-              const birth = new Date(menorData.fecha_nacimiento);
-              const today = new Date();
-              const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-              return age >= 9 && age <= 13;
-            })() && (
+            {menorData.fecha_nacimiento && ageMenor >= 9 && ageMenor <= 13 && (
               <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-                <span>⚠️</span> Este menor tiene {(() => {
-                  const birth = new Date(menorData.fecha_nacimiento);
-                  const today = new Date();
-                  return today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-                })()} años. Se recomienda tramitar su cédula de identidad pronto.
+                <span>⚠️</span> Este menor tiene {ageMenor} años. Se recomienda tramitar su cédula de identidad pronto.
               </div>
             )}
-            {/* Bloquear si el menor tiene 12 años o más */}
-            {menorData.fecha_nacimiento && (() => {
-              const birth = new Date(menorData.fecha_nacimiento);
-              const today = new Date();
-              const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-              return age >= 12;
-            })() && (
+            {menorData.fecha_nacimiento && ageMenor >= 12 && (
               <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
                 <span>🚫</span> No se puede registrar como menor. A partir de 12 años debe registrarse como visitante regular.
               </div>
@@ -596,12 +710,7 @@ export default function Recepcion() {
             <div className="flex justify-end pt-4">
               <button
                 type="submit"
-                disabled={menorData.fecha_nacimiento ? (() => {
-                  const birth = new Date(menorData.fecha_nacimiento);
-                  const today = new Date();
-                  const age = today.getFullYear() - birth.getFullYear() - (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-                  return age >= 12;
-                })() : false}
+                disabled={!!menorData.fecha_nacimiento && ageMenor >= 12}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >Guardar e Ingresar</button>
             </div>
