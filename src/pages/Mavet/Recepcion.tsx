@@ -46,6 +46,16 @@ export default function Recepcion() {
   // Modal Asistencia Personal
   const [isAsistenciaModalOpen, setIsAsistenciaModalOpen] = useState(false);
 
+  const getAge = (dateStr: string) => {
+    if (!dateStr) return -1;
+    const birth = new Date(dateStr);
+    const today = new Date();
+    return today.getFullYear() - birth.getFullYear() -
+      (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+  };
+
+  const ageMenor = getAge(menorData.fecha_nacimiento);
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
     return () => clearInterval(timer);
@@ -67,7 +77,6 @@ export default function Recepcion() {
     setIsLoadingDashboard(true);
     try {
       const eventos = await mavetApi.getAgendaPublica();
-      // Use local date (not UTC) to avoid timezone shift issues
       const now = new Date();
       const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const filtrados = eventos.filter((e: any) => {
@@ -86,11 +95,20 @@ export default function Recepcion() {
     fetchDashboardData();
   }, []);
 
+  // Debounced search: busca automáticamente mientras escribes
+  useEffect(() => {
+    if (searchQuery.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => handleSearch(), 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleSearch = async () => {
     if (!searchQuery || searchQuery.length < 3) return;
     setIsSearching(true);
     try {
-      // Endpoint simulado del frontend, en el real llamaría a mavetApi.buscarPersona
       const res = await axiosInstance.get(`/api/personas/buscar?q=${searchQuery}`);
       const result = res.data;
       if (result.data && result.data.length > 0) {
@@ -176,9 +194,9 @@ export default function Recepcion() {
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
       };
       
-      // Solo incluir id_taller si es un taller válido (para evitar errores FK con eventos)
-      if (finalTaller && formData.id_motivo.startsWith('taller_') && Number(finalTaller)) {
-        ingresoPayload.id_taller = Number(finalTaller);
+      // Solo incluir id_taller si es un taller válido (TAL-xxxxx), no un evento de auditorio
+      if (finalTaller && finalTaller.startsWith('TAL-')) {
+        ingresoPayload.id_taller = finalTaller;
       }
 
       await mavetApi.registrarIngreso(ingresoPayload);
@@ -213,6 +231,32 @@ export default function Recepcion() {
       setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
     } catch (error: any) {
       toast.error(error.message || "Error al registrar menor");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleIngresarMenorAsociado = async (menor: any) => {
+    if (!selectedPersona) return;
+    setIsSubmitting(true);
+    try {
+      const edad = getAge(menor.fecha_de_nac);
+      if (edad >= 12) {
+        toast.error(`${menor.nombres} tiene ${edad} años. Debe registrarse como visitante regular.`);
+        return;
+      }
+      const payload: any = {
+        nombres: menor.nombres,
+        apellidos: menor.apellidos,
+        fecha_de_nac: menor.fecha_de_nac,
+        cedula: menor.cedula || undefined,
+        id_motivo: formData.id_motivo.replace('motivo_', '') || "MVI-00001",
+        id_representante_persona: selectedPersona.id_persona,
+      };
+      await mavetApi.registrarIngreso(payload);
+      toast.success(`${menor.nombres} ingresado exitosamente.`);
+    } catch (error: any) {
+      toast.error(error.message || `Error al ingresar a ${menor.nombres}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -351,7 +395,7 @@ export default function Recepcion() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">Motivo *</label>
-                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
+                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required style={{ colorScheme: 'dark' }} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
                     <option value="">Seleccione...</option>
                     {motivos.map(m => (
                       <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.nombre}</option>
@@ -360,9 +404,9 @@ export default function Recepcion() {
                       <optgroup label="Eventos y Talleres de Hoy">
                         {eventosHoy.map((e, idx) => {
                           const parts = e.id.split('-');
-                          const numId = parts.length > 2 ? parts[2] : parts[1];
+                          const fullId = parts.length > 2 ? parts.slice(1).join('-') : parts[1];
                           return (
-                            <option key={`e_${idx}`} value={`evento_${numId}`}>
+                            <option key={`e_${idx}`} value={`evento_${fullId}`}>
                               {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
                             </option>
                           );
@@ -407,7 +451,13 @@ export default function Recepcion() {
                   <h4 className="text-sm font-bold text-brand-800 dark:text-brand-300 mb-2">Menores Asociados (Ingreso Rápido)</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedPersona.menores_asociados.map((m: any) => (
-                      <button type="button" key={m.id_persona} className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-brand-200 text-brand-700 dark:text-brand-400 rounded-lg text-sm hover:bg-brand-100 transition shadow-sm">
+                      <button
+                        type="button"
+                        key={m.id_persona}
+                        disabled={isSubmitting}
+                        onClick={() => handleIngresarMenorAsociado(m)}
+                        className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-brand-200 text-brand-700 dark:text-brand-400 rounded-lg text-sm hover:bg-brand-100 dark:hover:bg-brand-900/40 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         Ingresar a {m.nombres}
                       </button>
                     ))}

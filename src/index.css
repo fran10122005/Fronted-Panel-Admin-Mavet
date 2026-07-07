@@ -457,7 +457,9 @@ layer(base);
   color: #f1f3f9 !important;
 }
 
-.dark select option {
+.dark select option,
+.dark select optgroup,
+.dark select optgroup option {
   background-color: #141822 !important;
   color: #f1f3f9 !important;
 }

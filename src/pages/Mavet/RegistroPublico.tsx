@@ -65,7 +65,7 @@ export default function RegistroPublico() {
       
       if (res.talleres && res.talleres.length > 0) {
         setTalleresInscritos(res.talleres);
-        setFormData(prev => ({ ...prev, id_motivo: `evento_${res.talleres![0].id_taller}` }));
+        setFormData(prev => ({ ...prev, id_motivo: `taller_${res.talleres![0].id_taller}` }));
       } else {
         setTalleresInscritos([]);
       }
@@ -133,9 +133,9 @@ export default function RegistroPublico() {
         id_motivo: finalMotivo,
       };
       
-      // Solo enviar id_taller si es un taller
-      if (finalTaller && formData.id_motivo.startsWith('taller_') && Number(finalTaller)) {
-        payload.id_taller = Number(finalTaller);
+      // Solo enviar id_taller si es un taller (TAL-xxxxx)
+      if (finalTaller && finalTaller.startsWith('TAL-')) {
+        payload.id_taller = finalTaller;
       }
 
       await mavetApi.registrarAutoIngreso(payload);
@@ -373,6 +373,7 @@ export default function RegistroPublico() {
                   required
                   value={formData.id_motivo}
                   onChange={e => setFormData({ ...formData, id_motivo: e.target.value })}
+                  style={{ colorScheme: 'dark' }}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
                 >
                   <option value="">Selecciona una opción...</option>
@@ -392,10 +393,9 @@ export default function RegistroPublico() {
                       {eventosHoy.map((e, idx) => {
                         const parts = e.id.split('-');
                         const type = parts[0]; // "evento" o "taller"
-                        // Handle format "evento-SES-00004" or "evento-4"
-                        const numId = parts.length > 2 ? parts[2] : parts[1];
+                        const fullId = parts.length > 2 ? parts.slice(1).join('-') : parts[1];
                         return (
-                          <option key={`e_${idx}`} value={`${type}_${numId}`}>
+                          <option key={`e_${idx}`} value={`${type}_${fullId}`}>
                             {e.titulo} {e.hora_inicio ? `(${e.hora_inicio.substring(0, 5)})` : ''}
                           </option>
                         );
