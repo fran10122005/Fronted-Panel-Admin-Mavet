@@ -13,6 +13,7 @@ import {
   EyeIcon,
   DownloadIcon,
 } from "../../icons";
+import manualPdfUrl from "../../../Manual_MAVET_Guia_Visual_Estilo_Instructivo_CORREGIDO.pdf?url";
 
 type Seccion = {
   id: string;
@@ -430,103 +431,14 @@ const secciones: Seccion[] = [
 ];
 
 // ─── PDF Export ───────────────────────────────────────────────────────────────
-async function exportarManualPDF(titulo: string) {
-  const { jsPDF } = await import("jspdf");
-  const { applyPlugin } = await import("jspdf-autotable");
-  applyPlugin(jsPDF);
-
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pw = doc.internal.pageSize.getWidth();
-
-  // Header
-  doc.setFillColor(128, 0, 0);
-  doc.rect(0, 0, pw, 32, "F");
-  doc.setFillColor(196, 152, 90);
-  doc.rect(0, 30, pw, 2, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("MAVET — MANUAL DE USUARIO", 14, 9);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text("Museo de Artes Visuales y Espacios del Táchira", 14, 16);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text(titulo, 14, 24);
-
-  let y = 44;
-
-  for (const sec of secciones) {
-    if (y > 260) {
-      doc.addPage();
-      y = 20;
-    }
-
-    // Section title
-    doc.setFillColor(128, 0, 0);
-    doc.rect(14, y, pw - 28, 8, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(`${sec.titulo}`, 18, y + 5.5);
-    y += 12;
-
-    for (const sub of sec.contenido) {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-
-      // Subsection title
-      doc.setFillColor(245, 237, 232);
-      doc.rect(14, y, pw - 28, 6, "F");
-      doc.setTextColor(128, 0, 0);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8.5);
-      doc.text(sub.subtitulo, 18, y + 4);
-      y += 9;
-
-      for (const paso of sub.pasos) {
-        if (y > 275) {
-          doc.addPage();
-          y = 20;
-        }
-
-        doc.setTextColor(45, 45, 45);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.5);
-        const lines = doc.splitTextToSize(`• ${paso}`, pw - 40);
-        doc.text(lines, 18, y);
-        y += lines.length * 3.8 + 1;
-      }
-
-      y += 2;
-    }
-
-    y += 3;
-  }
-
-  // Footer
-  const pc = doc.getNumberOfPages();
-  for (let i = 1; i <= pc; i++) {
-    doc.setPage(i);
-    const h = doc.internal.pageSize.getHeight();
-    doc.setDrawColor(196, 152, 90);
-    doc.setLineWidth(0.4);
-    doc.line(30, h - 14, pw - 30, h - 14);
-    doc.setFontSize(6.5);
-    doc.setTextColor(155, 155, 155);
-    doc.setFont("helvetica", "normal");
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit", month: "long", year: "numeric",
-    });
-    doc.text(today, 30, h - 8);
-    doc.text(`Pág. ${i} de ${pc}`, pw / 2, h - 8, { align: "center" });
-    doc.text("Documento de uso interno", pw - 30, h - 8, { align: "right" });
-  }
-
-  doc.save(`MAVET_Manual_Usuario_${new Date().toISOString().split("T")[0]}.pdf`);
+async function exportarManualPDF() {
+  const link = document.createElement("a");
+  link.href = manualPdfUrl;
+  link.download = "MAVET_Inventario_Obras_2026-07-07 (1).pdf";
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -552,7 +464,7 @@ export default function ManualUsuario() {
   const handleExportPDF = async () => {
     setExporting(true);
     try {
-      await exportarManualPDF("Manual de Usuario — Sistema MAVET");
+      await exportarManualPDF();
     } catch (e) {
       console.error("[exportPDF]", e);
       alert("Error al generar el PDF.");

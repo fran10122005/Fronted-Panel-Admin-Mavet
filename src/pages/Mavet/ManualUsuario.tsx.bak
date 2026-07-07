@@ -1,0 +1,253 @@
+import { useMemo, useState } from "react";
+import { DownloadIcon } from "../../icons";
+import manualContent from "../../../docs/MANUAL_USUARIO.md?raw";
+
+type ManualSection = {
+  title: string;
+  content: string;
+};
+
+function parseSections(markdown: string): ManualSection[] {
+  const sections: ManualSection[] = [];
+  const lines = markdown.replace(/\r/g, "").split("\n");
+  let current: ManualSection | null = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    if (line.startsWith("## ")) {
+      if (current) {
+        sections.push(current);
+      }
+      current = {
+        title: line.replace(/^##\s*/, "").trim(),
+        content: "",
+      };
+      continue;
+    }
+
+    if (!current) continue;
+
+    if (current.content) {
+      current.content += "\n";
+    }
+    current.content += line;
+  }
+
+  if (current) {
+    sections.push(current);
+  }
+
+  return sections.filter((section) => section.title && section.content.trim());
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+async function exportarManualPDF(titulo: string) {
+  const { jsPDF } = await import("jspdf");
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  const marginY = 16;
+  const maxWidth = pw - marginX * 2;
+
+  doc.setFillColor(128, 0, 0);
+  doc.rect(0, 0, pw, 28, "F");
+  doc.setFillColor(196, 152, 90);
+  doc.rect(0, 27, pw, 2, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("MAVET — MANUAL DE USUARIO", marginX, 10);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("Museo de Artes Visuales y Espacios del Táchira", marginX, 17);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text(titulo, marginX, 24);
+
+  doc.setTextColor(40, 40, 40);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
+  let y = 38;
+  const content = manualContent.replace(/\r/g, "").trim();
+  const lines = doc.splitTextToSize(content, maxWidth);
+
+  for (const line of lines) {
+    if (y > ph - 16) {
+      doc.addPage();
+      y = marginY;
+    }
+
+    doc.text(line, marginX, y);
+    y += 4.2;
+  }
+
+  const pc = doc.getNumberOfPages();
+  for (let i = 1; i <= pc; i++) {
+    doc.setPage(i);
+    const h = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(196, 152, 90);
+    doc.setLineWidth(0.4);
+    doc.line(30, h - 14, pw - 30, h - 14);
+    doc.setFontSize(6.5);
+    doc.setTextColor(140, 140, 140);
+    doc.setFont("helvetica", "normal");
+    const today = new Date().toLocaleDateString("es-VE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+    doc.text(today, 30, h - 8);
+    doc.text(Pág.  de , pw / 2, h - 8, { align: "center" });
+    doc.text("Documento de uso interno", pw - 30, h - 8, { align: "right" });
+  }
+
+  doc.save(MAVET_Manual_Usuario_.pdf);
+}
+
+export default function ManualUsuario() {
+  const [busqueda, setBusqueda] = useState("");
+  const [seccionActiva, setSeccionActiva] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const secciones = useMemo(() => parseSections(manualContent), []);
+
+  const filtradas = useMemo(() => {
+    if (!busqueda.trim()) return secciones;
+
+    const q = busqueda.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return secciones.filter((seccion) => {
+      const hayTexto = ${seccion.title}\n
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      return hayTexto.includes(q);
+    });
+  }, [busqueda, secciones]);
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      await exportarManualPDF("Manual de Usuario — Sistema MAVET");
+    } catch (error) {
+      console.error("[exportPDF]", error);
+      alert("Error al generar el PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Manual de Usuario
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Guía completa del Sistema MAVET, alineada con la documentación existente.
+          </p>
+        </div>
+        <button
+          onClick={handleExportPDF}
+          disabled={exporting}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
+        >
+          <DownloadIcon />
+          {exporting ? "Generando PDF…" : "Exportar PDF"}
+        </button>
+      </div>
+
+      <div className="relative mb-8">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(event) => setBusqueda(event.target.value)}
+          placeholder="Buscar en el manual..."
+          className="w-full rounded-xl border border-gray-200 bg-white py-3.5 pl-12 pr-4 text-base text-gray-900 shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        />
+      </div>
+
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <aside className="lg:w-64 lg:shrink-0">
+          <nav className="sticky top-24 space-y-1">
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              Secciones
+            </p>
+            {filtradas.map((seccion) => {
+              const activo = seccionActiva === slugify(seccion.title);
+              return (
+                <button
+                  key={seccion.title}
+                  onClick={() => {
+                    const id = slugify(seccion.title);
+                    setSeccionActiva(activo ? null : id);
+                    const element = document.getElementById(sec-);
+                    if (element) {
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                  className={lex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition }
+                >
+                  <span className="text-base">•</span>
+                  {seccion.title}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1 space-y-8">
+          {filtradas.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center dark:border-gray-700 dark:bg-gray-800/50">
+              <p className="text-lg text-gray-400 dark:text-gray-500">
+                No se encontraron resultados para “{busqueda}”.
+              </p>
+            </div>
+          )}
+
+          {filtradas.map((seccion) => (
+            <section
+              key={seccion.title}
+              id={sec-}
+              className="scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/60"
+            >
+              <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+                {seccion.title}
+              </h2>
+              <div className="whitespace-pre-wrap text-sm leading-7 text-gray-700 dark:text-gray-300">
+                {seccion.content}
+              </div>
+            </section>
+          ))}
+
+          <div className="border-t border-gray-200 pt-8 text-center dark:border-gray-700">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              MAVET — Museo de Artes Visuales y Espacios del Táchira
+            </p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">
+              Versión 1.0 — Manual de Usuario
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
