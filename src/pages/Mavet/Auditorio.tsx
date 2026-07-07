@@ -247,55 +247,9 @@ const Auditorio: React.FC = () => {
   const handleVerAsistentes = async (ev: EventoAuditorio) => {
     setSelectedEvent(ev);
     try {
-      const eventDateStr = ev.start?.split("T")[0] || "";
-
-      // Fetch all ingresos and today's agenda to find the matching public ID
-      const [result, agenda] = await Promise.all([
-        mavetApi.getTodosIngresos(1, 500),
-        mavetApi.getAgendaPublica()
-      ]);
-
-      const eventTitleLower = (ev.title || "").toLowerCase().trim();
-      const titleWords = eventTitleLower.split(/\s+/).filter(w => w.length > 3);
-      
-      // Find possible agenda IDs for this event by matching title or date
-      const possibleAgendaIds = agenda
-        .filter(a => {
-          const aDate = (a.fecha || a.fecha_uso || a.start || "").split("T")[0];
-          if (aDate && eventDateStr && aDate !== eventDateStr) return false;
-          
-          const aTitle = (a.titulo || "").toLowerCase();
-          return aTitle.includes(eventTitleLower) || titleWords.some(w => aTitle.includes(w));
-        })
-        .map(a => {
-          const parts = String(a.id).split('-');
-          return parts.length > 2 ? Number(parts[2]).toString() : parts[1];
-        });
-
-      const asistentes = result.data.filter(i => {
-        // Fallback genérico: como el backend prohíbe guardar id_taller para eventos (error 500 de FK),
-        // dependemos de que la fecha coincida y el motivo sea de tipo evento.
-        if (eventDateStr) {
-          const checkInDate = (i.fecha_hora_entrada || "").split("T")[0];
-          if (checkInDate === eventDateStr) {
-            const motivoDesc = (i.Motivo?.descripcion || "").toLowerCase();
-            if (
-              motivoDesc.includes("evento") ||
-              motivoDesc.includes("conferencia") ||
-              motivoDesc.includes("auditorio") ||
-              motivoDesc.includes("charla") ||
-              motivoDesc.includes("reunión") ||
-              motivoDesc.includes("reunion")
-            ) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-      });
-
-      setEventoAsistentes(asistentes);
+      const idSolicitud = ev.id;
+      const result = await mavetApi.getTodosIngresos(1, 500, undefined, idSolicitud);
+      setEventoAsistentes(result.data);
     } catch {
       setEventoAsistentes([]);
     }
