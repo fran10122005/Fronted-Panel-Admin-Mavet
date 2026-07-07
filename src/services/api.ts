@@ -511,6 +511,28 @@ export const mavetApi = {
     }
   },
 
+  getSemanaAsistencia: async (cedulaTrabajador: string): Promise<{ horasSemanales: number; horasAcumuladas: number; horasRestantes: number; diasRegistrados: number }> => {
+    try {
+      const res = await axiosInstance.get('/api/rrhh/asistencias/semana', { params: { cedulaTrabajador } });
+      return res.data?.data || { horasSemanales: 0, horasAcumuladas: 0, horasRestantes: 0, diasRegistrados: 0 };
+    } catch {
+      return { horasSemanales: 0, horasAcumuladas: 0, horasRestantes: 0, diasRegistrados: 0 };
+    }
+  },
+
+  getResumenSemanalTodos: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get('/api/rrhh/asistencias/semana/resumen');
+      return res.data?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  updateAsistenciaObservaciones: async (id: string, observaciones: string): Promise<void> => {
+    await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, { observaciones });
+  },
+
   // === Registro Público Visitantes / Ingresos ===
   obtenerMotivos: async (): Promise<any[]> => {
     try {

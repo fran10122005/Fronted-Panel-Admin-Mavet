@@ -4,7 +4,7 @@ import { useDebounce } from "./useDebounce";
 import { mavetApi } from "../services/api";
 import { exportarReporteAsistencia, exportarCartaAvalHoras } from "../services/pdf.service";
 import toast from "react-hot-toast";
-import { RegistroAsistencia, Trabajador, Usuario, Cargo } from "../types";
+import { RegistroAsistencia, Trabajador, Usuario, Cargo, ResumenSemanalTrabajador } from "../types";
 
 export const ITEMS_PER_PAGE = 20;
 
@@ -36,6 +36,7 @@ export function useRRHH() {
   const { isOpen: isOpenUsuario, openModal: openUsuario, closeModal: closeUsuario } = useModal();
 
   const [asistencias, setAsistencias] = useState<RegistroAsistencia[]>([]);
+  const [resumenSemanal, setResumenSemanal] = useState<ResumenSemanalTrabajador[]>([]);
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -63,6 +64,7 @@ export function useRRHH() {
   const [editingTrabajadorId, setEditingTrabajadorId] = useState<string | null>(null);
   const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
   const [selectedTrabajadorForDetail, setSelectedTrabajadorForDetail] = useState<Trabajador | null>(null);
+  const [selectedForJustificacion, setSelectedForJustificacion] = useState<ResumenSemanalTrabajador | null>(null);
 
   const refreshData = async () => {
     const [dataCargos, dataUsers, dataRoles] = await Promise.all([
@@ -92,6 +94,34 @@ export function useRRHH() {
     setAsistTotalItems(res.totalItems);
   };
 
+  const refreshResumenSemanal = async () => {
+    const data = await mavetApi.getResumenSemanalTodos();
+    setResumenSemanal(data);
+  };
+
+  const handleUpdateObservaciones = async (id: string, observaciones: string) => {
+    try {
+      await mavetApi.updateAsistenciaObservaciones(id, observaciones);
+      setAsistencias((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, observaciones } : a))
+      );
+      setResumenSemanal((prev) =>
+        prev.map((r) => ({
+          ...r,
+          observaciones: r.dias.some((d) => d.id === id)
+            ? observaciones
+            : r.observaciones,
+          dias: r.dias.map((d) =>
+            d.id === id ? { ...d, observaciones } : d
+          ),
+        }))
+      );
+      toast.success("Observaciones guardadas");
+    } catch {
+      toast.error("Error al actualizar observaciones");
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try { await refreshData(); }
@@ -99,6 +129,10 @@ export function useRRHH() {
       finally { setIsLoading(false); }
     })();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "asistencias") refreshResumenSemanal();
+  }, [activeTab]);
 
   const handleOpenCrearTrabajador = () => {
     setEditingTrabajadorId(null);
@@ -343,9 +377,12 @@ export function useRRHH() {
     confirm, setConfirm,
     editingTrabajadorId, editingUsuarioId,
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
+    selectedForJustificacion, setSelectedForJustificacion,
     trabajPage, trabajTotalPages, trabajTotalItems,
     asistPage, asistTotalPages, asistTotalItems,
     refreshTrabajadores, refreshAsistencias, refreshData,
+    refreshResumenSemanal,
+    resumenSemanal, handleUpdateObservaciones,
     filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,

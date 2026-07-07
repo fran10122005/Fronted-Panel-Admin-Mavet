@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router";
 import {
   CalenderIcon,
   ChevronDownIcon,
+  DocsIcon,
   GridIcon,
   ListIcon,
   PageIcon,
@@ -67,6 +68,11 @@ const othersItems: NavItem[] = [
     path: "/profile",
   },
   {
+    icon: <DocsIcon />,
+    name: "Manual de Usuario",
+    path: "/manual",
+  },
+  {
     icon: <PlugInIcon />,
     name: "Cerrar Sesión",
     path: "/signin",
@@ -83,6 +89,7 @@ const routePermissions: Record<string, string[]> = {
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["*"],
   "/papelera": ["Administrador", "admin", "Gerente"],
+  "/manual": ["*"],
 };
 
 const AppSidebar: React.FC = () => {

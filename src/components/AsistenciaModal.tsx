@@ -146,7 +146,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
       setScanned(null);
       setEstado(null);
       setAlert(null);
-      setScanKey((k) => k + 1); // garantiza que el escáner siguiente sea fresco
+      setScanKey((k) => k + 1);
     }
   }, [isOpen]);
 

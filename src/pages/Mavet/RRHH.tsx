@@ -4,6 +4,7 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
+import JustificacionModal from "./rrhh/JustificacionModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth } from "../../context/AuthContext";
 
@@ -50,6 +51,8 @@ export default function RRHH() {
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleDeleteTrabajador, handleDeleteUsuario,
+    resumenSemanal, handleUpdateObservaciones,
+    selectedForJustificacion, setSelectedForJustificacion,
   } = useRRHH();
 
   return (
@@ -236,40 +239,125 @@ export default function RRHH() {
               )}
 
               {activeTab === "asistencias" && (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                      <th className="px-4 py-2">Fecha</th>
-                      <th className="px-4 py-2">Cédula</th>
-                      <th className="px-4 py-2">Nombre y Apellido</th>
-                      <th className="px-4 py-2">Cargo</th>
-                      <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
-                      <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
-                      <th className="px-4 py-2 text-center">Horas</th>
-                      <th className="px-4 py-2">Observaciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredAsistencias.length === 0 ? (
-                      <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
-                    ) : filteredAsistencias.map((a) => (
-                      <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
-                        <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
-                        <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
-                        <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
-                          <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
-                        </td>
-                        <td className="px-4 py-2 text-center font-mono text-xs">
-                          <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
-                        </td>
-                        <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-400 max-w-[160px] truncate text-xs" title={a.observaciones}>{a.observaciones || "—"}</td>
+                <>
+                  {/* Resumen Semanal */}
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
+                    <details className="group">
+                      <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 select-none">
+                        <svg className={`w-4 h-4 transition-transform group-open:rotate-90`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                        Resumen Semanal
+                        <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">({resumenSemanal.length} trabajadores)</span>
+                      </summary>
+                      <div className="mt-3 overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
+                              <th className="px-3 py-2">Trabajador</th>
+                              <th className="px-3 py-2">Cargo</th>
+                              <th className="px-3 py-2 text-center">Req.</th>
+                              <th className="px-3 py-2 text-center">Acum.</th>
+                              <th className="px-3 py-2 text-center">Restan</th>
+                              <th className="px-3 py-2 text-center">Cumplió</th>
+                              <th className="px-3 py-2">Observaciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                            {resumenSemanal.length === 0 ? (
+                              <tr><td colSpan={7} className="px-3 py-4 text-center text-gray-500"><p className="font-medium">No hay datos esta semana</p></td></tr>
+                            ) : resumenSemanal.map((r) => (
+                              <tr key={r.id_trabajador} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <td className="px-3 py-2 font-semibold text-xs">{r.nombres} {r.apellidos}</td>
+                                <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{r.cargo || "—"}</td>
+                                <td className="px-3 py-2 text-center text-xs">{r.horas_semanales > 0 ? `${r.horas_semanales}h` : "—"}</td>
+                                <td className="px-3 py-2 text-center text-xs font-medium">{r.horas_acumuladas > 0 ? `${r.horas_acumuladas}h` : "0h"}</td>
+                                <td className={`px-3 py-2 text-center text-xs font-medium ${r.horas_restantes > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{r.horas_restantes > 0 ? `${r.horas_restantes}h` : "0h"}</td>
+                                <td className="px-3 py-2 text-center">
+                                  {r.cumplio ? (
+                                    <span className="text-green-600 dark:text-green-400 text-lg" title="Completo">✓</span>
+                                  ) : r.justificado ? (
+                                    <span className="text-blue-600 dark:text-blue-400 text-lg" title="Justificado">✓</span>
+                                  ) : (
+                                    <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    {r.observaciones ? (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={r.observaciones}>
+                                        {r.observaciones}
+                                      </span>
+                                    ) : null}
+                                    {!r.cumplio && !r.justificado && (
+                                      <button
+                                        onClick={() => setSelectedForJustificacion(r)}
+                                        className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
+                                      >
+                                        Justificar
+                                      </button>
+                                    )}
+                                    {r.cumplio && (
+                                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">Completo</span>
+                                    )}
+                                    {r.justificado && (
+                                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">Justificado</span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  </div>
+
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
+                        <th className="px-4 py-2">Fecha</th>
+                        <th className="px-4 py-2">Cédula</th>
+                        <th className="px-4 py-2">Nombre y Apellido</th>
+                        <th className="px-4 py-2">Cargo</th>
+                        <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
+                        <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
+                        <th className="px-4 py-2 text-center">Horas</th>
+                        <th className="px-4 py-2">Observaciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                      {filteredAsistencias.length === 0 ? (
+                        <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
+                      ) : filteredAsistencias.map((a) => (
+                        <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
+                          <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
+                          <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
+                          <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
+                          <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
+                            <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
+                          </td>
+                          <td className="px-4 py-2 text-center font-mono text-xs">
+                            <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
+                          </td>
+                          <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
+                          <td className="px-4 py-2 max-w-[160px]">
+                            <input
+                              type="text"
+                              key={a.observaciones ?? ""}
+                              defaultValue={a.observaciones || ""}
+                              onBlur={(e) => {
+                                const val = e.target.value.trim();
+                                if (val !== (a.observaciones || "")) handleUpdateObservaciones(a.id, val);
+                              }}
+                              className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-brand-500 focus:outline-none text-xs px-1 py-0.5 dark:text-gray-300"
+                              placeholder="—"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )}
             </div>
 
@@ -333,6 +421,12 @@ export default function RRHH() {
           setSelectedTrabajadorForDetail(null);
         }}
         onRefresh={refreshData}
+      />
+
+      <JustificacionModal
+        trabajador={selectedForJustificacion}
+        onClose={() => setSelectedForJustificacion(null)}
+        onSave={handleUpdateObservaciones}
       />
 
       <ConfirmDialog

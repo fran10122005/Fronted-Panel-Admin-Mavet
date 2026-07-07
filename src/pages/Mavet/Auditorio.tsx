@@ -1,9 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import { DateSelectArg, EventClickArg } from "@fullcalendar/core";
+import { useState, useEffect, useMemo } from "react";
+import CalendarGrid from "../../components/CalendarGrid";
 import { 
   Plus, 
   List, 
@@ -73,7 +69,6 @@ const Auditorio: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
-  const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
   const isFormValid = useMemo(() => {
@@ -190,10 +185,10 @@ const Auditorio: React.FC = () => {
     }
   };
 
-  const handleDateSelect = (selectInfo: DateSelectArg) => {
+  const handleDateSelect = (dateStr: string) => {
+    if (isGerente) return;
     resetModalFields();
-    
-    // Generate next code
+
     const nextCode = generateNextCode(
       events.map(e => e.codigo_reserva),
       "RES",
@@ -201,19 +196,18 @@ const Auditorio: React.FC = () => {
     );
     setCodigoReserva(nextCode);
 
-    setEventDate(selectInfo.startStr.split("T")[0]);
+    setEventDate(dateStr);
     setHoraInicio("08:00");
     setHoraFin("18:00");
     openModal();
   };
 
-  const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = clickInfo.event;
+  const handleEventClick = (event: EventoAuditorio) => {
     setSelectedEvent({
       id: event.id,
       title: event.title,
-      start: event.startStr,
-      end: event.endStr,
+      start: event.start,
+      end: event.end,
       allDay: event.allDay,
       extendedProps: {
         organizador: event.extendedProps.organizador,
@@ -221,11 +215,11 @@ const Auditorio: React.FC = () => {
         cedula: event.extendedProps.cedula
       }
     });
-    setCodigoReserva(event.extendedProps.codigo_reserva || event.id || "");
+    setCodigoReserva((event as any).extendedProps?.codigo_reserva || event.id || "");
     setEventTitle(event.title);
-    setEventDate(event.startStr?.split("T")[0] || "");
-    setHoraInicio((event.startStr?.split("T")[1]?.substring(0, 5)) || "08:00");
-    setHoraFin((event.endStr?.split("T")[1]?.substring(0, 5)) || "18:00");
+    setEventDate(event.start?.split("T")[0] || "");
+    setHoraInicio((event.start?.split("T")[1]?.substring(0, 5)) || "08:00");
+    setHoraFin((event.end?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(event.extendedProps.organizador || "");
     setCedulaOrganizador(event.extendedProps.cedula || "");
     setTipoEvento(event.extendedProps.tipoEvento || "Conferencia");
@@ -397,27 +391,14 @@ const Auditorio: React.FC = () => {
     }
   };
 
-  const getCalendarColorClass = (tipo: string) => {
-    switch(tipo) {
-      case "Exposición": return "bg-blue-500";
-      case "Taller": return "bg-green-500";
-      case "Reunión": return "bg-orange-500";
-      default: return "bg-purple-500";
-    }
+  const colorMap: Record<string, string> = {
+    Conferencia: "bg-brand-500",
+    Exposición: "bg-blue-500",
+    Taller: "bg-green-500",
+    "Reunión": "bg-orange-500",
   };
 
-  const renderEventContent = (eventInfo: any) => {
-    const tipo = eventInfo.event.extendedProps.tipoEvento;
-    const colorClass = getCalendarColorClass(tipo);
-    
-    return (
-      <div className={`flex items-center px-2 py-1 rounded text-xs text-white ${colorClass} overflow-hidden shadow-sm hover:opacity-90 transition-opacity`}>
-        <div className="font-semibold truncate w-full" title={eventInfo.event.title}>
-          {eventInfo.event.title}
-        </div>
-      </div>
-    );
-  };
+  const getCalendarColor = (tipo: string) => colorMap[tipo] || "bg-purple-500";
   
   const formatDateForList = (dateString: string) => {
     if (!dateString) return "";
@@ -541,37 +522,14 @@ const Auditorio: React.FC = () => {
         )}
 
         {viewMode === "calendar" ? (
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 p-2 sm:p-6 shadow-theme-lg min-h-[350px] sm:min-h-[500px]">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-96">
-                <LoadingSkeleton variant="table" rows={8} cols={6} />
-              </div>
-            ) : (
-              <div className={`calendar-container ${saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
-                <FullCalendar
-                  ref={calendarRef}
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  headerToolbar={{
-                    left: "prev,next today",
-                    center: "title",
-                    right: "",
-                  }}
-                  events={filteredEvents}
-                  selectable={true}
-                  select={handleDateSelect}
-                  eventClick={handleEventClick}
-                  eventContent={renderEventContent}
-                  height="auto"
-                  locale="es"
-                  buttonText={{
-                    today: 'Hoy',
-                    month: 'Mes',
-                    week: 'Semana'
-                  }}
-                />
-              </div>
-            )}
+          <div className={saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}>
+            <CalendarGrid
+              events={filteredEvents}
+              onDateSelect={handleDateSelect}
+              onEventClick={handleEventClick}
+              getEventColor={getCalendarColor}
+              isLoading={isLoading}
+            />
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

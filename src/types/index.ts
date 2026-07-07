@@ -60,7 +60,8 @@ export interface PrestamoPayload {
 export interface AsistenciaPayload {
   cedulaTrabajador?: string;
   qr_uuid?: string;
-  tipoMovimiento: "Entrada Mañana" | "Salida Mañana" | "Entrada Tarde" | "Salida Tarde";
+  tipoMovimiento: string;
+  observaciones?: string;
 }
 
 export interface RegistroVisitantePayload {
@@ -156,6 +157,28 @@ export interface Prestamo {
   fechaPrestamo: string;
   fechaDevolucion?: string;
   estado: "ACTIVO" | "DEVUELTO";
+}
+
+export interface ResumenSemanalTrabajador {
+  id_trabajador: number;
+  cedula: string;
+  nombres: string;
+  apellidos: string;
+  cargo: string | null;
+  horas_semanales: number;
+  horas_acumuladas: number;
+  horas_restantes: number;
+  cumplio: boolean;
+  justificado?: boolean;
+  observaciones: string | null;
+  dias: Array<{
+    id: string;
+    fecha: string;
+    entrada: string | null;
+    salida: string | null;
+    horas: number | null;
+    observaciones: string | null;
+  }>;
 }
 
 export interface TopVisitante {

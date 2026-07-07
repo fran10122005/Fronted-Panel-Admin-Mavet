@@ -101,9 +101,9 @@ export default function TallerDetailModal({
                 onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={1} />
             </div>
             <div>
-              <label className={labelCls}>Fecha del Taller</label>
+              <label className={labelCls}>Fecha del Taller <span className="text-red-500">*</span></label>
               <input type="date" name="fecha" value={formData.fecha}
-                onChange={onChange} className={inputCls + " show-date-picker"} />
+                onChange={onChange} className={inputCls + " show-date-picker"} required />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -350,7 +350,7 @@ export function useTalleres() {
         horas_totales: planificarForm.horas_totales ? Number(planificarForm.horas_totales) : null,
         cupo_minimo: planificarForm.cupo_minimo ? Number(planificarForm.cupo_minimo) : null,
         cupo_maximo: planificarForm.cupo_maximo ? Number(planificarForm.cupo_maximo) : null,
-        estado: planificarForm.estado
+        estado: planificarForm.estado ? 'Activo' : 'Inactivo'
       };
 
       if (isEditingPlanificado && selectedTaller?.id_taller) {

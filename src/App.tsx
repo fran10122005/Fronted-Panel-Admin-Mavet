@@ -25,6 +25,7 @@ const Talleres = lazy(() => import("./pages/Mavet/Talleres"));
 const Auditorio = lazy(() => import("./pages/Mavet/Auditorio"));
 const Educacion = lazy(() => import("./pages/Mavet/Educacion"));
 const Papelera = lazy(() => import("./pages/Mavet/Papelera"));
+const ManualUsuario = lazy(() => import("./pages/Mavet/ManualUsuario"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 
 // Fallback loader for Suspense
@@ -112,6 +113,8 @@ export default function App() {
                 <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
                   <Route path="/papelera" element={<ErrorBoundary><Papelera /></ErrorBoundary>} />
                 </Route>
+                {/* Manual de Usuario (todos los roles autenticados) */}
+                <Route path="/manual" element={<ErrorBoundary><ManualUsuario /></ErrorBoundary>} />
               </Route>
             </Route>
 

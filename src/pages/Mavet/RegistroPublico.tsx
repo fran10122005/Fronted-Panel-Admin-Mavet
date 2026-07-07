@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { mavetApi } from '../../services/api';
 import { limitNumericInput, validatePhone } from '../../utils/validation';
+import { Modal } from '../../components/ui/modal';
 
 export default function RegistroPublico() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -15,13 +16,19 @@ export default function RegistroPublico() {
     apellidos: '',
     telefono: '',
     fecha_nacimiento: '',
-    id_motivo: ''
+    id_motivo: '',
+    cantidad_acompanantes: 0,
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [talleresInscritos, setTalleresInscritos] = useState<any[]>([]);
+
+  const [isVisitaInstitucional, setIsVisitaInstitucional] = useState(false);
+
+  const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
+  const [menorData, setMenorData] = useState({ nombres: '', apellidos: '', fecha_nacimiento: '', cedula: '' });
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -137,6 +144,7 @@ export default function RegistroPublico() {
         telefono: formData.telefono,
         fecha_de_nac: formData.fecha_nacimiento || undefined,
         id_motivo: finalMotivo,
+        cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0,
       };
       
       if (finalTaller && finalTaller.startsWith('TAL-')) {
@@ -419,6 +427,53 @@ export default function RegistroPublico() {
                 </select>
               </div>
 
+              {/* Visita Institucional / Grupal */}
+              <div className="mt-5 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="visitaInst"
+                    checked={isVisitaInstitucional}
+                    onChange={(e) => setIsVisitaInstitucional(e.target.checked)}
+                    className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                  />
+                  <label htmlFor="visitaInst" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                    Visita Institucional / Grupal
+                  </label>
+                </div>
+                {isVisitaInstitucional && (
+                  <div className="w-full sm:w-1/2 mt-1 animate-fade-in">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad de Acompañantes / Niños</label>
+                    <input
+                      type="number"
+                      min={0}
+                      name="cantidad_acompanantes"
+                      value={formData.cantidad_acompanantes}
+                      onChange={(e) => setFormData({ ...formData, cantidad_acompanantes: Number(e.target.value) })}
+                      onKeyDown={limitNumericInput}
+                      className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
+                      placeholder="Ej. 30"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Registrar Menor (solo si ya existe como visitante) */}
+              {existe && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsMenorModalOpen(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 dark:hover:bg-green-900/30 transition"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Registrar Menor Acompañante
+                  </button>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="mt-6 space-y-3">
                 <button
@@ -479,7 +534,9 @@ export default function RegistroPublico() {
                   onClick={() => {
                     setStep(1);
                     setCedula('');
-                    setFormData({ nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', id_motivo: '' });
+                    setFormData({ nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', id_motivo: '', cantidad_acompanantes: 0 });
+                    setIsVisitaInstitucional(false);
+                    setIsMenorModalOpen(false);
                   }}
                   className="inline-flex items-center gap-2 rounded-xl bg-brand-500 text-white px-6 py-3 text-sm font-bold shadow-lg shadow-brand-500/25 hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-500/30 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all duration-200 active:scale-[0.98]"
                 >
@@ -492,6 +549,58 @@ export default function RegistroPublico() {
             </div>
           )}
         </div>
+
+        {/* Modal Registrar Menor */}
+        <Modal isOpen={isMenorModalOpen} onClose={() => setIsMenorModalOpen(false)}>
+          <div className="p-2">
+            <h3 className="text-lg font-bold mb-1 dark:text-gray-200">Registrar Menor Acompañante</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Ingresa los datos del menor que te acompaña.</p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setIsLoading(true);
+              setError('');
+              try {
+                const payload: any = {
+                  cedula: menorData.cedula || undefined,
+                  nombres: menorData.nombres,
+                  apellidos: menorData.apellidos,
+                  fecha_de_nac: menorData.fecha_nacimiento,
+                  id_motivo: formData.id_motivo.replace('motivo_', '') || (motivos[0]?.id_motivo || 'MVI-00001'),
+                };
+                await mavetApi.registrarAutoIngreso(payload);
+                setIsMenorModalOpen(false);
+                setMenorData({ nombres: '', apellidos: '', fecha_nacimiento: '', cedula: '' });
+              } catch (err: any) {
+                setError(err.message || 'Error al registrar menor');
+              } finally {
+                setIsLoading(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm mb-1 dark:text-gray-200">Nombres del Menor *</label>
+                <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 dark:text-gray-200">Apellidos del Menor *</label>
+                <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 dark:text-gray-200">Fecha de Nacimiento *</label>
+                <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1 dark:text-gray-200">Cédula (opcional)</label>
+                <input type="text" value={menorData.cedula} onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })} onKeyDown={limitNumericInput} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" placeholder="Ej. 12345678" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsMenorModalOpen(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm">Cancelar</button>
+                <button type="submit" disabled={isLoading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-sm">
+                  {isLoading ? 'Registrando...' : 'Registrar Menor'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
 
         {/* Footer */}
         <div className="mt-6 text-center">
