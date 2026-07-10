@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface CalendarGridEvent {
+export interface CalendarGridEvent {
   id: string;
   title: string;
   start: string;

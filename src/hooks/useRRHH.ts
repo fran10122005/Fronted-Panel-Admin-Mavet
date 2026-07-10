@@ -141,7 +141,7 @@ export function useRRHH() {
   };
 
   const handleOpenEditarTrabajador = (t: Trabajador) => {
-    setEditingTrabajadorId(t.id ?? null);
+    setEditingTrabajadorId(t.id?.toString() ?? null);
     const cargoObj = cargos.find(c => c.nombre_cargo === t.cargo);
     setFormData({
       cedula: t.cedula,
@@ -174,13 +174,13 @@ export function useRRHH() {
       correo: u.correo,
       password: "",
       id_rol: rolObj?.id_rol || "",
-      id_trabajador: trabObj?.id || u.id_trabajador || "",
+      id_trabajador: String(trabObj?.id ?? u.id_trabajador ?? ""),
       estado: u.estado === true,
     });
     openUsuario();
   };
 
-  const handleResetPassword = (userId: string, correo: string) => {
+  const handleResetPassword = (_userId: string, correo: string) => {
     setConfirm({
       open: true,
       title: "Restablecer contraseña",
@@ -212,7 +212,7 @@ export function useRRHH() {
       onConfirm: async () => {
         setConfirm(prev => ({ ...prev, open: false }));
         try {
-          await mavetApi.eliminarTrabajador(t.id);
+          await mavetApi.eliminarTrabajador(t.id?.toString() ?? "");
           toast.success("Trabajador eliminado. Se movió a la papelera.");
           await refreshData();
         } catch (err: any) {

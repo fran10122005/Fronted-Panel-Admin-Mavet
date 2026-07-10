@@ -56,7 +56,7 @@ export default function InventarioBoveda() {
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
   const [customTecnica, setCustomTecnica] = useState("");
-  const [customEstado, setCustomEstado] = useState("");
+
   const [customCategoria, setCustomCategoria] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
@@ -133,7 +133,6 @@ export default function InventarioBoveda() {
     previewUrlRef.current = null;
     setImagenPreviewUrl(null);
     setCustomTecnica("");
-    setCustomEstado("");
     setCustomCategoria("");
     setFormErrors({});
     setIsEditing(false);
@@ -147,7 +146,6 @@ export default function InventarioBoveda() {
     previewUrlRef.current = null;
     setImagenPreviewUrl(null);
     setCustomTecnica("");
-    setCustomEstado("");
     setCustomCategoria("");
     setFormErrors({});
     setIsEditing(true);
@@ -185,7 +183,7 @@ export default function InventarioBoveda() {
 
   const isPintura = selectedCategoryName?.toLowerCase() === 'pintura';
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     setFormData((prev: any) => {

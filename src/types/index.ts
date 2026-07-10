@@ -91,11 +91,12 @@ export interface EventoAuditorio {
   codigo_reserva?: string;
   title: string;
   start: string;
-  end: string;
+  end?: string;
   allDay: boolean;
   extendedProps: {
     organizador: string;
     tipoEvento: string;
+    cedula?: string;
   };
 }
 

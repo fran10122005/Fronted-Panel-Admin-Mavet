@@ -15,9 +15,9 @@ export const initialPlanificarForm = {
   fecha: "",
   hora_inicio: "",
   hora_fin: "",
-  horas_totales: 0,
-  cupo_minimo: 0,
-  cupo_maximo: 0,
+  horas_totales: "" as number | string,
+  cupo_minimo: "" as number | string,
+  cupo_maximo: "" as number | string,
   estado: true
 };
 
@@ -207,9 +207,9 @@ export function useTalleres() {
         fecha: taller.fecha || "",
         hora_inicio: taller.hora_inicio || "",
         hora_fin: taller.hora_fin || "",
-        horas_totales: taller.horas_totales || 0,
-        cupo_minimo: taller.cupo_minimo || 0,
-        cupo_maximo: taller.cupo_maximo || 0,
+        horas_totales: taller.horas_totales ?? "",
+        cupo_minimo: taller.cupo_minimo ?? "",
+        cupo_maximo: taller.cupo_maximo ?? "",
         estado: taller.estado === "Activo" || taller.estado === true
       });
     } else {
@@ -243,11 +243,40 @@ export function useTalleres() {
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numFields = ["sesiones", "horas_totales", "cupo_minimo", "cupo_maximo"];
-    setPlanificarForm(prev => ({
-      ...prev,
-      [name]: numFields.includes(name) ? Number(value) : value
-    }));
+    const numFields = ["sesiones", "cupo_minimo", "cupo_maximo"];
+    setPlanificarForm(prev => {
+      const updated = {
+        ...prev,
+        // Para campos numéricos, guardar vacío si el valor es vacío, número si tiene valor
+        [name]: numFields.includes(name) ? (value === "" ? "" : Number(value)) : value
+      };
+
+      // Calcular horas_totales automáticamente al cambiar hora_inicio, hora_fin o sesiones
+      const horaInicio = name === "hora_inicio" ? value : prev.hora_inicio;
+      const horaFin = name === "hora_fin" ? value : prev.hora_fin;
+      const sesionesVal = name === "sesiones" ? value : String(prev.sesiones);
+      const sesiones = Number(sesionesVal);
+
+      if (horaInicio && horaFin && sesiones > 0) {
+        const [hI, mI] = horaInicio.split(":").map(Number);
+        const [hF, mF] = horaFin.split(":").map(Number);
+        const inicioMin = hI * 60 + mI;
+        const finMin = hF * 60 + mF;
+        if (finMin > inicioMin) {
+          const diffHoras = (finMin - inicioMin) / 60;
+          updated.horas_totales = diffHoras * sesiones;
+        } else {
+          updated.horas_totales = "";
+        }
+      } else if (!horaInicio || !horaFin || sesiones <= 0) {
+        // Si falta algún dato, limpiar horas_totales
+        if (["hora_inicio", "hora_fin", "sesiones"].includes(name)) {
+          updated.horas_totales = "";
+        }
+      }
+
+      return updated;
+    });
   };
 
   // --- Quick-create instructor ---

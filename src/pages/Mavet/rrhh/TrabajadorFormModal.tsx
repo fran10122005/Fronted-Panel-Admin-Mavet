@@ -26,7 +26,7 @@ export type TrabajadorFormValues = z.infer<typeof trabajadorSchema>;
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  editingTrabajadorId: number | null;
+  editingTrabajadorId: string | null;
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;

@@ -4,7 +4,7 @@ import { mavetApi } from "../services/api";
 import { useDebounce } from "./useDebounce";
 import { useModal } from "./useModal";
 import { generateNextCode } from "../utils/codeGenerator";
-import { Libro, PrestamoPayload, Prestamo } from "../types";
+import { Libro, Prestamo } from "../types";
 
 const today = new Date().toISOString().split("T")[0];
 

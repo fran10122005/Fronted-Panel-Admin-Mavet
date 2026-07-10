@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { mavetApi, axiosInstance } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
-import { exportarQRPublico } from "../../services/pdf.service";
+import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
 import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
 import AsistenciaModal from "../../components/AsistenciaModal";
@@ -34,10 +34,11 @@ export default function Recepcion() {
   const [eventosHoy, setEventosHoy] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
 
-  // Ingresos de hoy
-  const [ingresosHoy, setIngresosHoy] = useState<any[]>([]);
+  // Ingresos de hoy / mes / año
+  const [ingresos, setIngresos] = useState<any[]>([]);
   const [isLoadingIngresos, setIsLoadingIngresos] = useState(false);
   const [showAllIngresos, setShowAllIngresos] = useState(false);
+  const [ingresosFiltro, setIngresosFiltro] = useState<"hoy" | "mes" | "ano">("hoy");
   const INGRESOS_PAGE_SIZE = 5;
 
   // Modal de Código QR Público
@@ -97,15 +98,22 @@ export default function Recepcion() {
     }
   };
 
-  const fetchIngresosHoy = async () => {
+  const fetchIngresos = async () => {
     setIsLoadingIngresos(true);
     try {
       const now = new Date();
-      const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const result = await mavetApi.getTodosIngresos(1, 200, hoyStr);
-      setIngresosHoy(result.data || []);
+      let fechaStr = "";
+      if (ingresosFiltro === "hoy") {
+        fechaStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      } else if (ingresosFiltro === "mes") {
+        fechaStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      } else if (ingresosFiltro === "ano") {
+        fechaStr = `${now.getFullYear()}`;
+      }
+      const result = await mavetApi.getTodosIngresos(1, 1000, fechaStr);
+      setIngresos(result.data || []);
     } catch {
-      setIngresosHoy([]);
+      setIngresos([]);
     } finally {
       setIsLoadingIngresos(false);
     }
@@ -113,8 +121,11 @@ export default function Recepcion() {
 
   useEffect(() => {
     fetchDashboardData();
-    fetchIngresosHoy();
   }, []);
+
+  useEffect(() => {
+    fetchIngresos();
+  }, [ingresosFiltro]);
   useEffect(() => {
     if (searchQuery.length < 3) {
       setSearchResults([]);
@@ -233,7 +244,7 @@ export default function Recepcion() {
       setSelectedPersona(null);
       setSearchQuery("");
       fetchDashboardData();
-      fetchIngresosHoy();
+      fetchIngresos();
     } catch (error: any) {
       toast.error(error.message || "Error al registrar ingreso");
     } finally {
@@ -257,7 +268,7 @@ export default function Recepcion() {
       toast.success("Menor registrado e ingresado exitosamente.");
       setIsMenorModalOpen(false);
       setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
-      fetchIngresosHoy();
+      fetchIngresos();
     } catch (error: any) {
       toast.error(error.message || "Error al registrar menor");
     } finally {
@@ -284,7 +295,7 @@ export default function Recepcion() {
       };
       await mavetApi.registrarIngreso(payload);
       toast.success(`${menor.nombres} ingresado exitosamente.`);
-      fetchIngresosHoy();
+      fetchIngresos();
     } catch (error: any) {
       toast.error(error.message || `Error al ingresar a ${menor.nombres}`);
     } finally {
@@ -603,28 +614,52 @@ export default function Recepcion() {
 
       </div>
 
-      {/* Ingresos del día */}
+      {/* Ingresos del día / mes / año */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 gap-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
-            Ingresos de Hoy
-            {ingresosHoy.length > 0 && (
+            Ingresos Registrados
+            {ingresos.length > 0 && (
               <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-mono">
-                {ingresosHoy.length}
+                {ingresos.length}
               </span>
             )}
           </h2>
-          {!isLoadingIngresos && ingresosHoy.length > INGRESOS_PAGE_SIZE && (
-            <button
-              onClick={() => setShowAllIngresos(!showAllIngresos)}
-              className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition"
+          <div className="flex items-center gap-2">
+            <select
+              value={ingresosFiltro}
+              onChange={(e) => setIngresosFiltro(e.target.value as any)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
             >
-              {showAllIngresos ? 'Ver menos' : `Ver más (${ingresosHoy.length - INGRESOS_PAGE_SIZE} restantes)`}
+              <option value="hoy">Hoy</option>
+              <option value="mes">Este Mes</option>
+              <option value="ano">Este Año</option>
+            </select>
+            <button
+              onClick={() => {
+                const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
+                exportarReporteIngresos(ingresos, etiquetas[ingresosFiltro]);
+              }}
+              disabled={ingresos.length === 0}
+              className="bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed border border-red-200 dark:border-red-800/50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              PDF
             </button>
-          )}
+            {!isLoadingIngresos && ingresos.length > INGRESOS_PAGE_SIZE && (
+              <button
+                onClick={() => setShowAllIngresos(!showAllIngresos)}
+                className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition px-2"
+              >
+                {showAllIngresos ? 'Ver menos' : `Ver más (${ingresos.length - INGRESOS_PAGE_SIZE} restantes)`}
+              </button>
+            )}
+          </div>
         </div>
 
         {isLoadingIngresos ? (
@@ -633,24 +668,30 @@ export default function Recepcion() {
             <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
             <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
           </div>
-        ) : ingresosHoy.length > 0 ? (
+        ) : ingresos.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
                   <th className="pb-2.5 pr-3 font-medium">Nombre</th>
                   <th className="pb-2.5 pr-3 font-medium">Cédula</th>
+                  <th className="pb-2.5 pr-3 font-medium">Fecha</th>
                   <th className="pb-2.5 pr-3 font-medium">Hora</th>
                   <th className="pb-2.5 font-medium">Motivo</th>
                 </tr>
               </thead>
               <tbody>
-                {(showAllIngresos ? ingresosHoy : ingresosHoy.slice(0, INGRESOS_PAGE_SIZE)).map((i: any, idx: number) => (
+                {(showAllIngresos ? ingresos : ingresos.slice(0, INGRESOS_PAGE_SIZE)).map((i: any, idx: number) => (
                   <tr key={i.id_ingreso || idx} className="border-b border-gray-50 dark:border-gray-700/40 last:border-0">
                     <td className="py-2.5 pr-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
                       {i.Persona?.nombres || ''} {i.Persona?.apellidos || ''}
                     </td>
                     <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{i.Persona?.cedula || '-'}</td>
+                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
+                      {i.fecha_hora_entrada
+                        ? new Date(i.fecha_hora_entrada).toLocaleDateString('es-ES')
+                        : '-'}
+                    </td>
                     <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
                       {i.fecha_hora_entrada
                         ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
@@ -663,7 +704,7 @@ export default function Recepcion() {
             </table>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-6">No se han registrado ingresos hoy.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-6">No se han encontrado ingresos en este periodo.</p>
         )}
       </div>
 

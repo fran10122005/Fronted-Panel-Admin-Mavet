@@ -13,9 +13,9 @@ interface Props {
     fecha: string;
     hora_inicio: string;
     hora_fin: string;
-    horas_totales: number;
-    cupo_minimo: number;
-    cupo_maximo: number;
+    horas_totales: number | string;
+    cupo_minimo: number | string;
+    cupo_maximo: number | string;
     estado: boolean;
   };
   inventario: any[];
@@ -101,9 +101,10 @@ export default function TallerDetailModal({
                 onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={1} />
             </div>
             <div>
-              <label className={labelCls}>Fecha del Taller <span className="text-red-500">*</span></label>
+              <label className={labelCls}>Fecha del Taller</label>
               <input type="date" name="fecha" value={formData.fecha}
-                onChange={onChange} className={inputCls + " show-date-picker"} required />
+                min={new Date().toISOString().split("T")[0]}
+                onChange={onChange} className={inputCls + " show-date-picker"} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -120,9 +121,13 @@ export default function TallerDetailModal({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Horas Totales</label>
+              <label className={labelCls}>
+                Horas Totales
+                <span className="ml-1.5 text-[9px] font-bold text-brand-500 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full tracking-wide">AUTO</span>
+              </label>
               <input type="number" name="horas_totales" value={formData.horas_totales}
-                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={0} />
+                readOnly
+                className={inputCls + " bg-gray-50 dark:bg-gray-800/50 text-brand-600 dark:text-brand-400 font-semibold cursor-not-allowed"} min={0} />
             </div>
             <div>
               <label className={labelCls}>Estado</label>

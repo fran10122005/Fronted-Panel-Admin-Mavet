@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import CalendarGrid from "../../components/CalendarGrid";
+import CalendarGrid, { CalendarGridEvent } from "../../components/CalendarGrid";
 import { 
   Plus, 
   List, 
@@ -202,27 +202,27 @@ const Auditorio: React.FC = () => {
     openModal();
   };
 
-  const handleEventClick = (event: EventoAuditorio) => {
+  const handleEventClick = (event: CalendarGridEvent) => {
     setSelectedEvent({
       id: event.id,
       title: event.title,
       start: event.start,
       end: event.end,
-      allDay: event.allDay,
+      allDay: event.allDay ?? false,
       extendedProps: {
-        organizador: event.extendedProps.organizador,
-        tipoEvento: event.extendedProps.tipoEvento,
-        cedula: event.extendedProps.cedula
+        organizador: event.extendedProps?.organizador || "",
+        tipoEvento: event.extendedProps?.tipoEvento || "",
+        cedula: event.extendedProps?.cedula
       }
     });
-    setCodigoReserva((event as any).extendedProps?.codigo_reserva || event.id || "");
+    setCodigoReserva((event as any).codigo_reserva || event.id || "");
     setEventTitle(event.title);
     setEventDate(event.start?.split("T")[0] || "");
     setHoraInicio((event.start?.split("T")[1]?.substring(0, 5)) || "08:00");
     setHoraFin((event.end?.split("T")[1]?.substring(0, 5)) || "18:00");
-    setOrganizador(event.extendedProps.organizador || "");
-    setCedulaOrganizador(event.extendedProps.cedula || "");
-    setTipoEvento(event.extendedProps.tipoEvento || "Conferencia");
+    setOrganizador(event.extendedProps?.organizador || "");
+    setCedulaOrganizador(event.extendedProps?.cedula || "");
+    setTipoEvento(event.extendedProps?.tipoEvento || "Conferencia");
     openModal();
   };
   
@@ -233,7 +233,7 @@ const Auditorio: React.FC = () => {
     setHoraInicio((ev.start?.split("T")[1]?.substring(0, 5)) || "08:00");
     setHoraFin((ev.end?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(ev.extendedProps.organizador || "");
-    setCedulaOrganizador((ev as any).extendedProps?.cedula || ""); 
+    setCedulaOrganizador(ev.extendedProps?.cedula || ""); 
     setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
     openModal();
   };
@@ -648,6 +648,7 @@ const Auditorio: React.FC = () => {
                 <input
                   required
                   type="date"
+                  min={new Date().toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente}

@@ -187,7 +187,8 @@ export default function SesionesTallerModal({
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 uppercase">Fecha *</label>
                 <input type="date" required value={nuevaFecha} onChange={e => setNuevaFecha(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white" />
+                  min={new Date().toISOString().split("T")[0]}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white show-date-picker" />
               </div>
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 uppercase">Tema Impartido *</label>

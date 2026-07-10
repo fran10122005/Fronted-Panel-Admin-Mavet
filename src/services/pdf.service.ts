@@ -21,32 +21,13 @@ const LOGO_PATH = "/images/logo/mavet2.png";
 const MARGIN = 18;
 
 // ─── Helper: apply opacity via GState ─────────────────────────────────────────
-const G = (doc: jsPDF) => (doc as any).GState as any;
-function setOpacity(doc: jsPDF, opacity: number) {
+const G = (doc: any) => (doc as any).GState as any;
+function setOpacity(doc: any, opacity: number) {
   (doc as any).setGState(new (G(doc))({ opacity }));
 }
 
-// ─── Decorative: page gradient background ─────────────────────────────────────
-// Mimics `aside-gradient` from login: linear-gradient(180deg, rgba(128,0,0,0.15)→transparent)
-function addGradientOverlay(doc: jsPDF) {
-  const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
-  const steps = 20;
-  const stepH = ph / steps;
-  const peakAlpha = 0.16;
-  for (let i = 0; i < steps; i++) {
-    const alpha = peakAlpha * (1 - i / steps);
-    doc.setFillColor(...C.brand);
-    setOpacity(doc, alpha);
-    doc.rect(0, i * stepH, pw, stepH + 1, "F");
-  }
-  setOpacity(doc, 1);
-}
-
-
-
 // ─── Decorative: corner accents ──────────────────────────────────────────────
-function addCornerAccents(doc: jsPDF) {
+function addCornerAccents(doc: any) {
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const s = 10;
@@ -84,7 +65,7 @@ function getLogo(): Promise<string> {
   return logoPromise;
 }
 
-async function addHeader(doc: jsPDF, title: string) {
+async function addHeader(doc: any, title: string) {
   const logo = await getLogo();
   const pw = doc.internal.pageSize.getWidth();
 
@@ -111,32 +92,6 @@ async function addHeader(doc: jsPDF, title: string) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text(title, 42, 24);
-}
-
-function addFooter(doc: jsPDF) {
-  const pc = (doc as any).internal.getNumberOfPages();
-  const pw = doc.internal.pageSize.getWidth();
-  for (let i = 1; i <= pc; i++) {
-    doc.setPage(i);
-    const h = doc.internal.pageSize.getHeight();
-
-    addCornerAccents(doc);
-
-    doc.setDrawColor(...C.gold);
-    doc.setLineWidth(0.4);
-    doc.line(30, h - 25, pw - 30, h - 25);
-
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit", month: "long", year: "numeric",
-    });
-
-    doc.setFontSize(7);
-    doc.setTextColor(...C.textMuted);
-    doc.setFont("helvetica", "normal");
-    doc.text(today, 30, h - 18);
-    doc.text(`Pág. ${i} de ${pc}`, pw / 2, h - 18, { align: "center" });
-    doc.text("Documento de uso interno", pw - 30, h - 18, { align: "right" });
-  }
 }
 
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
@@ -232,6 +187,111 @@ export async function exportarInventarioObras(obras: Obra[]) {
   } catch (e) {
     console.error("[exportarInventarioObras]", e);
     alert("Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.");
+  }
+}
+
+// ─── PDF: Reporte de Ingresos ───────────────────────────────────────────────
+export async function exportarReporteIngresos(ingresos: any[], periodo?: string) {
+  try {
+    if (!ingresos.length) {
+      alert("No hay ingresos para generar el reporte.");
+      return;
+    }
+
+    const { jsPDF } = await import("jspdf");
+    const { applyPlugin } = await import("jspdf-autotable");
+    applyPlugin(jsPDF);
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+    
+    const tituloPeriodo = periodo ? ` (${periodo})` : "";
+    await addHeader(doc, `REPORTE DE INGRESOS${tituloPeriodo}`);
+
+    const tableData = ingresos.map((i: any) => {
+      const nombre = `${i.Persona?.nombres || ''} ${i.Persona?.apellidos || ''}`.trim() || 'Desconocido';
+      const hora = i.fecha_hora_entrada ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-';
+      const fecha = i.fecha_hora_entrada ? new Date(i.fecha_hora_entrada).toLocaleDateString('es-ES') : '-';
+      const motivo = i.Motivo?.descripcion || i.motivo || '-';
+      const acomp = i.cantidad_acompanantes || 0;
+      return [
+        nombre,
+        i.Persona?.cedula || '-',
+        fecha,
+        hora,
+        motivo,
+        acomp.toString()
+      ];
+    });
+
+    (doc as any).autoTable({
+      head: [["Nombre", "Cédula", "Fecha", "Hora", "Motivo", "Acompañantes"]],
+      body: tableData,
+      startY: 44,
+      theme: "grid",
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        lineColor: [220, 220, 220],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [128, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8.5,
+      },
+      alternateRowStyles: {
+        fillColor: [253, 248, 246],
+      },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 40 },
+        5: { cellWidth: 20, halign: "center" },
+      },
+      margin: { left: 18, right: 18 },
+      didDrawPage: (data: any) => {
+        if (data.pageNumber > 1) {
+          doc.setFillColor(...C.brandDark);
+          doc.rect(0, 0, pw, 22, "F");
+          doc.setFillColor(...C.gold);
+          doc.rect(0, 20, pw, 2, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text(`REPORTE DE INGRESOS${tituloPeriodo}`, 18, 13);
+        }
+      },
+    });
+
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    const today = new Date().toLocaleDateString("es-VE", {
+      day: "2-digit", month: "long", year: "numeric",
+    });
+
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      const ph = doc.internal.pageSize.getHeight();
+
+      doc.setDrawColor(...C.gold);
+      doc.setLineWidth(0.4);
+      doc.line(18, ph - 25, pw - 18, ph - 25);
+
+      doc.setFontSize(7);
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "normal");
+      doc.text(today, 18, ph - 18);
+      doc.text(`Pág. ${i} de ${totalPages}`, pw / 2, ph - 18, { align: "center" });
+      doc.text("Documento de uso interno", pw - 18, ph - 18, { align: "right" });
+    }
+
+    doc.save(`MAVET_Ingresos_${new Date().toISOString().split('T')[0]}.pdf`);
+  } catch (e) {
+    console.error("[exportarReporteIngresos]", e);
+    alert("Error al generar el reporte de ingresos.");
   }
 }
 
