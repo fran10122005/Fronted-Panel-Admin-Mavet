@@ -257,7 +257,7 @@ export const auditorioTourSteps: DriveStep[] = [
     popover: {
       title: "Filtro por tipo de evento",
       description:
-        "Seleccione el tipo de evento para filtrar: Conferencia, Exposición, Taller o Reunión. Cada tipo tiene un color distintivo en el calendario.",
+        "Seleccione el tipo de evento para filtrar: Conferencia, Taller o Reunión. Cada tipo tiene un color distintivo en el calendario.",
       side: "bottom",
       align: "center",
     },
@@ -293,7 +293,7 @@ export const auditorioTourSteps: DriveStep[] = [
     popover: {
       title: "Calendario de reservas",
       description:
-        "Navegue entre meses usando las flechas izquierda/derecha o presione 'Hoy' para volver al mes actual. Cada evento se muestra como una burbuja de color: brand para Conferencias, azul para Exposiciones, verde para Talleres y naranja para Reuniones. Haga clic en un evento para ver o editar sus datos.",
+        "Navegue entre meses usando las flechas izquierda/derecha o presione 'Hoy' para volver al mes actual. Cada evento se muestra como una burbuja de color: brand para Conferencias, verde para Talleres y naranja para Reuniones. Haga clic en un evento para ver o editar sus datos.",
       side: "top",
       align: "center",
     },
