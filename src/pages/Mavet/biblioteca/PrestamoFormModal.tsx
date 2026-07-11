@@ -4,16 +4,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
 
-const prestadorSchema = z.object({
+const consultanteSchema = z.object({
   cedula: z.string().min(1, "La cédula del solicitante es obligatoria"),
   nombre: z.string().min(1, "El nombre del solicitante es obligatorio"),
 });
 
-const prestamoSchema = z.object({
-  prestadores: z.array(prestadorSchema).min(1, "Debe haber al menos un prestador"),
+const consultaSchema = z.object({
+  consultantes: z.array(consultanteSchema).min(1, "Debe haber al menos un consultante"),
 });
 
-export type PrestamoFormValues = z.infer<typeof prestamoSchema>;
+export type PrestamoFormValues = z.infer<typeof consultaSchema>;
 
 interface Props {
   isOpen: boolean;
@@ -21,7 +21,7 @@ interface Props {
   selectedLibroTitle: string;
   maxCantidad: number;
   isSubmitting: boolean;
-  onSubmit: (prestadores: { cedula: string; nombre: string }[]) => void;
+  onSubmit: (consultantes: { cedula: string; nombre: string }[]) => void;
   inputCls: string;
 }
 
@@ -39,17 +39,17 @@ export default function PrestamoFormModal({
 
   const { register, handleSubmit, reset, control, formState: { errors } } =
     useForm<PrestamoFormValues>({
-      resolver: zodResolver(prestamoSchema) as any,
-      defaultValues: { prestadores: [] },
+      resolver: zodResolver(consultaSchema) as any,
+      defaultValues: { consultantes: [] },
     });
 
-  const { fields } = useFieldArray({ control, name: "prestadores" });
+  const { fields } = useFieldArray({ control, name: "consultantes" });
 
   useEffect(() => {
     if (isOpen) {
       setCantidad(1);
       setStep(1);
-      reset({ prestadores: [] });
+      reset({ consultantes: [] });
     }
   }, [isOpen, reset]);
 
@@ -57,12 +57,12 @@ export default function PrestamoFormModal({
     const n = Math.max(cantidad, 1);
     if (n > maxCantidad) return;
     const arr = Array.from({ length: n }, () => ({ cedula: "", nombre: "" }));
-    reset({ prestadores: arr });
+    reset({ consultantes: arr });
     setStep(2);
   };
 
   const handleFinalSubmit = (data: PrestamoFormValues) => {
-    onSubmit(data.prestadores);
+    onSubmit(data.consultantes);
   };
 
   const labelCls = "block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300";
@@ -72,7 +72,7 @@ export default function PrestamoFormModal({
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-6">
       <div className="dark:bg-gray-800">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-          Registrar Préstamo
+          Registrar Consulta
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
           Libro:{" "}
@@ -87,7 +87,7 @@ export default function PrestamoFormModal({
           <div className="space-y-4">
             <div>
               <label className={labelCls}>
-                ¿Cuántos ejemplares prestar?
+                ¿Cuántos ejemplares consultar?
               </label>
               <select
                 value={cantidad}
@@ -126,7 +126,7 @@ export default function PrestamoFormModal({
                 className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
               >
                 <p className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-3">
-                  Prestador #{index + 1}
+                  Consultante #{index + 1}
                 </p>
                 <div className="space-y-3">
                   <div>
@@ -134,12 +134,12 @@ export default function PrestamoFormModal({
                     <input
                       type="text"
                       disabled={isSubmitting}
-                      className={`${inputCls} ${errors.prestadores?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
+                      className={`${inputCls} ${errors.consultantes?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
                       placeholder="V-12345678"
-                      {...register(`prestadores.${index}.cedula`)}
+                      {...register(`consultantes.${index}.cedula`)}
                     />
-                    {errors.prestadores?.[index]?.cedula && (
-                      <p className={errorCls}>{errors.prestadores[index]!.cedula!.message}</p>
+                    {errors.consultantes?.[index]?.cedula && (
+                      <p className={errorCls}>{errors.consultantes[index]!.cedula!.message}</p>
                     )}
                   </div>
                   <div>
@@ -147,12 +147,12 @@ export default function PrestamoFormModal({
                     <input
                       type="text"
                       disabled={isSubmitting}
-                      className={`${inputCls} ${errors.prestadores?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50`}
+                      className={`${inputCls} ${errors.consultantes?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50`}
                       placeholder="Ej. María López"
-                      {...register(`prestadores.${index}.nombre`)}
+                      {...register(`consultantes.${index}.nombre`)}
                     />
-                    {errors.prestadores?.[index]?.nombre && (
-                      <p className={errorCls}>{errors.prestadores[index]!.nombre!.message}</p>
+                    {errors.consultantes?.[index]?.nombre && (
+                      <p className={errorCls}>{errors.consultantes[index]!.nombre!.message}</p>
                     )}
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export default function PrestamoFormModal({
                   {isSubmitting ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    `Registrar ${cantidad > 1 ? `${cantidad} Préstamos` : "Préstamo"}`
+                    `Registrar ${cantidad > 1 ? `${cantidad} Consultas` : "Consulta"}`
                   )}
                 </button>
               </div>
