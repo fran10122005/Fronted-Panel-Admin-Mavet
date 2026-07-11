@@ -64,7 +64,7 @@ export default function Talleres() {
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
     handleEliminarInventario,
-    handleOpenPlanificar, handleEliminarPlanificado,
+    formError, handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
     showCrearInstructor,
     nuevaCedula, setNuevaCedula,
@@ -515,6 +515,7 @@ export default function Talleres() {
         instructores={instructores}
         espacios={espacios}
         isSubmitting={isSubmitting}
+        formError={formError}
         onChange={handlePlanificarChange}
         onEstadoChange={handlePlanificarEstadoChange}
         onSubmit={handleSubmitPlanificar}
