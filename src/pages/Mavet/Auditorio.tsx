@@ -428,7 +428,7 @@ const Auditorio: React.FC = () => {
         motivo: eventTitle,
       };
 
-      if (isEditing && selectedEvent) {
+      if (selectedEvent) {
         await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
         toast.success("Reserva actualizada exitosamente");
       } else {
