@@ -15,7 +15,9 @@ import {
   Rol,
   Cargo,
   UsuarioPayload,
-  TrabajadorPayload
+  TrabajadorPayload,
+  ConsultasFiltradasResponse,
+  EstadisticasBiblioteca,
 } from "../types";
 
 export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -276,6 +278,35 @@ export const mavetApi = {
       }));
     } catch {
       return [];
+    }
+  },
+
+  getConsultasFiltradas: async (params: {
+    periodo?: string;
+    fecha_desde?: string;
+    fecha_hasta?: string;
+    id_libro?: string;
+    id_persona?: string;
+    estado?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ConsultasFiltradasResponse> => {
+    try {
+      const res = await axiosInstance.get('/api/biblioteca/consultas-sala/filtradas', { params });
+      return res.data;
+    } catch {
+      return { data: [], meta: { totalItems: 0, totalPages: 1, currentPage: 1 } };
+    }
+  },
+
+  getEstadisticasBiblioteca: async (top: number = 10): Promise<EstadisticasBiblioteca> => {
+    try {
+      const res = await axiosInstance.get('/api/biblioteca/consultas-sala/estadisticas', {
+        params: { top }
+      });
+      return res.data;
+    } catch {
+      return { topLibros: [], totales: { hoy: 0, semana: 0, mes: 0, activas: 0, devueltas: 0 } };
     }
   },
 

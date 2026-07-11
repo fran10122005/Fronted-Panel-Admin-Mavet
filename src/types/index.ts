@@ -220,3 +220,53 @@ export interface TrabajadorPayload {
   fecha_nacimiento?: string;
   fecha_ingreso?: string;
 }
+
+export interface ConsultaSalaFiltrada {
+  id_consulta: string;
+  id_libro: string;
+  id_persona: string | null;
+  id_trabajador: string | null;
+  estado: string;
+  hora_entrega: string;
+  hora_devolucion: string | null;
+  observaciones: string | null;
+  Persona?: {
+    id_persona: string;
+    nombres: string;
+    apellidos: string;
+    cedula: string;
+  };
+  Libro?: {
+    id_libro: string;
+    titulo: string;
+    estante: string;
+  };
+}
+
+export interface ConsultasFiltradasResponse {
+  data: ConsultaSalaFiltrada[];
+  meta: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  } | null;
+}
+
+export interface TopLibroStats {
+  id_libro: string;
+  titulo: string;
+  total_consultas: number;
+}
+
+export interface TotalesEstadisticas {
+  hoy: number;
+  semana: number;
+  mes: number;
+  activas: number;
+  devueltas: number;
+}
+
+export interface EstadisticasBiblioteca {
+  topLibros: TopLibroStats[];
+  totales: TotalesEstadisticas;
+}
