@@ -122,6 +122,19 @@ const Auditorio: React.FC = () => {
     const today = new Date();
     const tzOffset = today.getTimezoneOffset() * 60000;
     const localTodayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    const yearParts = eventDate.split("-");
+    const year = yearParts.length > 0 ? parseInt(yearParts[0]) : 0;
+    if (yearParts.length !== 3 || year < 2000 || year > 2100) {
+      setFormError("El formato de la fecha debe ser DD/MM/AAAA con un año válido.");
+      return;
+    }
+
+    if (eventDate < localTodayStr) {
+      setFormError("El valor debe ser igual o posterior a la fecha actual.");
+      return;
+    }
+
     const isToday = eventDate === localTodayStr;
 
     if (isToday) {
@@ -173,7 +186,13 @@ const Auditorio: React.FC = () => {
       const endFmt = formatTime(overlappingEventEnd);
       setFormError(`El Horario de ${startFmt} a ${endFmt} no esta disponible, Por favor, elige otra hora para tu reserva.`);
     } else {
-      setFormError((prev) => prev.includes("no esta disponible") || prev.includes("ya han pasado en el día de hoy") ? "" : prev);
+      setFormError((prev) => 
+        prev.includes("no esta disponible") || 
+        prev.includes("ya han pasado en el d") || 
+        prev.includes("posterior a la fecha actual") || 
+        prev.includes("formato de la fecha debe ser") 
+        ? "" : prev
+      );
     }
   }, [eventDate, horaInicio, horaFin, events, selectedEvent, isOpen]);
 
@@ -404,7 +423,7 @@ const Auditorio: React.FC = () => {
         nombre_responsable: organizador,
         institucion: tipoFinal,
         fecha_uso: eventDate,
-        hora_inicio: startStr,
+        hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
       };
@@ -733,7 +752,112 @@ const Auditorio: React.FC = () => {
       </div>
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
-        <div className="p-6">
+        { (isGerente || isPastEvent) && selectedEvent ? (
+          <div className="p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header read-only */}
+            <div className="flex items-start justify-between mb-6 pr-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-sm font-serif">
+                  {eventTitle || 'Reserva de Espacio'}
+                </h2>
+                <p className="text-brand-500 dark:text-brand-400 font-semibold text-xs mt-1">
+                  • {organizador || 'Sin organizador'} {cedulaOrganizador ? `(${cedulaOrganizador})` : ''}
+                </p>
+              </div>
+              <button 
+                onClick={closeModal}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                title="Cerrar"
+              >
+                <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tarjeta Estado de Reserva */}
+            <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-xl">
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Estado de la Reserva</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Condición Actual</span>
+                </div>
+              </div>
+              <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold border ${
+                selectedEvent.extendedProps?.estado === 'Realizada' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800/40' :
+                'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800/40'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                {selectedEvent.extendedProps?.estado || 'Pendiente'}
+              </span>
+            </div>
+
+            {/* Grilla de Parámetros */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Código de Reserva</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{codigoReserva || '—'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Fecha del Evento</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{eventDate || '—'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Horario</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{horaInicio} - {horaFin}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Espacio</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{espacios.length > 0 ? espacios[0].nombre_espacio : '—'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tipo de Evento</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{tipoEvento || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors shadow-sm"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6">
           <div className="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4 pr-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
               {selectedEvent ? (isPastEvent ? "Ver Reserva (Solo Lectura)" : "Editar Reserva de Auditorio") : "Nueva Reserva de Auditorio"}
@@ -787,7 +911,6 @@ const Auditorio: React.FC = () => {
                 <input
                   required
                   type="date"
-                  min={new Date().toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente || isPastEvent || isDateLocked}
@@ -987,7 +1110,8 @@ const Auditorio: React.FC = () => {
               )}
             </div>
           </form>
-        </div>
+          </div>
+        )}
       </Modal>
 
       {/* ══════════════════════════════════════════
