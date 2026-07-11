@@ -4,6 +4,7 @@ import { Modal } from "../../components/ui/modal";
 import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
 import { generateNextCode } from "../../utils/codeGenerator";
+import { Pencil, Trash2 } from "lucide-react";
 
 import ComponentCard from "../../components/common/ComponentCard";
 
@@ -52,9 +53,9 @@ export default function Salas() {
     // Generar código automático
     const all = espacios;
     const nextCode = generateNextCode(
-      all.map(e => e.codigo_espacio),
-      "ESP",
-      3
+      all.map(e => e.id_espacio || e.id),
+      "EMU",
+      5
     );
     
     setFormData({ codigo_espacio: nextCode, nombre_espacio: "", capacidad_maxima: "", descripcion: "" });
@@ -65,7 +66,7 @@ export default function Salas() {
     setIsEditing(true);
     setSelectedId(espacio.id_espacio || espacio.id);
     setFormData({
-      codigo_espacio: espacio.codigo_espacio || "",
+      codigo_espacio: espacio.id_espacio || espacio.codigo_espacio || "",
       nombre_espacio: espacio.nombre_espacio || "",
       capacidad_maxima: espacio.capacidad_maxima || "",
       descripcion: espacio.descripcion || ""
@@ -81,6 +82,17 @@ export default function Salas() {
     e.preventDefault();
     if (!formData.nombre_espacio.trim()) {
       toast.error("El nombre del espacio es obligatorio");
+      return;
+    }
+
+    const trimmedName = formData.nombre_espacio.trim();
+    const isDuplicate = espacios.some(e => 
+      e.nombre_espacio.toLowerCase() === trimmedName.toLowerCase() && 
+      (isEditing ? (e.id_espacio || e.id) !== selectedId : true)
+    );
+
+    if (isDuplicate) {
+      toast.error("Ya existe un espacio con ese nombre");
       return;
     }
     
@@ -178,15 +190,17 @@ export default function Salas() {
                     <td className="px-6 py-4 text-right space-x-2 flex justify-end">
                       <button
                         onClick={() => openEditar(esp)}
-                        className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+                        title="Editar"
+                        className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
                       >
-                        Editar
+                        <Pencil className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => setConfirmDelete({ open: true, id: esp.id_espacio || esp.id })}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium ml-3"
+                        title="Eliminar"
+                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium ml-3 transition-colors"
                       >
-                        Eliminar
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>

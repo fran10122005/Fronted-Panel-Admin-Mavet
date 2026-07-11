@@ -901,7 +901,8 @@ export const mavetApi = {
           extendedProps: {
             organizador: orgName,
             tipoEvento: item.institucion || "Conferencia",
-            cedula: p.cedula || item.cedula || ""
+            cedula: p.cedula || item.cedula || "",
+            estado: item.estado || "Pendiente"
           }
         }
       });

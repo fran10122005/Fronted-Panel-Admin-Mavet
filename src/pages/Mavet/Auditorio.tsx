@@ -45,6 +45,7 @@ const Auditorio: React.FC = () => {
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [isPastEvent, setIsPastEvent] = useState(false);
+  const [isDateLocked, setIsDateLocked] = useState(false);
   
   const [codigoReserva, setCodigoReserva] = useState("");
   const [eventTitle, setEventTitle] = useState("");
@@ -114,6 +115,68 @@ const Auditorio: React.FC = () => {
     loadEspacios();
   }, []);
 
+  useEffect(() => {
+    if (!isOpen || !eventDate || !horaInicio || !horaFin) return;
+    if (horaInicio >= horaFin) return;
+
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const localTodayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    const isToday = eventDate === localTodayStr;
+
+    if (isToday) {
+      const currentHour = today.getHours();
+      const currentMinute = today.getMinutes();
+      const [startH, startM] = horaInicio.split(":").map(Number);
+      
+      if (startH < currentHour || (startH === currentHour && startM < currentMinute)) {
+        setFormError("No se pueden reservar horarios que ya han pasado en el día de hoy. Por favor, selecciona una hora futura.");
+        return;
+      }
+    }
+
+    let overlappingEventStart = "";
+    let overlappingEventEnd = "";
+
+    const isOverlapping = events.some(ev => {
+      if (selectedEvent && ev.id === selectedEvent.id) return false;
+      const startParts = ev.start?.split("T") || [];
+      const evDate = startParts[0];
+      
+      if (evDate !== eventDate) return false;
+      
+      const evStart = startParts[startParts.length - 1]?.substring(0, 5);
+      const endParts = ev.end?.split("T") || [];
+      const evEnd = endParts[endParts.length - 1]?.substring(0, 5);
+      
+      if (evStart && evEnd) {
+         if (horaInicio < evEnd && horaFin > evStart) {
+             overlappingEventStart = evStart;
+             overlappingEventEnd = evEnd;
+             return true;
+         }
+      }
+      return false;
+    });
+
+    if (isOverlapping) {
+      const formatTime = (timeStr: string) => {
+        if (!timeStr) return '';
+        let [hoursStr, minutes] = timeStr.split(':');
+        let hours = parseInt(hoursStr, 10);
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12 || 12;
+        return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+      };
+      
+      const startFmt = formatTime(overlappingEventStart);
+      const endFmt = formatTime(overlappingEventEnd);
+      setFormError(`El Horario de ${startFmt} a ${endFmt} no esta disponible, Por favor, elige otra hora para tu reserva.`);
+    } else {
+      setFormError((prev) => prev.includes("no esta disponible") || prev.includes("ya han pasado en el día de hoy") ? "" : prev);
+    }
+  }, [eventDate, horaInicio, horaFin, events, selectedEvent, isOpen]);
+
   const filteredEvents = useMemo(() => {
     return events.filter(ev => {
       const matchTipo = filterTipo === "Todos" || ev.extendedProps.tipoEvento === filterTipo;
@@ -121,7 +184,7 @@ const Auditorio: React.FC = () => {
         ev.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase());
       return matchTipo && matchSearch;
-    });
+    }).sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
   }, [events, filterTipo, searchTerm]);
 
   const handleCedulaBlur = async () => {
@@ -188,12 +251,27 @@ const Auditorio: React.FC = () => {
 
   const handleDateSelect = (dateStr: string) => {
     if (isGerente) return;
-    resetModalFields();
+    
+    const selectedDate = new Date(`${dateStr}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      toast.warning("No se puede crear una nueva reserva en fechas pasadas.");
+      return;
+    }
 
+    if (selectedDate.getMonth() !== today.getMonth() || selectedDate.getFullYear() !== today.getFullYear()) {
+      toast.warning("Las reservas solo están permitidas para el mes en curso.");
+      return;
+    }
+    
+    resetModalFields();
+    
     const nextCode = generateNextCode(
       events.map(e => e.codigo_reserva),
       "RES",
-      3
+      5
     );
     setCodigoReserva(nextCode);
 
@@ -201,6 +279,7 @@ const Auditorio: React.FC = () => {
     setHoraInicio("08:00");
     setHoraFin("18:00");
     setIsPastEvent(false);
+    setIsDateLocked(true); // Bloquear fecha si se seleccionó del calendario
     openModal();
   };
 
@@ -214,7 +293,8 @@ const Auditorio: React.FC = () => {
       extendedProps: {
         organizador: event.extendedProps?.organizador || "",
         tipoEvento: event.extendedProps?.tipoEvento || "",
-        cedula: event.extendedProps?.cedula
+        cedula: event.extendedProps?.cedula,
+        estado: event.extendedProps?.estado || "Pendiente"
       }
     });
     setCodigoReserva((event as any).codigo_reserva || event.id || "");
@@ -228,7 +308,8 @@ const Auditorio: React.FC = () => {
     // Bloquear edición si la fecha ya pasó
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((event.start?.split("T")[0] || "") + "T00:00:00");
-    setIsPastEvent(evDate < today);
+    setIsPastEvent(evDate < today || event.extendedProps?.estado === 'Realizada');
+    setIsDateLocked(true); // Bloquear fecha también al editar desde calendario
     openModal();
   };
   
@@ -243,7 +324,7 @@ const Auditorio: React.FC = () => {
     setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
-    setIsPastEvent(evDate < today);
+    setIsPastEvent(evDate < today || ev.extendedProps?.estado === 'Realizada');
     openModal();
   };
 
@@ -281,6 +362,23 @@ const Auditorio: React.FC = () => {
       return;
     }
 
+    if (selectedDate.getMonth() !== today.getMonth() || selectedDate.getFullYear() !== today.getFullYear()) {
+      setFormError("Las reservas solo están permitidas para el mes en curso.");
+      return;
+    }
+
+    if (selectedDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const [startHour, startMinute] = horaInicio.split(":").map(Number);
+      
+      if (startHour < currentHour || (startHour === currentHour && startMinute < currentMinute)) {
+        setFormError("No puedes hacer reservas en horas que ya han pasado el día de hoy.");
+        return;
+      }
+    }
+
     if (!cedulaOrganizador || !organizador) {
       setFormError("Debe buscar y seleccionar un organizador válido.");
       return;
@@ -291,26 +389,8 @@ const Auditorio: React.FC = () => {
       return;
     }
 
-    // Verificación de superposición de horarios (overlap)
-    const isOverlapping = events.some(ev => {
-      // Ignorar el evento actual si estamos editando
-      if (selectedEvent && ev.id === selectedEvent.id) return false;
-      
-      const evDate = ev.start?.split("T")[0];
-      if (evDate !== eventDate) return false;
-
-      const evStart = ev.start?.split("T")[1]?.substring(0, 5);
-      const evEnd = ev.end?.split("T")[1]?.substring(0, 5);
-      
-      if (evStart && evEnd) {
-         return horaInicio < evEnd && horaFin > evStart;
-      }
-      return false;
-    });
-
-    if (isOverlapping) {
-      setFormError("Ya existe una reserva en el auditorio para este horario. Por favor, elija otro bloque de horas.");
-      return;
+    if (formError.includes("no esta disponible") || formError.includes("ya han pasado en el día de hoy")) {
+      return; // Prevenir guardado si hay solapamiento o fecha pasada detectado por useEffect
     }
 
     try {
@@ -324,27 +404,28 @@ const Auditorio: React.FC = () => {
         nombre_responsable: organizador,
         institucion: tipoFinal,
         fecha_uso: eventDate,
-        hora_inicio: horaInicio + ":00",
+        hora_inicio: startStr,
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
-        estado: "Aprobada"
       };
 
-      if (selectedEvent) {
+      if (isEditing && selectedEvent) {
         await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
+        toast.success("Reserva actualizada exitosamente");
       } else {
         await mavetApi.registrarReservaAuditorio(payload);
+        toast.success("Reserva creada exitosamente");
       }
       
       const data = await mavetApi.getEventos();
       setEvents(data);
-      closeModal();
-      resetModalFields();
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Error al guardar la reserva";
       toast.error(msg);
     } finally {
       setSaving(false);
+      closeModal();
+      resetModalFields();
     }
   };
 
@@ -387,9 +468,18 @@ const Auditorio: React.FC = () => {
     setOrganizadorAuto(false);
     setTipoEvento("Conferencia");
     setCustomTipoEvento("");
+    
+    const nextCode = generateNextCode(
+      events.map(e => e.codigo_reserva),
+      "RES",
+      5
+    );
+    setCodigoReserva(nextCode);
+    
     setSelectedEvent(null);
     setFormError("");
     setIsPastEvent(false);
+    setIsDateLocked(false);
   };
 
   const getColorClass = (tipo: string) => {
@@ -457,7 +547,6 @@ const Auditorio: React.FC = () => {
               <option value="Todos">Todos los tipos</option>
               <option value="Conferencia">Conferencia</option>
               <option value="Exposición">Exposición</option>
-              <option value="Taller">Taller / Curso</option>
               <option value="Reunión">Reunión Interna</option>
             </select>
           </div>
@@ -505,7 +594,7 @@ const Auditorio: React.FC = () => {
                 const nextCode = generateNextCode(
                   events.map(e => e.codigo_reserva),
                   "RES",
-                  3
+                  5
                 );
                 setCodigoReserva(nextCode);
                 openModal();
@@ -557,7 +646,7 @@ const Auditorio: React.FC = () => {
                   const nextCode = generateNextCode(
                     events.map(e => e.codigo_reserva),
                     "RES",
-                    3
+                    5
                   );
                   setCodigoReserva(nextCode);
                   openModal();
@@ -571,20 +660,35 @@ const Auditorio: React.FC = () => {
                 return (
                   <div key={ev.id} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-theme-md hover:-translate-y-1">
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
-                        {ev.extendedProps.tipoEvento || "Conferencia"}
+                      <div className="flex gap-2">
+                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
+                          {ev.extendedProps.tipoEvento || "Conferencia"}
+                        </div>
+                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${
+                          ev.extendedProps?.estado === 'Realizada' 
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50' 
+                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50'
+                        }`}>
+                          {ev.extendedProps?.estado || "Pendiente"}
+                        </div>
                       </div>
                       {!isGerente && (() => {
                         const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
                         const t = new Date(); t.setHours(0, 0, 0, 0);
-                        return d >= t;
-                      })() && (
-                        <div className="flex gap-1.5">
-                          <button onClick={() => handleEditFromList(ev)} className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors" title="Editar evento">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
+                        const isPast = d < t || ev.extendedProps?.estado === 'Realizada';
+                        return (
+                          <div className="flex gap-1.5">
+                            <button 
+                              onClick={() => !isPast && handleEditFromList(ev)} 
+                              disabled={isPast}
+                              className={`p-1.5 transition-colors ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500'}`} 
+                              title={isPast ? "No se puede editar evento histórico" : "Editar evento"}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                     
                     <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-1">{ev.title}</h3>
@@ -626,10 +730,21 @@ const Auditorio: React.FC = () => {
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
         <div className="p-6">
-          <div className="mb-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+          <div className="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4 pr-8">
             <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
               {selectedEvent ? (isPastEvent ? "Ver Reserva (Solo Lectura)" : "Editar Reserva de Auditorio") : "Nueva Reserva de Auditorio"}
             </h3>
+            {selectedEvent && (
+              <div className="mt-2 flex">
+                <span className={`px-3 py-1 inline-flex rounded-full text-xs font-bold border ${
+                  selectedEvent.extendedProps?.estado === 'Realizada' 
+                    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50' 
+                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50'
+                }`}>
+                  {selectedEvent.extendedProps?.estado || 'Pendiente'}
+                </span>
+              </div>
+            )}
           </div>
           {isPastEvent && (
             <div className="mb-4 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 p-3 rounded-lg border border-amber-200 dark:border-amber-900/30 text-sm">
@@ -671,8 +786,8 @@ const Auditorio: React.FC = () => {
                   min={new Date().toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  disabled={isGerente || isPastEvent}
-                  className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
+                  disabled={isGerente || isPastEvent || isDateLocked}
+                  className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -708,7 +823,6 @@ const Auditorio: React.FC = () => {
                   >
                     <option value="Conferencia">Conferencia</option>
                     <option value="Exposición">Exposición</option>
-                    <option value="Taller">Taller / Curso</option>
                     <option value="Reunión">Reunión Interna</option>
                     <option value="other">Otros (especificar)...</option>
                   </select>
@@ -769,8 +883,8 @@ const Auditorio: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleCedulaBlur}
-                        disabled={isGerente || organizadorLoading || !cedulaOrganizador}
-                        className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
+                        disabled={isGerente || organizadorLoading || !cedulaOrganizador || isPastEvent}
+                        className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Search className="w-5 h-5" />
                         <span className="hidden sm:inline">Buscar</span>
@@ -810,7 +924,7 @@ const Auditorio: React.FC = () => {
               </div>
             </div>
 
-            {formError && (
+            {formError && !isPastEvent && (
               <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{formError}</p>
@@ -818,7 +932,7 @@ const Auditorio: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-              {isGerente || isPastEvent ? (
+              {isGerente ? (
                 <div className="flex items-center justify-end w-full">
                   <button
                     type="button"
@@ -834,8 +948,13 @@ const Auditorio: React.FC = () => {
                     {selectedEvent && (
                       <button 
                         onClick={handleDeleteEvent}
-                        className="text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 dark:border-red-900/50 dark:hover:bg-red-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                        title="Eliminar evento"
+                        disabled={isPastEvent}
+                        className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                          isPastEvent 
+                            ? 'text-gray-400 bg-gray-100 border-transparent cursor-not-allowed opacity-60 dark:bg-gray-800 dark:text-gray-500' 
+                            : 'text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 dark:border-red-900/50 dark:hover:bg-red-600'
+                        }`}
+                        title={isPastEvent ? "No se puede eliminar evento histórico" : "Eliminar evento"}
                         type="button"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -853,7 +972,8 @@ const Auditorio: React.FC = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={saving || !isFormValid}
+                      disabled={saving || !isFormValid || isPastEvent || !!formError}
+                      title={isPastEvent ? "No se puede editar evento histórico" : ""}
                       className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
