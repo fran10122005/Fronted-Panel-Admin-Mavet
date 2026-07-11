@@ -122,6 +122,19 @@ const Auditorio: React.FC = () => {
     const today = new Date();
     const tzOffset = today.getTimezoneOffset() * 60000;
     const localTodayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    const yearParts = eventDate.split("-");
+    const year = yearParts.length > 0 ? parseInt(yearParts[0]) : 0;
+    if (yearParts.length !== 3 || year < 2000 || year > 2100) {
+      setFormError("El formato de la fecha debe ser DD/MM/AAAA con un año válido.");
+      return;
+    }
+
+    if (eventDate < localTodayStr) {
+      setFormError("El valor debe ser igual o posterior a la fecha actual.");
+      return;
+    }
+
     const isToday = eventDate === localTodayStr;
 
     if (isToday) {
@@ -173,7 +186,13 @@ const Auditorio: React.FC = () => {
       const endFmt = formatTime(overlappingEventEnd);
       setFormError(`El Horario de ${startFmt} a ${endFmt} no esta disponible, Por favor, elige otra hora para tu reserva.`);
     } else {
-      setFormError((prev) => prev.includes("no esta disponible") || prev.includes("ya han pasado en el día de hoy") ? "" : prev);
+      setFormError((prev) => 
+        prev.includes("no esta disponible") || 
+        prev.includes("ya han pasado en el d") || 
+        prev.includes("posterior a la fecha actual") || 
+        prev.includes("formato de la fecha debe ser") 
+        ? "" : prev
+      );
     }
   }, [eventDate, horaInicio, horaFin, events, selectedEvent, isOpen]);
 
@@ -813,7 +832,7 @@ const Auditorio: React.FC = () => {
                 </div>
                 <div>
                   <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Espacio</span>
-                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{espacios.find(e => (e.id_espacio || e.id) === espacioId)?.nombre_espacio || '—'}</span>
+                  <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{espacios.length > 0 ? espacios[0].nombre_espacio : '—'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -892,7 +911,6 @@ const Auditorio: React.FC = () => {
                 <input
                   required
                   type="date"
-                  min={new Date().toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente || isPastEvent || isDateLocked}
