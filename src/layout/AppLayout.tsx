@@ -3,12 +3,14 @@ import { Outlet } from "react-router";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
+import { TourProvider } from "../context/TourContext";
+import WelcomeTourModal from "../components/WelcomeTourModal";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
   return (
-    <div className="min-h-screen xl:flex bg-[#fafafa] dark:bg-[#0c0e17] text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="min-h-screen xl:flex bg-gray-50 dark:bg-[#0c0e17] text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <div>
         <AppSidebar />
         <Backdrop />
@@ -23,6 +25,7 @@ const LayoutContent: React.FC = () => {
           <Outlet />
         </div>
       </div>
+      <WelcomeTourModal />
     </div>
   );
 };
@@ -30,7 +33,9 @@ const LayoutContent: React.FC = () => {
 const AppLayout: React.FC = () => {
   return (
     <SidebarProvider>
-      <LayoutContent />
+      <TourProvider>
+        <LayoutContent />
+      </TourProvider>
     </SidebarProvider>
   );
 };

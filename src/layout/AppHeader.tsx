@@ -3,6 +3,7 @@ import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
 import UserDropdown from "../components/header/UserDropdown";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
+import TourFab from "../components/TourFab";
 
 const AppHeader: React.FC = () => {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ const AppHeader: React.FC = () => {
 
         <div className="flex items-center gap-2 2xsm:gap-3">
           <ThemeToggleButton />
+          <TourFab />
           {isSuper && (
             <Link
               to="/papelera"

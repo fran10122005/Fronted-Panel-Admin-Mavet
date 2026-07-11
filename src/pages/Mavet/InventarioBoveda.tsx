@@ -465,6 +465,7 @@ export default function InventarioBoveda() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
+            data-tour="exportar-pdf"
             onClick={() => {
               if (obras.length === 0) return;
               exportarInventarioObras(filteredObras);
@@ -478,6 +479,7 @@ export default function InventarioBoveda() {
           {canEditObra && (
             <>
               <button
+                data-tour="agregar-artista"
                 onClick={() => handleArtistFormOpen()}
                 className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
               >
@@ -486,6 +488,7 @@ export default function InventarioBoveda() {
                 <span className="sm:hidden">Artista</span>
               </button>
               <button 
+                data-tour="agregar-nueva-obra"
                 onClick={handleOpenAdd}
                 className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
               >
@@ -507,6 +510,7 @@ export default function InventarioBoveda() {
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
             <input
+              data-tour="buscador-obras"
               type="text"
               placeholder="Buscar por código, título o autor..."
               value={searchTerm}
@@ -517,6 +521,7 @@ export default function InventarioBoveda() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
             <select
+              data-tour="filtro-estado"
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
               className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"

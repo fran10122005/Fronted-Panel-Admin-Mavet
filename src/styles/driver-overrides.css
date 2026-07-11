@@ -1,0 +1,142 @@
+.driver-popover {
+  background-color: #ffffff !important;
+  border: 1px solid #ebdcdc !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+  font-family: "Playfair Display", serif !important;
+  max-width: 380px !important;
+}
+
+.dark .driver-popover {
+  background: linear-gradient(145deg, #161c27 0%, #0e1119 100%) !important;
+  border-color: #202635 !important;
+  color: #fcf9fa !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.driver-popover-title {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: #800000 !important;
+  font-family: "Playfair Display", serif !important;
+  padding-bottom: 0.25rem !important;
+}
+
+.dark .driver-popover-title {
+  color: #ff4d6d !important;
+}
+
+.driver-popover-description {
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  color: #6f5f5f !important;
+}
+
+.dark .driver-popover-description {
+  color: #dac7ca !important;
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn {
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  padding: 0.5rem 1rem !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.driver-popover-next-btn {
+  background-color: #800000 !important;
+  border-color: #800000 !important;
+  color: #ffffff !important;
+}
+
+.driver-popover-next-btn:hover {
+  background-color: #700000 !important;
+  border-color: #700000 !important;
+}
+
+.dark .driver-popover-next-btn {
+  background-color: #600000 !important;
+  border-color: #600000 !important;
+}
+
+.dark .driver-popover-next-btn:hover {
+  background-color: #800000 !important;
+}
+
+.driver-popover-prev-btn {
+  color: #800000 !important;
+  background: transparent !important;
+  border-color: #ebdcdc !important;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: #faf0f0 !important;
+}
+
+.dark .driver-popover-prev-btn {
+  color: #dac7ca !important;
+  border-color: #202635 !important;
+}
+
+.dark .driver-popover-prev-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem !important;
+  color: #a99999 !important;
+}
+
+.dark .driver-popover-progress-text {
+  color: #6f5f5f !important;
+}
+
+.driver-popover-close-btn {
+  color: #a99999 !important;
+  font-size: 1.25rem !important;
+  transition: color 0.2s ease !important;
+}
+
+.driver-popover-close-btn:hover {
+  color: #6f5f5f !important;
+}
+
+.dark .driver-popover-close-btn {
+  color: #6f5f5f !important;
+}
+
+.dark .driver-popover-close-btn:hover {
+  color: #dac7ca !important;
+}
+
+.driver-overlay {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.driver-stage-no-interaction {
+  pointer-events: none !important;
+}
+
+.driver-active-element {
+  outline: 4px solid #800000 !important;
+  outline-offset: 4px !important;
+  animation: driver-pulse 1.5s ease-in-out infinite !important;
+}
+
+.dark .driver-active-element {
+  outline-color: #b91c1c !important;
+}
+
+@keyframes driver-pulse {
+  0%, 100% {
+    outline-width: 4px;
+    outline-offset: 4px;
+  }
+  50% {
+    outline-width: 7px;
+    outline-offset: 6px;
+  }
+}

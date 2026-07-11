@@ -442,6 +442,7 @@ const Auditorio: React.FC = () => {
                 <Search className="h-4 w-4 text-gray-400" />
               </span>
               <input
+                data-tour="buscador-eventos"
                 type="text"
                 placeholder="Buscar evento..."
                 value={searchTerm}
@@ -450,6 +451,7 @@ const Auditorio: React.FC = () => {
               />
             </div>
             <select
+              data-tour="filtro-tipo"
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
               className="py-2 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
@@ -463,6 +465,7 @@ const Auditorio: React.FC = () => {
           </div>
 
           <button 
+            data-tour="exportar-pdf"
             onClick={() => {
               if (events.length === 0) return;
               exportarHistorialEventos(events);
@@ -500,6 +503,7 @@ const Auditorio: React.FC = () => {
           
           {!isGerente && (
             <button
+              data-tour="nueva-reserva"
               onClick={() => {
                 resetModalFields();
                 const nextCode = generateNextCode(

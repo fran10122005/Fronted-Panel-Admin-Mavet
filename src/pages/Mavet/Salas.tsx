@@ -130,6 +130,7 @@ export default function Salas() {
         desc="Administración de los espacios disponibles en el museo."
         action={
           <button
+            data-tour="nuevo-espacio"
             onClick={openCrear}
             className="bg-brand-600 text-white hover:bg-brand-700 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
           >
