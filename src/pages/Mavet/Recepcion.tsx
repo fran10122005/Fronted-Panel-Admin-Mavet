@@ -28,8 +28,6 @@ export default function Recepcion() {
   const [motivos, setMotivos] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [time, setTime] = useState(new Date().toLocaleTimeString());
-
   // Dashboard state
   const [eventosHoy, setEventosHoy] = useState<any[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
@@ -62,11 +60,7 @@ export default function Recepcion() {
   };
 
   const ageMenor = getAge(menorData.fecha_nacimiento);
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const age = getAge(formData.fecha_nacimiento);
 
   useEffect(() => {
     const fetchMotivos = async () => {
@@ -429,18 +423,23 @@ export default function Recepcion() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
+                  <input type="date" name="fecha_nacimiento" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula {formData.fecha_nacimiento && age >= 9 ? "*" : "(Bloqueado - < 9 años)"}</label>
                   <div className="flex">
                     <select
                       name="nacionalidad"
                       value={formData.nacionalidad}
                       onChange={handleChange}
-                      className="border rounded-l-lg px-2 py-2 bg-gray-50 dark:bg-gray-600 dark:border-gray-600 focus:outline-none dark:text-white"
+                      disabled={formData.fecha_nacimiento !== "" && age < 9}
+                      className="border rounded-l-lg px-2 py-2 bg-gray-50 dark:bg-gray-600 dark:border-gray-600 focus:outline-none dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="V-">V-</option>
                       <option value="E-">E-</option>
                     </select>
-                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} className="w-full border-y border-r rounded-r-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. 31.243.332" />
+                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} disabled={formData.fecha_nacimiento !== "" && age < 9} className="w-full border-y border-r rounded-r-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Ej. 31.243.332" />
                   </div>
                 </div>
                 <div>
@@ -450,10 +449,6 @@ export default function Recepcion() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos *</label>
                   <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. Silva" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fecha_nacimiento" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
@@ -531,11 +526,7 @@ export default function Recepcion() {
                 </div>
               )}
 
-              <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400 font-mono text-sm tracking-wider flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                  {time}
-                </span>
+              <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center">
                 <div className="flex gap-3">
                   <button 
                     type="button" 
