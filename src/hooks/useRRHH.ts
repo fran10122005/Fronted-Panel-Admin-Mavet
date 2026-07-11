@@ -99,11 +99,11 @@ export function useRRHH() {
     setResumenSemanal(data);
   };
 
-  const handleUpdateObservaciones = async (id: string, observaciones: string) => {
+  const handleUpdateObservaciones = async (id: string, observaciones: string, horas_justificadas: number) => {
     try {
-      await mavetApi.updateAsistenciaObservaciones(id, observaciones);
+      await mavetApi.updateAsistenciaObservaciones(id, observaciones, horas_justificadas);
       setAsistencias((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, observaciones } : a))
+        prev.map((a) => (a.id === id ? { ...a, observaciones, horas_justificadas } : a))
       );
       setResumenSemanal((prev) =>
         prev.map((r) => ({
@@ -112,7 +112,7 @@ export function useRRHH() {
             ? observaciones
             : r.observaciones,
           dias: r.dias.map((d) =>
-            d.id === id ? { ...d, observaciones } : d
+            d.id === id ? { ...d, observaciones, horas_justificadas } : d
           ),
         }))
       );
@@ -366,7 +366,8 @@ export function useRRHH() {
   const filteredUsuarios = useMemo(() =>
     usuarios.filter((u) =>
       u.correo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase())
+      (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (u.trabajador?.cedula || "").toLowerCase().includes(debouncedSearch.toLowerCase().replace(/^[VEve]-/, ''))
     ), [usuarios, debouncedSearch]);
 
   return {

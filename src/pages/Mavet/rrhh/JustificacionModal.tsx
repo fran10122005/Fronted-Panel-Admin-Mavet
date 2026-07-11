@@ -6,28 +6,40 @@ import toast from "react-hot-toast";
 interface Props {
   trabajador: ResumenSemanalTrabajador | null;
   onClose: () => void;
-  onSave: (idDia: string, texto: string) => Promise<void>;
+  onSave: (idDia: string, texto: string, horas_justificadas: number) => Promise<void>;
 }
 
 export default function JustificacionModal({ trabajador: t, onClose, onSave }: Props) {
+  // Extraer horas previas si existen
+  const existingHoras = t?.dias.find(d => d.horas_justificadas)?.horas_justificadas || 0;
+  const initialHoras = Math.floor(existingHoras);
+  const initialMinutos = Math.round((existingHoras - initialHoras) * 60);
+
   const [texto, setTexto] = useState(t?.observaciones ?? "");
+  const [horas, setHoras] = useState(initialHoras > 0 ? initialHoras.toString() : "");
+  const [minutos, setMinutos] = useState(initialMinutos > 0 ? initialMinutos.toString() : "");
   const [guardando, setGuardando] = useState(false);
 
   if (!t) return null;
 
   const handleGuardar = async () => {
-    if (!texto.trim()) {
-      toast.error("Escribe una justificación antes de guardar");
+    const h = parseInt(horas || "0", 10);
+    const m = parseInt(minutos || "0", 10);
+    const totalHoras = h + (m / 60);
+
+    if (!texto.trim() || totalHoras <= 0 || totalHoras >= 24) {
+      toast.error("Por favor completa la justificación y una cantidad de horas válida (mayor a 0 y menor a 24)");
       return;
     }
+
     setGuardando(true);
     try {
       for (const dia of t.dias) {
-        if (dia.observaciones !== texto.trim()) {
-          await onSave(dia.id, texto.trim());
+        if (dia.observaciones !== texto.trim() || dia.horas_justificadas !== totalHoras) {
+          await onSave(dia.id, texto.trim(), totalHoras);
         }
       }
-      toast.success("Justificación guardada para todos los días de la semana");
+      toast.success("Justificación guardada correctamente");
       onClose();
     } catch {
       toast.error("Error al guardar justificación");
@@ -157,18 +169,51 @@ export default function JustificacionModal({ trabajador: t, onClose, onSave }: P
             </div>
           </div>
 
-          {/* Textarea de justificación */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              Justificación
-            </label>
-            <textarea
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              rows={3}
-              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-4 py-3 text-sm focus:border-brand-500 focus:outline-none resize-none"
-              placeholder="Describe el motivo por el cual el trabajador no completó sus horas semanales..."
-            />
+          {/* Textarea y campos de horas */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Horas <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={horas}
+                  onChange={(e) => setHoras(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-4 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Minutos <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={minutos}
+                  onChange={(e) => setMinutos(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-4 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                Justificación <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-4 py-3 text-sm focus:border-brand-500 focus:outline-none resize-none"
+                placeholder="Describe el motivo por el cual el trabajador no completó sus horas semanales..."
+              />
+            </div>
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
               Esta justificación se aplicará a todos los días de la semana del trabajador.
             </p>

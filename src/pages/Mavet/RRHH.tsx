@@ -31,6 +31,34 @@ export default function RRHH() {
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
   const isGerente = userRole === "Gerente";
 
+  const getRoleBadgeStyle = (rolName: string) => {
+    switch (rolName.toLowerCase()) {
+      case "administrador":
+      case "admin":
+        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50";
+      case "gerente":
+        return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50";
+      case "curador":
+        return "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800/50";
+      case "educador":
+      case "educacion":
+      case "educación":
+      case "guía":
+      case "guia":
+        return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800/50";
+      case "bibliotecario":
+      case "bibliotecaria":
+        return "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-400 dark:border-teal-800/50";
+      case "recepcionista":
+        return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50";
+      case "usuario":
+      case "empleado":
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700";
+    }
+  };
+
   const {
     trabajadores, cargos, roles,
     isLoading, activeTab, setActiveTab,
@@ -130,7 +158,7 @@ export default function RRHH() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto flex-1">
+            <div className="overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {activeTab === "trabajadores" && (
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -195,6 +223,7 @@ export default function RRHH() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
+                      <th className="px-3 py-2 w-10"></th>
                       <th className="px-5 py-2">Usuario (Correo)</th>
                       <th className="px-5 py-2">Trabajador Vinculado</th>
                       <th className="px-5 py-2">Cargo</th>
@@ -205,29 +234,42 @@ export default function RRHH() {
                   </thead>
                   <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredUsuarios.length === 0 ? (
-                      <tr><td colSpan={6} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron usuarios</p></td></tr>
+                      <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron usuarios</p></td></tr>
                     ) : filteredUsuarios.map((u) => (
                       <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="px-3 py-2">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 text-[10px] font-bold text-gray-500">
+                            {(u as any).foto_url ? (
+                              <img src={(u as any).foto_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                               (u.trabajador?.nombre && (u.trabajador as any)?.apellidos) 
+                               ? `${u.trabajador.nombre.charAt(0)}${(u.trabajador as any).apellidos.charAt(0)}`.toUpperCase() 
+                               : "UM"
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-2 font-semibold text-brand-700 dark:text-brand-400">{u.correo}</td>
-                        <td className="px-5 py-2 font-medium">{u.trabajador ? `${u.trabajador.nombre}` : <span className="text-gray-400 italic">No vinculado</span>}</td>
+                        <td className="px-5 py-2 font-semibold">{u.trabajador ? `${u.trabajador.nombre}` : <span className="text-gray-400 italic">No vinculado</span>}</td>
                         <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{u.trabajador ? u.trabajador.cargo : "—"}</td>
                         <td className="px-5 py-2 text-center">
-                          <span className="inline-block px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-xs border border-blue-200">{u.rol}</span>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeStyle(u.rol)}`}>
+                            {u.rol}
+                          </span>
                         </td>
                         <td className="px-5 py-2 text-center">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${u.estado === true ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.estado === true ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400"}`}>
                             {u.estado === true ? "Activo" : "Inactivo"}
                           </span>
                         </td>
                         <td className="px-5 py-2 text-center">
                            <div className="flex items-center justify-center gap-1.5">
-                             <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                               <IconEdit /> Editar
+                             <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                               <IconEdit />
                              </button>
-                             <button onClick={() => handleResetPassword(u.id, u.correo)} title="Enviar correo de restablecimiento de contraseña" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                               Resetear
+                             <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                              </button>
-                             <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors">
+                             <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                              </button>
                            </div>
@@ -248,7 +290,7 @@ export default function RRHH() {
                         Resumen Semanal
                         <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">({resumenSemanal.length} trabajadores)</span>
                       </summary>
-                      <div className="mt-3 overflow-x-auto">
+                      <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
@@ -341,17 +383,9 @@ export default function RRHH() {
                           </td>
                           <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
                           <td className="px-4 py-2 max-w-[160px]">
-                            <input
-                              type="text"
-                              key={a.observaciones ?? ""}
-                              defaultValue={a.observaciones || ""}
-                              onBlur={(e) => {
-                                const val = e.target.value.trim();
-                                if (val !== (a.observaciones || "")) handleUpdateObservaciones(a.id, val);
-                              }}
-                              className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-brand-500 focus:outline-none text-xs px-1 py-0.5 dark:text-gray-300"
-                              placeholder="—"
-                            />
+                            <span className="text-xs text-gray-500 dark:text-gray-400 block truncate" title={a.observaciones || ""}>
+                              {a.observaciones || "—"}
+                            </span>
                           </td>
                         </tr>
                       ))}

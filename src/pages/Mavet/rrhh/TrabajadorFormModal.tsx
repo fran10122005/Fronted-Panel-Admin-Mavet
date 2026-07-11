@@ -5,19 +5,39 @@ import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
 import { Cargo } from "../../../types";
 import { limitNumericInput } from "../../../utils/validation";
+import flatpickr from "flatpickr";
+import { Spanish } from "flatpickr/dist/l10n/es.js";
 
 const trabajadorSchema = z.object({
   cedula: z.string().min(1, "La cédula es obligatoria"),
   nombres: z.string().min(1, "Los nombres son obligatorios"),
   apellidos: z.string().min(1, "Los apellidos son obligatorios"),
-  telefono: z.string().optional(),
-  correo_personal: z.string().email("Debe ser un correo válido").optional().or(z.literal('')),
+  telefono: z.string().min(1, "El teléfono es obligatorio"),
+  correo_personal: z.string().min(1, "El correo es obligatorio").email("Debe ser un correo válido"),
   id_cargo: z.string().min(1, "El cargo es obligatorio"),
-  horas_semanales: z.preprocess((val) => Number(val), z.number().min(0, "Mínimo 0 horas").optional()),
-  estado: z.enum(["Activo", "Inactivo"]).optional(),
-  fecha_nacimiento: z.string().optional(),
-  direccion: z.string().optional(),
-  fecha_ingreso: z.string().optional(),
+  horas_semanales: z.preprocess((val) => val === "" || val === undefined ? undefined : Number(val), z.number({ required_error: "Las horas son obligatorias" }).min(5, "Mínimo 5 horas")),
+  estado: z.enum(["Activo", "Inactivo"], { required_error: "El estado es obligatorio" }),
+  fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria").regex(/^\d{2}\/\d{2}\/\d{4}$/, "Formato debe ser DD/MM/AAAA").refine(val => {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return true;
+    const [d, m, y] = val.split('/');
+    const birthDate = new Date(Number(y), Number(m) - 1, Number(d));
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const mDiff = today.getMonth() - birthDate.getMonth();
+    if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 18 && age <= 80;
+  }, "El trabajador debe tener entre 18 y 80 años"),
+  direccion: z.string().min(1, "La dirección es obligatoria"),
+  fecha_ingreso: z.string().min(1, "La fecha de ingreso es obligatoria").regex(/^\d{2}\/\d{2}\/\d{4}$/, "Formato debe ser DD/MM/AAAA").refine(val => {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return true;
+    const [d, m, y] = val.split('/');
+    const inputDate = new Date(Number(y), Number(m) - 1, Number(d));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return inputDate <= today;
+  }, "La fecha no puede ser mayor a hoy"),
   foto_url: z.string().optional(),
 });
 
@@ -40,21 +60,102 @@ export default function TrabajadorFormModal({
   isOpen, onClose, editingTrabajadorId, initialData,
   cargos, isSubmitting, onSubmit, inputCls,
 }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<TrabajadorFormValues>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<TrabajadorFormValues>({
     resolver: zodResolver(trabajadorSchema) as any,
     defaultValues: initialData,
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
+  const [nacionalidad, setNacionalidad] = useState("V-");
+  const [numeroCedula, setNumeroCedula] = useState("");
 
   useEffect(() => {
+    let fps: flatpickr.Instance | flatpickr.Instance[] | null = null;
     if (isOpen) {
-      reset(initialData);
+      const formatDateForInput = (dateStr?: string) => {
+        if (!dateStr) return dateStr;
+        if (dateStr.includes('-')) {
+          const [y, m, d] = dateStr.split('-');
+          return `${d}/${m}/${y}`;
+        }
+        return dateStr;
+      };
+
+      const formattedInitialData = {
+        ...initialData,
+        fecha_nacimiento: formatDateForInput(initialData.fecha_nacimiento),
+        fecha_ingreso: formatDateForInput(initialData.fecha_ingreso),
+      };
+
+      const initialCedula = initialData.cedula || "";
+      if (initialCedula.toUpperCase().startsWith("E-")) {
+        setNacionalidad("E-");
+        setNumeroCedula(initialCedula.substring(2));
+      } else if (initialCedula.toUpperCase().startsWith("V-")) {
+        setNacionalidad("V-");
+        setNumeroCedula(initialCedula.substring(2));
+      } else {
+        setNacionalidad("V-");
+        setNumeroCedula(initialCedula);
+      }
+
+      reset(formattedInitialData);
       setPhotoFile(null);
       setPhotoPreview(initialData.foto_url || null);
+
+      setTimeout(() => {
+        fps = flatpickr(".flatpickr-wrap", {
+          wrap: true,
+          clickOpens: false,
+          dateFormat: "d/m/Y",
+          locale: Spanish,
+          allowInput: true,
+          onChange: function(selectedDates, dateStr, instance) {
+            const inputElement = instance.input;
+            const inputName = inputElement.getAttribute("name");
+            if (inputName) {
+              setValue(inputName as any, dateStr, { shouldValidate: true, shouldDirty: true });
+            }
+          }
+        });
+      }, 50);
     }
-  }, [isOpen, initialData, reset]);
+    return () => {
+      if (fps) {
+        if (Array.isArray(fps)) fps.forEach(f => f.destroy());
+        else fps.destroy();
+      }
+    };
+  }, [isOpen, initialData, reset, setValue]);
+
+  useEffect(() => {
+    if (numeroCedula) {
+      setValue("cedula", `${nacionalidad}${numeroCedula}`, { shouldValidate: true });
+    } else {
+      setValue("cedula", "", { shouldValidate: true });
+    }
+  }, [nacionalidad, numeroCedula, setValue]);
+
+  const handleFormSubmit = (data: TrabajadorFormValues) => {
+    const parseDate = (dateStr?: string) => {
+      if (!dateStr) return dateStr;
+      if (dateStr.includes('/')) {
+        const [d, m, y] = dateStr.split('/');
+        return `${y}-${m}-${d}`;
+      }
+      return dateStr;
+    };
+
+    const finalData = {
+      ...data,
+      fecha_nacimiento: parseDate(data.fecha_nacimiento),
+      fecha_ingreso: parseDate(data.fecha_ingreso),
+    };
+
+    onSubmit(finalData, photoFile);
+  };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -81,7 +182,7 @@ export default function TrabajadorFormModal({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           Complete los datos del trabajador. Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
         </p>
-        <form onSubmit={handleSubmit((data) => onSubmit(data, photoFile))} noValidate className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
           <div>
             <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Datos Personales</h5>
             
@@ -122,21 +223,50 @@ export default function TrabajadorFormModal({
               </div>
               <div>
                 <label className={labelCls}>Cédula <span className="text-red-500">*</span></label>
-                <input
-                  type="text" placeholder="V-12345678" onKeyDown={limitNumericInput}
-                  className={`${inputCls} ${errors.cedula ? 'border-red-500' : ''}`}
-                  readOnly={editingTrabajadorId !== null}
-                  {...register("cedula")}
-                />
+                <div className="flex w-full">
+                  <select 
+                    className={`${inputCls.replace('w-full', '')} w-16 px-2 rounded-r-none border-r-0 text-center`}
+                    value={nacionalidad}
+                    onChange={(e) => setNacionalidad(e.target.value)}
+                    disabled={editingTrabajadorId !== null}
+                  >
+                    <option value="V-">V-</option>
+                    <option value="E-">E-</option>
+                  </select>
+                  <input
+                    type="text" placeholder="12345678" onKeyDown={limitNumericInput}
+                    className={`${inputCls.replace('w-full', '')} flex-1 min-w-0 rounded-l-none border-l-0 ${errors.cedula ? 'border-red-500' : ''}`}
+                    value={numeroCedula}
+                    onChange={(e) => {
+                      const num = e.target.value.replace(/\D/g, '');
+                      setNumeroCedula(num);
+                    }}
+                    readOnly={editingTrabajadorId !== null}
+                  />
+                  <input type="hidden" {...register("cedula")} />
+                </div>
                 {errors.cedula && <p className="text-red-500 text-xs mt-1">{errors.cedula.message}</p>}
               </div>
               <div>
-                <label className={labelCls}>Fecha de Nacimiento</label>
-                <input
-                  type="date"
-                  className={inputCls + " show-date-picker"}
-                  {...register("fecha_nacimiento")}
-                />
+                <label className={labelCls}>Fecha de Nacimiento <span className="text-red-500">*</span></label>
+                <div className="flatpickr-wrap relative flex items-center">
+                  <input
+                    type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
+                    className={`${inputCls} w-full pr-10 ${errors.fecha_nacimiento ? 'border-red-500' : ''}`}
+                    {...register("fecha_nacimiento", {
+                      onChange: (e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+                        if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
+                        e.target.value = val;
+                      }
+                    })}
+                  />
+                  <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </button>
+                </div>
+                {errors.fecha_nacimiento && <p className="text-red-500 text-xs mt-1">{errors.fecha_nacimiento.message}</p>}
               </div>
               </div>
             </div>
@@ -146,15 +276,16 @@ export default function TrabajadorFormModal({
             <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Contacto</h5>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Teléfono</label>
+                <label className={labelCls}>Teléfono <span className="text-red-500">*</span></label>
                 <input
                   type="tel" placeholder="0414-1234567" onKeyDown={limitNumericInput}
-                  className={inputCls}
+                  className={`${inputCls} ${errors.telefono ? 'border-red-500' : ''}`}
                   {...register("telefono")}
                 />
+                {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
               </div>
               <div>
-                <label className={labelCls}>Correo Personal</label>
+                <label className={labelCls}>Correo Personal <span className="text-red-500">*</span></label>
                 <input
                   type="email" placeholder="ejemplo@correo.com"
                   className={`${inputCls} ${errors.correo_personal ? 'border-red-500' : ''}`}
@@ -164,12 +295,13 @@ export default function TrabajadorFormModal({
               </div>
             </div>
             <div className="mt-3">
-              <label className={labelCls}>Dirección</label>
+              <label className={labelCls}>Dirección <span className="text-red-500">*</span></label>
               <input
                 type="text" placeholder="Ej. Av. Principal, Urb. Las Flores, Casa N° 10"
-                className={inputCls}
+                className={`${inputCls} ${errors.direccion ? 'border-red-500' : ''}`}
                 {...register("direccion")}
               />
+              {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>}
             </div>
           </div>
 
@@ -190,7 +322,7 @@ export default function TrabajadorFormModal({
                 {errors.id_cargo && <p className="text-red-500 text-xs mt-1">{errors.id_cargo.message}</p>}
               </div>
               <div>
-                <label className={labelCls}>Horas Semanales</label>
+                <label className={labelCls}>Horas Semanales <span className="text-red-500">*</span></label>
                 <input
                   type="number" onKeyDown={limitNumericInput} placeholder="Ej. 40" min={0} max={168}
                   className={`${inputCls} ${errors.horas_semanales ? 'border-red-500' : ''}`}
@@ -199,15 +331,28 @@ export default function TrabajadorFormModal({
                 {errors.horas_semanales && <p className="text-red-500 text-xs mt-1">{errors.horas_semanales.message}</p>}
               </div>
               <div>
-                <label className={labelCls}>Fecha de Ingreso</label>
-                <input
-                  type="date"
-                  className={inputCls + " show-date-picker"}
-                  {...register("fecha_ingreso")}
-                />
+                <label className={labelCls}>Fecha de Ingreso <span className="text-red-500">*</span></label>
+                <div className="flatpickr-wrap relative flex items-center">
+                  <input
+                    type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
+                    className={`${inputCls} w-full pr-10 ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
+                    {...register("fecha_ingreso", {
+                      onChange: (e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+                        if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
+                        e.target.value = val;
+                      }
+                    })}
+                  />
+                  <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </button>
+                </div>
+                {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
               </div>
               <div>
-                <label className={labelCls}>Estado</label>
+                <label className={labelCls}>Estado <span className="text-red-500">*</span></label>
                 <select className={inputCls} {...register("estado")}>
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
