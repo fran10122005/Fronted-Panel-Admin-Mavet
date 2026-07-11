@@ -8,6 +8,8 @@ import TallerDetailModal from "./talleres/TallerDetailModal";
 import InscripcionModal from "./talleres/InscripcionModal";
 import SesionesTallerModal from "./talleres/SesionesTallerModal";
 import { useAuth } from "../../context/AuthContext";
+import { mavetApi, axiosInstance } from "../../services/api";
+import toast from "react-hot-toast";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
@@ -75,7 +77,7 @@ export default function Talleres() {
     handleBuscarPersona,
     handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
-    openEnrolments, openAsistentes, openSesiones,
+    openAsistentes, openSesiones,
     exportInscripcionesFn,
     handleDesinscribir,
     searchInventario, setSearchInventario,
@@ -100,6 +102,18 @@ export default function Talleres() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gesti&oacute;n de Talleres</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administraci&oacute;n de talleres, planificaci&oacute;n y control de inscripciones.</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          <button onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/inventario-talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Inventario_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de inventario descargado'); } catch { toast.error('Error al descargar inventario de talleres'); } }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-colors shadow-sm">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Inventario de Talleres
+          </button>
+          <button onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Planificacion_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de planificación descargado'); } catch { toast.error('Error al descargar planificación de talleres'); } }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors shadow-sm">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Planificación de Talleres
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -257,12 +271,12 @@ export default function Talleres() {
                       <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
                         className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
                         <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                        Recepción
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openSesiones(t); }}
-                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         Asistencia
+                      </button>
+                      <button onClick={async (e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); try { await mavetApi.exportInscripciones(t.id_taller, 'pdf'); toast.success('PDF de inscritos descargado'); } catch { toast.error('Error al descargar el PDF'); } }}
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <svg className="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Lista de Inscritos
                       </button>
                       {!isGerente && (
                         <>
