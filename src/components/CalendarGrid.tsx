@@ -141,7 +141,9 @@ export default function CalendarGrid({ events, onDateSelect, onEventClick, getEv
 
             const dayEvents = getEventsForDay(day);
             const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             const isToday = isSameDay(dayDate, today);
+            const isPast = dayDate < todayDateOnly;
 
             return (
               <div
@@ -149,10 +151,14 @@ export default function CalendarGrid({ events, onDateSelect, onEventClick, getEv
                 onClick={() => onDateSelect(
                   `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 )}
-                className={`min-h-[60px] sm:min-h-[100px] rounded-xl border p-1 sm:p-2 transition-all duration-200 overflow-hidden cursor-pointer
+                title={isPast ? "No se pueden crear reservas en fechas pasadas" : undefined}
+                className={`min-h-[60px] sm:min-h-[100px] rounded-xl border p-1 sm:p-2 transition-all duration-200 overflow-hidden 
+                  ${isPast ? "cursor-not-allowed opacity-60 bg-gray-50 dark:bg-gray-800/30" : "cursor-pointer"}
                   ${isToday
                     ? "border-brand-500/50 bg-brand-50/60 dark:bg-brand-900/15 dark:border-brand-500/40 ring-1 ring-brand-500/30"
-                    : "border-gray-100 dark:border-gray-700/60 hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    : isPast 
+                      ? "border-gray-100 dark:border-gray-800"
+                      : "border-gray-100 dark:border-gray-700/60 hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   }`}
               >
                 <span className={`flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] sm:text-sm font-bold

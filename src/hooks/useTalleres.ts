@@ -13,6 +13,7 @@ export const initialPlanificarForm = {
   id_espacio: "",
   sesiones: "",
   fecha: "",
+  fecha_fin: "",
   hora_inicio: "",
   hora_fin: "",
   horas_totales: "" as number | string,
@@ -205,7 +206,7 @@ export function useTalleres() {
         id_espacio: taller.id_espacio || "",
         sesiones: taller.sesiones || "",
         fecha: taller.fecha || "",
-        hora_inicio: taller.hora_inicio || "",
+        fecha_fin: taller.fecha_fin || "",
         hora_fin: taller.hora_fin || "",
         horas_totales: taller.horas_totales ?? "",
         cupo_minimo: taller.cupo_minimo ?? "",
@@ -273,6 +274,14 @@ export function useTalleres() {
         if (["hora_inicio", "hora_fin", "sesiones"].includes(name)) {
           updated.horas_totales = "";
         }
+      }
+
+      // Sincronizar fecha_fin con fecha cuando sesiones = 1
+      const currentSesiones = name === "sesiones" ? value : prev.sesiones;
+      const currentFecha = name === "fecha" ? value : prev.fecha;
+      const sesionesNum = currentSesiones === "" ? 0 : Number(currentSesiones);
+      if (sesionesNum <= 1) {
+        updated.fecha_fin = currentFecha;
       }
 
       return updated;
@@ -374,6 +383,7 @@ export function useTalleres() {
         nombre_curso: selected?.nombre || "",
         sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
         fecha: planificarForm.fecha || null,
+        fecha_fin: planificarForm.fecha_fin || null,
         hora_inicio: planificarForm.hora_inicio || null,
         hora_fin: planificarForm.hora_fin || null,
         horas_totales: planificarForm.horas_totales ? Number(planificarForm.horas_totales) : null,

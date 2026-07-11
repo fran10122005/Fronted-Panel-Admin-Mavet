@@ -11,6 +11,7 @@ interface Props {
     id_espacio: string;
     sesiones: string;
     fecha: string;
+    fecha_fin: string;
     hora_inicio: string;
     hora_fin: string;
     horas_totales: number | string;
@@ -106,6 +107,14 @@ export default function TallerDetailModal({
                 min={new Date().toISOString().split("T")[0]}
                 onChange={onChange} className={inputCls + " show-date-picker"} />
             </div>
+            {Number(formData.sesiones) > 1 && (
+              <div>
+                <label className={labelCls}>Fecha de Fin</label>
+                <input type="date" name="fecha_fin" value={formData.fecha_fin}
+                  min={formData.fecha || new Date().toISOString().split("T")[0]}
+                  onChange={onChange} className={inputCls + " show-date-picker"} />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
