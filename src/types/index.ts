@@ -258,6 +258,14 @@ export interface TopLibroStats {
   total_consultas: number;
 }
 
+export interface TopLectorStats {
+  id_persona: string;
+  nombres: string;
+  apellidos: string;
+  cedula: string;
+  total_consultas: number;
+}
+
 export interface TotalesEstadisticas {
   hoy: number;
   semana: number;
@@ -268,5 +276,7 @@ export interface TotalesEstadisticas {
 
 export interface EstadisticasBiblioteca {
   topLibros: TopLibroStats[];
+  topLectores: TopLectorStats[];
+  totalLectores: number;
   totales: TotalesEstadisticas;
 }

@@ -306,7 +306,7 @@ export const mavetApi = {
       });
       return res.data;
     } catch {
-      return { topLibros: [], totales: { hoy: 0, semana: 0, mes: 0, activas: 0, devueltas: 0 } };
+      return { topLibros: [], topLectores: [], totalLectores: 0, totales: { hoy: 0, semana: 0, mes: 0, activas: 0, devueltas: 0 } };
     }
   },
 

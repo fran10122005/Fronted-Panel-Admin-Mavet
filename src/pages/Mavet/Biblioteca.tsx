@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import type {
   ConsultaSalaFiltrada,
   ConsultasFiltradasResponse,
+  EstadisticasBiblioteca,
 } from "../../types";
 import { mavetApi } from "../../services/api";
 
@@ -407,7 +408,7 @@ export default function Biblioteca() {
                             : "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${p.estado === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}></span>
-                          {p.estado === "ACTIVO" ? "Activo" : "Devuelto"}
+                          {p.estado === "ACTIVO" ? "En lectura" : "Devuelto"}
                         </span>
                       </td>
                       <td className="px-3 py-3 text-center">
@@ -509,6 +510,13 @@ function ConsultasTab() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  const [estadisticas, setEstadisticas] = useState<EstadisticasBiblioteca>({
+    topLibros: [],
+    topLectores: [],
+    totalLectores: 0,
+    totales: { hoy: 0, semana: 0, mes: 0, activas: 0, devueltas: 0 },
+  });
+
   const fetchConsultas = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -532,6 +540,7 @@ function ConsultasTab() {
 
   useEffect(() => {
     fetchConsultas();
+    mavetApi.getEstadisticasBiblioteca(5).then(setEstadisticas).catch(() => {});
   }, [fetchConsultas]);
 
   const handlePeriodoChange = (p: Periodo) => {
@@ -561,9 +570,38 @@ function ConsultasTab() {
     });
   };
 
+  const statsCards = [
+    { label: "Consultas Hoy", value: estadisticas.totales.hoy, color: "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400" },
+    { label: "Esta Semana", value: estadisticas.totales.semana, color: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-400" },
+    { label: "Este Mes", value: estadisticas.totales.mes, color: "bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400" },
+    { label: "En lectura", value: estadisticas.totales.activas, color: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400" },
+    { label: "Devueltas", value: estadisticas.totales.devueltas, color: "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400" },
+  ];
+
   return (
     <>
-      {/* ── Filtros ── */}
+      {/* ── Estadísticas ── */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+          <h3 className="font-bold text-gray-800 dark:text-white text-base">Estadísticas de Consultas</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Resumen de actividad en sala de lectura</p>
+        </div>
+        <div className="p-4">
+          {/* Totales */}
+          <div             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+            {statsCards.map((card) => (
+              <div
+                key={card.label}
+                className={`rounded-xl border px-4 py-3 flex flex-col items-center text-center ${card.color}`}
+              >
+                <span className="text-2xl font-bold">{card.value}</span>
+                <span className="text-xs font-medium mt-1 opacity-80">{card.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm space-y-3">
         <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Filtrar por</h3>
 
@@ -614,7 +652,7 @@ function ConsultasTab() {
             className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
           >
             <option value="">Todos</option>
-            <option value="ACTIVO">Activo</option>
+            <option value="ACTIVO">En lectura</option>
             <option value="Devuelto">Devuelto</option>
           </select>
 
@@ -645,13 +683,12 @@ function ConsultasTab() {
                     <th className="px-3 py-3">Libro</th>
                     <th className="px-3 py-3">Fecha Consulta</th>
                     <th className="px-3 py-3 text-center">Estado</th>
-                    <th className="px-3 py-3">Observaciones</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {consultas.data.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-14 text-center text-gray-500">
+                      <td colSpan={5} className="px-5 py-14 text-center text-gray-500">
                         <svg className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
@@ -683,12 +720,7 @@ function ConsultasTab() {
                               : "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
                           }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${c.estado?.toUpperCase() === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}></span>
-                            {c.estado?.toUpperCase() === "ACTIVO" ? "Activo" : "Devuelto"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs max-w-[180px]">
-                          <span className="block truncate" title={c.observaciones || ""}>
-                            {c.observaciones || "—"}
+                            {c.estado?.toUpperCase() === "ACTIVO" ? "En lectura" : "Devuelto"}
                           </span>
                         </td>
                       </tr>
@@ -719,6 +751,72 @@ function ConsultasTab() {
             </div>
           </>
         )}
+      </div>
+
+      {/* Top Lectores + Top Libros */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+          <h4 className="font-semibold text-gray-800 dark:text-white text-sm mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Lectores más frecuentes
+          </h4>
+          {estadisticas.topLectores.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de lectores</p>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {estadisticas.topLectores.map((lector, i) => (
+                <div key={lector.id_persona} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-400 text-xs font-bold flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-800 dark:text-white truncate">
+                        {lector.nombres} {lector.apellidos}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{lector.cedula}</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-brand-600 dark:text-brand-400 text-sm shrink-0 ml-2">
+                    {lector.total_consultas}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+          <h4 className="font-semibold text-gray-800 dark:text-white text-sm mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            Libros más consultados
+          </h4>
+          {estadisticas.topLibros.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">Sin datos de libros</p>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {estadisticas.topLibros.map((libro, i) => (
+                <div key={libro.id_libro} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-400 text-xs font-bold flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-800 dark:text-white truncate">{libro.titulo}</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-brand-600 dark:text-brand-400 text-sm shrink-0 ml-2">
+                    {libro.total_consultas}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
