@@ -74,8 +74,6 @@ export default function CalendarGrid({ events, onDateSelect, onEventClick, getEv
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   const goToday = () => setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
 
-  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
-
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6">

@@ -18,7 +18,7 @@ export default function Papelera() {
     try {
       const data = await mavetApi.getPapeleraGlobal();
       setItems(data);
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar la papelera");
     } finally {
       setIsLoading(false);

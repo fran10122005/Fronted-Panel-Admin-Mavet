@@ -57,16 +57,6 @@ export function findSelectByLabel(labelText: string): Element | null {
   return selects[0] || null;
 }
 
-export function findCardByTitle(title: string): Element | null {
-  const cards = document.querySelectorAll("[class*='rounded-2xl'], [class*='rounded-xl']");
-  for (const card of cards) {
-    if ((card.textContent || "").toLowerCase().includes(title.toLowerCase())) {
-      return card;
-    }
-  }
-  return null;
-}
-
 export function findSectionByHeading(headingText: string): Element | null {
   const heading = findHeadingByText(headingText);
   if (!heading) return null;
