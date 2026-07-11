@@ -8,7 +8,7 @@ import { RegistroAsistencia, Trabajador, Usuario, Cargo, ResumenSemanalTrabajado
 
 export const ITEMS_PER_PAGE = 20;
 
-export const initialTrabajadorState = {
+const initialTrabajadorState = {
   cedula: "",
   nombres: "",
   apellidos: "",
@@ -23,7 +23,7 @@ export const initialTrabajadorState = {
   foto_url: "",
 };
 
-export const initialUsuarioState = {
+const initialUsuarioState = {
   correo: "",
   password: "",
   id_rol: "",
@@ -392,6 +392,6 @@ export function useRRHH() {
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleCartaAval, handleDeleteTrabajador, handleDeleteUsuario,
-    initialTrabajadorState, initialUsuarioState,
+
   };
 }

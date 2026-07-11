@@ -30,14 +30,14 @@ const navItems: NavItem[] = [
     path: "/",
   },
   {
-    icon: <CalenderIcon />,
-    name: "Auditorio",
-    path: "/auditorio",
-  },
-  {
     icon: <ListIcon />,
     name: "Recepción",
     path: "/recepcion",
+  },
+  {
+    icon: <PageIcon />,
+    name: "Biblioteca",
+    path: "/biblioteca",
   },
   {
     icon: <PageIcon />,
@@ -45,14 +45,14 @@ const navItems: NavItem[] = [
     path: "/talleres",
   },
   {
+    icon: <CalenderIcon />,
+    name: "Auditorio",
+    path: "/auditorio",
+  },
+  {
     icon: <TableIcon />,
     name: "Inventario de Bóveda",
     path: "/inventario-obras",
-  },
-  {
-    icon: <PageIcon />,
-    name: "Biblioteca",
-    path: "/biblioteca",
   },
   {
     icon: <UserCircleIcon />,
@@ -62,11 +62,6 @@ const navItems: NavItem[] = [
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <UserCircleIcon />,
-    name: "Mi Perfil",
-    path: "/profile",
-  },
   {
     icon: <DocsIcon />,
     name: "Manual de Usuario",

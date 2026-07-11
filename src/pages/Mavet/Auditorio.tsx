@@ -175,7 +175,7 @@ const Auditorio: React.FC = () => {
     if (isOverlapping) {
       const formatTime = (timeStr: string) => {
         if (!timeStr) return '';
-        let [hoursStr, minutes] = timeStr.split(':');
+        const [hoursStr, minutes] = timeStr.split(':');
         let hours = parseInt(hoursStr, 10);
         const ampm = hours >= 12 ? 'pm' : 'am';
         hours = hours % 12 || 12;
@@ -428,7 +428,7 @@ const Auditorio: React.FC = () => {
         motivo: eventTitle,
       };
 
-      if (isEditing && selectedEvent) {
+      if (selectedEvent) {
         await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
         toast.success("Reserva actualizada exitosamente");
       } else {

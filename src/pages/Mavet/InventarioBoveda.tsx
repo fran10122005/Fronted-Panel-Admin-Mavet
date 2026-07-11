@@ -236,7 +236,7 @@ export default function InventarioBoveda() {
 
     try {
       let tecnicaId = formData.id_tecnica;
-      let estadoId = formData.id_estado_actual;
+      const estadoId = formData.id_estado_actual;
       let categoriaId = formData.id_categoria_obra;
 
       if (isOtherTecnica) {

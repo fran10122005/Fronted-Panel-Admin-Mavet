@@ -3,11 +3,11 @@ import { useModal } from "./useModal";
 import { mavetApi } from "../services/api";
 import toast from "react-hot-toast";
 
-export const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 10;
 
-export const initialInventarioForm = { nombre: "", descripcion: "" };
+const initialInventarioForm = { nombre: "", descripcion: "" };
 
-export const initialPlanificarForm = {
+const initialPlanificarForm = {
   id_taller_inventario: "",
   selectedInstructorId: "",
   id_espacio: "",
@@ -22,7 +22,7 @@ export const initialPlanificarForm = {
   estado: true
 };
 
-export const initialEnrollForm = {
+const initialEnrollForm = {
   tallerId: "",
   alumnoCedula: "",
   alumnoNombre: "",

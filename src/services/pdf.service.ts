@@ -460,16 +460,4 @@ export async function exportarCarnetTrabajador(trabajador: Trabajador) {
   }
 }
 
-// ─── PDF: Credenciales Masivas (múltiples trabajadores) ──────────────────────
-export async function exportarCredencialesMasivas(_trabajadores: Trabajador[]) {
-  try {
-    const res = await axiosInstance.get("/api/reportes/credenciales-masivas", {
-      responseType: "blob",
-    });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
-  } catch (e) {
-    console.error("[exportarCredencialesMasivas]", e);
-    alert("Error al generar las credenciales masivas. Verifique su conexión.");
-  }
-}
+
