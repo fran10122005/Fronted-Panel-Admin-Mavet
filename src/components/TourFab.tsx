@@ -18,8 +18,8 @@ const TourFab = () => {
     <button
       onClick={handleClick}
       className="flex items-center justify-center w-9 h-9 text-gray-500 hover:text-brand-600 bg-white/90 dark:bg-gray-950/60 border border-gray-300 dark:border-gray-700 rounded-lg transition-all duration-300 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 hover:scale-105 active:scale-95 shadow-theme-xs shrink-0"
-      aria-label="Tour guiado"
-      title="Tour guiado"
+      aria-label="Tutorial"
+      title="Tutorial"
     >
       <svg
         className="size-4.5"
