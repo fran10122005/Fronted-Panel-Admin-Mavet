@@ -35,7 +35,7 @@ export default function Salas() {
     try {
       const data = await mavetApi.getEspaciosMuseo();
       setEspacios(data);
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar los espacios");
     } finally {
       setIsLoading(false);

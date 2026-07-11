@@ -64,15 +64,6 @@ export interface AsistenciaPayload {
   observaciones?: string;
 }
 
-export interface RegistroVisitantePayload {
-  nombre: string;
-  cedula: string;
-  telefono: string;
-  edad: string;
-  institucion?: string;
-  profesion?: string;
-}
-
 export interface TallerInscripcionPayload {
   tallerId: string;
   alumno: {
