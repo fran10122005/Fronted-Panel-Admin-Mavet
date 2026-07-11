@@ -423,7 +423,7 @@ const Auditorio: React.FC = () => {
         nombre_responsable: organizador,
         institucion: tipoFinal,
         fecha_uso: eventDate,
-        hora_inicio: startStr,
+        hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
       };
