@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { useTour } from "../hooks/useTour";
-import { globalTourSteps, pageTourSteps } from "../config/tourSteps";
+import { globalTourSteps, pageTourSteps, getTalleresTourSteps, getRRHHTourSteps, getBibliotecaTourSteps } from "../config/tourSteps";
 
 interface TourContextType {
   isTourActive: boolean;
   startGlobalTour: () => void;
-  startPageTour: (path: string) => void;
+  startPageTour: (path: string, tabId?: string) => void;
   stopTour: () => void;
   hasSeenTour: boolean;
   markTourAsSeen: () => void;
@@ -36,8 +36,15 @@ export const TourProvider = ({ children }: { children: ReactNode }) => {
   }, [tour]);
 
   const startPageTour = useCallback(
-    (path: string) => {
-      const steps = pageTourSteps[path];
+    (path: string, tabId?: string) => {
+      let steps = pageTourSteps[path];
+      if (path === "/talleres" && tabId) {
+        steps = getTalleresTourSteps(tabId);
+      } else if (path === "/rrhh" && tabId) {
+        steps = getRRHHTourSteps(tabId);
+      } else if (path === "/biblioteca" && tabId) {
+        steps = getBibliotecaTourSteps(tabId);
+      }
       if (steps && steps.length > 0) {
         tour.startTour(steps);
       }

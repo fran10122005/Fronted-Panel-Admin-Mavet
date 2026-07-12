@@ -1,301 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { mavetApi, axiosInstance } from "../../services/api";
+import React from "react";
 import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
-import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
 import AsistenciaModal from "../../components/AsistenciaModal";
+import { useRecepcion } from "../../hooks/useRecepcion";
 
 export default function Recepcion() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [selectedPersona, setSelectedPersona] = useState<any>(null);
-
-  const [formData, setFormData] = useState({
-    nacionalidad: "V-",
-    cedula: "",
-    nombres: "",
-    apellidos: "",
-    fecha_nacimiento: "",
-    telefono: "",
-    institucion_profesion: "",
-    id_motivo: "",
-    cantidad_acompanantes: 0
-  });
-
-  const [isVisitaInstitucional, setIsVisitaInstitucional] = useState(false);
-
-  const [motivos, setMotivos] = useState<any[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  // Dashboard state
-  const [eventosHoy, setEventosHoy] = useState<any[]>([]);
-  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
-
-  // Ingresos de hoy / mes / año
-  const [ingresos, setIngresos] = useState<any[]>([]);
-  const [isLoadingIngresos, setIsLoadingIngresos] = useState(false);
-  const [showAllIngresos, setShowAllIngresos] = useState(false);
-  const [ingresosFiltro, setIngresosFiltro] = useState<"hoy" | "mes" | "ano">("hoy");
-  const INGRESOS_PAGE_SIZE = 5;
-
-  // Modal de Código QR Público
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const publicRegistrationUrl = `${window.location.origin}/registro-visitante`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(publicRegistrationUrl)}`;
-
-  // Modal para menores
-  const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
-  const [menorData, setMenorData] = useState({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
-
-  // Modal Asistencia Personal
-  const [isAsistenciaModalOpen, setIsAsistenciaModalOpen] = useState(false);
-
-  const getAge = (dateStr: string) => {
-    if (!dateStr) return -1;
-    const birth = new Date(dateStr);
-    const today = new Date();
-    return today.getFullYear() - birth.getFullYear() -
-      (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
-  };
-
-  const ageMenor = getAge(menorData.fecha_nacimiento);
-  const age = getAge(formData.fecha_nacimiento);
-
-  useEffect(() => {
-    const fetchMotivos = async () => {
-      try {
-        const data = await mavetApi.obtenerMotivos();
-        setMotivos(data);
-      } catch (error) {
-        console.error("Error al cargar motivos", error);
-      }
-    };
-    fetchMotivos();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    setIsLoadingDashboard(true);
-    try {
-      const eventos = await mavetApi.getAgendaPublica();
-      const now = new Date();
-      const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const filtrados = eventos.filter((e: any) => {
-        const fecha = e.fecha || e.fecha_uso || e.fecha_solicitada || e.start || e.date || "";
-        return fecha.startsWith(hoyStr);
-      });
-      setEventosHoy(filtrados);
-    } catch (error) {
-      console.error("Error cargando dashboard", error);
-    } finally {
-      setIsLoadingDashboard(false);
-    }
-  };
-
-  const fetchIngresos = async () => {
-    setIsLoadingIngresos(true);
-    try {
-      const now = new Date();
-      let fechaStr = "";
-      if (ingresosFiltro === "hoy") {
-        fechaStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      } else if (ingresosFiltro === "mes") {
-        fechaStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      } else if (ingresosFiltro === "ano") {
-        fechaStr = `${now.getFullYear()}`;
-      }
-      const result = await mavetApi.getTodosIngresos(1, 1000, fechaStr);
-      setIngresos(result.data || []);
-    } catch {
-      setIngresos([]);
-    } finally {
-      setIsLoadingIngresos(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  useEffect(() => {
-    fetchIngresos();
-  }, [ingresosFiltro]);
-  useEffect(() => {
-    if (searchQuery.length < 3) {
-      setSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(() => handleSearch(), 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleSearch = async () => {
-    if (!searchQuery || searchQuery.length < 3) return;
-    setIsSearching(true);
-    try {
-      const res = await axiosInstance.get(`/api/personas/buscar?q=${searchQuery}`);
-      const result = res.data;
-      if (result.data && result.data.length > 0) {
-        setSearchResults(result.data);
-      } else {
-        setSearchResults([]);
-        toast.error("No se encontró ninguna persona. Puede registrarla ahora.");
-      }
-    } catch (error) {
-      console.error("Error buscando persona", error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const selectPersona = (p: any) => {
-    setSelectedPersona(p);
-    setFormData(prev => ({
-      ...prev,
-      nacionalidad: p.cedula ? (p.cedula.startsWith("E-") ? "E-" : "V-") : "V-",
-      cedula: p.cedula ? p.cedula.replace(/^[VE]-/, "") : "",
-      nombres: p.nombres || "",
-      apellidos: p.apellidos || "",
-      telefono: p.telefono || "",
-      fecha_nacimiento: p.fecha_de_nac || ""
-    }));
-    setSearchResults([]);
-
-    if (p.require_cedula_update) {
-      toast.error("⚠️ Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.");
-    } else {
-      toast.success("Persona seleccionada correctamente.");
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (e.target.name === "cedula") {
-      let value = e.target.value.replace(/\D/g, "");
-      if (value.length > 8) value = value.slice(0, 8);
-      const formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      setFormData({ ...formData, cedula: formatted });
-    } else {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.nombres || !formData.nombres.trim()) {
-      toast.error("El campo Nombres es obligatorio.");
-      return;
-    }
-    if (!formData.apellidos || !formData.apellidos.trim()) {
-      toast.error("El campo Apellidos es obligatorio.");
-      return;
-    }
-    if (!formData.id_motivo) {
-      toast.error("El motivo de visita es obligatorio.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      let finalMotivo = '';
-      let finalTaller: string | undefined = undefined;
-      let finalSolicitud: string | undefined = undefined;
-
-      if (formData.id_motivo.startsWith('evento_')) {
-        const rawId = formData.id_motivo.split('_')[1];
-        if (rawId.startsWith('TAL-')) {
-          finalTaller = rawId;
-        } else {
-          finalSolicitud = rawId;
-        }
-        const motivoTaller = motivos.find(m => m.descripcion.toLowerCase().includes('taller') || m.descripcion.toLowerCase().includes('educa'));
-        finalMotivo = motivoTaller ? motivoTaller.id_motivo : (motivos[0]?.id_motivo || '');
-      } else {
-        finalMotivo = formData.id_motivo.split('_')[1];
-      }
-
-      // Lógica atómica de registro y creación de ingreso
-      const ingresoPayload: any = {
-        cedula: formData.cedula ? `${formData.nacionalidad}${formData.cedula}` : "",
-        nombres: formData.nombres,
-        apellidos: formData.apellidos,
-        telefono: formData.telefono,
-        fecha_de_nac: formData.fecha_nacimiento,
-        id_motivo: finalMotivo,
-        cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0
-      };
-      
-      if (finalTaller && finalTaller.startsWith('TAL-')) {
-        ingresoPayload.id_taller = finalTaller;
-      }
-      if (finalSolicitud) {
-        ingresoPayload.id_solicitud = finalSolicitud;
-      }
-
-      await mavetApi.registrarIngreso(ingresoPayload);
-      toast.success("Acceso registrado exitosamente.");
-      setFormData({ nacionalidad: "V-", cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
-      setIsVisitaInstitucional(false);
-      setSelectedPersona(null);
-      setSearchQuery("");
-      fetchDashboardData();
-      fetchIngresos();
-    } catch (error: any) {
-      toast.error(error.message || "Error al registrar ingreso");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRegistrarMenor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const menorPayload: any = {
-        nombres: menorData.nombres,
-        apellidos: menorData.apellidos,
-        fecha_de_nac: menorData.fecha_nacimiento,
-        id_motivo: formData.id_motivo.replace('motivo_', '') || "MVI-00001",
-        id_representante_persona: selectedPersona?.id_persona,
-        cedula: menorData.cedula ? menorData.cedula : undefined
-      };
-      await mavetApi.registrarIngreso(menorPayload);
-      toast.success("Menor registrado e ingresado exitosamente.");
-      setIsMenorModalOpen(false);
-      setMenorData({ nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" });
-      fetchIngresos();
-    } catch (error: any) {
-      toast.error(error.message || "Error al registrar menor");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleIngresarMenorAsociado = async (menor: any) => {
-    if (!selectedPersona) return;
-    setIsSubmitting(true);
-    try {
-      const edad = getAge(menor.fecha_de_nac);
-      if (edad >= 12) {
-        toast.error(`${menor.nombres} tiene ${edad} años. Debe registrarse como visitante regular.`);
-        return;
-      }
-      const payload: any = {
-        nombres: menor.nombres,
-        apellidos: menor.apellidos,
-        fecha_de_nac: menor.fecha_de_nac,
-        cedula: menor.cedula || undefined,
-        id_motivo: formData.id_motivo.replace('motivo_', '') || "MVI-00001",
-        id_representante_persona: selectedPersona.id_persona,
-      };
-      await mavetApi.registrarIngreso(payload);
-      toast.success(`${menor.nombres} ingresado exitosamente.`);
-      fetchIngresos();
-    } catch (error: any) {
-      toast.error(error.message || `Error al ingresar a ${menor.nombres}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    searchQuery, setSearchQuery,
+    searchResults,
+    selectedPersona,
+    formData,
+    isVisitaInstitucional, setIsVisitaInstitucional,
+    motivos,
+    isSubmitting,
+    isSearching,
+    eventosHoy,
+    isLoadingDashboard,
+    ingresos,
+    isLoadingIngresos,
+    showAllIngresos, setShowAllIngresos,
+    ingresosFiltro, setIngresosFiltro,
+    isQrModalOpen, setIsQrModalOpen,
+    isMenorModalOpen, setIsMenorModalOpen,
+    menorData, setMenorData,
+    isAsistenciaModalOpen, setIsAsistenciaModalOpen,
+    age, ageMenor,
+    publicRegistrationUrl,
+    qrImageUrl,
+    INGRESOS_PAGE_SIZE,
+    handleSearch, selectPersona, handleChange, handleSubmit,
+    handleRegistrarMenor, handleIngresarMenorAsociado,
+    fetchDashboardData, resetForm,
+  } = useRecepcion();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
@@ -427,7 +164,7 @@ export default function Recepcion() {
                   <input type="date" name="fecha_nacimiento" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula {formData.fecha_nacimiento && age >= 9 ? "*" : "(Bloqueado - < 9 años)"}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula {formData.fecha_nacimiento && age >= 9 ? "*" : "(opcional < 9 años)"}</label>
                   <div className="flex">
                     <select
                       name="nacionalidad"
@@ -528,14 +265,9 @@ export default function Recepcion() {
 
               <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center">
                 <div className="flex gap-3">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setFormData({ nacionalidad: "V-", cedula: "", nombres: "", apellidos: "", fecha_nacimiento: "", telefono: "", institucion_profesion: "", id_motivo: "", cantidad_acompanantes: 0 });
-                      setSelectedPersona(null);
-                      setSearchQuery("");
-                      setIsVisitaInstitucional(false);
-                    }} 
+                  <button
+                    type="button"
+                    onClick={resetForm}
                     className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-bold py-2.5 px-6 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
                   >
                     Limpiar Formulario
@@ -719,13 +451,13 @@ export default function Recepcion() {
             </div>
             <div>
               <label className="block text-sm mb-1 dark:text-gray-200">Cédula {menorData.fecha_nacimiento && ageMenor >= 9 ? "*" : "(Opcional si es < 9 años)"}</label>
-              <input 
-                type="text" 
-                value={menorData.cedula} 
-                onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })} 
+              <input
+                type="text"
+                value={menorData.cedula}
+                onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })}
                 onKeyDown={limitNumericInput}
-                className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" 
-                placeholder="Ej. 12345678" 
+                className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+                placeholder="Ej. 12345678"
                 required={!!menorData.fecha_nacimiento && ageMenor >= 9}
               />
             </div>
@@ -795,9 +527,9 @@ export default function Recepcion() {
       </Modal>
 
       {/* Modal de Asistencia Personal (Empleados) */}
-      <AsistenciaModal 
-        isOpen={isAsistenciaModalOpen} 
-        onClose={() => setIsAsistenciaModalOpen(false)} 
+      <AsistenciaModal
+        isOpen={isAsistenciaModalOpen}
+        onClose={() => setIsAsistenciaModalOpen(false)}
       />
 
     </div>

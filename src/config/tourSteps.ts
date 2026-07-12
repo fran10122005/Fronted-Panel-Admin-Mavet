@@ -385,7 +385,7 @@ export const recepcionTourSteps: DriveStep[] = [
   },
 ];
 
-export const talleresTourSteps: DriveStep[] = [
+const talleresSharedSteps: DriveStep[] = [
   {
     element: () => findHeadingByText("Gestión de Talleres"),
     popover: {
@@ -406,67 +406,142 @@ export const talleresTourSteps: DriveStep[] = [
       align: "center",
     },
   },
-  {
-    element: () => findButtonContainingText("Gestionar Instructores"),
-    popover: {
-      title: "Gestión de instructores",
-      description:
-        "Registre, consulte y administre los facilitadores disponibles. Busque por nombre o cédula para evitar duplicados antes de crear uno nuevo.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findButtonContainingText("Planificar Taller"),
-    popover: {
-      title: "Planificar nuevo taller",
-      description:
-        "Cree una nueva edición de taller: seleccione un taller del inventario, asigne instructor, espacio físico, fecha y defina la cantidad de cupos disponibles.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findHeadingByText("Listado de Talleres"),
-    popover: {
-      title: "Talleres planificados",
-      description:
-        "Lista de talleres activos con nombre, instructor, fecha, cupos disponibles y estado. Use el menú contextual en cada fila para acciones rápidas: Recepción, Asistencia, Inscribir, Editar o Eliminar.",
-      side: "top",
-      align: "center",
-    },
-  },
-  {
-    element: () => findHeadingByText("Alumnos Inscritos"),
-    popover: {
-      title: "Alumnos inscritos por taller",
-      description:
-        "Acordeones expandibles que muestran los alumnos inscritos en cada taller con nombre, cédula, fecha de inscripción y estado. Puede desinscribir alumnos si es necesario.",
-      side: "top",
-      align: "center",
-    },
-  },
-  {
-    element: () => findHeadingByText("Inventario de Talleres"),
-    popover: {
-      title: "Inventario maestro",
-      description:
-        "Catálogo base de todos los talleres que ofrece el museo. Aquí se crean los talleres base (nombre, descripción, duración) que luego podrá planificar con fechas específicas.",
-      side: "top",
-      align: "center",
-    },
-  },
-  {
-    element: () => findButtonContainingText("Crear Taller"),
-    popover: {
-      title: "Nuevo taller base",
-      description:
-        "Agregue un nuevo taller al inventario maestro. Defina nombre, descripción, duración y otros atributos para que esté disponible al planificar.",
-      side: "bottom",
-      align: "center",
-    },
-  },
 ];
+
+const talleresStepsPorTab: Record<string, DriveStep[]> = {
+  planificados: [
+    {
+      element: () => document.querySelector('[data-tour="buscador-planificados"]') || findHeadingByText("Listado de Talleres"),
+      popover: {
+        title: "Buscador y filtros",
+        description:
+          "Busque talleres por nombre del curso o instructor. Use el filtro desplegable para ver solo los talleres de un instructor específico.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: () => document.querySelector('[data-tour="planificar-taller"]') || findButtonContainingText("Planificar Taller"),
+      popover: {
+        title: "Planificar nuevo taller",
+        description:
+          "Cree una nueva edición de taller: seleccione un taller del inventario, asigne instructor, espacio físico, fechas, horarios y defina los cupos disponibles.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => document.querySelector('[data-tour="pdf-planificacion"]') || findButtonContainingText("PDF Planificación"),
+      popover: {
+        title: "Exportar planificación",
+        description:
+          "Descargue un PDF con todos los talleres planificados actualmente.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => findHeadingByText("Listado de Talleres"),
+      popover: {
+        title: "Lista de talleres planificados",
+        description:
+          "Cada taller muestra nombre, instructor, fecha, cupos y estado. Use los botones en cada fila: 📋 (Asistencia), 📄 (PDF inscritos), ➕ (Inscribir), ✅ (Sesiones), ✏️ (Editar) y 🗑️ (Eliminar).",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+  inscripciones: [
+    {
+      element: () => findHeadingByText("Alumnos Inscritos"),
+      popover: {
+        title: "Inscripciones por taller",
+        description:
+          "Acordeones agrupados por taller. Cada uno muestra el número de alumnos inscritos. Haga clic para expandir y ver la lista detallada.",
+        side: "top",
+        align: "start",
+      },
+    },
+    {
+      element: () => document.querySelector("details") || findHeadingByText("Alumnos Inscritos"),
+      popover: {
+        title: "Detalle de inscripciones",
+        description:
+          "Al expandir un taller, verá el nombre del alumno, cédula, fecha de inscripción y estado. Use el icono 🗑️ para desinscribir.",
+        side: "top",
+        align: "start",
+      },
+    },
+  ],
+  inventario: [
+    {
+      element: () => document.querySelector('[data-tour="buscador-inventario"]') || findHeadingByText("Inventario de Talleres"),
+      popover: {
+        title: "Inventario maestro",
+        description:
+          "Catálogo base de talleres del museo. Busque por nombre o descripción en el campo de texto.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: () => findHeadingByText("Inventario de Talleres"),
+      popover: {
+        title: "Tabla de inventario",
+        description:
+          "Lista todos los talleres base con nombre y descripción. Use ✏️ para editar o 🗑️ para eliminar. Solo los administradores pueden eliminar.",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+  instructores: [
+    {
+      element: () => findHeadingByText("Gestionar Instructores"),
+      popover: {
+        title: "Gestión de instructores",
+        description:
+          "Panel completo de instructores. Busque una persona por cédula, complete profesión y especialidad, y créela como instructor.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: () => findButtonContainingText("Buscar"),
+      popover: {
+        title: "Buscar persona",
+        description:
+          "Ingrese una cédula (Ej: V-12345678) y presione Buscar. Si la persona existe y no es instructor, aparecerá una tarjeta verde para continuar.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => findButtonContainingText("Crear Instructor"),
+      popover: {
+        title: "Crear instructor",
+        description:
+          "Complete profesión y especialidad, luego presione Crear Instructor. El nuevo instructor aparecerá en la tabla inferior y estará disponible al planificar talleres.",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+};
+
+export const talleresTourSteps: DriveStep[] = [
+  ...talleresSharedSteps,
+  ...talleresStepsPorTab.planificados,
+  ...talleresStepsPorTab.inscripciones,
+  ...talleresStepsPorTab.inventario,
+  ...talleresStepsPorTab.instructores,
+];
+
+export function getTalleresTourSteps(tabId: string): DriveStep[] {
+  const steps = talleresStepsPorTab[tabId];
+  if (!steps) return talleresTourSteps;
+  return [...talleresSharedSteps, ...steps];
+}
 
 export const bovedaTourSteps: DriveStep[] = [
   {
@@ -549,7 +624,7 @@ export const bovedaTourSteps: DriveStep[] = [
   },
 ];
 
-export const bibliotecaTourSteps: DriveStep[] = [
+const bibliotecaSharedSteps: DriveStep[] = [
   {
     element: () => findHeadingByText("Inventario de Biblioteca"),
     popover: {
@@ -560,71 +635,90 @@ export const bibliotecaTourSteps: DriveStep[] = [
       align: "center",
     },
   },
-  {
-    element: () => findButtonContainingText("Registrar Nuevo Libro"),
-    popover: {
-      title: "Registrar nuevo libro",
-      description:
-        "Agregue un nuevo título al catálogo: unidad, título, autor, estante, categoría, año, cantidad total y estado.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findButtonContainingText("Exportar PDF"),
-    popover: {
-      title: "Exportar catálogo",
-      description:
-        "Descargue el catálogo completo de la biblioteca en formato PDF.",
-      side: "left",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      document.querySelector('input[placeholder*="Buscar por unidad"]') ||
-      document.querySelector('input[placeholder*="buscar"]'),
-    popover: {
-      title: "Buscador de libros",
-      description:
-        "Busque libros por unidad, título o autor dentro del catálogo. Resultados en tiempo real.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findSelectByLabel("Estado"),
-    popover: {
-      title: "Filtros de catálogo",
-      description:
-        "Filtre los libros por estado (disponible, prestado), categoría y autor. Use los filtros en conjunto con el buscador para encontrar rápidamente lo que necesita.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findNthTable(0),
-    popover: {
-      title: "Catálogo de libros",
-      description:
-        "Tabla del inventario con unidad, título, autor, estante, categoría, cantidad disponible y total, y estado actual del ejemplar.",
-      side: "top",
-      align: "center",
-    },
-  },
-  {
-    element: () => findHeadingByText("Control de Préstamos"),
-    popover: {
-      title: "Préstamos por cédula",
-      description:
-        "Busque por cédula del solicitante para ver el historial completo de préstamos: libros activos, devueltos, fechas y estados.",
-      side: "top",
-      align: "center",
-    },
-  },
 ];
 
-export const rrhhTourSteps: DriveStep[] = [
+const bibliotecaStepsPorTab: Record<string, DriveStep[]> = {
+  inventario: [
+    {
+      element: () => findButtonContainingText("Registrar Nuevo Libro"),
+      popover: {
+        title: "Registrar nuevo libro",
+        description:
+          "Agregue un nuevo título al catálogo: unidad, título, autor, estante, categoría, año, cantidad total y estado.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => findButtonContainingText("Exportar PDF"),
+      popover: {
+        title: "Exportar catálogo",
+        description:
+          "Descargue el catálogo completo de la biblioteca en formato PDF.",
+        side: "left",
+        align: "center",
+      },
+    },
+    {
+      element: () =>
+        document.querySelector('input[placeholder*="Buscar por unidad"]') ||
+        document.querySelector('input[placeholder*="buscar"]'),
+      popover: {
+        title: "Buscador de libros",
+        description:
+          "Busque libros por unidad, título o autor dentro del catálogo. Resultados en tiempo real.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => findSelectByLabel("Estado"),
+      popover: {
+        title: "Filtros de catálogo",
+        description:
+          "Filtre los libros por estado (disponible, prestado), categoría y autor. Use los filtros en conjunto con el buscador para encontrar rápidamente lo que necesita.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () => findNthTable(0),
+      popover: {
+        title: "Catálogo de libros",
+        description:
+          "Tabla del inventario con unidad, título, autor, estante, categoría, cantidad disponible y total, y estado actual del ejemplar.",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+  consultas: [
+    {
+      element: () => findHeadingByText("Control de Préstamos"),
+      popover: {
+        title: "Préstamos por cédula",
+        description:
+          "Busque por cédula del solicitante para ver el historial completo de préstamos: libros activos, devueltos, fechas y estados.",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+};
+
+export const bibliotecaTourSteps: DriveStep[] = [
+  ...bibliotecaSharedSteps,
+  ...bibliotecaStepsPorTab.inventario,
+  ...bibliotecaStepsPorTab.consultas,
+];
+
+export function getBibliotecaTourSteps(tabId: string): DriveStep[] {
+  const steps = bibliotecaStepsPorTab[tabId];
+  if (!steps) return bibliotecaTourSteps;
+  return [...bibliotecaSharedSteps, ...steps];
+}
+
+const rrhhSharedSteps: DriveStep[] = [
   {
     element: () => findHeadingByText("Gestión de RRHH"),
     popover: {
@@ -635,77 +729,99 @@ export const rrhhTourSteps: DriveStep[] = [
       align: "center",
     },
   },
-  {
-    element: () =>
-      findButtonByText("Trabajadores") ||
-      findButtonContainingText("Trabajadores"),
-    popover: {
-      title: "Pestaña: Trabajadores",
-      description:
-        "Registre y administre el personal del museo. Cada trabajador puede tener una foto, cargo, horario semanal y un carnet institucional con código QR para control de asistencia.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      findButtonByText("Usuarios") || findButtonContainingText("Usuarios"),
-    popover: {
-      title: "Pestaña: Usuarios del sistema",
-      description:
-        "Gestione las cuentas de acceso al panel administrativo. Cree usuarios vinculados a trabajadores, asigne roles (Administrador, Recepcionista, Bibliotecario, Curador, Educación) y restablezca contraseñas cuando sea necesario.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      findButtonByText("Asistencias") || findButtonContainingText("Asistencias"),
-    popover: {
-      title: "Pestaña: Asistencias",
-      description:
-        "Historial de entradas y salidas del personal. Revise el resumen semanal con horas acumuladas, pendientes y estado de cumplimiento. Puede justificar inasistencias directamente desde aquí.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      document.querySelector('[data-tour="registrar-trabajador"]') ||
-      findButtonContainingText("Registrar Trabajador"),
-    popover: {
-      title: "Registrar nuevo trabajador",
-      description:
-        "Complete los datos del empleado: nombres, apellidos, cédula, fecha de nacimiento, teléfono, correo, cargo, horario semanal y estado. Una vez registrado, podrá generar su carnet institucional.",
-      side: "left",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      document.querySelector('[data-tour="crear-usuario"]') ||
-      findButtonContainingText("Crear Usuario"),
-    popover: {
-      title: "Crear usuario del sistema",
-      description:
-        "Cree una nueva cuenta de acceso vinculando un trabajador existente. Defina el correo electrónico, contraseña inicial y el rol del sistema que determinará los módulos a los que tendrá acceso.",
-      side: "left",
-      align: "center",
-    },
-  },
-  {
-    element: () =>
-      document.querySelector('[data-tour="resumen-semanal"]') ||
-      findButtonContainingText("Resumen Semanal"),
-    popover: {
-      title: "Resumen semanal de asistencias",
-      description:
-        "Panel colapsable con el resumen de horas requeridas, acumuladas, restantes y si cada trabajador cumplió con su jornada. Incluye botón para justificar inasistencias.",
-      side: "top",
-      align: "center",
-    },
-  },
 ];
+
+const rrhhStepsPorTab: Record<string, DriveStep[]> = {
+  trabajadores: [
+    {
+      element: () =>
+        findButtonByText("Trabajadores") ||
+        findButtonContainingText("Trabajadores"),
+      popover: {
+        title: "Pestaña: Trabajadores",
+        description:
+          "Registre y administre el personal del museo. Cada trabajador puede tener una foto, cargo, horario semanal y un carnet institucional con código QR para control de asistencia.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () =>
+        document.querySelector('[data-tour="registrar-trabajador"]') ||
+        findButtonContainingText("Registrar Trabajador"),
+      popover: {
+        title: "Registrar nuevo trabajador",
+        description:
+          "Complete los datos del empleado: nombres, apellidos, cédula, fecha de nacimiento, teléfono, correo, cargo, horario semanal y estado. Una vez registrado, podrá generar su carnet institucional.",
+        side: "left",
+        align: "center",
+      },
+    },
+  ],
+  usuarios: [
+    {
+      element: () =>
+        findButtonByText("Usuarios") || findButtonContainingText("Usuarios"),
+      popover: {
+        title: "Pestaña: Usuarios del sistema",
+        description:
+          "Gestione las cuentas de acceso al panel administrativo. Cree usuarios vinculados a trabajadores, asigne roles (Administrador, Recepcionista, Bibliotecario, Curador, Educación) y restablezca contraseñas cuando sea necesario.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () =>
+        document.querySelector('[data-tour="crear-usuario"]') ||
+        findButtonContainingText("Crear Usuario"),
+      popover: {
+        title: "Crear usuario del sistema",
+        description:
+          "Cree una nueva cuenta de acceso vinculando un trabajador existente. Defina el correo electrónico, contraseña inicial y el rol del sistema que determinará los módulos a los que tendrá acceso.",
+        side: "left",
+        align: "center",
+      },
+    },
+  ],
+  asistencias: [
+    {
+      element: () =>
+        findButtonByText("Asistencias") || findButtonContainingText("Asistencias"),
+      popover: {
+        title: "Pestaña: Asistencias",
+        description:
+          "Historial de entradas y salidas del personal. Revise el resumen semanal con horas acumuladas, pendientes y estado de cumplimiento. Puede justificar inasistencias directamente desde aquí.",
+        side: "bottom",
+        align: "center",
+      },
+    },
+    {
+      element: () =>
+        document.querySelector('[data-tour="resumen-semanal"]') ||
+        findButtonContainingText("Resumen Semanal"),
+      popover: {
+        title: "Resumen semanal de asistencias",
+        description:
+          "Panel colapsable con el resumen de horas requeridas, acumuladas, restantes y si cada trabajador cumplió con su jornada. Incluye botón para justificar inasistencias.",
+        side: "top",
+        align: "center",
+      },
+    },
+  ],
+};
+
+export const rrhhTourSteps: DriveStep[] = [
+  ...rrhhSharedSteps,
+  ...rrhhStepsPorTab.trabajadores,
+  ...rrhhStepsPorTab.usuarios,
+  ...rrhhStepsPorTab.asistencias,
+];
+
+export function getRRHHTourSteps(tabId: string): DriveStep[] {
+  const steps = rrhhStepsPorTab[tabId];
+  if (!steps) return rrhhTourSteps;
+  return [...rrhhSharedSteps, ...steps];
+}
 
 export const papeleraTourSteps: DriveStep[] = [
   {

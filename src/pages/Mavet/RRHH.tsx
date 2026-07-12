@@ -111,6 +111,7 @@ export default function RRHH() {
               .filter(tab => !(isGerente && tab === "usuarios"))
               .map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
+                  data-tour={`tab-${tab}`}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
