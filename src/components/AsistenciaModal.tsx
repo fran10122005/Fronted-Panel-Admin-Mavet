@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Modal } from "./ui/modal";
 import { mavetApi } from "../services/api";
+import { formatHoras } from "../utils/formatters";
 import { limitNumericInput } from "../utils/validation";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -44,17 +45,6 @@ const CAMPO_COLORS: Record<string, string> = {
   entrada_manana: "text-green-700 dark:text-green-400",
   salida_manana:  "text-red-600 dark:text-red-400",
 };
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatHoras(h: number): string {
-  const totalMinutos = Math.floor(h * 60);
-  const hrs = Math.floor(totalMinutos / 60);
-  const min = totalMinutos % 60;
-  if (hrs === 0) return `${min} min`;
-  if (min === 0) return `${hrs}h`;
-  return `${hrs}h ${min}min`;
-}
 
 function parsearQRData(text: string): { cedula: string } | null {
   const partes = text.split("|");

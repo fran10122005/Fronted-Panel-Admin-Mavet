@@ -7,6 +7,7 @@ import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
+import { formatHoras } from "../../utils/formatters";
 import Pagination from "../../components/ui/Pagination";
 
 const IconEdit = () => (
@@ -17,15 +18,6 @@ const IconEdit = () => (
 );
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
-
-function formatHoras(h: number): string {
-  const totalMinutos = Math.floor(h * 60);
-  const hrs = Math.floor(totalMinutos / 60);
-  const min = totalMinutos % 60;
-  if (hrs === 0) return `${min} min`;
-  if (min === 0) return `${hrs}h`;
-  return `${hrs}h ${min}min`;
-}
 
 export default function RRHH() {
   const { user } = useAuth();

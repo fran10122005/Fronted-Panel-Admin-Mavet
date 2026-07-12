@@ -14,7 +14,7 @@ import {
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, getUserRole } from "../context/AuthContext";
 
 type NavItem = {
   name: string;
@@ -93,7 +93,7 @@ const AppSidebar: React.FC = () => {
   const location = useLocation();
 
   // Agregamos fallbacks en caso de que el objeto user antiguo en localStorage no tenga .Role
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
 
   const filteredNavItems = useCallback(() => {
     if (userRole === "Administrador" || userRole === "admin" || userRole === "Gerente") return navItems;

@@ -8,7 +8,7 @@ import TallerFormModal from "./talleres/TallerFormModal";
 import TallerDetailModal from "./talleres/TallerDetailModal";
 import InscripcionModal from "./talleres/InscripcionModal";
 import SesionesTallerModal from "./talleres/SesionesTallerModal";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 import { mavetApi, axiosInstance } from "../../services/api";
 import toast from "react-hot-toast";
 
@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
 
 export default function Talleres() {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
   const [activeTab, setActiveTab] = useState<"planificados" | "inscripciones" | "inventario" | "instructores">("planificados");
 

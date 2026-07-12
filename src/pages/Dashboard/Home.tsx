@@ -2,7 +2,7 @@ import PageMeta from "../../components/common/PageMeta";
 import { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
 import { Link } from "react-router";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 import Skeleton from "../../components/ui/Skeleton";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -12,7 +12,7 @@ export default function Home() {
   const [topVisitantes, setTopVisitantes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isSuper = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const showObrasCard = isSuper || userRole === "Curador";

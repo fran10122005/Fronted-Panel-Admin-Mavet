@@ -165,7 +165,9 @@ export const rrhh = {
     }
   },
 
-  updateAsistenciaObservaciones: async (id: string, observaciones: string): Promise<void> => {
-    await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, { observaciones });
+  updateAsistenciaObservaciones: async (id: string, observaciones: string, horas_justificadas?: number): Promise<void> => {
+    const body: any = { observaciones };
+    if (horas_justificadas !== undefined) body.horas_justificadas = horas_justificadas;
+    await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, body);
   },
 };

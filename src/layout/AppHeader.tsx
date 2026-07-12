@@ -1,13 +1,13 @@
 import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, getUserRole } from "../context/AuthContext";
 import UserDropdown from "../components/header/UserDropdown";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import TourFab from "../components/TourFab";
 
 const AppHeader: React.FC = () => {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isSuper = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();

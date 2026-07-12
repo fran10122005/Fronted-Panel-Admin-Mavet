@@ -22,7 +22,7 @@ import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { validateRequired } from "../../utils/validation";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 import Salas from "./Salas";
 import { generateNextCode } from "../../utils/codeGenerator";
 
@@ -40,7 +40,7 @@ const formatCedula = (input: string): string => {
 
 const Auditorio: React.FC = () => {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
