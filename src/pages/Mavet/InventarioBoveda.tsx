@@ -30,8 +30,8 @@ export default function InventarioBoveda() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
 
-  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador";
-  const canDeleteObra = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador" || userRole === "Restaurador";
+  const canDeleteObra = userRole === "Administrador" || userRole === "admin";
 
   const previewUrlRef = useRef<string | null>(null);
   useEffect(() => {

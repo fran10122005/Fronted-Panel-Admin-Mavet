@@ -323,7 +323,7 @@ export default function RRHH() {
                                         {r.observaciones}
                                       </span>
                                     ) : null}
-                                    {!r.cumplio && !r.justificado && (
+                                    {!r.cumplio && !r.justificado && !isGerente && (
                                       <button
                                         onClick={() => setSelectedForJustificacion(r)}
                                         className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
@@ -377,9 +377,23 @@ export default function RRHH() {
                           </td>
                           <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
                           <td className="px-4 py-2 max-w-[160px]">
-                            <span className="text-xs text-gray-500 dark:text-gray-400 block truncate" title={a.observaciones || ""}>
-                              {a.observaciones || "—"}
-                            </span>
+                            {isGerente ? (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
+                                {a.observaciones || "—"}
+                              </span>
+                            ) : (
+                              <input
+                                type="text"
+                                key={a.observaciones ?? ""}
+                                defaultValue={a.observaciones || ""}
+                                onBlur={(e) => {
+                                  const val = e.target.value.trim();
+                                  if (val !== (a.observaciones || "")) handleUpdateObservaciones(a.id, val);
+                                }}
+                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-brand-500 focus:outline-none text-xs px-1 py-0.5 dark:text-gray-300"
+                                placeholder="—"
+                              />
+                            )}
                           </td>
                         </tr>
                       ))}

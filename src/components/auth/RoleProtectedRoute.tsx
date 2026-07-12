@@ -18,8 +18,7 @@ export default function RoleProtectedRoute({ allowedRoles }: Props) {
 
   const userRole = getUserRole(user);
 
-  // Administrador and Gerente bypass all page routing checks
-  const isSuperUser = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const isSuperUser = userRole === "Administrador" || userRole === "admin";
   const hasAccess = isSuperUser || allowedRoles.includes(userRole);
 
   if (!hasAccess) {
