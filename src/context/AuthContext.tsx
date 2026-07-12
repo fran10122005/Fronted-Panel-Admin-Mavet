@@ -78,6 +78,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+export function getUserRole(user: User | null): string {
+  return user?.Role?.nombre_rol || user?.rol || "Administrador";
+}
+
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

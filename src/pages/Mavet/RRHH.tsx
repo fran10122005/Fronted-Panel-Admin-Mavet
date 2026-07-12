@@ -6,7 +6,8 @@ import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
+import Pagination from "../../components/ui/Pagination";
 
 const IconEdit = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +29,7 @@ function formatHoras(h: number): string {
 
 export default function RRHH() {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
 
   const getRoleBadgeStyle = (rolName: string) => {
@@ -64,7 +65,7 @@ export default function RRHH() {
     isLoading, activeTab, setActiveTab,
     searchTerm, setSearchTerm,
     formData, formUsuario, isSubmitting,
-    confirm, setConfirm,
+    confirm,
     editingTrabajadorId, editingUsuarioId,
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     trabajPage, trabajTotalPages, trabajTotalItems,
@@ -396,29 +397,31 @@ export default function RRHH() {
               )}
             </div>
 
-            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-2">
+            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               {activeTab === "trabajadores" && (
-                <>
-                  <span>Mostrando <span className="font-semibold">{Math.min(filteredTrabajadores.length, ITEMS_PER_PAGE)}</span> de <span className="font-semibold">{trabajTotalItems}</span> trabajadores</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => refreshTrabajadores(trabajPage - 1)} disabled={trabajPage <= 1} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed">Anterior</button>
-                    <span className="text-xs font-medium">Pág. {trabajPage} de {trabajTotalPages || 1}</span>
-                    <button onClick={() => refreshTrabajadores(trabajPage + 1)} disabled={trabajPage >= trabajTotalPages} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed">Siguiente</button>
-                  </div>
-                </>
+                <Pagination
+                  currentPage={trabajPage}
+                  totalPages={trabajTotalPages}
+                  totalItems={trabajTotalItems}
+                  pageSize={ITEMS_PER_PAGE}
+                  label="trabajadores"
+                  onPageChange={refreshTrabajadores}
+                />
               )}
               {activeTab === "asistencias" && (
-                <>
-                  <span>Mostrando <span className="font-semibold">{Math.min(filteredAsistencias.length, ITEMS_PER_PAGE)}</span> de <span className="font-semibold">{asistTotalItems}</span> asistencias</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => refreshAsistencias(asistPage - 1)} disabled={asistPage <= 1} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed">Anterior</button>
-                    <span className="text-xs font-medium">Pág. {asistPage} de {asistTotalPages || 1}</span>
-                    <button onClick={() => refreshAsistencias(asistPage + 1)} disabled={asistPage >= asistTotalPages} className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed">Siguiente</button>
-                  </div>
-                </>
+                <Pagination
+                  currentPage={asistPage}
+                  totalPages={asistTotalPages}
+                  totalItems={asistTotalItems}
+                  pageSize={ITEMS_PER_PAGE}
+                  label="asistencias"
+                  onPageChange={refreshAsistencias}
+                />
               )}
               {activeTab === "usuarios" && (
-                <span>Mostrando <span className="font-semibold">{filteredUsuarios.length}</span> registros</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
+                  Mostrando {filteredUsuarios.length} registros
+                </span>
               )}
             </div>
           </>
@@ -464,15 +467,7 @@ export default function RRHH() {
         onSave={handleUpdateObservaciones}
       />
 
-      <ConfirmDialog
-        open={confirm.open}
-        title={confirm.title}
-        message={confirm.message}
-        variant={confirm.variant}
-        confirmLabel={confirm.confirmLabel}
-        onConfirm={confirm.onConfirm}
-        onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
-      />
+      <ConfirmDialog {...confirm} />
     </div>
   );
 }
