@@ -244,29 +244,157 @@ Módulo de uso exclusivo para el personal de taquilla o recepción ubicado en la
 
 ## 8. Área Educativa: Talleres de Formación (`/talleres`)
 
-Este módulo controla la oferta de talleres académicos y de arte impartidos por el museo MAVET.
+Este módulo controla la oferta de talleres académicos y de arte impartidos por el museo MAVET. La interfaz está organizada en **4 pestañas** en la parte superior: **Planificados**, **Inscripciones**, **Inventario** e **Instructores**. Las tarjetas de métricas en la parte superior muestran los totales de talleres activos, alumnos inscritos y talleres en inventario.
 
-### Proceso de Creación o Planificación de un Taller:
-1. Haga clic en el botón **"Planificar Taller"** (o en la sección de talleres correspondientes).
-2. En el formulario modal, complete:
-   * **Nombre del Curso:** Selección del curso del catálogo o inventario de talleres.
-   * **Instructor:** Seleccione el docente a cargo en la lista desplegable.
-   * **Espacio:** Aula o área del museo donde se dictará (Ej: *Taller A*, *Patio Central*).
-   * **Sesiones y Horas Totales:** Frecuencia e intensidad horaria.
-   * **Horarios:** Hora de inicio, hora de fin y fecha de arranque.
-   * **Cupos:** Definición de cupo mínimo y cupo máximo para el control de admisiones.
-3. Presione **"Planificar Taller"**.
+---
 
-### Inscripción de Estudiantes a los Talleres (Paso a Paso):
-1. En la lista de talleres planificados, haga clic en el botón de opciones del taller correspondiente y elija **"Inscribir Alumno"**.
-2. Complete el formulario en el modal de inscripción:
-   * Seleccione el taller al que desea inscribir.
-   * Ingrese el Nombre completo del Alumno y su Edad.
-3. **Validación de Menores de Edad:**
-   * Si la edad ingresada es **menor a 18 años** (`esMenor` se vuelve activo en base al número), el formulario activará dinámicamente campos adicionales obligatorios bajo la sección *Datos del Representante*.
-   * Ingrese: Nombre del Representante, Cédula del Representante y Teléfono de Contacto.
-4. Haga clic en **"Inscribir Alumno"**.
-   * *Validación interna:* El sistema denegará la inscripción si se supera el cupo máximo definido del taller o si faltan datos del representante para menores de edad.
+### Pestaña: Planificados
+
+Muestra la tabla de talleres planificados con:
+* **Buscador:** Filtre por nombre del taller o nombre del instructor escribiendo en el campo de texto.
+* **Filtro por instructor:** Seleccione un instructor específico en la lista desplegable para ver solo sus talleres.
+* **Paginación con números:** Si hay más de 10 talleres, aparecen botones numerados (1, 2, 3...) debajo de la tabla. Haga clic en un número para ir directamente a esa página, o use las flechas ◀ y ▶ para avanzar/retroceder.
+* Cada fila tiene botones de acción visibles (íconos), descritos en la tabla a continuación.
+
+#### Planificar un Taller Nuevo
+1. Esté en la pestaña **Planificados**.
+2. Haga clic en el botón **"Planificar Taller"** (arriba a la derecha, junto al botón PDF).
+3. En el modal que aparece, complete:
+   * **Taller:** Seleccione un taller del catálogo (Inventario).
+   * **Instructor:** Seleccione el docente a cargo.
+   * **Espacio:** Aula o área del museo (Ej: *Taller A*, *Patio Central*).
+   * **Sesiones:** Número de sesiones del taller.
+   * **Fecha de inicio:** Primer día del taller.
+   * **Fecha de fin:** Se sincroniza automáticamente cuando sesiones = 1.
+   * **Hora inicio / Hora fin:** Horario de cada sesión.
+   * **Horas totales:** Se auto-calculan en base a (hora_fin - hora_inicio) × sesiones.
+   * **Cupo mínimo / Cupo máximo:** Límites de admisión.
+   * **Estado:** Activo (encendido) o Inactivo (apagado).
+4. Presione **"Planificar Taller"**. El taller aparecerá en la tabla.
+
+#### Inscribir un Alumno
+1. En la fila del taller, haga clic en el ícono **➕ (verde)**.
+2. En el modal, seleccione el taller (si no está pre-seleccionado).
+3. Ingrese:
+   * **Cédula del Alumno** (opcional pero recomendada para seguimiento).
+   * **Nombre completo del Alumno**.
+   * **Edad del Alumno**.
+4. **Si es menor de edad (< 18 años):** El formulario activará automáticamente los campos de *Datos del Representante*. Ingrese nombre, cédula y teléfono del representante legal.
+5. Presione **"Inscribir Alumno"**.
+6. *Validación interna:* El sistema rechazará la inscripción si el taller ya alcanzó su cupo máximo o si faltan datos del representante para menores.
+
+#### Acciones por fila (íconos visibles)
+
+Cada taller en la tabla tiene botones de acción directamente visibles (sin menú de 3 puntos). Al pasar el mouse sobre cada uno aparece un tooltip con su función:
+
+| Ícono | Color | Tooltip | Acción |
+|-------|-------|---------|--------|
+| 📋 (clipboard) | Ámbar | "Asistencia" | Abre el modal de asistentes que se registraron en recepción para ese taller. |
+| 📄 (PDF) | Rojo | "Lista de Inscritos" | Descarga automáticamente un PDF con la lista de alumnos inscritos. |
+| ➕ (cruz) | Verde | "Inscribir" | Abre el modal para inscribir un nuevo alumno al taller. |
+| ✅ (check) | Azul | "Sesiones" | Abre el modal de gestión de sesiones y pase de lista. |
+| ✏️ (lápiz) | Gris | "Editar" | Abre el modal de planificación precargado para editar los datos del taller. |
+| 🗑️ (papelera) | Rojo | "Eliminar" | Solicita confirmación y elimina el taller planificado. |
+
+#### Ver Asistencia de un Taller (Check-In)
+1. En la fila del taller, haga clic en el ícono **📋 (clipboard ámbar)** → tooltip "Asistencia".
+2. Se abrirá un modal con la tabla de asistentes que se registraron en recepción para ese taller, con nombre, cédula, acompañantes y hora de ingreso.
+
+#### Ver/Descargar Lista de Inscritos (PDF)
+1. En la fila del taller, haga clic en el ícono **📄 (PDF rojo)** → tooltip "Lista de Inscritos".
+2. El sistema descargará automáticamente un PDF con la lista de alumnos inscritos.
+
+#### Inscribir un Alumno (desde la tabla)
+1. En la fila del taller, haga clic en el ícono **➕ (cruz verde)** → tooltip "Inscribir".
+2. Siga los pasos de inscripción descritos arriba.
+
+#### Gestionar Sesiones y Pasar Lista
+1. En la fila del taller, haga clic en el ícono **✅ (check azul)** → tooltip "Sesiones".
+2. Se abrirá el modal de sesiones con:
+   * **Lista de sesiones:** Tabla con fecha, tema y botón "Pasar Lista".
+   * **Métricas:** Barra lateral con ranking de asistencia por alumno.
+3. Para crear una nueva sesión, haga clic en **"Nueva Sesión"**, ingrese fecha y tema.
+4. Para pasar lista, haga clic en **"Pasar Lista"** sobre una sesión existente y marque/desmarque los alumnos presentes.
+
+#### Editar un Taller Planificado (desde la tabla)
+1. En la fila del taller, haga clic en el ícono **✏️ (lápiz gris)** → tooltip "Editar".
+2. Se abrirá el modal de planificación con los datos actuales precargados.
+3. Modifique los campos necesarios y presione **"Guardar"**.
+
+#### Eliminar un Taller Planificado (desde la tabla)
+1. En la fila del taller, haga clic en el ícono **🗑️ (papelera roja)** → tooltip "Eliminar".
+2. Confirme la eliminación en el cuadro de diálogo.
+
+#### Descargar PDF de Planificación General
+1. En la pestaña **Planificados**, haga clic en el botón **"PDF Planificación"**.
+2. El sistema descargará un PDF con todos los talleres planificados.
+
+---
+
+### Pestaña: Inscripciones
+
+Muestra todos los alumnos inscritos agrupados por taller en acordeones expandibles.
+
+#### Explorar Inscripciones
+1. Esté en la pestaña **Inscripciones**.
+2. Cada taller aparece como un acordeón con el número de alumnos.
+3. Haga clic en un acordeón para expandirlo y ver la tabla de alumnos.
+4. La tabla muestra: número, nombre del alumno, cédula, fecha de inscripción y estado.
+
+#### Desinscribir un Alumno
+1. Expanda el acordeón del taller correspondiente.
+2. En la fila del alumno, haga clic en el ícono **🗑️ (papelera)**.
+3. Confirme la desinscripción. El registro se moverá a la Papelera (visible para Administradores).
+
+---
+
+### Pestaña: Inventario
+
+Catálogo maestro de talleres disponibles. Desde aquí se crean, editan y eliminan los tipos de taller que luego se usan al planificar.
+
+#### Crear un Taller en el Inventario
+1. Esté en la pestaña **Inventario**.
+2. Haga clic en el botón **"Crear Taller"**.
+3. En el modal, ingrese:
+   * **Nombre del Taller** (obligatorio).
+   * **Descripción** (opcional).
+4. Presione **"Guardar"**. El nuevo taller aparecerá en la tabla del inventario.
+
+#### Editar un Taller del Inventario
+1. En la fila del taller, haga clic en el ícono **✏️ (lápiz)**.
+2. Modifique el nombre y/o descripción en el modal.
+3. Presione **"Guardar"**.
+
+#### Eliminar un Taller del Inventario
+1. En la fila del taller, haga clic en el ícono **🗑️ (papelera)**.
+2. Confirme la eliminación en el diálogo.
+
+#### Descargar PDF del Inventario
+1. En la pestaña **Inventario**, haga clic en el botón **"PDF Inventario"**.
+2. El sistema descargará un PDF con el catálogo completo.
+
+---
+
+### Pestaña: Instructores
+
+Gestión de instructores sin modal: búsqueda, creación y visualización directa en la página.
+
+#### Registrar un Nuevo Instructor
+1. Esté en la pestaña **Instructores**.
+2. En el campo de texto, ingrese la **cédula** de la persona (Ej: `V-12345678`).
+3. Haga clic en el botón **"Buscar"**.
+4. Si la persona existe en el sistema:
+   * Aparecerá una tarjeta verde con su nombre y cédula.
+   * Si ya es instructor, el sistema lo notificará y no permitirá crearlo duplicado.
+5. Complete los campos opcionales:
+   * **Profesión** (Ej: Arquitecto, Historiador del Arte).
+   * **Especialidad** (Ej: Escultura, Pintura al Óleo).
+6. Haga clic en **"Crear Instructor"**.
+7. El instructor aparecerá en la tabla inferior y estará disponible para seleccionar al planificar talleres.
+
+#### Visualizar Instructores Registrados
+1. En la pestaña **Instructores**, la tabla inferior lista todos los instructores con su nombre, profesión y especialidad.
+2. El contador en la esquina superior derecha muestra el total de instructores registrados.
 
 ---
 

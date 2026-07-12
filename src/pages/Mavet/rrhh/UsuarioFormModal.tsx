@@ -91,7 +91,7 @@ export default function UsuarioFormModal({
             >
               <option value="">Ninguno (Opcional)</option>
               {trabajadores.map((t) => (
-                <option key={t.id || t.cedula} value={t.id}>{t.nombre} {t.apellido}</option>
+                <option key={t.id || t.cedula} value={t.id}>{t.cedula.replace(/^[VE]-/i, '')} - {t.nombre} {t.apellido}</option>
               ))}
             </select>
             {errors.id_trabajador && <p className="text-red-500 text-xs mt-1">{errors.id_trabajador.message}</p>}

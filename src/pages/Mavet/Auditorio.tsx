@@ -907,6 +907,7 @@ const Auditorio: React.FC = () => {
                 <input
                   required
                   type="date"
+                  min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente || isPastEvent || isDateLocked}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useModal } from "./useModal";
+import { useConfirm } from "./useConfirm";
 import { useDebounce } from "./useDebounce";
 import { mavetApi } from "../services/api";
 import { exportarReporteAsistencia, exportarCartaAvalHoras } from "../services/pdf.service";
@@ -50,9 +51,7 @@ export function useRRHH() {
   const [formUsuario, setFormUsuario] = useState(initialUsuarioState);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
-    open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
-  });
+  const { confirm, requestConfirm } = useConfirm();
 
   const [trabajPage, setTrabajPage] = useState(1);
   const [trabajTotalPages, setTrabajTotalPages] = useState(1);
@@ -99,11 +98,11 @@ export function useRRHH() {
     setResumenSemanal(data);
   };
 
-  const handleUpdateObservaciones = async (id: string, observaciones: string) => {
+  const handleUpdateObservaciones = async (id: string, observaciones: string, horas_justificadas: number) => {
     try {
-      await mavetApi.updateAsistenciaObservaciones(id, observaciones);
+      await mavetApi.updateAsistenciaObservaciones(id, observaciones, horas_justificadas);
       setAsistencias((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, observaciones } : a))
+        prev.map((a) => (a.id === id ? { ...a, observaciones, horas_justificadas } : a))
       );
       setResumenSemanal((prev) =>
         prev.map((r) => ({
@@ -112,7 +111,7 @@ export function useRRHH() {
             ? observaciones
             : r.observaciones,
           dias: r.dias.map((d) =>
-            d.id === id ? { ...d, observaciones } : d
+            d.id === id ? { ...d, observaciones, horas_justificadas } : d
           ),
         }))
       );
@@ -181,14 +180,12 @@ export function useRRHH() {
   };
 
   const handleResetPassword = (_userId: string, correo: string) => {
-    setConfirm({
-      open: true,
+    requestConfirm({
       title: "Restablecer contraseña",
       message: `¿Enviar correo de restablecimiento de contraseña a "${correo}"?`,
       variant: "info",
       confirmLabel: "Enviar",
       onConfirm: async () => {
-        setConfirm(prev => ({ ...prev, open: false }));
         setIsSubmitting(true);
         try {
           await mavetApi.resetPasswordUsuario(correo);
@@ -203,14 +200,12 @@ export function useRRHH() {
   };
 
   const handleDeleteTrabajador = (t: Trabajador) => {
-    setConfirm({
-      open: true,
+    requestConfirm({
       title: "Eliminar trabajador",
       message: `¿Está seguro de que desea eliminar a "${t.nombre} ${t.apellido}"? Se moverá a la papelera.`,
       variant: "danger",
       confirmLabel: "Eliminar",
       onConfirm: async () => {
-        setConfirm(prev => ({ ...prev, open: false }));
         try {
           await mavetApi.eliminarTrabajador(t.id?.toString() ?? "");
           toast.success("Trabajador eliminado. Se movió a la papelera.");
@@ -223,14 +218,12 @@ export function useRRHH() {
   };
 
   const handleDeleteUsuario = (u: Usuario) => {
-    setConfirm({
-      open: true,
+    requestConfirm({
       title: "Eliminar usuario",
       message: `¿Está seguro de que desea eliminar al usuario "${u.correo}"? Esta acción no se puede deshacer.`,
       variant: "danger",
       confirmLabel: "Eliminar",
       onConfirm: async () => {
-        setConfirm(prev => ({ ...prev, open: false }));
         try {
           await mavetApi.eliminarUsuario(u.id);
           toast.success("Usuario eliminado exitosamente.");
@@ -269,15 +262,12 @@ export function useRRHH() {
       setActiveTab("trabajadores");
 
       if (editingTrabajadorId === null && trabajadorId) {
-        // Show confirm dialog to print carnet
-        setConfirm({
-          open: true,
+        requestConfirm({
           title: "Imprimir Carnet",
           message: "El trabajador ha sido registrado exitosamente. ¿Deseas imprimir su carnet ahora?",
           confirmLabel: "Imprimir",
           variant: "info",
           onConfirm: async () => {
-            setConfirm(prev => ({ ...prev, open: false }));
             try {
               const res = await mavetApi.getTrabajadores(1, 100);
               const t = res.data.find(x => x.id === trabajadorId);
@@ -366,7 +356,8 @@ export function useRRHH() {
   const filteredUsuarios = useMemo(() =>
     usuarios.filter((u) =>
       u.correo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase())
+      (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (u.trabajador?.cedula || "").toLowerCase().includes(debouncedSearch.toLowerCase().replace(/^[VEve]-/, ''))
     ), [usuarios, debouncedSearch]);
 
   return {
@@ -374,7 +365,7 @@ export function useRRHH() {
     isLoading, activeTab, setActiveTab,
     searchTerm, setSearchTerm, debouncedSearch,
     formData, formUsuario, isSubmitting,
-    confirm, setConfirm,
+    confirm, requestConfirm,
     editingTrabajadorId, editingUsuarioId,
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     selectedForJustificacion, setSelectedForJustificacion,

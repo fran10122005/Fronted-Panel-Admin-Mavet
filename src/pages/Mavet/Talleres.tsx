@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTalleres } from "../../hooks/useTalleres";
 import ComponentCard from "../../components/common/ComponentCard";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -32,6 +33,14 @@ export default function Talleres() {
   const { user } = useAuth();
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
   const isGerente = userRole === "Gerente";
+  const [activeTab, setActiveTab] = useState<"planificados" | "inscripciones" | "inventario" | "instructores">("planificados");
+
+  const tabs = [
+    { id: "planificados" as const, label: "Planificados", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: "inscripciones" as const, label: "Inscripciones", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+    { id: "inventario" as const, label: "Inventario", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
+    { id: "instructores" as const, label: "Instructores", icon: "M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" },
+  ];
 
   const {
     talleres, inventario, instructores, espacios,
@@ -64,16 +73,13 @@ export default function Talleres() {
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
     handleEliminarInventario,
-    handleOpenPlanificar, handleEliminarPlanificado,
+    formError, handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
-    showCrearInstructor,
     nuevaCedula, setNuevaCedula,
     personaEncontrada,
     buscandoPersona,
     nuevaProfesion, setNuevaProfesion,
     nuevaEspecialidad, setNuevaEspecialidad,
-    openCrearInstructor,
-    closeCrearInstructor,
     handleBuscarPersona,
     handleCrearInstructor,
     openEnroll, handleEnrollChange, handleSubmitInscripcion,
@@ -102,18 +108,28 @@ export default function Talleres() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gesti&oacute;n de Talleres</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administraci&oacute;n de talleres, planificaci&oacute;n y control de inscripciones.</p>
-        <div className="flex flex-wrap gap-2 mt-3">
-          <button onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/inventario-talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Inventario_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de inventario descargado'); } catch { toast.error('Error al descargar inventario de talleres'); } }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-colors shadow-sm">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Inventario de Talleres
-          </button>
-          <button onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Planificacion_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de planificación descargado'); } catch { toast.error('Error al descargar planificación de talleres'); } }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors shadow-sm">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Planificación de Talleres
-          </button>
-        </div>
+      </div>
+
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="flex gap-1 -mb-px overflow-x-auto">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              data-tour={`tab-${tab.id}`}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-brand-500 text-brand-600 dark:text-brand-400"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+              }`}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={tab.icon} />
+              </svg>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -155,12 +171,14 @@ export default function Talleres() {
         </div>
       ) : (
       <>
-
+      {activeTab === "planificados" && (
+      
       <ComponentCard title="Listado de Talleres" desc="Talleres planificados con instructor, fecha y cupos">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-4">
           <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-start sm:items-center">
             <div className="relative w-full sm:w-56 md:w-64">
               <input type="text" placeholder="Buscar por nombre o instructor..."
+                data-tour="buscador-planificados"
                 value={searchTerm}
                 onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className={inputCls + " pl-10 text-sm"} />
@@ -177,17 +195,15 @@ export default function Talleres() {
               ))}
             </select>
           </div>
-          {!isGerente && (
-            <div className="flex flex-wrap gap-2">
-              <button onClick={openCrearInstructor}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-4 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                <span className="hidden sm:inline">Gestionar Instructores</span>
-                <span className="sm:hidden">Instructores</span>
-              </button>
-              <button onClick={handleOpenPlanificar}
+          <div className="flex flex-wrap gap-2">
+            <button data-tour="pdf-planificacion" onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Planificacion_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de planificación descargado'); } catch { toast.error('Error al descargar planificación'); } }}
+              className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="hidden sm:inline">PDF Planificación</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+            {!isGerente && (
+              <button data-tour="planificar-taller" onClick={handleOpenPlanificar}
                 className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -195,8 +211,8 @@ export default function Talleres() {
                 <span className="hidden sm:inline">Planificar Taller</span>
                 <span className="sm:hidden">Planificar</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
         <table className="w-full text-left min-w-[600px] sm:min-w-0">
@@ -206,7 +222,7 @@ export default function Talleres() {
               <th className={thCls}>Instructor</th>
               <th className={thCls}>Fecha</th>
               <th className={thCls}>Cupos</th>
-              <th className={`${thCls} text-center w-14`}></th>
+              <th className={`${thCls} text-center w-44`}>Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -232,73 +248,42 @@ export default function Talleres() {
                   <span className="text-xs font-medium">{t.cupo_minimo || 0}/{t.cupo_maximo || 0}</span>
                   {t.sesiones && <span className="text-[11px] text-gray-400 ml-1.5">· {t.sesiones} ses.</span>}
                 </td>
-                <td className="px-3 py-2 text-center">
-                  <div className="relative inline-block">
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      const menu = document.getElementById(`actions-${t.id_taller}`);
-                      if (!menu) return;
-                      const isOpen = !menu.classList.contains('hidden');
-                      document.querySelectorAll('[id^="actions-"]').forEach(el => {
-                        el.classList.add('hidden'); el.classList.remove('flex');
-                        (el as HTMLElement).style.position = '';
-                        (el as HTMLElement).style.top = '';
-                        (el as HTMLElement).style.right = '';
-                      });
-                      if (!isOpen) {
-                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                        menu.style.position = 'fixed';
-                        menu.style.top = `${rect.bottom + 4}px`;
-                        menu.style.right = `${window.innerWidth - rect.right}px`;
-                        menu.classList.remove('hidden');
-                        menu.classList.add('flex');
-                        const closeHandler = (ev: MouseEvent) => {
-                          if (!menu.contains(ev.target as Node) && ev.target !== e.currentTarget) {
-                            menu.classList.add('hidden'); menu.classList.remove('flex');
-                            menu.style.position = ''; menu.style.top = ''; menu.style.right = '';
-                            document.removeEventListener('click', closeHandler);
-                          }
-                        };
-                        setTimeout(() => document.addEventListener('click', closeHandler), 0);
-                      }
-                    }}
-                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                      </svg>
+                <td className="px-3 py-2 text-center whitespace-nowrap">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <button onClick={() => openAsistentes(t)}
+                      className="flex flex-col items-center p-1 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors group" title="Asistencia">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                      <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Lista</span>
                     </button>
-                    <div id={`actions-${t.id_taller}`} className="hidden z-50 min-w-[160px] flex-col rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
-                      <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openAsistentes(t); }}
-                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                        Asistencia
-                      </button>
-                      <button onClick={async (e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); try { await mavetApi.exportInscripciones(t.id_taller, 'pdf'); toast.success('PDF de inscritos descargado'); } catch { toast.error('Error al descargar el PDF'); } }}
-                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                        <svg className="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Lista de Inscritos
-                      </button>
-                      {!isGerente && (
-                        <>
-                          <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); openEnroll(t); }}
-                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                            <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                            Inscribir
-                          </button>
-                          <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                          <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleOpenPlanificar(t); }}
-                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                            <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                            Editar
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); document.getElementById(`actions-${t.id_taller}`)?.classList.add('hidden'); handleEliminarPlanificado(t); }}
-                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left">
-                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            Eliminar
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <button onClick={() => { mavetApi.exportInscripciones(t.id_taller, 'pdf'); toast.success('PDF de inscritos descargado'); }}
+                      className="flex flex-col items-center p-1 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors group" title="Lista de Inscritos">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">PDF</span>
+                    </button>
+                    {!isGerente && (
+                      <>
+                        <button onClick={() => openEnroll(t)}
+                          className="flex flex-col items-center p-1 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors group" title="Inscribir">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                          <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Insc.</span>
+                        </button>
+                        <button onClick={() => openSesiones(t)}
+                          className="flex flex-col items-center p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors group" title="Sesiones">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                          <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Ses.</span>
+                        </button>
+                        <button onClick={() => handleOpenPlanificar(t)}
+                          className="flex flex-col items-center p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors group" title="Editar">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Editar</span>
+                        </button>
+                        <button onClick={() => handleEliminarPlanificado(t)}
+                          className="flex flex-col items-center p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors group" title="Eliminar">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Elim.</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -308,26 +293,38 @@ export default function Talleres() {
         </div>
         {totalPages > 1 && (
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-sm text-gray-600 dark:text-gray-400 order-2 sm:order-1">
-              P&aacute;gina {currentPage} de {totalPages}
-            </span>
-            <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
+            <div className="flex items-center gap-2 order-2 sm:order-1">
               <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                Anterior
+                className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
               </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button key={page} onClick={() => setCurrentPage(page)}
+                  className={`w-9 h-9 text-sm font-medium rounded-lg border transition-colors ${
+                    page === currentPage
+                      ? "bg-brand-500 text-white border-brand-500"
+                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}>
+                  {page}
+                </button>
+              ))}
               <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                Siguiente
+                className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg order-1 sm:order-2">
+              P&aacute;gina {currentPage} de {totalPages}
+            </span>
           </div>
         )}
       </ComponentCard>
+      )}
 
-      <ComponentCard title="Alumnos Inscritos por Taller" desc="Distribución de inscripciones agrupadas por taller">
+      {activeTab === "inscripciones" && (
+      <ComponentCard title="Alumnos Inscritos" desc="Distribución de inscripciones agrupadas por taller">
         {inscripcionesAgrupadas.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,23 +398,36 @@ export default function Talleres() {
           </div>
         )}
       </ComponentCard>
+      )}
 
+      {activeTab === "inventario" && (
       <ComponentCard
         title="Inventario de Talleres"
         desc="Catálogo maestro de talleres disponibles"
-        action={!isGerente ? (
-          <button onClick={handleOpenCrear}
-            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap w-full sm:w-auto justify-center">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Crear Taller
-          </button>
-        ) : undefined}
+        action={
+          <div className="flex gap-2">
+            <button onClick={async () => { try { const res = await axiosInstance.get('/api/reportes/inventario-talleres', { responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([res.data])); const a = document.createElement('a'); a.href = url; a.download = `MAVET_Inventario_Talleres_${new Date().toISOString().split('T')[0]}.pdf`; a.click(); window.URL.revokeObjectURL(url); toast.success('PDF de inventario descargado'); } catch { toast.error('Error al descargar inventario'); } }}
+              className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span className="hidden sm:inline">PDF Inventario</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+            {!isGerente && (
+              <button onClick={handleOpenCrear}
+                className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Crear Taller
+              </button>
+            )}
+          </div>
+        }
       >
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative w-full sm:w-64">
             <input type="text" placeholder="Buscar en inventario..."
+              data-tour="buscador-inventario"
               value={searchInventario}
               onChange={e => setSearchInventario(e.target.value)}
               className={inputCls + " pl-10 text-sm"} />
@@ -481,6 +491,102 @@ export default function Talleres() {
         </table>
         </div>
       </ComponentCard>
+      )}
+
+      {activeTab === "instructores" && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Gestionar Instructores</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Busque una persona por cédula para registrarla como instructor.</p>
+            </div>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
+              {instructores.length} registrado{instructores.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input type="text" value={nuevaCedula} onChange={e => setNuevaCedula(e.target.value)}
+                className={inputCls} placeholder="Ej. V-12345678" />
+              <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
+                className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0 text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar
+              </button>
+            </div>
+
+            {buscandoPersona && (
+              <p className="text-xs text-brand-600 font-medium flex items-center gap-2">
+                <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></span>
+                Buscando persona...
+              </p>
+            )}
+
+            {personaEncontrada && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-sm">
+                <p className="font-medium text-green-800 dark:text-green-300">
+                  {personaEncontrada.nombres} {personaEncontrada.apellidos}
+                </p>
+                <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Cédula: {personaEncontrada.cedula}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
+                <input type="text" value={nuevaProfesion} onChange={e => setNuevaProfesion(e.target.value)}
+                  className={inputCls} placeholder="Ej. Arquitecto" />
+              </div>
+              <div>
+                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
+                <input type="text" value={nuevaEspecialidad} onChange={e => setNuevaEspecialidad(e.target.value)}
+                  className={inputCls} placeholder="Ej. Historia del Arte" />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button type="button" onClick={handleCrearInstructor} disabled={isSubmitting || !personaEncontrada}
+                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Crear Instructor"}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Nombre</th>
+                    <th className="px-3 py-2 font-medium">Profesión</th>
+                    <th className="px-3 py-2 font-medium">Especialidad</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {instructores.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-xs">No hay instructores registrados.</td>
+                    </tr>
+                  ) : (
+                    instructores.map(inst => (
+                      <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion_ocupacion || "—"}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.especialidad || "—"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       </>
       )}
 
@@ -515,6 +621,7 @@ export default function Talleres() {
         instructores={instructores}
         espacios={espacios}
         isSubmitting={isSubmitting}
+        formError={formError}
         onChange={handlePlanificarChange}
         onEstadoChange={handlePlanificarEstadoChange}
         onSubmit={handleSubmitPlanificar}
@@ -523,100 +630,6 @@ export default function Talleres() {
       />
 
       {/* --- Instructor Management Modal --- */}
-      <Modal isOpen={showCrearInstructor} onClose={closeCrearInstructor} className="max-w-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Gestionar Instructores</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">Busque una persona por cédula para registrarla como instructor.</p>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Buscar por Cédula *</label>
-            <div className="flex gap-2">
-              <input type="text" value={nuevaCedula} onChange={e => setNuevaCedula(e.target.value)}
-                className={inputCls} placeholder="Ej. V-12345678" />
-              <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
-                className="bg-brand-500 hover:bg-brand-600 text-white px-3 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="text-xs">Buscar</span>
-              </button>
-            </div>
-          </div>
-
-          {buscandoPersona && (
-            <p className="text-xs text-brand-600 font-medium flex items-center gap-2">
-              <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></span>
-              Buscando persona...
-            </p>
-          )}
-
-          {personaEncontrada && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-sm">
-              <p className="font-medium text-green-800 dark:text-green-300">
-                {personaEncontrada.nombres} {personaEncontrada.apellidos}
-              </p>
-              <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Cédula: {personaEncontrada.cedula}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
-              <input type="text" value={nuevaProfesion} onChange={e => setNuevaProfesion(e.target.value)}
-                className={inputCls} placeholder="Ej. Arquitecto" />
-            </div>
-            <div>
-              <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
-              <input type="text" value={nuevaEspecialidad} onChange={e => setNuevaEspecialidad(e.target.value)}
-                className={inputCls} placeholder="Ej. Historia del Arte" />
-            </div>
-          </div>
-
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <button type="button" onClick={closeCrearInstructor} disabled={isSubmitting}
-              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-              Cerrar
-            </button>
-            <button type="button" onClick={handleCrearInstructor} disabled={isSubmitting || !personaEncontrada}
-              className="w-full sm:w-auto flex items-center justify-center px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : "Crear Instructor"}
-            </button>
-          </div>
-
-          <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">Instructores Registrados ({instructores.length})</h4>
-            <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Nombre</th>
-                    <th className="px-3 py-2 font-medium">Profesión</th>
-                    <th className="px-3 py-2 font-medium">Especialidad</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {instructores.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-xs">No hay instructores registrados.</td>
-                    </tr>
-                  ) : (
-                    instructores.map(inst => (
-                      <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                        <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion_ocupacion || "—"}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.especialidad || "—"}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </Modal>
-
       <InscripcionModal
         isOpen={isOpenEnroll}
         onClose={closeEnrollModal}

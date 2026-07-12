@@ -109,6 +109,7 @@ export default function Biblioteca() {
       <div className="flex border-b border-gray-200 dark:border-gray-700 gap-1">
         <button
           onClick={() => setActiveTab("inventario")}
+          data-tour="tab-inventario"
           className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
             activeTab === "inventario"
               ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
@@ -122,6 +123,7 @@ export default function Biblioteca() {
         </button>
         <button
           onClick={() => setActiveTab("consultas")}
+          data-tour="tab-consultas"
           className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
             activeTab === "consultas"
               ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"

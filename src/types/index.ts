@@ -124,6 +124,7 @@ export interface Usuario {
   trabajador?: {
     nombre: string;
     cargo: string;
+    cedula?: string;
   };
 }
 
@@ -170,6 +171,7 @@ export interface ResumenSemanalTrabajador {
     salida: string | null;
     horas: number | null;
     observaciones: string | null;
+    horas_justificadas: number | null;
   }>;
 }
 

@@ -9,6 +9,22 @@ const TourFab = () => {
     if (isTourActive) return;
     if (location.pathname === "/") {
       startGlobalTour();
+    } else if (location.pathname === "/talleres" || location.pathname === "/biblioteca") {
+      const activeTab = document.querySelector('[data-tour^="tab-"].border-brand-500');
+      if (activeTab) {
+        const tabId = activeTab.getAttribute("data-tour")?.replace("tab-", "");
+        startPageTour(location.pathname, tabId || undefined);
+      } else {
+        startPageTour(location.pathname);
+      }
+    } else if (location.pathname === "/rrhh") {
+      const activeTab = document.querySelector('[data-tour^="tab-"].shadow-sm');
+      if (activeTab) {
+        const tabId = activeTab.getAttribute("data-tour")?.replace("tab-", "");
+        startPageTour(location.pathname, tabId || undefined);
+      } else {
+        startPageTour(location.pathname);
+      }
     } else {
       startPageTour(location.pathname);
     }
