@@ -161,6 +161,7 @@ export default function TrabajadorFormModal({
                   {...register("correo_personal")}
                 />
                 {errors.correo_personal && <p className="text-red-500 text-xs mt-1">{errors.correo_personal.message}</p>}
+                {!errors.correo_personal && <p className="text-[10px] text-gray-400 mt-0.5">Solo informativo. No se usa como acceso al sistema.</p>}
               </div>
             </div>
             <div className="mt-3">

@@ -8,7 +8,7 @@ import TourFab from "../components/TourFab";
 const AppHeader: React.FC = () => {
   const { user } = useAuth();
   const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
-  const isSuper = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const isSuper = userRole === "Administrador" || userRole === "admin";
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 

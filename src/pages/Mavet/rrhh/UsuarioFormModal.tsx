@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
@@ -53,16 +53,28 @@ export default function UsuarioFormModal({
   trabajadores, roles, isSubmitting, onSubmit, inputCls,
 }: Props) {
   const schema = useMemo(() => buildUsuarioSchema(editingUsuarioId === null), [editingUsuarioId]);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UsuarioFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } = useForm<UsuarioFormValues>({
     resolver: zodResolver(schema) as any,
     defaultValues: initialData,
   });
+
+  const watchedIdTrabajador = useWatch({ control, name: "id_trabajador" });
+  const watchedCorreo = watch("correo");
 
   useEffect(() => {
     if (isOpen) {
       reset(initialData);
     }
   }, [isOpen, initialData, reset]);
+
+  useEffect(() => {
+    if (editingUsuarioId !== null) return;
+    if (!watchedIdTrabajador || watchedIdTrabajador === "0" || watchedCorreo?.trim()) return;
+    const t = trabajadores.find((tr) => String(tr.id) === String(watchedIdTrabajador));
+    if (t?.correo) {
+      setValue("correo", t.correo);
+    }
+  }, [watchedIdTrabajador, editingUsuarioId, watchedCorreo, trabajadores, setValue]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[420px] p-5">
