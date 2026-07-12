@@ -56,6 +56,10 @@ export function useTalleres() {
 
   const [inventarioForm, setInventarioForm] = useState(initialInventarioForm);
   const [planificarForm, setPlanificarForm] = useState(initialPlanificarForm);
+  const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const instructor = useTalleresInstructor(
@@ -180,6 +184,8 @@ export function useTalleres() {
   };
 
   const handleOpenPlanificar = (taller?: any) => {
+    setFormError("");
+    setFieldErrors({});
     if (taller) {
       setIsEditingPlanificado(true);
       setSelectedTaller(taller);
@@ -227,8 +233,13 @@ export function useTalleres() {
   };
 
   const handlePlanificarChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormError("");
     const { name, value } = e.target;
     const numFields = ["sesiones", "cupo_minimo", "cupo_maximo"];
+
+    // Limpiar error del campo que se está modificando
+    setFieldErrors(prev => ({ ...prev, [name]: "" }));
+
     setPlanificarForm(prev => {
       const updated = {
         ...prev,
@@ -250,14 +261,52 @@ export function useTalleres() {
         if (finMin > inicioMin) {
           const diffHoras = (finMin - inicioMin) / 60;
           updated.horas_totales = diffHoras * sesiones;
+          // Limpiar el error de horas si ya es válido
+          setFieldErrors(fe => ({ ...fe, hora_inicio: "", hora_fin: "" }));
         } else {
           updated.horas_totales = "";
+          // Mostrar error de hora en tiempo real
+          if ((name === "hora_inicio" || name === "hora_fin") && horaInicio && horaFin) {
+            const diffMin = finMin - inicioMin;
+            if (diffMin <= 0) {
+              setFieldErrors(fe => ({ ...fe, hora_fin: "La hora de fin debe ser posterior a la hora de inicio" }));
+            } else if (diffMin < 20) {
+              setFieldErrors(fe => ({ ...fe, hora_fin: "La duración mínima es 20 minutos" }));
+            }
+          }
         }
       } else if (!horaInicio || !horaFin || sesiones <= 0) {
         // Si falta algún dato, limpiar horas_totales
         if (["hora_inicio", "hora_fin", "sesiones"].includes(name)) {
           updated.horas_totales = "";
         }
+      }
+
+      // Validación en tiempo real de cupos
+      const cupoMin = name === "cupo_minimo" ? Number(value) : Number(prev.cupo_minimo);
+      const cupoMax = name === "cupo_maximo" ? Number(value) : Number(prev.cupo_maximo);
+      if (value !== "" && prev.cupo_minimo !== "" && prev.cupo_maximo !== "") {
+        if (cupoMin > 0 && cupoMax > 0 && cupoMin > cupoMax) {
+          setFieldErrors(fe => ({ ...fe, cupo_maximo: "El cupo máximo debe ser mayor o igual al cupo mínimo" }));
+        } else if ((name === "cupo_minimo" || name === "cupo_maximo") && cupoMin <= cupoMax) {
+          setFieldErrors(fe => ({ ...fe, cupo_maximo: "" }));
+        }
+      }
+
+      // Validación en tiempo real de fechas
+      const fechaInicio = name === "fecha" ? value : prev.fecha;
+      const fechaFin = name === "fecha_fin" ? value : prev.fecha_fin;
+      if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+        setFieldErrors(fe => ({ ...fe, fecha_fin: "La fecha de fin debe ser igual o posterior a la fecha de inicio" }));
+      } else if ((name === "fecha" || name === "fecha_fin") && fechaInicio && fechaFin && fechaInicio <= fechaFin) {
+        setFieldErrors(fe => ({ ...fe, fecha_fin: "" }));
+      }
+
+      // Validación en tiempo real de sesiones
+      if (name === "sesiones" && value !== "" && Number(value) < 1) {
+        setFieldErrors(fe => ({ ...fe, sesiones: "El número de sesiones debe ser al menos 1" }));
+      } else if (name === "sesiones") {
+        setFieldErrors(fe => ({ ...fe, sesiones: "" }));
       }
 
       // Sincronizar fecha_fin con fecha cuando sesiones = 1
@@ -282,6 +331,29 @@ export function useTalleres() {
       toast.error("Debe seleccionar un instructor.");
       return;
     }
+    // Validaciones de formulario
+    if (planificarForm.cupo_minimo && planificarForm.cupo_maximo && Number(planificarForm.cupo_minimo) > Number(planificarForm.cupo_maximo)) {
+      setFormError('El cupo mínimo no puede ser mayor al cupo máximo');
+      setIsSubmitting(false);
+      return;
+    }
+    if (planificarForm.fecha && planificarForm.fecha_fin && planificarForm.fecha > planificarForm.fecha_fin) {
+      setFormError('La fecha de inicio debe ser anterior o igual a la fecha de fin');
+      setIsSubmitting(false);
+      return;
+    }
+    if (planificarForm.hora_inicio && planificarForm.hora_fin) {
+      const [hI, mI] = planificarForm.hora_inicio.split(':').map(Number);
+      const [hF, mF] = planificarForm.hora_fin.split(':').map(Number);
+      const diffMin = hF * 60 + mF - (hI * 60 + mI);
+      if (diffMin < 20) {
+        setFormError('La hora de fin debe ser al menos 20 minutos después de la hora de inicio');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    setFormError("");
+    setFieldErrors({});
     setIsSubmitting(true);
     try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
@@ -317,7 +389,7 @@ export function useTalleres() {
       setTalleres(talleresData);
       setInscripciones(inscripcionesData);
     } catch (error: any) {
-      toast.error(error.message || "Error al planificar taller.");
+      setFormError(error.message || "Error al planificar taller.");
     } finally {
       setIsSubmitting(false);
     }
@@ -405,6 +477,8 @@ export function useTalleres() {
     isOpenAsistentes, closeAsistentesModal,
     isOpenSesiones, closeSesionesModal,
     confirm, setConfirm,
+    formError, setFormError,
+    fieldErrors,
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
     handleEliminarInventario,

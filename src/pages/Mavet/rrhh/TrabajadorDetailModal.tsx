@@ -14,6 +14,7 @@ interface Props {
 export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, onRefresh }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localFotoUrl, setLocalFotoUrl] = useState<string | null>(null);
+  const [viewingImage, setViewingImage] = useState(false);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,16 +34,17 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
   const fotoUrl = localFotoUrl || t?.foto_url;
 
   return (
-    <Modal
-      isOpen={t !== null}
-      onClose={onClose}
-      showCloseButton={false}
-      className="max-w-3xl p-0 overflow-hidden"
-    >
+    <>
+      <Modal
+        isOpen={t !== null && !viewingImage}
+        onClose={onClose}
+        showCloseButton={false}
+        className="max-w-5xl p-0 overflow-hidden"
+      >
       {t && (
-        <div className="flex flex-col md:flex-row min-h-[420px]">
+        <div className="flex flex-col md:flex-row md:min-h-[420px]">
           <div
-            className="md:w-[280px] w-full bg-brand-950 p-5 flex flex-col items-center justify-between relative text-white"
+            className="md:w-[260px] w-full bg-brand-950 p-4 md:p-5 flex flex-col items-center justify-center md:justify-between relative text-white"
             style={{
               backgroundImage: `
                 linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
@@ -51,30 +53,40 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
               backgroundSize: '20px 20px'
             }}
           >
-            <div className="w-full flex justify-between text-[11px] font-semibold tracking-wider text-brand-300">
-              <span>{t.cedula}</span>
-              <span>REGISTRO RRHH</span>
-            </div>
 
-            <div className="w-44 h-56 my-6 border border-brand-800/60 bg-brand-950/40 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center relative p-4 group overflow-hidden">
+
+            <div className="w-24 h-32 md:w-28 md:h-36 my-3 md:my-6 border border-brand-800/60 bg-brand-950/40 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center relative p-2 group overflow-hidden">
               <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t border-l border-brand-400"></div>
               <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t border-r border-brand-400"></div>
               <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b border-l border-brand-400"></div>
               <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b border-r border-brand-400"></div>
 
+              {fotoUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewingImage(true); }}
+                  className="absolute top-1 right-1 md:top-2 md:right-2 bg-black/60 hover:bg-black/80 text-white rounded-md p-1 md:p-1.5 z-10 opacity-70 group-hover:opacity-100 transition-opacity"
+                  title="Ver foto en grande"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </button>
+              )}
+
               {fotoUrl ? (
                 <img
                   src={fotoUrl}
                   alt="Foto del trabajador"
-                  className="w-full h-full object-cover rounded-lg"
+                  className="w-full h-full object-cover rounded-md cursor-pointer"
+                  onClick={() => setViewingImage(true)}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center">
-                  <svg className="w-10 h-10 text-brand-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-8 h-8 md:w-10 md:h-10 text-brand-400/80 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="font-semibold text-[11px] tracking-wider text-brand-100 uppercase text-center">Ficha de Personal</span>
-                  <span className="text-[9px] text-brand-300/60 tracking-widest uppercase mt-1 text-center font-serif">MAVET RRHH</span>
+                  <span className="font-semibold text-[10px] md:text-[11px] tracking-wider text-brand-100 uppercase text-center leading-tight">Ficha de<br/>Personal</span>
                 </div>
               )}
 
@@ -88,7 +100,7 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
               </label>
             </div>
 
-            <div className="text-center">
+            <div className="text-center hidden md:block">
               <p className="text-xs font-semibold tracking-widest text-brand-300">MAVET</p>
               <p className="text-[9px] text-brand-400/60 mt-0.5">Museo de Artes Visuales y del Espacio</p>
             </div>
@@ -101,7 +113,10 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
                   <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white leading-tight">
                     {t.nombre} {t.apellido}
                   </h2>
-                  <p className="text-brand-500 dark:text-brand-400 font-semibold text-xs mt-1">
+                  <p className="text-[13px] font-bold tracking-wide text-gray-600 dark:text-gray-400 mt-1">
+                    {t.cedula}
+                  </p>
+                  <p className="text-brand-500 dark:text-brand-400 font-semibold text-xs mt-0.5">
                     • {t.cargo}
                   </p>
                 </div>
@@ -233,5 +248,21 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
         </div>
       )}
     </Modal>
+
+    <Modal
+      isOpen={viewingImage}
+      onClose={() => setViewingImage(false)}
+      showCloseButton={true}
+      className="max-w-2xl bg-black/95 p-2 rounded-lg"
+    >
+      {fotoUrl && (
+        <img
+          src={fotoUrl}
+          alt="Foto del trabajador"
+          className="w-full h-auto max-h-[85vh] object-contain rounded-md"
+        />
+      )}
+    </Modal>
+    </>
   );
 }

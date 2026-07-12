@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { twMerge } from "tailwind-merge";
 
 interface ModalProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
       )}
       <div
         ref={modalRef}
-        className={`${contentClasses}  ${className}`}
+        className={twMerge(contentClasses, className)}
         onClick={(e) => e.stopPropagation()}
       >
         {showCloseButton && (

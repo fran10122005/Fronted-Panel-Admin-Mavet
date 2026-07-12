@@ -1,5 +1,6 @@
 import { Modal } from "../../../components/ui/modal";
 import { limitNumericInput } from "../../../utils/validation";
+import { AlertCircle } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface Props {
   instructores: any[];
   espacios: any[];
   isSubmitting: boolean;
+  formError: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onEstadoChange: (value: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -35,7 +37,7 @@ const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text
 export default function TallerDetailModal({
   isOpen, onClose, isEditing, formData,
   inventario, instructores, espacios,
-  isSubmitting, onChange, onEstadoChange, onSubmit,
+  isSubmitting, formError, onChange, onEstadoChange, onSubmit,
   inputCls, selectCls,
 }: Props) {
   return (
@@ -94,7 +96,7 @@ export default function TallerDetailModal({
             <div>
               <label className={labelCls}>Cupo Mínimo</label>
               <input type="number" name="cupo_minimo" value={formData.cupo_minimo}
-                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={0} />
+                onChange={onChange} onKeyDown={limitNumericInput} className={inputCls} min={1} />
             </div>
             <div>
               <label className={labelCls}>Cupo Máximo</label>
@@ -148,6 +150,12 @@ export default function TallerDetailModal({
               </select>
             </div>
           </div>
+          {formError && (
+            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium">{formError}</p>
+            </div>
+          )}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button type="button" onClick={onClose} disabled={isSubmitting}
               className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">

@@ -95,8 +95,8 @@ export default function LibroFormModal({
                 Cuota (Nº Catalogación)
               </label>
               <input
-                type="text" readOnly tabIndex={-1}
-                className={inputCls + " bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-70"}
+                type="text" placeholder="Ej. C-001"
+                className={inputCls}
                 {...register("cuota")}
               />
             </div>

@@ -33,7 +33,6 @@ const getFirstDayOfMonth = (date: Date) => {
 
 const defaultGetColor = (tipo?: string) => {
   switch (tipo) {
-    case "Exposición": return "bg-blue-500";
     case "Taller": return "bg-green-500";
     case "Reunión": return "bg-orange-500";
     default: return "bg-brand-500";

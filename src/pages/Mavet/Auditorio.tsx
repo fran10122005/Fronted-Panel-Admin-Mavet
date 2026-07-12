@@ -503,16 +503,14 @@ const Auditorio: React.FC = () => {
 
   const getColorClass = (tipo: string) => {
     switch(tipo) {
-      case "Exposición": return "bg-blue-500 text-white border-blue-600";
       case "Taller": return "bg-green-500 text-white border-green-600";
       case "Reunión": return "bg-orange-500 text-white border-orange-600";
-      default: return "bg-purple-500 text-white border-purple-600";
+      default: return "bg-brand-500 text-white border-brand-600";
     }
   };
 
   const colorMap: Record<string, string> = {
     Conferencia: "bg-brand-500",
-    Exposición: "bg-blue-500",
     Taller: "bg-green-500",
     "Reunión": "bg-orange-500",
   };
@@ -567,7 +565,6 @@ const Auditorio: React.FC = () => {
             >
               <option value="Todos">Todos los tipos</option>
               <option value="Conferencia">Conferencia</option>
-              <option value="Exposición">Exposición</option>
               <option value="Reunión">Reunión Interna</option>
             </select>
           </div>
@@ -637,7 +634,6 @@ const Auditorio: React.FC = () => {
           <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-theme-xs text-sm w-full">
             <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">Leyenda:</span>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-brand-500"></div><span className="text-gray-600 dark:text-gray-400">Conferencia</span></div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500"></div><span className="text-gray-600 dark:text-gray-400">Exposición</span></div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500"></div><span className="text-gray-600 dark:text-gray-400">Taller</span></div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-gray-600 dark:text-gray-400">Reunión</span></div>
           </div>
@@ -911,6 +907,7 @@ const Auditorio: React.FC = () => {
                 <input
                   required
                   type="date"
+                  min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente || isPastEvent || isDateLocked}
@@ -949,7 +946,6 @@ const Auditorio: React.FC = () => {
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                   >
                     <option value="Conferencia">Conferencia</option>
-                    <option value="Exposición">Exposición</option>
                     <option value="Reunión">Reunión Interna</option>
                     <option value="other">Otros (especificar)...</option>
                   </select>
