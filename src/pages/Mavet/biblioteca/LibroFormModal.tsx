@@ -3,6 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
+import { AlertCircle } from "lucide-react";
+
+const currentYear = new Date().getFullYear();
+const todayStr = new Date().toISOString().split("T")[0];
 
 const libroSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio"),
@@ -15,7 +19,7 @@ const libroSchema = z.object({
   customCategoria: z.string().optional(),
   ano_libro: z.preprocess(
     (val) => (val === "" || val === null ? undefined : Number(val)),
-    z.number().min(1000, "Mínimo 1000").max(2099, "Máximo 2099").optional()
+    z.number().min(1000, "Mínimo 1000").max(currentYear, `El año del libro no puede ser mayor a ${currentYear}`).optional()
   ),
   fecha_ingreso: z.string().optional(),
   cantidad_total: z.preprocess(
@@ -31,6 +35,12 @@ const libroSchema = z.object({
 }, {
   message: "Especifique la nueva categoría",
   path: ["customCategoria"]
+}).refine((data) => {
+  if (!data.fecha_ingreso) return true;
+  return data.fecha_ingreso <= todayStr;
+}, {
+  message: "La fecha de ingreso no puede ser posterior al día de hoy",
+  path: ["fecha_ingreso"]
 });
 
 export type LibroFormValues = z.infer<typeof libroSchema>;
@@ -42,13 +52,14 @@ interface Props {
   initialData: any;
   categorias: any[];
   isSubmitting: boolean;
+  formError: string;
   onSubmit: (data: LibroFormValues) => void;
   inputCls: string;
 }
 
 export default function LibroFormModal({
   isOpen, onClose, isEditing, initialData,
-  categorias, isSubmitting, onSubmit, inputCls,
+  categorias, isSubmitting, formError, onSubmit, inputCls,
 }: Props) {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<LibroFormValues>({
     resolver: zodResolver(libroSchema) as any,
@@ -201,9 +212,10 @@ export default function LibroFormModal({
               </label>
               <input
                 type="date" max={new Date().toISOString().split('T')[0]}
-                className={inputCls}
+                className={`${inputCls} ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
                 {...register("fecha_ingreso")}
               />
+              {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
             </div>
           </div>
 
@@ -234,6 +246,12 @@ export default function LibroFormModal({
             </div>
           </div>
 
+          {formError && (
+            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium">{formError}</p>
+            </div>
+          )}
           <div className="flex justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
             <button
               type="button" onClick={onClose}

@@ -48,6 +48,7 @@ export default function Biblioteca() {
     handleLibroSubmit,
     customCategoria,
     autorNombre, autorApellido,
+    formError,
   } = useLibros();
 
   const [activeTab, setActiveTab] = useState<Tab>("inventario");
@@ -452,6 +453,7 @@ export default function Biblioteca() {
             initialData={{ ...libroFormData, autorNombre, autorApellido, customCategoria }}
             categorias={categorias}
             isSubmitting={isSubmitting}
+            formError={formError}
             onSubmit={handleLibroSubmit}
             inputCls={inputCls}
           />

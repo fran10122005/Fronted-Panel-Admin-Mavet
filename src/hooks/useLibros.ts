@@ -53,6 +53,7 @@ export function useLibros() {
   const [libroFormData, setLibroFormData] = useState<Libro>(initialLibroState);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedLibroForDetail, setSelectedLibroForDetail] = useState<Libro | null>(null);
+  const [formError, setFormError] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -168,6 +169,7 @@ export function useLibros() {
   const [autorApellido, setAutorApellido] = useState("");
 
   const handleOpenAddLibro = () => {
+    setFormError("");
     const nextUnidad = generateNextCode(
       libros.map(l => l.unidad),
       "BIB",
@@ -181,7 +183,7 @@ export function useLibros() {
   };
 
   const handleEditLibro = (libro: Libro) => {
-    setLibroFormData({ ...libro });
+    setFormError("");
     const autorEncontrado = autores.find((a: any) => a.id_autor === libro.id_autor);
     setAutorNombre(autorEncontrado?.nombre || libro.autor.split(" ")[0] || "");
     setAutorApellido(autorEncontrado?.apellido || libro.autor.split(" ").slice(1).join(" ") || "");
@@ -190,6 +192,15 @@ export function useLibros() {
   };
 
   const handleLibroSubmit = async (data: any) => {
+    setFormError("");
+    if (data.ano_libro && Number(data.ano_libro) > new Date().getFullYear()) {
+      setFormError(`El año del libro no puede ser mayor a ${new Date().getFullYear()}`);
+      return;
+    }
+    if (data.fecha_ingreso && data.fecha_ingreso > new Date().toISOString().split("T")[0]) {
+      setFormError("La fecha de ingreso no puede ser posterior al día de hoy");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload: any = { ...data };
@@ -233,7 +244,7 @@ export function useLibros() {
       await fetchLibrosPaginated(currentPage || 1);
       closeLibro();
     } catch (error: any) {
-      toast.error(error.message || "Error al guardar el libro.");
+      setFormError(error.message || "Error al guardar el libro.");
     } finally {
       setIsSubmitting(false);
     }
@@ -285,6 +296,6 @@ export function useLibros() {
     initialLibroState,
     customCategoria, setCustomCategoria,
     autorNombre, setAutorNombre, autorApellido, setAutorApellido,
-    fetchDatos,
+    fetchDatos, formError, setFormError,
   };
 }
