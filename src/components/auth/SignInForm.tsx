@@ -41,7 +41,7 @@ export default function SignInForm() {
               <h1 className="mb-2 font-bold text-gray-900 text-3xl dark:text-white/90">
                 Iniciar Sesión
               </h1>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-sm text-gray-800 dark:text-gray-200">
                 Ingrese sus credenciales administrativas para acceder al sistema del MAVET.
               </p>
             </div>
@@ -66,6 +66,7 @@ export default function SignInForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="placeholder:text-gray-600 dark:placeholder:text-white/50"
                     />
                   </div>
                   <div>
@@ -75,19 +76,20 @@ export default function SignInForm() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Ingrese su contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                      placeholder="Ingrese su contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="placeholder:text-gray-600 dark:placeholder:text-white/50"
+                    />
                       <span
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                       >
                         {showPassword ? (
-                          <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                          <EyeIcon className="fill-gray-600 dark:fill-gray-300 size-5" />
                         ) : (
-                          <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                          <EyeCloseIcon className="fill-gray-600 dark:fill-gray-300 size-5" />
                         )}
                       </span>
                     </div>
@@ -95,7 +97,7 @@ export default function SignInForm() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Checkbox checked={isChecked} onChange={setIsChecked} />
-                      <span className="block font-normal text-gray-800 text-theme-sm dark:text-gray-300">
+                      <span className="block font-normal text-gray-900 text-theme-sm dark:text-gray-200">
                         Mantener sesión iniciada
                       </span>
                     </div>
