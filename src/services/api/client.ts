@@ -29,6 +29,18 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+export function wakeUpBackend(timeout = 60000): Promise<void> {
+  return new Promise((resolve) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    fetch(API_BASE, { signal: controller.signal, mode: "no-cors" })
+      .then(() => resolve())
+      .catch(() => resolve())
+      .finally(() => clearTimeout(timer));
+  });
+}
+
 export function extractPagination(res: any, list: any[]) {
   const meta = res?.data?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
   return {
