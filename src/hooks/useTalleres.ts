@@ -127,14 +127,16 @@ export function useTalleres() {
   }, []);
 
   const handleOpenCrear = () => {
+    setFormError("");
     setInventarioForm({ nombre: "", descripcion: "" });
     openCrear();
   };
 
   const handleCrearInventario = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (!inventarioForm.nombre.trim()) {
-      toast.error("El nombre del taller es obligatorio.");
+      setFormError("El nombre del taller es obligatorio.");
       return;
     }
     setIsSubmitting(true);
@@ -152,6 +154,7 @@ export function useTalleres() {
   };
 
   const handleOpenEditar = (item: any) => {
+    setFormError("");
     setSelectedInventario(item);
     setInventarioForm({ nombre: item.nombre || "", descripcion: item.descripcion || "" });
     openEditar();
@@ -159,8 +162,9 @@ export function useTalleres() {
 
   const handleEditarInventario = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (!inventarioForm.nombre.trim()) {
-      toast.error("El nombre del taller es obligatorio.");
+      setFormError("El nombre del taller es obligatorio.");
       return;
     }
     setIsSubmitting(true);
@@ -412,15 +416,27 @@ export function useTalleres() {
 
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (!planificarForm.id_taller_inventario) {
-      toast.error("Debe seleccionar un taller del inventario.");
+      setFormError("Debe seleccionar un taller del inventario.");
       return;
     }
     if (!planificarForm.selectedInstructorId) {
-      toast.error("Debe seleccionar un instructor.");
+      setFormError("Debe seleccionar un instructor.");
       return;
     }
-    // Validaciones de formulario
+    if (!planificarForm.fecha) {
+      setFormError("La fecha del taller es obligatoria.");
+      return;
+    }
+    if (planificarForm.cupo_minimo && Number(planificarForm.cupo_minimo) < 1) {
+      setFormError("El cupo mínimo debe ser mayor a 0.");
+      return;
+    }
+    if (planificarForm.cupo_maximo && Number(planificarForm.cupo_maximo) < 1) {
+      setFormError("El cupo máximo debe ser mayor a 0.");
+      return;
+    }
     if (planificarForm.cupo_minimo && planificarForm.cupo_maximo && Number(planificarForm.cupo_minimo) > Number(planificarForm.cupo_maximo)) {
       setFormError('El cupo mínimo no puede ser mayor al cupo máximo');
       setIsSubmitting(false);
@@ -485,19 +501,38 @@ export function useTalleres() {
   };
 
   const openEnroll = (taller: any) => {
+    setFormError("");
     setSelectedTallerEnroll(taller);
     setEnrollForm(prev => ({ ...prev, tallerId: taller.id_taller }));
     openEnrollModal();
   };
 
   const handleEnrollChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormError("");
     setEnrollForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmitInscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    if (!enrollForm.tallerId) {
+      setFormError("Debe seleccionar un taller.");
+      return;
+    }
+    if (!enrollForm.alumnoCedula.trim()) {
+      setFormError("La cédula del alumno es obligatoria.");
+      return;
+    }
+    if (!enrollForm.alumnoNombre.trim()) {
+      setFormError("El nombre del alumno es obligatorio.");
+      return;
+    }
+    if (!enrollForm.alumnoEdad.trim()) {
+      setFormError("La edad del alumno es obligatoria.");
+      return;
+    }
     if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
-      toast.error("Los menores de edad requieren nombre y cédula del representante.");
+      setFormError("Los menores de edad requieren nombre y cédula del representante.");
       return;
     }
     setIsSubmitting(true);

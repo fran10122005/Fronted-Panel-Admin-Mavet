@@ -64,7 +64,7 @@ export default function Talleres() {
     handleOpenCrear, handleCrearInventario,
     handleOpenEditar, handleEditarInventario,
     handleEliminarInventario,
-    formError, handleOpenPlanificar, handleEliminarPlanificado,
+    formError, setFormError, handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
     showCrearInstructor,
     nuevaCedula, setNuevaCedula,
@@ -86,6 +86,7 @@ export default function Talleres() {
 
   const handleInventarioFormChange = (e: any) => {
     const { name, value } = e.target;
+    setFormError("");
     setInventarioForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -490,6 +491,7 @@ export default function Talleres() {
         isEditing={false}
         formData={inventarioForm}
         isSubmitting={isSubmitting}
+        formError={formError}
         onChange={handleInventarioFormChange}
         onSubmit={handleCrearInventario}
         inputCls={inputCls}
@@ -501,6 +503,7 @@ export default function Talleres() {
         isEditing={true}
         formData={inventarioForm}
         isSubmitting={isSubmitting}
+        formError={formError}
         onChange={handleInventarioFormChange}
         onSubmit={handleEditarInventario}
         inputCls={inputCls}
@@ -626,6 +629,7 @@ export default function Talleres() {
         enrollForm={enrollForm}
         esMenor={esMenor}
         isSubmitting={isSubmitting}
+        formError={formError}
         onChange={handleEnrollChange}
         onSubmit={handleSubmitInscripcion}
         inputCls={inputCls}
