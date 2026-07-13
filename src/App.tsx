@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { Toaster } from "react-hot-toast";
 
@@ -11,6 +11,7 @@ import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import LoadingScreen from "./components/LoadingScreen";
 
 // Lazy loaded pages (Code Splitting)
 const Home = lazy(() => import("./pages/Dashboard/Home"));
@@ -36,6 +37,12 @@ const PageLoader = () => (
 );
 
 export default function App() {
+  const [showLoading, setShowLoading] = useState(true);
+
+  if (showLoading) {
+    return <LoadingScreen onFinish={() => setShowLoading(false)} />;
+  }
+
   return (
     <AuthProvider>
       <Router>
