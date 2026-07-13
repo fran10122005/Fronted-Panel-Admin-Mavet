@@ -3,6 +3,8 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
+import { mavetApi } from "../../../services/api";
+import { Search, AlertCircle } from "lucide-react";
 
 const consultanteSchema = z.object({
   cedula: z.string().min(1, "La cédula del solicitante es obligatoria"),
@@ -36,8 +38,9 @@ export default function PrestamoFormModal({
 }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [cantidad, setCantidad] = useState(1);
+  const [searchStates, setSearchStates] = useState<Record<number, { loading: boolean; found: boolean; error: string }>>({});
 
-  const { register, handleSubmit, reset, control, formState: { errors } } =
+  const { register, handleSubmit, reset, control, setValue, formState: { errors } } =
     useForm<PrestamoFormValues>({
       resolver: zodResolver(consultaSchema) as any,
       defaultValues: { consultantes: [] },
@@ -45,10 +48,29 @@ export default function PrestamoFormModal({
 
   const { fields } = useFieldArray({ control, name: "consultantes" });
 
+  const handleSearchPersona = async (index: number, cedula: string) => {
+    if (!cedula.trim()) return;
+    setSearchStates((prev) => ({ ...prev, [index]: { loading: true, found: false, error: "" } }));
+    try {
+      const results = await mavetApi.buscarPersona(cedula.trim());
+      if (results.length === 0) {
+        setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: false, error: "No se encontró ninguna persona" } }));
+      } else {
+        const p = results[0];
+        const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
+        setValue(`consultantes.${index}.nombre`, nombreCompleto);
+        setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: true, error: "" } }));
+      }
+    } catch {
+      setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: false, error: "Error al buscar la persona" } }));
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setCantidad(1);
       setStep(1);
+      setSearchStates({});
       reset({ consultantes: [] });
     }
   }, [isOpen, reset]);
@@ -131,13 +153,44 @@ export default function PrestamoFormModal({
                 <div className="space-y-3">
                   <div>
                     <label className={labelCls}>Cédula</label>
-                    <input
-                      type="text"
-                      disabled={isSubmitting}
-                      className={`${inputCls} ${errors.consultantes?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
-                      placeholder="V-12345678"
-                      {...register(`consultantes.${index}.cedula`)}
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        disabled={isSubmitting}
+                        className={`${inputCls} flex-1 ${errors.consultantes?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
+                        placeholder="V-12345678"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value;
+                            handleSearchPersona(index, val);
+                          }
+                        }}
+                        {...register(`consultantes.${index}.cedula`)}
+                      />
+                      <button
+                        type="button"
+                        disabled={isSubmitting || searchStates[index]?.loading}
+                        onClick={() => {
+                          const el = document.querySelector<HTMLInputElement>(`input[name="consultantes.${index}.cedula"]`);
+                          handleSearchPersona(index, el?.value || "");
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-50 shrink-0"
+                      >
+                        {searchStates[index]?.loading ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Search className="w-4 h-4" />
+                        )}
+                        <span className="hidden sm:inline">Buscar</span>
+                      </button>
+                    </div>
+                    {searchStates[index]?.error && (
+                      <div className="flex items-center gap-1.5 mt-1.5 text-red-600 dark:text-red-400">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <p className="text-xs font-medium">{searchStates[index].error}</p>
+                      </div>
+                    )}
                     {errors.consultantes?.[index]?.cedula && (
                       <p className={errorCls}>{errors.consultantes[index]!.cedula!.message}</p>
                     )}
@@ -146,8 +199,8 @@ export default function PrestamoFormModal({
                     <label className={labelCls}>Nombre del Solicitante</label>
                     <input
                       type="text"
-                      disabled={isSubmitting}
-                      className={`${inputCls} ${errors.consultantes?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50`}
+                      disabled={isSubmitting || searchStates[index]?.found}
+                      className={`${inputCls} ${errors.consultantes?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50 ${searchStates[index]?.found ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700" : ""}`}
                       placeholder="Ej. María López"
                       {...register(`consultantes.${index}.nombre`)}
                     />
