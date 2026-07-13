@@ -14,7 +14,7 @@ import {
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, getUserRole } from "../context/AuthContext";
 
 type NavItem = {
   name: string;
@@ -76,14 +76,14 @@ const othersItems: NavItem[] = [
 
 const routePermissions: Record<string, string[]> = {
   "/": ["*"],
-  "/auditorio": ["Administrador", "admin", "Gerente", "Educación"],
+  "/auditorio": ["Administrador", "admin", "Gerente", "Educador", "Educación"],
   "/recepcion": ["Administrador", "admin", "Gerente", "Recepcionista"],
-  "/talleres": ["Administrador", "admin", "Gerente", "Educación"],
-  "/inventario-obras": ["Administrador", "admin", "Gerente", "Curador"],
-  "/biblioteca": ["Administrador", "admin", "Gerente", "Bibliotecario"],
+  "/talleres": ["Administrador", "admin", "Gerente", "Educador", "Educación"],
+  "/inventario-obras": ["Administrador", "admin", "Gerente", "Curador", "Restaurador"],
+  "/biblioteca": ["Administrador", "admin", "Gerente", "Bibliotecario", "Bibliotecaria"],
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["*"],
-  "/papelera": ["Administrador", "admin", "Gerente"],
+  "/papelera": ["Administrador", "admin"],
   "/manual": ["*"],
 };
 
@@ -93,10 +93,10 @@ const AppSidebar: React.FC = () => {
   const location = useLocation();
 
   // Agregamos fallbacks en caso de que el objeto user antiguo en localStorage no tenga .Role
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
 
   const filteredNavItems = useCallback(() => {
-    if (userRole === "Administrador" || userRole === "admin" || userRole === "Gerente") return navItems;
+    if (userRole === "Administrador" || userRole === "admin") return navItems;
     return navItems.filter((item) => {
       const allowedRoles = routePermissions[item.path || ""] || [];
       if (allowedRoles.includes("*")) return true;

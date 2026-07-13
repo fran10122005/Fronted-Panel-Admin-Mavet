@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useModal } from "./useModal";
 import { mavetApi } from "../services/api";
 import toast from "react-hot-toast";
+import { useTalleresInscripciones } from "./useTalleresInscripciones";
+import { useTalleresInstructor } from "./useTalleresInstructor";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,16 +24,6 @@ const initialPlanificarForm = {
   estado: true
 };
 
-const initialEnrollForm = {
-  tallerId: "",
-  alumnoCedula: "",
-  alumnoNombre: "",
-  alumnoEdad: "",
-  repNombre: "",
-  repCedula: "",
-  repTelefono: "",
-  correo: ""
-};
 
 export function useTalleres() {
   const [talleres, setTalleres] = useState<any[]>([]);
@@ -49,14 +41,9 @@ export function useTalleres() {
   const { isOpen: isOpenCrear, openModal: openCrear, closeModal: closeCrear } = useModal();
   const { isOpen: isOpenEditar, openModal: openEditar, closeModal: closeEditar } = useModal();
   const { isOpen: isOpenPlanificar, openModal: openPlanificar, closeModal: closePlanificar } = useModal();
-  const { isOpen: isOpenInscr, openModal: openInscrModal, closeModal: closeInscrModal } = useModal();
-  const { isOpen: isOpenEnroll, openModal: openEnrollModal, closeModal: closeEnrollModal } = useModal();
-
   const [selectedInventario, setSelectedInventario] = useState<any>(null);
   const [selectedTaller, setSelectedTaller] = useState<any>(null);
   const [isEditingPlanificado, setIsEditingPlanificado] = useState(false);
-  const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
-  const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
   const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
   const [tallerSesiones, setTallerSesiones] = useState<any[]>([]);
   const [metricasTaller, setMetricasTaller] = useState<any>(null);
@@ -72,20 +59,19 @@ export function useTalleres() {
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // --- Instructor creation inside modal ---
-  const [showCrearInstructor, setShowCrearInstructor] = useState(false);
-  const [nuevaCedula, setNuevaCedula] = useState("");
-  const [personaEncontrada, setPersonaEncontrada] = useState<any>(null);
-  const [buscandoPersona, setBuscandoPersona] = useState(false);
-  const [nuevaProfesion, setNuevaProfesion] = useState("");
-  const [nuevaEspecialidad, setNuevaEspecialidad] = useState("");
-
-  const [enrollForm, setEnrollForm] = useState(initialEnrollForm);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const edadNum = parseInt(enrollForm.alumnoEdad, 10);
-  const esMenor = !isNaN(edadNum) && edadNum < 18;
+  const instructor = useTalleresInstructor(
+    instructores, setInstructores, setIsSubmitting,
+    (id) => setPlanificarForm((prev: any) => ({ ...prev, selectedInstructorId: id })),
+    setFormError,
+  );
+
+  const insc = useTalleresInscripciones(setInscripciones, setConfirm, selectedTaller, setFormError);
+
+  const edadNum = insc.edadNum;
+  const esMenor = insc.esMenor;
 
   const inscripcionesAgrupadas = useMemo(() => {
     const map = new Map<number, { taller: any; alumnos: any[] }>();
@@ -215,6 +201,7 @@ export function useTalleres() {
         sesiones: taller.sesiones || "",
         fecha: taller.fecha || "",
         fecha_fin: taller.fecha_fin || "",
+        hora_inicio: taller.hora_inicio || "",
         hora_fin: taller.hora_fin || "",
         horas_totales: taller.horas_totales ?? "",
         cupo_minimo: taller.cupo_minimo ?? "",
@@ -339,81 +326,6 @@ export function useTalleres() {
     });
   };
 
-  // --- Quick-create instructor ---
-  const handleBuscarPersona = async () => {
-    if (!nuevaCedula.trim()) {
-      toast.error("Ingrese una cédula para buscar");
-      return;
-    }
-    setBuscandoPersona(true);
-    try {
-      const results = await mavetApi.buscarPersona(nuevaCedula.trim());
-      if (results.length === 0) {
-        toast.error("No se encontró ninguna persona con esa cédula");
-        setPersonaEncontrada(null);
-      } else {
-        const p = results[0];
-        const yaEsInstructor = instructores.some(i => i.id_persona === p.id_persona);
-        if (yaEsInstructor) {
-          toast.error("Esa persona ya está registrada como instructor");
-          setPersonaEncontrada(null);
-          return;
-        }
-        setPersonaEncontrada(p);
-      }
-    } catch {
-      toast.error("Error al buscar la persona");
-      setPersonaEncontrada(null);
-    } finally {
-      setBuscandoPersona(false);
-    }
-  };
-
-  const handleCrearInstructor = async () => {
-    if (!personaEncontrada) {
-      toast.error("Debe buscar una persona primero");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await mavetApi.crearInstructor({
-        id_persona: personaEncontrada.id_persona,
-        profesion: nuevaProfesion,
-        especialidad: nuevaEspecialidad
-      });
-      toast.success("Instructor creado");
-      const refreshed = await mavetApi.getInstructores();
-      setInstructores(refreshed);
-      const nuevoInst = refreshed.find(i => i.id_persona === personaEncontrada.id_persona);
-      if (nuevoInst) {
-        setPlanificarForm(prev => ({ ...prev, selectedInstructorId: nuevoInst.id_instructor }));
-      }
-      setShowCrearInstructor(false);
-      resetCrearInstructorForm();
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetCrearInstructorForm = () => {
-    setNuevaCedula("");
-    setPersonaEncontrada(null);
-    setNuevaProfesion("");
-    setNuevaEspecialidad("");
-  };
-
-  const openCrearInstructor = () => {
-    resetCrearInstructorForm();
-    setShowCrearInstructor(true);
-  };
-
-  const closeCrearInstructor = () => {
-    setShowCrearInstructor(false);
-    resetCrearInstructorForm();
-  };
-
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -500,80 +412,6 @@ export function useTalleres() {
     }
   };
 
-  const openEnroll = (taller: any) => {
-    setFormError("");
-    setSelectedTallerEnroll(taller);
-    setEnrollForm(prev => ({ ...prev, tallerId: taller.id_taller }));
-    openEnrollModal();
-  };
-
-  const handleEnrollChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormError("");
-    setEnrollForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmitInscripcion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-    if (!enrollForm.tallerId) {
-      setFormError("Debe seleccionar un taller.");
-      return;
-    }
-    if (!enrollForm.alumnoCedula.trim()) {
-      setFormError("La cédula del alumno es obligatoria.");
-      return;
-    }
-    if (!enrollForm.alumnoNombre.trim()) {
-      setFormError("El nombre del alumno es obligatorio.");
-      return;
-    }
-    if (!enrollForm.alumnoEdad.trim()) {
-      setFormError("La edad del alumno es obligatoria.");
-      return;
-    }
-    if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
-      setFormError("Los menores de edad requieren nombre y cédula del representante.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const payload: any = {
-        tallerId: enrollForm.tallerId,
-        alumno: { 
-          cedula: enrollForm.alumnoCedula,
-          nombre: enrollForm.alumnoNombre, 
-          edad: enrollForm.alumnoEdad 
-        }
-      };
-      if (esMenor) {
-        payload.representante = {
-          nombre: enrollForm.repNombre,
-          cedula: enrollForm.repCedula,
-          telefono: enrollForm.repTelefono
-        };
-      }
-      await mavetApi.inscribirTaller(payload);
-      toast.success("Alumno inscrito correctamente.");
-      setEnrollForm(prev => ({ ...prev, alumnoCedula: "", alumnoNombre: "", alumnoEdad: "", repNombre: "", repCedula: "", repTelefono: "" }));
-      const refreshed = await mavetApi.getInscripcionesTaller();
-      setInscripciones(refreshed);
-    } catch (error: any) {
-      toast.error(error.message || "Error al inscribir al alumno.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const openEnrolments = async (taller: any) => {
-    setSelectedTaller(taller);
-    try {
-      const data = await mavetApi.getInscripcionesPorTaller(taller.id_taller);
-      setTallerInscripciones(data);
-    } catch {
-      setTallerInscripciones([]);
-    }
-    openInscrModal();
-  };
 
   const openAsistentes = async (taller: any) => {
     setSelectedTaller(taller);
@@ -601,37 +439,6 @@ export function useTalleres() {
       setMetricasTaller(null);
     }
     openSesionesModal();
-  };
-
-  const handleDesinscribir = (inscripcion: any) => {
-    setConfirm({
-      open: true,
-      title: "Desinscribir alumno",
-      message: `¿Estás seguro de desinscribir a "${inscripcion.Alumno?.nombres || ""} ${inscripcion.Alumno?.apellidos || ""}" del taller "${inscripcion.Taller?.nombre_curso || ""}"? El registro pasará a la papelera.`,
-      variant: "danger",
-      confirmLabel: "Desinscribir",
-      onConfirm: async () => {
-        setConfirm(prev => ({ ...prev, open: false }));
-        try {
-          await mavetApi.eliminarInscripcion(inscripcion.id_inscripcion || inscripcion.id);
-          toast.success("Alumno desinscrito correctamente. Puede restaurarlo desde la Papelera.");
-          const refreshed = await mavetApi.getInscripcionesTaller();
-          setInscripciones(refreshed);
-        } catch (error: any) {
-          toast.error(error.message || "Error al desinscribir alumno.");
-        }
-      },
-    });
-  };
-
-  const exportInscripcionesFn = async (format: 'pdf' | 'excel') => {
-    if (!selectedTaller) return;
-    try {
-      await mavetApi.exportInscripciones(selectedTaller.id_taller, format);
-      toast.success(`Inscripciones exportadas en formato ${format.toUpperCase()}`);
-    } catch {
-      toast.error("Error al exportar inscripciones.");
-    }
   };
 
   const filteredTalleres = talleres.filter(t => {
@@ -671,7 +478,6 @@ export function useTalleres() {
     currentPage, setCurrentPage,
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
-    enrollForm, setEnrollForm,
     isSubmitting,
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
@@ -680,16 +486,12 @@ export function useTalleres() {
     selectedInventario, setSelectedInventario,
     selectedTaller, setSelectedTaller,
     isEditingPlanificado, setIsEditingPlanificado,
-    selectedTallerEnroll, setSelectedTallerEnroll,
-    tallerInscripciones, setTallerInscripciones,
     tallerAsistentes, setTallerAsistentes,
     tallerSesiones, setTallerSesiones,
     metricasTaller, setMetricasTaller,
     isOpenCrear, closeCrear,
     isOpenEditar, closeEditar,
     isOpenPlanificar, closePlanificar,
-    isOpenInscr, closeInscrModal,
-    isOpenEnroll, closeEnrollModal,
     isOpenAsistentes, closeAsistentesModal,
     isOpenSesiones, closeSesionesModal,
     confirm, setConfirm,
@@ -700,20 +502,9 @@ export function useTalleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
-    // Instructor quick-create
-    showCrearInstructor,
-    nuevaCedula, setNuevaCedula,
-    personaEncontrada,
-    buscandoPersona,
-    nuevaProfesion, setNuevaProfesion,
-    nuevaEspecialidad, setNuevaEspecialidad,
-    openCrearInstructor,
-    closeCrearInstructor,
-    handleBuscarPersona,
-    handleCrearInstructor,
-    openEnroll, handleEnrollChange, handleSubmitInscripcion,
-    openEnrolments, openAsistentes, openSesiones,
-    exportInscripcionesFn,
-    handleDesinscribir,
+    // Compossed hooks
+    ...instructor,
+    ...insc,
+    openAsistentes, openSesiones,
   };
 }

@@ -560,8 +560,8 @@ export const mavetApi = {
     }
   },
 
-  updateAsistenciaObservaciones: async (id: string, observaciones: string): Promise<void> => {
-    await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, { observaciones });
+  updateAsistenciaObservaciones: async (id: string, observaciones: string, horas_justificadas: number): Promise<void> => {
+    await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, { observaciones, horas_justificadas });
   },
 
   // === Registro Público Visitantes / Ingresos ===
@@ -1008,7 +1008,8 @@ export const mavetApi = {
         id_trabajador: u.id_trabajador ?? u.Trabajador?.id_trabajador,
         trabajador: u.Trabajador ? {
           nombre: `${u.Trabajador.nombres || ""} ${u.Trabajador.apellidos || ""}`.trim(),
-          cargo: u.Trabajador.CargoTrabajador?.nombre_cargo || "Sin Cargo"
+          cargo: u.Trabajador.CargoTrabajador?.nombre_cargo || "Sin Cargo",
+          cedula: u.Trabajador.cedula
         } : undefined
       }));
     } catch (e) {

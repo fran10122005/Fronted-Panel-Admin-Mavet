@@ -9,7 +9,16 @@ export default function UserDropdown() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
-  const fotoUrl = user?.foto_url || user?.Trabajador?.foto_url;
+  const fotoUrl = user?.foto_url;
+
+  const getInitials = () => {
+    const nombres = user?.Trabajador?.nombres || "";
+    const apellidos = user?.Trabajador?.apellidos || "";
+    if (nombres && apellidos) {
+      return `${nombres.charAt(0)}${apellidos.charAt(0)}`.toUpperCase();
+    }
+    return "UM";
+  };
 
   function handleLogout() {
     logout();
@@ -34,9 +43,9 @@ export default function UserDropdown() {
           {fotoUrl ? (
             <img src={fotoUrl} alt="Foto" className="w-full h-full object-cover" />
           ) : (
-            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-            </svg>
+            <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-600 font-bold text-[15px] font-serif">
+              {getInitials()}
+            </div>
           )}
         </span>
       </button>
@@ -51,9 +60,9 @@ export default function UserDropdown() {
             {fotoUrl ? (
               <img src={fotoUrl} alt="Foto" className="w-full h-full object-cover" />
             ) : (
-              <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
+              <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-600 font-bold text-[15px] font-serif">
+                {getInitials()}
+              </div>
             )}
           </span>
           <div>

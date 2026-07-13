@@ -2,7 +2,7 @@ import PageMeta from "../../components/common/PageMeta";
 import { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
 import { Link } from "react-router";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 import Skeleton from "../../components/ui/Skeleton";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -12,13 +12,13 @@ export default function Home() {
   const [topVisitantes, setTopVisitantes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
   const isSuper = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
-  const showObrasCard = isSuper || userRole === "Curador";
-  const showLibrosCard = isSuper || userRole === "Bibliotecario";
-  const showVisitantesCard = isSuper || userRole === "Recepcionista";
-  const showEventosCard = isSuper || userRole === "Educación";
+  const showObrasCard = isSuper || userRole === "Curador" || userRole === "Restaurador";
+  const showLibrosCard = isSuper || userRole === "Bibliotecario" || userRole === "Bibliotecaria";
+  const showVisitantesCard = isSuper || userRole === "Recepcionista" || userRole === "Gerente";
+  const showEventosCard = isSuper || userRole === "Educador" || userRole === "Educación" || userRole === "Gerente";
 
   useEffect(() => {
     const now = new Date();
@@ -33,8 +33,9 @@ export default function Home() {
   }, []);
 
   // Calcular número de columnas dinámicas para la rejilla inferior
-  const activePanelsCount = [showEventosCard, showVisitantesCard, showObrasCard].filter(Boolean).length;
-  const gridColsClass = activePanelsCount === 3 ? "grid-cols-1 xl:grid-cols-3" :
+  const activePanelsCount = [showEventosCard, showVisitantesCard, showObrasCard, showLibrosCard].filter(Boolean).length;
+  const gridColsClass = activePanelsCount >= 4 ? "grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4" :
+                        activePanelsCount === 3 ? "grid-cols-1 xl:grid-cols-3" :
                         activePanelsCount === 2 ? "grid-cols-1 xl:grid-cols-2" : "grid-cols-1";
 
   // Datos de visitantes para el mes actual
@@ -325,6 +326,63 @@ export default function Home() {
                                 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20'
                               }`}>
                                 {obra.EstadoObra?.nombre_estado || "Bueno"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Libros Recientes */}
+            {showLibrosCard && (
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
+                <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-800 dark:text-white text-lg">Últimos Libros Registrados</h3>
+                  <Link to="/biblioteca" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ir a Biblioteca</Link>
+                </div>
+                <div className="p-5 overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-xs text-gray-500 border-b border-gray-100 dark:border-gray-800">
+                        <th className="pb-3 font-medium uppercase">Código</th>
+                        <th className="pb-3 font-medium uppercase">Título</th>
+                        <th className="pb-3 font-medium uppercase text-center">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-800">
+                      {isLoading ? (
+                        [1, 2, 3].map(i => (
+                          <tr key={i}>
+                            <td className="py-4"><Skeleton className="h-4 w-20" /></td>
+                            <td className="py-4"><Skeleton className="h-4 w-32" /></td>
+                            <td className="py-4"><Skeleton className="h-5 w-16 mx-auto rounded-full" /></td>
+                          </tr>
+                        ))
+                      ) : stats?.ultimosLibros?.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="py-8 text-center text-gray-500">
+                            <p className="text-sm">No hay libros registrados en Biblioteca.</p>
+                          </td>
+                        </tr>
+                      ) : stats?.ultimosLibros?.map((libro: any) => {
+                        const isBueno = libro.estado === 'Bueno';
+                        const isRegular = libro.estado === 'Regular';
+                        
+                        return (
+                          <tr key={libro.id_libro} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                            <td className="py-3.5 font-mono text-xs text-indigo-600 dark:text-indigo-400 font-semibold">{libro.unidad || `LIB-${libro.id_libro}`}</td>
+                            <td className="py-3.5 font-medium truncate max-w-[150px]">{libro.titulo || "Sin Título"}</td>
+                            <td className="py-3.5 text-center">
+                              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                isBueno ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:border-green-500/20' : 
+                                isRegular ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20' : 
+                                'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:border-red-500/20'
+                              }`}>
+                                {libro.estado || "Bueno"}
                               </span>
                             </td>
                           </tr>

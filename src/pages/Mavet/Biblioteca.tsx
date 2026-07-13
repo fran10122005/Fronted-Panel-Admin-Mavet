@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useLibros, ITEMS_PER_PAGE } from "../../hooks/useLibros";
+import Pagination from "../../components/ui/Pagination";
 import { exportarCatalogoBiblioteca } from "../../services/pdf.service";
 import LibroFormModal from "./biblioteca/LibroFormModal";
 import ConsultaFormModal from "./biblioteca/PrestamoFormModal";
 import LibroDetailModal from "./biblioteca/LibroDetailModal";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 import type {
   ConsultaSalaFiltrada,
   ConsultasFiltradasResponse,
@@ -19,11 +20,11 @@ type Tab = "inventario" | "consultas";
 
 export default function Biblioteca() {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
 
-  const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
-  const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario";
-  const canDeleteLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria";
+  const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria";
+  const canDeleteLibro = userRole === "Administrador" || userRole === "admin";
 
   const {
     categorias, isLoading,
@@ -109,6 +110,7 @@ export default function Biblioteca() {
       <div className="flex border-b border-gray-200 dark:border-gray-700 gap-1">
         <button
           onClick={() => setActiveTab("inventario")}
+          data-tour="tab-inventario"
           className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
             activeTab === "inventario"
               ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
@@ -122,6 +124,7 @@ export default function Biblioteca() {
         </button>
         <button
           onClick={() => setActiveTab("consultas")}
+          data-tour="tab-consultas"
           className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
             activeTab === "consultas"
               ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
@@ -330,24 +333,15 @@ export default function Biblioteca() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400 mt-auto gap-2">
-                  <span>
-                    Mostrando <span className="font-semibold">{Math.min(filteredLibros.length, ITEMS_PER_PAGE)}</span> de{" "}
-                    <span className="font-semibold">{totalItems}</span> libros
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => goToPage(currentPage - 1)}
-                      disabled={currentPage <= 1}
-                      className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed"
-                    >Anterior</button>
-                    <span className="text-xs font-medium">Pág. {currentPage} de {totalPages || 1}</span>
-                    <button
-                      onClick={() => goToPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                      className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed"
-                    >Siguiente</button>
-                  </div>
+                <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages || 1}
+                    totalItems={totalItems}
+                    pageSize={ITEMS_PER_PAGE}
+                    label="libros"
+                    onPageChange={goToPage}
+                  />
                 </div>
               </>
             )}
@@ -730,24 +724,15 @@ function ConsultasTab() {
               </table>
             </div>
 
-            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-wrap justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-2">
-              <span>
-                Mostrando <span className="font-semibold">{consultas.data.length}</span> de{" "}
-                <span className="font-semibold">{totalItems}</span> registros
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed"
-                >Anterior</button>
-                <span className="text-xs font-medium">Pág. {page} de {totalPages}</span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs font-medium disabled:opacity-40 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:cursor-not-allowed"
-                >Siguiente</button>
-              </div>
+            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={limit}
+                label="registros"
+                onPageChange={(p) => setPage(p)}
+              />
             </div>
           </>
         )}

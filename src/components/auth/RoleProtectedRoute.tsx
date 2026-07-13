@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 
 interface Props {
   allowedRoles: string[];
@@ -16,10 +16,9 @@ export default function RoleProtectedRoute({ allowedRoles }: Props) {
     );
   }
 
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
 
-  // Administrador and Gerente bypass all page routing checks
-  const isSuperUser = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const isSuperUser = userRole === "Administrador" || userRole === "admin";
   const hasAccess = isSuperUser || allowedRoles.includes(userRole);
 
   if (!hasAccess) {

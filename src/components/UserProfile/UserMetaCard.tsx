@@ -7,8 +7,15 @@ import ConfirmDialog from "../ui/ConfirmDialog";
 export default function UserMetaCard({ profile, onRefresh }: { profile: any; onRefresh?: () => void }) {
   const trabajador = profile?.Trabajador || {};
   const nombreCompleto = trabajador.nombres ? `${trabajador.nombres} ${trabajador.apellidos}` : "Usuario MAVET";
-  const fotoUrl = profile?.foto_url || trabajador?.foto_url;
+  const fotoUrl = profile?.foto_url;
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const getInitials = () => {
+    if (trabajador?.nombres && trabajador?.apellidos) {
+      return `${trabajador.nombres.charAt(0)}${trabajador.apellidos.charAt(0)}`.toUpperCase();
+    }
+    return "UM";
+  };
   const [uploading, setUploading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { updateUser } = useAuth();
@@ -58,9 +65,9 @@ export default function UserMetaCard({ profile, onRefresh }: { profile: any; onR
               {fotoUrl ? (
                 <img src={fotoUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
               ) : (
-                <svg className="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
+                <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-600 font-bold text-3xl font-serif">
+                  {getInitials()}
+                </div>
               )}
               <label className="absolute inset-0 bg-black/50 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white text-[10px] font-bold uppercase text-center transition-all">
                 {uploading ? (
@@ -77,7 +84,7 @@ export default function UserMetaCard({ profile, onRefresh }: { profile: any; onR
                 <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} disabled={uploading} />
               </label>
             </div>
-            {fotoUrl && (
+            {profile?.foto_url && (
               <button
                 type="button"
                 onClick={() => setConfirmOpen(true)}

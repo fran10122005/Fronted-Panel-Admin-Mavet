@@ -88,34 +88,34 @@ export default function App() {
             {/* --- GRUPO 1: RUTAS CON MENÚ LATERAL (ADMIN) --- */}
             <Route element={<AuthRoute />}>
               <Route element={<AppLayout />}>
-                <Route index path="/" element={<ErrorBoundary><Home /></ErrorBoundary>} />
-                <Route path="/profile" element={<ErrorBoundary><UserProfiles /></ErrorBoundary>} />
+                <Route index path="/" element={<Home />} />
+                <Route path="/profile" element={<UserProfiles />} />
 
                 {/* Módulos específicos del MAVET */}
-                <Route element={<RoleProtectedRoute allowedRoles={["Bibliotecario"]} />}>
+                <Route element={<RoleProtectedRoute allowedRoles={["Bibliotecario", "Bibliotecaria", "Gerente"]} />}>
                   <Route path="/biblioteca" element={<ErrorBoundary><Biblioteca /></ErrorBoundary>} />
                 </Route>
-                <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
+                <Route element={<RoleProtectedRoute allowedRoles={["Gerente"]} />}>
                   <Route path="/rrhh" element={<ErrorBoundary><RRHH /></ErrorBoundary>} />
                 </Route>
-                <Route element={<RoleProtectedRoute allowedRoles={["Recepcionista"]} />}>
+                <Route element={<RoleProtectedRoute allowedRoles={["Recepcionista", "Gerente"]} />}>
                   <Route path="/recepcion" element={<ErrorBoundary><Recepcion /></ErrorBoundary>} />
                   <Route path="/ingresos" element={<ErrorBoundary><Ingresos /></ErrorBoundary>} />
                 </Route>
-                <Route element={<RoleProtectedRoute allowedRoles={["Educación"]} />}>
+                <Route element={<RoleProtectedRoute allowedRoles={["Educador", "Educación", "Gerente"]} />}>
                   <Route path="/educacion" element={<ErrorBoundary><Educacion /></ErrorBoundary>} />
                   <Route path="/talleres" element={<ErrorBoundary><Talleres /></ErrorBoundary>} />
                   <Route path="/auditorio" element={<ErrorBoundary><Auditorio /></ErrorBoundary>} />
                 </Route>
-                <Route element={<RoleProtectedRoute allowedRoles={["Curador"]} />}>
+                <Route element={<RoleProtectedRoute allowedRoles={["Curador", "Restaurador", "Gerente"]} />}>
                   <Route path="/inventario-obras" element={<ErrorBoundary><InventarioBoveda /></ErrorBoundary>} />
                 </Route>
                 {/* Ruta de Papelera (solo Admin) */}
                 <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
-                  <Route path="/papelera" element={<ErrorBoundary><Papelera /></ErrorBoundary>} />
+                  <Route path="/papelera" element={<Papelera />} />
                 </Route>
                 {/* Manual de Usuario (todos los roles autenticados) */}
-                <Route path="/manual" element={<ErrorBoundary><ManualUsuario /></ErrorBoundary>} />
+                <Route path="/manual" element={<ManualUsuario />} />
               </Route>
             </Route>
 

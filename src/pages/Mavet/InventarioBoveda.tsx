@@ -8,8 +8,9 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
 import { limitNumericInput, validateEmail, validatePhone } from "../../utils/validation";
+import Pagination from "../../components/ui/Pagination";
 import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, getUserRole } from "../../context/AuthContext";
 
 const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
   id: "",
@@ -27,10 +28,10 @@ const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: numb
 
 export default function InventarioBoveda() {
   const { user } = useAuth();
-  const userRole = user?.Role?.nombre_rol || user?.rol || "Administrador";
+  const userRole = getUserRole(user);
 
-  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador";
-  const canDeleteObra = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
+  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador" || userRole === "Restaurador";
+  const canDeleteObra = userRole === "Administrador" || userRole === "admin";
 
   const previewUrlRef = useRef<string | null>(null);
   useEffect(() => {
@@ -622,14 +623,15 @@ export default function InventarioBoveda() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400 gap-4 mt-auto">
-              <span>Página {currentPage} de {totalPages} ({totalItems} obras)</span>
-              <div className="flex gap-2">
-                <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Anterior</button>
-                <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
-              </div>
+            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={ITEMS_PER_PAGE}
+                label="obras"
+                onPageChange={goToPage}
+              />
             </div>
           </>
         )}
