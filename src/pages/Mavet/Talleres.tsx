@@ -16,6 +16,14 @@ import { AlertCircle } from "lucide-react";
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
 
+function tallerFinalizado(t: any): boolean {
+  if (!t.fecha_fin) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fin = new Date(t.fecha_fin + "T23:59:59");
+  return fin < hoy;
+}
+
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-2 sm:gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-3 py-3 sm:px-5 sm:py-4 shadow-sm">
@@ -262,7 +270,9 @@ export default function Talleres() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">PDF</span>
                     </button>
-                    {!isGerente && (
+                    {tallerFinalizado(t) ? (
+                      <span className="text-[10px] font-semibold text-gray-400 italic tracking-wide">Solo Lectura</span>
+                    ) : !isGerente && (
                       <>
                         <button onClick={() => openEnroll(t)}
                           className="flex flex-col items-center p-1 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors group" title="Inscribir">

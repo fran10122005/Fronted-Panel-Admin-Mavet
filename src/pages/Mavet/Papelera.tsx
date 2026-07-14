@@ -7,10 +7,13 @@ import Skeleton from "../../components/ui/Skeleton";
 import { Modal } from "../../components/ui/modal";
 import Button from "../../components/ui/button/Button";
 
+const LIMPIEZA_KEY = "papelera_ultima_limpieza";
+const DIAS_LIMPIEZA = 30;
+
 export default function Papelera() {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [modalType, setModalType] = useState<"restore" | "delete" | null>(null);
+  const [modalType, setModalType] = useState<"restore" | "delete" | "vaciar" | null>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const fetchPapelera = async () => {
@@ -57,6 +60,36 @@ export default function Papelera() {
     }
   };
 
+  const handleVaciarPapelera = async () => {
+    setModalType(null);
+    try {
+      await mavetApi.vaciarPapelera();
+      toast.success("Papelera vaciada correctamente.");
+      setItems([]);
+    } catch (error: any) {
+      toast.error(error.message || "Error al vaciar la papelera");
+    }
+  };
+
+  // Auto-cleanup: vaciar items con más de 30 días al cargar la página
+  useEffect(() => {
+    const ultimaLimpieza = localStorage.getItem(LIMPIEZA_KEY);
+    const ahora = Date.now();
+    if (ultimaLimpieza && ahora - Number(ultimaLimpieza) < DIAS_LIMPIEZA * 24 * 60 * 60 * 1000) return;
+
+    (async () => {
+      try {
+        await mavetApi.vaciarPapelera();
+        localStorage.setItem(LIMPIEZA_KEY, String(ahora));
+        const data = await mavetApi.getPapeleraGlobal();
+        setItems(data);
+        toast.success("Papelera limpiada automáticamente (30 días).");
+      } catch {
+        // backend might not support vaciarPapelera; skip silently
+      }
+    })();
+  }, []);
+
   return (
     <>
       <PageMeta
@@ -69,13 +102,24 @@ export default function Papelera() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Papelera de Reciclaje</h1>
             <p className="text-sm text-gray-500">Aquí puedes restaurar elementos eliminados o borrarlos de forma permanente.</p>
           </div>
-          <Link
-            to="/"
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Volver al Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            {items.length > 0 && (
+              <button
+                onClick={() => setModalType("vaciar")}
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-xl border border-red-200 dark:border-red-800/50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Vaciar Papelera
+              </button>
+            )}
+            <Link
+              to="/"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Volver al Dashboard
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03] shadow-sm overflow-hidden">
@@ -200,6 +244,30 @@ export default function Papelera() {
             <Button variant="outline" onClick={() => setModalType(null)}>Cancelar</Button>
             <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleForceDelete}>
               Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL VACIAR PAPELERA */}
+      <Modal
+        isOpen={modalType === "vaciar"}
+        onClose={() => setModalType(null)}
+        title="Vaciar Papelera"
+        size="sm"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4 text-red-600 bg-red-50 dark:bg-red-500/10 p-3 rounded-lg border border-red-200 dark:border-red-500/20">
+            <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <p className="text-sm font-medium">Esta acción no se puede deshacer.</p>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
+            ¿Estás seguro que deseas vaciar la papelera? Se eliminarán <strong>todos</strong> los registros ({items.length}) permanentemente.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setModalType(null)}>Cancelar</Button>
+            <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleVaciarPapelera}>
+              Sí, vaciar todo
             </Button>
           </div>
         </div>

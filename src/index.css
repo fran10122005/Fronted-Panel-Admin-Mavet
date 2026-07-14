@@ -191,7 +191,7 @@ layer(base);
 }
 
 @utility aside-gradient {
-  background: linear-gradient(180deg, rgba(128, 0, 0, 0.12) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(128, 0, 0, 0.20) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   
@@ -205,12 +205,12 @@ layer(base);
 
 @media (max-width: 1023px) {
   .aside-gradient {
-    background: linear-gradient(180deg, rgba(128, 0, 0, 0.10) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.98) !important;
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.20) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.98) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
   .dark .aside-gradient {
-    background: linear-gradient(180deg, rgba(128, 0, 0, 0.25) 0%, rgba(128, 0, 0, 0.02) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.40) 0%, rgba(128, 0, 0, 0.05) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-right: 1px solid #27171a !important;
@@ -218,7 +218,7 @@ layer(base);
 }
 
 @utility header-gradient {
-  background: linear-gradient(90deg, rgba(128, 0, 0, 0.10) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.6);
+  background: linear-gradient(90deg, rgba(128, 0, 0, 0.18) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   
@@ -774,26 +774,27 @@ layer(base);
 
 /* Sidebar and Header Gradients */
 .dark .aside-gradient {
-  background: linear-gradient(180deg, rgba(128, 0, 0, 0.28) 0%, rgba(128, 0, 0, 0.03) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+  background: linear-gradient(180deg, rgba(128, 0, 0, 0.45) 0%, rgba(128, 0, 0, 0.06) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
   border-right: 1px solid #27171a !important;
 }
 
 .dark .header-gradient {
-  background: linear-gradient(90deg, rgba(128, 0, 0, 0.18) 0%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+  background: linear-gradient(90deg, rgba(128, 0, 0, 0.35) 0%, rgba(13, 8, 9, 0) 100%), #12090b !important;
   border-bottom: 1px solid #27171a !important;
 }
 
 @media (max-width: 1023px) {
   .dark .aside-gradient {
-    background: linear-gradient(180deg, rgba(128, 0, 0, 0.25) 0%, rgba(128, 0, 0, 0.02) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.40) 0%, rgba(128, 0, 0, 0.05) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-right: 1px solid #27171a !important;
   }
   .dark .header-gradient {
-    background: #12090b !important;
+    background: linear-gradient(90deg, rgba(128, 0, 0, 0.35) 0%, rgba(13, 8, 9, 0) 100%), #12090b !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid #27171a !important;
   }
 }
 

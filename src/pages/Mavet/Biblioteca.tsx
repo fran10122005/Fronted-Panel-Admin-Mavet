@@ -15,7 +15,7 @@ import type {
 } from "../../types";
 import { mavetApi } from "../../services/api";
 
-type Periodo = "hoy" | "semana" | "mes" | "personalizado";
+type Periodo = "todas" | "hoy" | "semana" | "mes" | "personalizado";
 type Tab = "inventario" | "consultas";
 
 export default function Biblioteca() {
@@ -45,6 +45,7 @@ export default function Biblioteca() {
     confirm, setConfirm,
     goToPage, handleOpenPrestamo: handleOpenConsulta, handlePrestamoSubmit: handleConsultaSubmit,
     handleOpenAddLibro, handleEditLibro, handleDeleteLibro,
+    sortConfig, setSortConfig, handleSort,
     handleLibroSubmit,
     customCategoria,
     autorNombre, autorApellido,
@@ -190,6 +191,20 @@ export default function Biblioteca() {
                   placeholder="Buscar autor..."
                   className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[160px]"
                 />
+                <select
+                  value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) { setSortConfig(null); return; }
+                    const [key, direction] = val.split("_");
+                    setSortConfig({ key, direction: direction as "asc" | "desc" });
+                  }}
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[110px]"
+                >
+                  <option value="">Ord. predet.</option>
+                  <option value="unidad_asc">ID ↑</option>
+                  <option value="unidad_desc">ID ↓</option>
+                </select>
               </div>
             </div>
 
@@ -493,7 +508,7 @@ export default function Biblioteca() {
 }
 
 function ConsultasTab() {
-  const [periodo, setPeriodo] = useState<Periodo>("hoy");
+  const [periodo, setPeriodo] = useState<Periodo>("todas");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("");
@@ -517,11 +532,11 @@ function ConsultasTab() {
     setIsLoading(true);
     try {
       const params: any = { page, limit };
-      if (periodo !== "personalizado") {
-        params.periodo = periodo;
-      } else {
+      if (periodo === "personalizado") {
         if (fechaDesde) params.fecha_desde = fechaDesde;
         if (fechaHasta) params.fecha_hasta = fechaHasta;
+      } else if (periodo !== "todas") {
+        params.periodo = periodo;
       }
       if (estadoFilter) params.estado = estadoFilter;
 
@@ -602,7 +617,7 @@ function ConsultasTab() {
         <h3 className="font-semibold text-gray-800 dark:text-white text-sm">Filtrar por</h3>
 
         <div className="flex flex-wrap gap-2">
-          {(["hoy", "semana", "mes", "personalizado"] as Periodo[]).map((p) => (
+          {(["todas", "hoy", "semana", "mes", "personalizado"] as Periodo[]).map((p) => (
             <button
               key={p}
               onClick={() => handlePeriodoChange(p)}
@@ -612,7 +627,7 @@ function ConsultasTab() {
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
               } capitalize`}
             >
-              {p === "hoy" ? "Hoy" : p === "semana" ? "Esta Semana" : p === "mes" ? "Este Mes" : "Por Fecha"}
+              {p === "todas" ? "Todas" : p === "hoy" ? "Hoy" : p === "semana" ? "Esta Semana" : p === "mes" ? "Este Mes" : "Por Fecha"}
             </button>
           ))}
         </div>

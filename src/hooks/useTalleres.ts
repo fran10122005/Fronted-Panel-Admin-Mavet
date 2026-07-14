@@ -7,6 +7,20 @@ import { useTalleresInstructor } from "./useTalleresInstructor";
 
 const ITEMS_PER_PAGE = 10;
 
+function autoInactivarVencidos(talleres: any[]): any[] {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return talleres.map(t => {
+    if (t.fecha_fin) {
+      const fin = new Date(t.fecha_fin + "T23:59:59");
+      if (fin < hoy && (t.estado === "Activo" || t.estado === true)) {
+        return { ...t, estado: "Inactivo" };
+      }
+    }
+    return t;
+  });
+}
+
 const initialInventarioForm = { nombre: "", descripcion: "" };
 
 const initialPlanificarForm = {
@@ -96,7 +110,7 @@ export function useTalleres() {
         mavetApi.getInscripcionesTaller()
       ]);
       setInventario(invRes.data);
-      setTalleres(tal);
+      setTalleres(autoInactivarVencidos(tal));
       setInstructores(inst);
       setEspacios(esp);
       setInscripciones(ins);
@@ -314,12 +328,14 @@ export function useTalleres() {
         setFieldErrors(fe => ({ ...fe, sesiones: "" }));
       }
 
-      // Sincronizar fecha_fin con fecha cuando sesiones = 1
-      const currentSesiones = name === "sesiones" ? value : prev.sesiones;
-      const currentFecha = name === "fecha" ? value : prev.fecha;
-      const sesionesNum = currentSesiones === "" ? 0 : Number(currentSesiones);
-      if (sesionesNum <= 1) {
-        updated.fecha_fin = currentFecha;
+      // Sincronizar fecha_fin con fecha solo si cambió sesiones o fecha
+      if (name === "sesiones" || name === "fecha") {
+        const currentSesiones = name === "sesiones" ? value : prev.sesiones;
+        const currentFecha = name === "fecha" ? value : prev.fecha;
+        const sesionesNum = currentSesiones === "" ? 0 : Number(currentSesiones);
+        if (sesionesNum <= 1) {
+          updated.fecha_fin = currentFecha;
+        }
       }
 
       return updated;
@@ -403,7 +419,7 @@ export function useTalleres() {
         mavetApi.getTalleres(),
         mavetApi.getInscripcionesTaller()
       ]);
-      setTalleres(talleresData);
+      setTalleres(autoInactivarVencidos(talleresData));
       setInscripciones(inscripcionesData);
     } catch (error: any) {
       setFormError(error.message || "Error al planificar taller.");

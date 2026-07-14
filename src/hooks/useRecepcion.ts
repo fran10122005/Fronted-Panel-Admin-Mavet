@@ -185,6 +185,20 @@ export function useRecepcion() {
     if (!formData.nombres?.trim()) { toast.error("El campo Nombres es obligatorio."); return; }
     if (!formData.apellidos?.trim()) { toast.error("El campo Apellidos es obligatorio."); return; }
     if (!formData.id_motivo) { toast.error("El motivo de visita es obligatorio."); return; }
+    const cedulaCompleta = formData.cedula ? `${formData.nacionalidad}${formData.cedula}` : "";
+    const yaRegistrado = ingresos.some(i => {
+      if (!i.fecha_hora_entrada) return false;
+      const personaCedula = i.Persona?.cedula || "";
+      if (personaCedula !== cedulaCompleta) return false;
+      const diffMs = Date.now() - new Date(i.fecha_hora_entrada).getTime();
+      return diffMs < 4 * 60 * 60 * 1000;
+    });
+    if (yaRegistrado) {
+      toast.error("Esta persona ya registró su ingreso hace menos de 4 horas.");
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let finalMotivo = "";
@@ -197,10 +211,24 @@ export function useRecepcion() {
         } else {
           finalSolicitud = rawId;
         }
-        const motivoTaller = motivos.find(
-          (m) => m.descripcion.toLowerCase().includes("taller") || m.descripcion.toLowerCase().includes("educa")
-        );
-        finalMotivo = motivoTaller ? motivoTaller.id_motivo : motivos[0]?.id_motivo || "";
+        const eventoSeleccionado = eventosHoy.find(e => {
+          const parts = (e.id || "").split('-');
+          const eid = parts.length > 2 ? parts.slice(1).join('-') : parts[1];
+          return eid === rawId;
+        });
+        if (eventoSeleccionado?.id_motivo) {
+          finalMotivo = eventoSeleccionado.id_motivo;
+        } else if (rawId.startsWith("TAL-")) {
+          const tallerMotivo = motivos.find(
+            (m: any) => JSON.stringify(m).toLowerCase().includes("taller") || JSON.stringify(m).toLowerCase().includes("educa")
+          );
+          finalMotivo = tallerMotivo?.id_motivo || "";
+        } else {
+          const eventMotivo = motivos.find(
+            (m: any) => JSON.stringify(m).toLowerCase().includes("evento") || JSON.stringify(m).toLowerCase().includes("conferencia")
+          );
+          finalMotivo = eventMotivo?.id_motivo || "";
+        }
       } else {
         finalMotivo = formData.id_motivo.split("_")[1];
       }

@@ -420,7 +420,7 @@ export default function Recepcion() {
                         ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                         : '-'}
                     </td>
-                    <td className="py-2.5 text-gray-500 dark:text-gray-400">{i.Motivo?.descripcion || i.motivo || '-'}</td>
+                    <td className="py-2.5 text-gray-500 dark:text-gray-400">{motivos.find(m => m.id_motivo === i.id_motivo)?.nombre || i.Motivo?.descripcion || i.motivo || '-'}</td>
                   </tr>
                 ))}
               </tbody>

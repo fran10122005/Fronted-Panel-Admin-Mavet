@@ -51,6 +51,11 @@ export default function InventarioBoveda() {
   // Estados para búsqueda y filtrado
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("Todos");
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => prev?.key === key && prev.direction === "asc" ? { key, direction: "desc" } : { key, direction: "asc" });
+  };
 
   const { isOpen, openModal, closeModal } = useModal();
   const [formData, setFormData] = useState<any>(initialFormState);
@@ -444,7 +449,7 @@ export default function InventarioBoveda() {
 
   // Filtrado reactivo de las obras
   const filteredObras = useMemo(() => {
-    return obras.filter((obra) => {
+    const result = obras.filter((obra) => {
       const matchesSearch = 
         obra.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
         obra.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -455,7 +460,24 @@ export default function InventarioBoveda() {
       
       return matchesSearch && matchesEstado;
     });
-  }, [obras, searchTerm, filterEstado]);
+    if (!sortConfig) return result;
+    return [...result].sort((a: any, b: any) => {
+      const sortId = (v: any) => {
+        const s = (v ?? "").toString();
+        const n = parseInt(s.replace(/\D/g, ""), 10);
+        return isNaN(n) ? s.toLowerCase() : n;
+      };
+      if (sortConfig.key === "codigo_inventario") {
+        const aN = sortId(a.codigo_inventario), bN = sortId(b.codigo_inventario);
+        return typeof aN === "number" && typeof bN === "number"
+          ? (sortConfig.direction === "asc" ? aN - bN : bN - aN)
+          : 0;
+      }
+      const aVal = (a[sortConfig.key] ?? "").toString().toLowerCase();
+      const bVal = (b[sortConfig.key] ?? "").toString().toLowerCase();
+      return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+  }, [obras, searchTerm, filterEstado, sortConfig]);
 
   return (
     <div className="space-y-6 relative">
@@ -531,6 +553,20 @@ export default function InventarioBoveda() {
               <option value="Excelente">Excelente</option>
               <option value="Bueno">Bueno</option>
               <option value="Restauración">En Restauración</option>
+            </select>
+            <select
+              value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) { setSortConfig(null); return; }
+                const [key, direction] = val.split("_");
+                setSortConfig({ key, direction: direction as "asc" | "desc" });
+              }}
+              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
+            >
+              <option value="">Ord. predet.</option>
+              <option value="codigo_inventario_asc">ID ↑</option>
+              <option value="codigo_inventario_desc">ID ↓</option>
             </select>
           </div>
         </div>

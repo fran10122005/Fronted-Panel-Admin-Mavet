@@ -165,7 +165,7 @@ export default function TallerDetailModal({
               className="w-full sm:w-auto flex items-center justify-center min-w-[150px] px-5 py-2.5 sm:py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : "Planificar Taller"}
+              ) : isEditing ? "Guardar Cambios" : "Planificar Taller"}
             </button>
           </div>
         </form>

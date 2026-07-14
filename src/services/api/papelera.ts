@@ -27,4 +27,13 @@ export const papelera = {
       throw new Error(e.response?.data?.message || "Error al eliminar definitivamente");
     }
   },
+
+  vaciarPapelera: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await axiosInstance.delete("/api/papelera/vaciar");
+      return { success: true, message: res.data.message || "Papelera vaciada correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al vaciar la papelera");
+    }
+  },
 };

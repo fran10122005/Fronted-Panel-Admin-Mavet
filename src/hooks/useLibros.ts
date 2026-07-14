@@ -27,6 +27,8 @@ const initialLibroState: Libro = {
 
 export const ITEMS_PER_PAGE = 20;
 
+type SortConfig = { key: string; direction: "asc" | "desc" } | null;
+
 export function useLibros() {
   const { isOpen: isPrestamoOpen, openModal: openPrestamo, closeModal: closePrestamo } = useModal();
   const { isOpen: isLibroOpen, openModal: openLibro, closeModal: closeLibro } = useModal();
@@ -41,6 +43,11 @@ export function useLibros() {
   const [filterEstado, setFilterEstado] = useState("Todos");
   const [filterCategoria, setFilterCategoria] = useState("Todas");
   const [filterAutor, setFilterAutor] = useState("Todos");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => prev?.key === key && prev.direction === "asc" ? { key, direction: "desc" } : { key, direction: "asc" });
+  };
 
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; cancelLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
     open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
@@ -253,7 +260,7 @@ export function useLibros() {
   };
 
   const filteredLibros = useMemo(() => {
-    return libros.filter((libro) => {
+    const result = libros.filter((libro) => {
       const autorStr   = libro.autor  || "";
       const unidadStr  = libro.unidad || "";
       const tituloStr  = libro.titulo || "";
@@ -267,7 +274,27 @@ export function useLibros() {
       const matchesAutor = filterAutor === "Todos" || autorStr.toLowerCase().includes(filterAutor.toLowerCase());
       return matchesSearch && matchesEstado && matchesCategoria && matchesAutor;
     });
-  }, [libros, debouncedSearch, filterEstado, filterCategoria, filterAutor]);
+    if (!sortConfig) return result;
+    return [...result].sort((a: any, b: any) => {
+      const sortId = (v: any) => {
+        const s = (v ?? "").toString();
+        const n = parseInt(s.replace(/\D/g, ""), 10);
+        return isNaN(n) ? s.toLowerCase() : n;
+      };
+      if (sortConfig.key === "unidad") {
+        const aN = sortId(a.unidad), bN = sortId(b.unidad);
+        return typeof aN === "number" && typeof bN === "number"
+          ? (sortConfig.direction === "asc" ? aN - bN : bN - aN)
+          : 0;
+      }
+      if (sortConfig.key === "cantidad_disponible") {
+        return sortConfig.direction === "asc" ? (a.cantidad_disponible || 0) - (b.cantidad_disponible || 0) : (b.cantidad_disponible || 0) - (a.cantidad_disponible || 0);
+      }
+      const aVal = (a[sortConfig.key] ?? "").toString().toLowerCase();
+      const bVal = (b[sortConfig.key] ?? "").toString().toLowerCase();
+      return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
+  }, [libros, debouncedSearch, filterEstado, filterCategoria, filterAutor, sortConfig]);
 
   const filteredPrestamos = useMemo(() => {
     if (!searchCedula.trim()) return prestamos.filter(p => p.estado === "ACTIVO");
@@ -285,6 +312,7 @@ export function useLibros() {
     searchCedula, setSearchCedula,
     currentPage, totalPages, totalItems,
     filteredLibros, filteredPrestamos,
+    sortConfig, setSortConfig, handleSort,
     isPrestamoOpen, closePrestamo,
     isLibroOpen, closeLibro,
     selectedLibroId, selectedLibroTitle, selectedLibroCantidad,
