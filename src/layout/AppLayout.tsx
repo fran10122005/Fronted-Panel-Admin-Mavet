@@ -5,6 +5,7 @@ import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
 import { TourProvider } from "../context/TourContext";
 import WelcomeTourModal from "../components/WelcomeTourModal";
+import Footer from "../components/Footer";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 
 const LayoutContent: React.FC = () => {
@@ -24,6 +25,7 @@ const LayoutContent: React.FC = () => {
         <AppHeader />
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
           <ErrorBoundary><Outlet /></ErrorBoundary>
+          <Footer />
         </div>
       </div>
       <WelcomeTourModal />

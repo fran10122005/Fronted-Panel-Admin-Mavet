@@ -41,18 +41,29 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
     if (calledRef.current) return;
     calledRef.current = true;
 
+    let cancelled = false;
+    let finishTimer: ReturnType<typeof setTimeout> | undefined;
+
     wakeUpBackend().then(() => {
+      if (cancelled) return;
       setProgress(100);
       setDone(true);
-      setTimeout(onFinish, 900);
+      finishTimer = setTimeout(() => {
+        if (!cancelled) onFinish();
+      }, 900);
     });
+
+    return () => {
+      cancelled = true;
+      if (finishTimer) clearTimeout(finishTimer);
+    };
   }, [onFinish]);
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="mb-8 transition-all duration-700" style={{ opacity: done ? 0 : 1 }}>
         <img
-          src="/images/logo/logo_mavet.png"
+          src="/images/logo/mavet2.png"
           alt="MAVET"
           className="h-36 w-auto object-contain"
         />

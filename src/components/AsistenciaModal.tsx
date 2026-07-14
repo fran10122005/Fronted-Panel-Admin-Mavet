@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Modal } from "./ui/modal";
 import { mavetApi } from "../services/api";
-import { formatHoras } from "../utils/formatters";
+import { formatHoras, normalizeCedula } from "../utils/formatters";
 import { limitNumericInput } from "../utils/validation";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -172,7 +172,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
 
   const handleConsultarManual = useCallback(() => {
     if (!cedula.trim()) { showAlert("Ingrese su número de cédula.", false); return; }
-    consultarEstado({ cedulaTrabajador: cedula.trim() });
+    consultarEstado({ cedulaTrabajador: normalizeCedula(cedula) });
   }, [cedula, consultarEstado, showAlert]);
 
   const handleRegistro = useCallback(async () => {
@@ -181,7 +181,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
     try {
       const payload: any = { tipoMovimiento: estado.siguienteMovimiento };
       if (mode === "manual") {
-        payload.cedulaTrabajador = cedula;
+        payload.cedulaTrabajador = normalizeCedula(cedula);
       } else if (scanned) {
         const parsed = parsearQRData(scanned);
         if (parsed) {

@@ -34,7 +34,7 @@ export function wakeUpBackend(timeout = 60000): Promise<void> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
 
-    fetch(API_BASE, { signal: controller.signal, mode: "no-cors" })
+    fetch(`${API_BASE}/api/visitantes/motivos`, { signal: controller.signal })
       .then(() => resolve())
       .catch(() => resolve())
       .finally(() => clearTimeout(timer));

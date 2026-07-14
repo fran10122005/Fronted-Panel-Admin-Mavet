@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
 import { mavetApi } from "../../../services/api";
+import { normalizeCedula } from "../../../utils/formatters";
 import { Search, AlertCircle } from "lucide-react";
 
 const consultanteSchema = z.object({
@@ -52,7 +53,7 @@ export default function PrestamoFormModal({
     if (!cedula.trim()) return;
     setSearchStates((prev) => ({ ...prev, [index]: { loading: true, found: false, error: "" } }));
     try {
-      const results = await mavetApi.buscarPersona(cedula.trim());
+      const results = await mavetApi.buscarPersona(normalizeCedula(cedula));
       if (results.length === 0) {
         setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: false, error: "No se encontró ninguna persona" } }));
       } else {

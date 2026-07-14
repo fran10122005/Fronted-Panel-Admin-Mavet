@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { mavetApi } from "../services/api";
+import { normalizeCedula } from "../utils/formatters";
 import toast from "react-hot-toast";
 
 export function useTalleresInstructor(
@@ -44,7 +45,7 @@ export function useTalleresInstructor(
     }
     setBuscandoPersona(true);
     try {
-      const results = await mavetApi.buscarPersona(nuevaCedula.trim());
+      const results = await mavetApi.buscarPersona(normalizeCedula(nuevaCedula));
       if (results.length === 0) {
         setError("No se encontró ninguna persona con esa cédula");
         setPersonaEncontrada(null);

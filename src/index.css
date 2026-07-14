@@ -191,15 +191,29 @@ layer(base);
 }
 
 @utility aside-gradient {
-  background: linear-gradient(180deg, rgba(128, 0, 0, 0.12) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.7);
+  background: linear-gradient(180deg, rgba(128, 0, 0, 0.12) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   
   .dark & {
-    background: rgba(12, 14, 20, 0.75);
+    background: rgba(12, 14, 20, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}
+
+@media (max-width: 1023px) {
+  .aside-gradient {
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.10) 0%, rgba(255, 255, 255, 0) 100%), rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .dark .aside-gradient {
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.25) 0%, rgba(128, 0, 0, 0.02) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-right: 1px solid #27171a !important;
   }
 }
 
@@ -767,6 +781,20 @@ layer(base);
 .dark .header-gradient {
   background: linear-gradient(90deg, rgba(128, 0, 0, 0.18) 0%, rgba(13, 8, 9, 0) 100%), #12090b !important;
   border-bottom: 1px solid #27171a !important;
+}
+
+@media (max-width: 1023px) {
+  .dark .aside-gradient {
+    background: linear-gradient(180deg, rgba(128, 0, 0, 0.25) 0%, rgba(128, 0, 0, 0.02) 60%, rgba(13, 8, 9, 0) 100%), #12090b !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-right: 1px solid #27171a !important;
+  }
+  .dark .header-gradient {
+    background: #12090b !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* Sidebar Active/Inactive Items */

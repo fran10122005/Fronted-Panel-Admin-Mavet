@@ -10,7 +10,6 @@ export function formatHoras(h: number): string {
 export function formatCedula(cedula: string): string {
   if (!cedula) return "";
   
-  // Si tiene el prefijo V- o E-
   let prefix = "";
   let digits = cedula;
   
@@ -22,11 +21,16 @@ export function formatCedula(cedula: string): string {
     digits = cedula.substring(1);
   }
   
-  // Limpiar no digitos
   digits = digits.replace(/\D/g, "");
-  
-  // Aplicar formato de puntos
   const formattedDigits = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   
   return prefix ? `${prefix}${formattedDigits}` : formattedDigits;
+}
+
+export function normalizeCedula(cedula: string): string {
+  if (!cedula) return "";
+  const digits = cedula.replace(/\D/g, "");
+  if (!digits) return "";
+  const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `V-${formatted}`;
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { mavetApi, axiosInstance } from "../services/api";
+import { normalizeCedula } from "../utils/formatters";
 import toast from "react-hot-toast";
 
 const INGRESOS_PAGE_SIZE = 5;
@@ -122,7 +123,15 @@ export function useRecepcion() {
       const res = await axiosInstance.get(`/api/personas/buscar?q=${searchQuery}`);
       const result = res.data;
       if (result.data && result.data.length > 0) {
-        setSearchResults(result.data);
+        const seen = new Set<string>();
+        const deduped = result.data.filter((p: any) => {
+          const normalizedCedula = p.cedula ? p.cedula.replace(/^[VE]-/, "").trim() : "";
+          const key = normalizedCedula || p.id_persona;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setSearchResults(deduped);
       } else {
         setSearchResults([]);
         toast.error("No se encontró ninguna persona. Puede registrarla ahora.");
@@ -228,7 +237,7 @@ export function useRecepcion() {
         fecha_de_nac: menorData.fecha_nacimiento,
         id_motivo: formData.id_motivo.replace("motivo_", "") || "MVI-00001",
         id_representante_persona: selectedPersona?.id_persona,
-        cedula: menorData.cedula || undefined,
+        cedula: normalizeCedula(menorData.cedula) || undefined,
       };
       await mavetApi.registrarIngreso(menorPayload);
       toast.success("Menor registrado e ingresado exitosamente.");
@@ -255,7 +264,7 @@ export function useRecepcion() {
         nombres: menor.nombres,
         apellidos: menor.apellidos,
         fecha_de_nac: menor.fecha_de_nac,
-        cedula: menor.cedula || undefined,
+        cedula: normalizeCedula(menor.cedula) || undefined,
         id_motivo: formData.id_motivo.replace("motivo_", "") || "MVI-00001",
         id_representante_persona: selectedPersona.id_persona,
       };

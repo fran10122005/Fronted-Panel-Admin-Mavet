@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import { mavetApi } from "../services/api";
+import { normalizeCedula } from "../utils/formatters";
 import { useDebounce } from "./useDebounce";
 import { useModal } from "./useModal";
 import { generateNextCode } from "../utils/codeGenerator";
@@ -117,7 +118,7 @@ export function useLibros() {
         try {
           await mavetApi.registrarPrestamo({
             libroId: selectedLibroId,
-            cedulaSolicitante: p.cedula,
+            cedulaSolicitante: normalizeCedula(p.cedula),
             nombreSolicitante: p.nombre,
             horaPrestamo: new Date().toISOString(),
             estado: "ACTIVO",
@@ -184,6 +185,7 @@ export function useLibros() {
 
   const handleEditLibro = (libro: Libro) => {
     setFormError("");
+    setLibroFormData(libro);
     const autorEncontrado = autores.find((a: any) => a.id_autor === libro.id_autor);
     setAutorNombre(autorEncontrado?.nombre || libro.autor.split(" ")[0] || "");
     setAutorApellido(autorEncontrado?.apellido || libro.autor.split(" ").slice(1).join(" ") || "");

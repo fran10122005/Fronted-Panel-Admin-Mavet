@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { mavetApi } from '../../services/api';
 import { limitNumericInput, validatePhone } from '../../utils/validation';
+import { normalizeCedula } from '../../utils/formatters';
 import { Modal } from '../../components/ui/modal';
 
 export default function RegistroPublico() {
@@ -62,7 +63,7 @@ export default function RegistroPublico() {
     setIsLoading(true);
     setError('');
     try {
-      const res = await mavetApi.checkVisitantePublico(cedula);
+      const res = await mavetApi.checkVisitantePublico(normalizeCedula(cedula));
       if (res.existe) {
         setExiste(true);
         setNombreExistente(res.nombre);
@@ -154,6 +155,7 @@ export default function RegistroPublico() {
         payload.id_solicitud = finalSolicitud;
       }
 
+      payload.cedula = normalizeCedula(payload.cedula);
       await mavetApi.registrarAutoIngreso(payload);
       setStep(3);
     } catch (err: any) {
@@ -561,7 +563,7 @@ export default function RegistroPublico() {
               setError('');
               try {
                 const payload: any = {
-                  cedula: menorData.cedula || undefined,
+                  cedula: normalizeCedula(menorData.cedula) || undefined,
                   nombres: menorData.nombres,
                   apellidos: menorData.apellidos,
                   fecha_de_nac: menorData.fecha_nacimiento,
@@ -603,9 +605,12 @@ export default function RegistroPublico() {
         </Modal>
 
         {/* Footer */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-1">
           <p className="text-xs text-gray-400 dark:text-gray-600">
             &copy; {new Date().getFullYear()} MAVET &mdash; Museo de Artes Visuales y Espacios del Táchira
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-600">
+            Servicio Comunitario UNEFA &mdash; Anthony Cartier, Edgar Rivas, Gabriel Colina, María Conde, Samuel Roa y Francisco Rincón
           </p>
         </div>
       </div>

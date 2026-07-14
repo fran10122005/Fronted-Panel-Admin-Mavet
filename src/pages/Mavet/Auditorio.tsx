@@ -22,21 +22,10 @@ import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { validateRequired } from "../../utils/validation";
+import { formatCedula, normalizeCedula } from "../../utils/formatters";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import Salas from "./Salas";
 import { generateNextCode } from "../../utils/codeGenerator";
-
-const formatCedula = (input: string): string => {
-  if (!input) return "";
-  
-  // Keep only digits
-  let digits = input.replace(/\D/g, "");
-  if (digits.length > 8) {
-    digits = digits.slice(0, 8);
-  }
-  
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-};
 
 const Auditorio: React.FC = () => {
   const { user } = useAuth();
@@ -419,7 +408,7 @@ const Auditorio: React.FC = () => {
       const payload = {
         codigo_reserva: codigoReserva,
         id_espacio: espacioId,
-        cedula: cedulaOrganizador,
+        cedula: normalizeCedula(cedulaOrganizador),
         nombre_responsable: organizador,
         institucion: tipoFinal,
         fecha_uso: eventDate,
