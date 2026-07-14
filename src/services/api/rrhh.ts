@@ -31,11 +31,12 @@ export const rrhh = {
     }
   },
 
-  getAsistencia: async (page?: number, limit?: number): Promise<{ data: RegistroAsistencia[]; totalItems: number; totalPages: number; currentPage: number }> => {
+  getAsistencia: async (page?: number, limit?: number, fecha?: string): Promise<{ data: RegistroAsistencia[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
       const params: any = {};
       if (page !== undefined) params.page = page;
       if (limit !== undefined) params.limit = limit;
+      if (fecha !== undefined) params.fecha = fecha;
       const res = await axiosInstance.get("/api/rrhh/asistencias", { params });
       const list = extractList(res).map((item: any) => {
         const t = item.Trabajador || {};

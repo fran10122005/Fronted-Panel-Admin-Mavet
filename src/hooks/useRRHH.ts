@@ -59,6 +59,11 @@ export function useRRHH() {
   const [asistPage, setAsistPage] = useState(1);
   const [asistTotalPages, setAsistTotalPages] = useState(1);
   const [asistTotalItems, setAsistTotalItems] = useState(0);
+  
+  const [asistFecha, setAsistFecha] = useState<string>(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  });
 
   const [editingTrabajadorId, setEditingTrabajadorId] = useState<string | null>(null);
   const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
@@ -85,8 +90,9 @@ export function useRRHH() {
     setTrabajTotalItems(res.totalItems);
   };
 
-  const refreshAsistencias = async (page: number) => {
-    const res = await mavetApi.getAsistencia(page, ITEMS_PER_PAGE);
+  const refreshAsistencias = async (page: number, date?: string) => {
+    const targetDate = date ?? asistFecha;
+    const res = await mavetApi.getAsistencia(page, ITEMS_PER_PAGE, targetDate);
     setAsistencias(res.data);
     setAsistPage(res.currentPage);
     setAsistTotalPages(res.totalPages);
@@ -332,7 +338,7 @@ export function useRRHH() {
 
   const handleExportAsistencia = () => {
     if (asistencias.length === 0) { toast.error("No hay registros de asistencia para exportar."); return; }
-    exportarReporteAsistencia(filteredAsistencias);
+    exportarReporteAsistencia(asistencias, asistFecha);
     toast.success("Reporte de asistencia generado.");
   };
 
@@ -390,7 +396,7 @@ export function useRRHH() {
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     selectedForJustificacion, setSelectedForJustificacion,
     trabajPage, trabajTotalPages, trabajTotalItems,
-    asistPage, asistTotalPages, asistTotalItems,
+    asistPage, asistTotalPages, asistTotalItems, asistFecha, setAsistFecha,
     refreshTrabajadores, refreshAsistencias, refreshData,
     refreshResumenSemanal,
     resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
