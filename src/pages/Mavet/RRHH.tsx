@@ -7,7 +7,6 @@ import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
 import ObservacionModal from "./rrhh/ObservacionModal";
-import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import { formatHoras } from "../../utils/formatters";
@@ -81,7 +80,6 @@ export default function RRHH() {
   } = useRRHH();
 
   const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const activeAdminsCount = usuarios.filter(u => u.rol === "Administrador" && u.estado === true).length;
   const currentEditingUser = usuarios.find(u => u.id?.toString() === editingUsuarioId);
@@ -96,7 +94,7 @@ export default function RRHH() {
         </div>
         <div className="flex flex-wrap gap-2">
           {activeTab === "asistencias" && (
-            <button data-tour="exportar-asistencia-pdf" onClick={() => setIsExportModalOpen(true)} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
+            <button data-tour="exportar-asistencia-pdf" onClick={handleExportAsistencia} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
               <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span className="hidden sm:inline">Exportar Asistencia PDF</span>
               <span className="sm:hidden">Asistencia PDF</span>
@@ -514,201 +512,6 @@ export default function RRHH() {
 
       <ObservacionModal
         isOpen={!!observacionModalData}
-</div>
-
-                      <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                              <th className="px-3 py-2">Trabajador</th>
-                              <th className="px-3 py-2">Cargo</th>
-                              <th className="px-3 py-2 text-center">Req.</th>
-                              <th className="px-3 py-2 text-center">Acum.</th>
-                              <th className="px-3 py-2 text-center">Restan</th>
-                              <th className="px-3 py-2 text-center">Cumplió</th>
-                              <th className="px-3 py-2">Observaciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
-                            {resumenSemanal.length === 0 ? (
-                              <tr><td colSpan={7} className="px-3 py-4 text-center text-gray-500"><p className="font-medium">No hay datos esta semana</p></td></tr>
-                            ) : resumenSemanal.map((r) => (
-                              <tr key={r.id_trabajador} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td className="px-3 py-2 font-semibold text-xs">{r.nombres} {r.apellidos}</td>
-                                <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{r.cargo || "—"}</td>
-                                <td className="px-3 py-2 text-center text-xs">{r.horas_semanales > 0 ? `${r.horas_semanales}h` : "—"}</td>
-                                <td className="px-3 py-2 text-center text-xs font-medium">{r.horas_acumuladas > 0 ? `${r.horas_acumuladas}h` : "0h"}</td>
-                                <td className={`px-3 py-2 text-center text-xs font-medium ${r.horas_restantes > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{r.horas_restantes > 0 ? `${r.horas_restantes}h` : "0h"}</td>
-                                <td className="px-3 py-2 text-center">
-                                  {r.cumplio ? (
-                                    <span className="text-green-600 dark:text-green-400 text-lg" title="Completo">✓</span>
-                                  ) : r.justificado ? (
-                                    <span className="text-blue-600 dark:text-blue-400 text-lg" title="Justificado">📝</span>
-                                  ) : (
-                                    <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2">
-                                  <div className="flex items-center gap-2">
-                                    {r.observaciones ? (
-                                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={r.observaciones}>
-                                        {r.observaciones}
-                                      </span>
-                                    ) : null}
-                                    {!r.cumplio && !r.justificado && !isGerente && new Date().getDay() === 3 && (
-                                      <button
-                                        onClick={() => setSelectedForJustificacion(r)}
-                                        className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
-                                      >
-                                        Justificar
-                                      </button>
-                                    )}
-                                    {r.cumplio && (
-                                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">Completo</span>
-                                    )}
-                                    {r.justificado && (
-                                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">Justificado</span>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </details>
-                  </div>
-
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                        <th className="px-4 py-2">Fecha</th>
-                        <th className="px-4 py-2">Cédula</th>
-                        <th className="px-4 py-2">Nombre y Apellido</th>
-                        <th className="px-4 py-2">Cargo</th>
-                        <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
-                        <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
-                        <th className="px-4 py-2 text-center">Horas</th>
-                        <th className="px-4 py-2">Observaciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredAsistencias.length === 0 ? (
-                        <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
-                      ) : filteredAsistencias.map((a) => (
-                        <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
-                          <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
-                          <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
-                          <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
-                          <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
-                            <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
-                          </td>
-                          <td className="px-4 py-2 text-center font-mono text-xs">
-                            <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
-                          </td>
-                          <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                        <td className="px-4 py-2 max-w-[160px]">
-                            {isGerente ? (
-                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
-                                {a.observaciones || "—"}
-                              </span>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[120px]" title={a.observaciones || ""}>
-                                    {a.observaciones || "—"}
-                                  </span>
-                                  <button
-                                    onClick={() => setObservacionModalData({ id: a.id, observaciones: a.observaciones || "" })}
-                                    className="p-1 text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
-                                    title="Añadir o editar observación"
-                                  >
-                                    <IconEdit />
-                                  </button>
-                                </div>
-                              )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
-            </div>
-
-            <div className="px-5 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-              {activeTab === "trabajadores" && (
-                <Pagination
-                  currentPage={trabajPage}
-                  totalPages={trabajTotalPages}
-                  totalItems={trabajTotalItems}
-                  pageSize={ITEMS_PER_PAGE}
-                  label="trabajadores"
-                  onPageChange={refreshTrabajadores}
-                />
-              )}
-              {activeTab === "asistencias" && (
-                <Pagination
-                  currentPage={asistPage}
-                  totalPages={asistTotalPages}
-                  totalItems={asistTotalItems}
-                  pageSize={ITEMS_PER_PAGE}
-                  label="asistencias"
-                  onPageChange={refreshAsistencias}
-                />
-              )}
-              {activeTab === "usuarios" && (
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
-                  Mostrando {filteredUsuarios.length} registros
-                </span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      <TrabajadorFormModal
-        isOpen={isOpenTrabajador}
-        onClose={closeTrabajador}
-        editingTrabajadorId={editingTrabajadorId}
-        initialData={formData}
-        cargos={cargos}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmitTrabajador}
-        inputCls={inputCls}
-      />
-
-      <UsuarioFormModal
-        isOpen={isOpenUsuario}
-        onClose={closeUsuario}
-        editingUsuarioId={editingUsuarioId}
-        initialData={formUsuario}
-        trabajadores={trabajadores}
-        roles={roles}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmitUsuario}
-        inputCls={inputCls}
-        isLastAdmin={isEditingUserLastAdmin}
-      />
-
-      <TrabajadorDetailModal
-        trabajador={selectedTrabajadorForDetail}
-        onClose={() => setSelectedTrabajadorForDetail(null)}
-        onEdit={(t) => {
-          handleOpenEditarTrabajador(t);
-          setSelectedTrabajadorForDetail(null);
-        }}
-        onRefresh={refreshData}
-      />
-
-      <JustificacionModal
-        trabajador={selectedForJustificacion}
-        onClose={() => setSelectedForJustificacion(null)}
-        onSave={handleJustificarSemana}
-      />
-
-      <ObservacionModal
-        isOpen={!!observacionModalData}
         onClose={() => setObservacionModalData(null)}
         observacionData={observacionModalData}
         onSave={handleUpdateObservaciones}
@@ -721,7 +524,7 @@ export default function RRHH() {
           import("../../services/pdf.service").then(m => m.exportarReporteAsistencia(params));
         }}
       />
-      
+
       <ConfirmDialog {...confirm} />
     </div>
   );
