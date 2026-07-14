@@ -319,25 +319,9 @@ export async function exportarReporteIngresos(
 
 // ─── PDF: Reporte de Asistencia ──────────────────────────────────────────────
 export async function exportarReporteAsistencia(
-  _asistencias: RegistroAsistencia[],
-  _periodo?: string,
+  params: { rango: "mes" | "custom", fechaInicio?: string, fechaFin?: string }
 ) {
   try {
-    const isMes = window.confirm("¿Deseas exportar el mes actual completo?\n\n(Aceptar = Mes Completo, Cancelar = Seleccionar rango de fechas)");
-    const params: any = {};
-    
-    if (isMes) {
-      params.rango = "mes";
-    } else {
-      const inicio = window.prompt("Ingresa la fecha de INICIO (YYYY-MM-DD):", _periodo || "");
-      if (!inicio) return;
-      const fin = window.prompt("Ingresa la fecha de FIN (YYYY-MM-DD):", inicio);
-      if (!fin) return;
-      params.rango = "custom";
-      params.fechaInicio = inicio;
-      params.fechaFin = fin;
-    }
-
     const res = await axiosInstance.get("/api/reportes/asistencia", {
       params,
       responseType: "blob",
