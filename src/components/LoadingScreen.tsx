@@ -41,22 +41,11 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
     if (calledRef.current) return;
     calledRef.current = true;
 
-    let cancelled = false;
-    let finishTimer: ReturnType<typeof setTimeout> | undefined;
-
     wakeUpBackend().then(() => {
-      if (cancelled) return;
       setProgress(100);
       setDone(true);
-      finishTimer = setTimeout(() => {
-        if (!cancelled) onFinish();
-      }, 900);
+      setTimeout(onFinish, 900);
     });
-
-    return () => {
-      cancelled = true;
-      if (finishTimer) clearTimeout(finishTimer);
-    };
   }, [onFinish]);
 
   return (
