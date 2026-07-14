@@ -400,7 +400,7 @@ export function useRRHH() {
     refreshTrabajadores, refreshAsistencias, refreshData,
     refreshResumenSemanal,
     resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
-    filteredAsistencias, filteredTrabajadores, filteredUsuarios, usuarios,
+    filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
     handleOpenCrearTrabajador, handleOpenEditarTrabajador,
