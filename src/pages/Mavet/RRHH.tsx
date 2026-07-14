@@ -7,6 +7,7 @@ import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
 import ObservacionModal from "./rrhh/ObservacionModal";
+import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import { formatHoras } from "../../utils/formatters";
@@ -80,6 +81,7 @@ export default function RRHH() {
   } = useRRHH();
 
   const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const activeAdminsCount = usuarios.filter(u => u.rol === "Administrador" && u.estado === true).length;
   const currentEditingUser = usuarios.find(u => u.id?.toString() === editingUsuarioId);
@@ -94,7 +96,7 @@ export default function RRHH() {
         </div>
         <div className="flex flex-wrap gap-2">
           {activeTab === "asistencias" && (
-            <button data-tour="exportar-asistencia-pdf" onClick={handleExportAsistencia} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
+            <button data-tour="exportar-asistencia-pdf" onClick={() => setIsExportModalOpen(true)} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
               <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span className="hidden sm:inline">Exportar Asistencia PDF</span>
               <span className="sm:hidden">Asistencia PDF</span>
