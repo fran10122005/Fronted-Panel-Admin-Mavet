@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRRHH, ITEMS_PER_PAGE } from "../../hooks/useRRHH";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
@@ -5,6 +6,7 @@ import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
+import ObservacionModal from "./rrhh/ObservacionModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import { formatHoras } from "../../utils/formatters";
@@ -72,9 +74,16 @@ export default function RRHH() {
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleDeleteTrabajador, handleDeleteUsuario,
-    resumenSemanal, handleUpdateObservaciones,
+    resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
     selectedForJustificacion, setSelectedForJustificacion,
+    usuarios,
   } = useRRHH();
+
+  const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
+
+  const activeAdminsCount = usuarios.filter(u => u.rol_nombre === "Administrador" && u.estado === true).length;
+  const currentEditingUser = usuarios.find(u => u.id?.toString() === editingUsuarioId);
+  const isEditingUserLastAdmin = currentEditingUser?.rol_nombre === "Administrador" && activeAdminsCount <= 1;
 
   return (
     <div className="space-y-6 relative">
@@ -191,14 +200,13 @@ export default function RRHH() {
                         </td>
                         <td className="px-5 py-2 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
-                             <button onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>
-                               Carnet
+                             <button onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial" className="inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>
                              </button>
                              {!isGerente && (
                                 <>
-                                   <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                                      <IconEdit /> Editar
+                                   <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center p-1.5 rounded-lg border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                                      <IconEdit />
                                    </button>
                                    <button onClick={() => handleDeleteTrabajador(t)} title="Eliminar trabajador" className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors">
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -252,20 +260,22 @@ export default function RRHH() {
                         </td>
                         <td className="px-5 py-2 text-center">
                           <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.estado === true ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400"}`}>
-                            {u.estado === true ? "Activo" : "Inactivo"}
+                            {u.estado === true ? "Activo" : "Suspendido"}
                           </span>
                         </td>
                         <td className="px-5 py-2 text-center">
                            <div className="flex items-center justify-center gap-1.5">
-                             <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                               <IconEdit />
-                             </button>
-                             <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                             </button>
-                             <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                             </button>
+                              <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                                <IconEdit />
+                              </button>
+                              <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                              </button>
+                              {!(u.rol_nombre === "Administrador" && activeAdminsCount <= 1) && (
+                                <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              )}
                            </div>
                         </td>
                       </tr>
@@ -276,7 +286,6 @@ export default function RRHH() {
 
               {activeTab === "asistencias" && (
                 <>
-                  {/* Resumen Semanal */}
                   <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
                     <details className="group">
                       <summary data-tour="resumen-semanal" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 select-none">
@@ -284,6 +293,13 @@ export default function RRHH() {
                         Resumen Semanal
                         <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">({resumenSemanal.length} trabajadores)</span>
                       </summary>
+                      
+                      <div className="mt-2 pl-6 flex items-center gap-4 text-[11px] text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1"><span className="text-green-600 dark:text-green-400 text-sm">✓</span> Completo</div>
+                        <div className="flex items-center gap-1"><span className="text-blue-600 dark:text-blue-400 text-sm">📝</span> Justificado</div>
+                        <div className="flex items-center gap-1"><span className="text-amber-500 text-sm">⚠</span> Incompleto</div>
+                      </div>
+
                       <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <table className="w-full text-left border-collapse">
                           <thead>
@@ -311,7 +327,7 @@ export default function RRHH() {
                                   {r.cumplio ? (
                                     <span className="text-green-600 dark:text-green-400 text-lg" title="Completo">✓</span>
                                   ) : r.justificado ? (
-                                    <span className="text-blue-600 dark:text-blue-400 text-lg" title="Justificado">✓</span>
+                                    <span className="text-blue-600 dark:text-blue-400 text-lg" title="Justificado">📝</span>
                                   ) : (
                                     <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
                                   )}
@@ -323,7 +339,7 @@ export default function RRHH() {
                                         {r.observaciones}
                                       </span>
                                     ) : null}
-                                    {!r.cumplio && !r.justificado && !isGerente && (
+                                    {!r.cumplio && !r.justificado && !isGerente && new Date().getDay() === 3 && (
                                       <button
                                         onClick={() => setSelectedForJustificacion(r)}
                                         className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
@@ -376,24 +392,25 @@ export default function RRHH() {
                             <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
                           </td>
                           <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                          <td className="px-4 py-2 max-w-[160px]">
+                        <td className="px-4 py-2 max-w-[160px]">
                             {isGerente ? (
                               <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
                                 {a.observaciones || "—"}
                               </span>
                             ) : (
-                              <input
-                                type="text"
-                                key={a.observaciones ?? ""}
-                                defaultValue={a.observaciones || ""}
-                                onBlur={(e) => {
-                                  const val = e.target.value.trim();
-                                  if (val !== (a.observaciones || "")) handleUpdateObservaciones(a.id, val);
-                                }}
-                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-brand-500 focus:outline-none text-xs px-1 py-0.5 dark:text-gray-300"
-                                placeholder="—"
-                              />
-                            )}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[120px]" title={a.observaciones || ""}>
+                                    {a.observaciones || "—"}
+                                  </span>
+                                  <button
+                                    onClick={() => setObservacionModalData({ id: a.id, observaciones: a.observaciones || "" })}
+                                    className="p-1 text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
+                                    title="Añadir o editar observación"
+                                  >
+                                    <IconEdit />
+                                  </button>
+                                </div>
+                              )}
                           </td>
                         </tr>
                       ))}
@@ -455,6 +472,7 @@ export default function RRHH() {
         isSubmitting={isSubmitting}
         onSubmit={handleSubmitUsuario}
         inputCls={inputCls}
+        isLastAdmin={isEditingUserLastAdmin}
       />
 
       <TrabajadorDetailModal
@@ -470,6 +488,13 @@ export default function RRHH() {
       <JustificacionModal
         trabajador={selectedForJustificacion}
         onClose={() => setSelectedForJustificacion(null)}
+        onSave={handleJustificarSemana}
+      />
+
+      <ObservacionModal
+        isOpen={!!observacionModalData}
+        onClose={() => setObservacionModalData(null)}
+        observacionData={observacionModalData}
         onSave={handleUpdateObservaciones}
       />
 

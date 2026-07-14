@@ -98,26 +98,46 @@ export function useRRHH() {
     setResumenSemanal(data);
   };
 
-  const handleUpdateObservaciones = async (id: string, observaciones: string, horas_justificadas: number) => {
+  const handleUpdateObservaciones = async (id: string, observaciones: string, horas_justificadas?: number) => {
     try {
       await mavetApi.updateAsistenciaObservaciones(id, observaciones, horas_justificadas);
       setAsistencias((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, observaciones, horas_justificadas } : a))
+        prev.map((a) => (a.id === id ? { ...a, observaciones, ...(horas_justificadas !== undefined && { horas_justificadas }) } : a))
       );
       setResumenSemanal((prev) =>
-        prev.map((r) => ({
-          ...r,
-          observaciones: r.dias.some((d) => d.id === id)
-            ? observaciones
-            : r.observaciones,
-          dias: r.dias.map((d) =>
-            d.id === id ? { ...d, observaciones, horas_justificadas } : d
-          ),
-        }))
+        prev.map((r) => {
+          if (!r.dias.some((d) => d.id === id)) return r;
+          
+          const newDias = r.dias.map((d) =>
+            d.id === id ? { ...d, observaciones, ...(horas_justificadas !== undefined && { horas_justificadas }) } : d
+          );
+          
+          const newHorasAcumuladas = newDias.reduce((sum, d) => sum + (d.horas || 0) + (d.horas_justificadas || 0), 0);
+          const newHorasRestantes = Math.max(0, r.horas_semanales - newHorasAcumuladas);
+
+          return {
+            ...r,
+            observaciones,
+            dias: newDias,
+            horas_acumuladas: Math.round(newHorasAcumuladas * 100) / 100,
+            horas_restantes: Math.round(newHorasRestantes * 100) / 100,
+            cumplio: newHorasRestantes <= 0,
+          };
+        })
       );
-      toast.success("Observaciones guardadas");
-    } catch {
+    } catch (error) {
       toast.error("Error al actualizar observaciones");
+      throw error; // Rethrow so the caller knows it failed
+    }
+  };
+
+  const handleJustificarSemana = async (cedula: string, observaciones: string, horas_justificadas: number) => {
+    try {
+      await mavetApi.justificarHoras(cedula, observaciones, horas_justificadas);
+      await refreshResumenSemanal();
+    } catch (error) {
+      toast.error("Error al guardar justificación");
+      throw error;
     }
   };
 
@@ -373,8 +393,8 @@ export function useRRHH() {
     asistPage, asistTotalPages, asistTotalItems,
     refreshTrabajadores, refreshAsistencias, refreshData,
     refreshResumenSemanal,
-    resumenSemanal, handleUpdateObservaciones,
-    filteredAsistencias, filteredTrabajadores, filteredUsuarios,
+    resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
+    filteredAsistencias, filteredTrabajadores, filteredUsuarios, usuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
     handleOpenCrearTrabajador, handleOpenEditarTrabajador,

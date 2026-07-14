@@ -90,16 +90,19 @@ export default function TrabajadorFormModal({
       };
 
       const initialCedula = initialData.cedula || "";
+      let nacio = "V-";
+      let numStr = initialCedula;
+
       if (initialCedula.toUpperCase().startsWith("E-")) {
-        setNacionalidad("E-");
-        setNumeroCedula(initialCedula.substring(2));
+        nacio = "E-";
+        numStr = initialCedula.substring(2);
       } else if (initialCedula.toUpperCase().startsWith("V-")) {
-        setNacionalidad("V-");
-        setNumeroCedula(initialCedula.substring(2));
-      } else {
-        setNacionalidad("V-");
-        setNumeroCedula(initialCedula);
+        nacio = "V-";
+        numStr = initialCedula.substring(2);
       }
+
+      setNacionalidad(nacio);
+      setNumeroCedula(numStr.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, "."));
 
       reset(formattedInitialData);
       setPhotoFile(null);
@@ -208,7 +211,11 @@ export default function TrabajadorFormModal({
                 <input
                   type="text" placeholder="Ej. Ricardo Andrés"
                   className={`${inputCls} ${errors.nombres ? 'border-red-500 focus:ring-red-500/20' : ''}`}
-                  {...register("nombres")}
+                  {...register("nombres", {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/\d/g, '');
+                    }
+                  })}
                 />
                 {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
               </div>
@@ -217,7 +224,11 @@ export default function TrabajadorFormModal({
                 <input
                   type="text" placeholder="Ej. López Martínez"
                   className={`${inputCls} ${errors.apellidos ? 'border-red-500' : ''}`}
-                  {...register("apellidos")}
+                  {...register("apellidos", {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/\d/g, '');
+                    }
+                  })}
                 />
                 {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
               </div>
@@ -234,11 +245,12 @@ export default function TrabajadorFormModal({
                     <option value="E-">E-</option>
                   </select>
                   <input
-                    type="text" placeholder="12345678" onKeyDown={limitNumericInput}
+                    type="text" placeholder="12.345.678" onKeyDown={limitNumericInput}
                     className={`${inputCls.replace('w-full', '')} flex-1 min-w-0 rounded-l-none border-l-0 ${errors.cedula ? 'border-red-500' : ''}`}
                     value={numeroCedula}
                     onChange={(e) => {
-                      const num = e.target.value.replace(/\D/g, '');
+                      let num = e.target.value.replace(/\D/g, '');
+                      num = num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                       setNumeroCedula(num);
                     }}
                     readOnly={editingTrabajadorId !== null}

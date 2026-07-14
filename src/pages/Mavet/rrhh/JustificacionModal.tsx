@@ -6,40 +6,46 @@ import toast from "react-hot-toast";
 interface Props {
   trabajador: ResumenSemanalTrabajador | null;
   onClose: () => void;
-  onSave: (idDia: string, texto: string, horas_justificadas: number) => Promise<void>;
+  onSave: (cedula: string, texto: string, horas_justificadas: number) => Promise<void>;
 }
 
 export default function JustificacionModal({ trabajador: t, onClose, onSave }: Props) {
-  // Extraer horas previas si existen
-  const existingHoras = t?.dias.find(d => d.horas_justificadas)?.horas_justificadas || 0;
-  const initialHoras = Math.floor(existingHoras);
-  const initialMinutos = Math.round((existingHoras - initialHoras) * 60);
-
-  const [texto, setTexto] = useState(t?.observaciones ?? "");
-  const [horas, setHoras] = useState(initialHoras > 0 ? initialHoras.toString() : "");
-  const [minutos, setMinutos] = useState(initialMinutos > 0 ? initialMinutos.toString() : "");
+  const [texto, setTexto] = useState("");
+  const [horas, setHoras] = useState("");
+  const [minutos, setMinutos] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   if (!t) return null;
 
   const handleGuardar = async () => {
+    if (!texto.trim() || horas === "" || minutos === "") {
+      toast.error("Todos los campos (justificación, horas y minutos) son obligatorios");
+      return;
+    }
+
     const h = parseInt(horas || "0", 10);
     const m = parseInt(minutos || "0", 10);
     const totalHoras = h + (m / 60);
 
-    if (!texto.trim() || totalHoras <= 0 || totalHoras >= 24) {
-      toast.error("Por favor completa la justificación y una cantidad de horas válida (mayor a 0 y menor a 24)");
+    const maxHoras = t.horas_restantes || 0;
+
+    if (maxHoras <= 0) {
+      toast.error("El trabajador ya completó sus horas requeridas");
+      return;
+    }
+
+    if (totalHoras < (20 / 60) || totalHoras > maxHoras) {
+      toast.error(`La cantidad de horas debe ser mínimo 20 minutos y máximo ${maxHoras} horas`);
       return;
     }
 
     setGuardando(true);
     try {
-      for (const dia of t.dias) {
-        if (dia.observaciones !== texto.trim() || dia.horas_justificadas !== totalHoras) {
-          await onSave(dia.id, texto.trim(), totalHoras);
-        }
-      }
+      await onSave(t.cedula, texto.trim(), totalHoras);
       toast.success("Justificación guardada correctamente");
+      setTexto("");
+      setHoras("");
+      setMinutos("");
       onClose();
     } catch {
       toast.error("Error al guardar justificación");

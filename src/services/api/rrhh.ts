@@ -15,6 +15,9 @@ export const rrhh = {
         telefono: item.telefono || "",
         correo: item.correo_personal || "",
         cargo: item.CargoTrabajador?.nombre_cargo || "Sin cargo",
+        fecha_ingreso: item.fecha_ingreso || "",
+        fecha_nacimiento: item.fecha_nacimiento || "",
+        direccion: item.direccion || "",
         horas_semanales: item.horas_semanales || 0,
         estado: item.estado === true || item.estado === "Activo" ? "Activo" : "Inactivo",
         id: item.id_trabajador,
@@ -169,5 +172,9 @@ export const rrhh = {
     const body: any = { observaciones };
     if (horas_justificadas !== undefined) body.horas_justificadas = horas_justificadas;
     await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, body);
+  },
+
+  justificarHoras: async (cedula: string, observaciones: string, horas_justificadas: number): Promise<void> => {
+    await axiosInstance.post('/api/rrhh/asistencias/justificar', { cedula, observaciones, horas_justificadas });
   },
 };

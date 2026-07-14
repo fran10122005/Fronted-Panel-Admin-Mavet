@@ -22,13 +22,12 @@ interface CalendarGridProps {
   isLoading?: boolean;
 }
 
-const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 const getFirstDayOfMonth = (date: Date) => {
-  const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  return day === 0 ? 6 : day - 1;
+  return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 };
 
 const defaultGetColor = (tipo?: string) => {

@@ -101,6 +101,8 @@ export interface Trabajador {
   cargo: string;
   id_cargo: string;
   fecha_ingreso: string;
+  fecha_nacimiento?: string;
+  direccion?: string;
   horas_semanales?: number;
   estado: "Activo" | "Inactivo";
   qr_uuid?: string;

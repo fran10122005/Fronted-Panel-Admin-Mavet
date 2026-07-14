@@ -9,26 +9,38 @@ const buildUsuarioSchema = (isCreation: boolean) =>
   z.object({
     id_trabajador: z.preprocess(
       (val) => (val === 0 || val === "0" || val === "" || val === null || val === undefined ? undefined : String(val)),
-      z.string().optional()
+      z.string({ required_error: "El trabajador vinculado es obligatorio" }).min(1, "El trabajador vinculado es obligatorio")
     ),
     correo: z.string().email("Debe ser un correo válido"),
     password: z.string().optional(),
     id_rol: z.string().min(1, "El rol del sistema es obligatorio"),
     estado: z.preprocess((val) => val === "true" || val === true, z.boolean().optional()),
   }).superRefine((data, ctx) => {
-    if (isCreation && (!data.password || data.password.length === 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "La contraseña es obligatoria para nuevos usuarios",
-        path: ["password"],
-      });
+    if (isCreation) {
+      if (!data.password || data.password.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La contraseña es obligatoria para nuevos usuarios",
+          path: ["password"],
+        });
+      }
     }
-    if (data.password && data.password.length > 0 && data.password.length < 6) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "La contraseña debe tener al menos 6 caracteres",
-        path: ["password"],
-      });
+    
+    if (data.password && data.password.length > 0) {
+      if (data.password.length < 6) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La contraseña debe tener al menos 6 caracteres",
+          path: ["password"],
+        });
+      }
+      if (!/^[a-zA-Z0-9]+$/.test(data.password)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La contraseña solo debe contener letras y números (sin caracteres especiales)",
+          path: ["password"],
+        });
+      }
     }
   });
 
@@ -44,6 +56,7 @@ interface Props {
   isSubmitting: boolean;
   onSubmit: (data: UsuarioFormValues) => void;
   inputCls: string;
+  isLastAdmin?: boolean;
 }
 
 const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
@@ -51,6 +64,7 @@ const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-g
 export default function UsuarioFormModal({
   isOpen, onClose, editingUsuarioId, initialData,
   trabajadores, roles, isSubmitting, onSubmit, inputCls,
+  isLastAdmin = false
 }: Props) {
   const schema = useMemo(() => buildUsuarioSchema(editingUsuarioId === null), [editingUsuarioId]);
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } = useForm<UsuarioFormValues>({
@@ -82,14 +96,26 @@ export default function UsuarioFormModal({
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
           {editingUsuarioId !== null ? "Editar Usuario" : "Registrar Nuevo Usuario"}
         </h3>
+        
+        {isLastAdmin && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+            <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-xs text-red-700 dark:text-red-400">
+              Este es el único administrador activo del sistema. Por seguridad, no se puede modificar su rol ni suspender su cuenta.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3">
           <div>
-            <label className={labelCls}>Trabajador Vinculado</label>
+            <label className={labelCls}>Trabajador Vinculado <span className="text-red-500">*</span></label>
             <select
-              className={inputCls}
+              className={`${inputCls} ${errors.id_trabajador ? 'border-red-500' : ''}`}
               {...register("id_trabajador")}
             >
-              <option value="">Ninguno (Opcional)</option>
+              <option value="">Seleccione un trabajador...</option>
               {trabajadores.map((t) => (
                 <option key={t.id || t.cedula} value={t.id}>{t.cedula.replace(/^[VE]-/i, '')} - {t.nombre} {t.apellido}</option>
               ))}
@@ -116,7 +142,7 @@ export default function UsuarioFormModal({
                 {...register("password")}
               />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-              {!errors.password && <p className="text-[11px] text-gray-500 mt-0.5">Debe tener al menos 6 caracteres.</p>}
+              {!errors.password && <p className="text-[11px] text-gray-500 mt-0.5">Debe tener al menos 6 caracteres alfanuméricos.</p>}
             </div>
           )}
 
@@ -125,6 +151,7 @@ export default function UsuarioFormModal({
             <select
               className={`${inputCls} ${errors.id_rol ? 'border-red-500' : ''}`}
               {...register("id_rol")}
+              disabled={isLastAdmin}
             >
               <option value="" disabled>Seleccione un rol...</option>
               {roles.map((r: any) => (
@@ -137,9 +164,13 @@ export default function UsuarioFormModal({
           {editingUsuarioId !== null && (
             <div>
               <label className={labelCls}>Estado</label>
-              <select className={inputCls} {...register("estado")}>
+              <select 
+                className={inputCls} 
+                {...register("estado")}
+                disabled={isLastAdmin}
+              >
                 <option value="true">Activo</option>
-                <option value="false">Inactivo (Borrado Lógico)</option>
+                <option value="false">Suspendido</option>
               </select>
             </div>
           )}
