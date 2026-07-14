@@ -81,9 +81,9 @@ export default function RRHH() {
 
   const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
 
-  const activeAdminsCount = usuarios.filter(u => u.rol_nombre === "Administrador" && u.estado === true).length;
+  const activeAdminsCount = usuarios.filter(u => u.rol === "Administrador" && u.estado === true).length;
   const currentEditingUser = usuarios.find(u => u.id?.toString() === editingUsuarioId);
-  const isEditingUserLastAdmin = currentEditingUser?.rol_nombre === "Administrador" && activeAdminsCount <= 1;
+  const isEditingUserLastAdmin = currentEditingUser?.rol === "Administrador" && activeAdminsCount <= 1;
 
   return (
     <div className="space-y-6 relative">
@@ -271,7 +271,7 @@ export default function RRHH() {
                               <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                               </button>
-                              {!(u.rol_nombre === "Administrador" && activeAdminsCount <= 1) && (
+                              {!(u.rol === "Administrador" && activeAdminsCount <= 1) && (
                                 <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
