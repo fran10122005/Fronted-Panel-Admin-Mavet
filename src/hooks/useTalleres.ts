@@ -112,7 +112,10 @@ export function useTalleres() {
       setInventario(invRes.data);
       setTalleres(autoInactivarVencidos(tal));
       setInstructores(inst);
-      setEspacios(esp);
+      setEspacios(esp.filter((e: any) => {
+        const n = (e.nombre_espacio || e.nombre || "").toLowerCase();
+        return !n.includes("boveda") && !n.includes("bóveda");
+      }));
       setInscripciones(ins);
     } catch (error) {
       console.error(error);
