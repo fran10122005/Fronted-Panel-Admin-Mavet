@@ -594,7 +594,7 @@ export default function Talleres() {
                     instructores.map(inst => (
                       <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                         <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion_ocupacion || "—"}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion || "—"}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.especialidad || "—"}</td>
                       </tr>
                     ))
