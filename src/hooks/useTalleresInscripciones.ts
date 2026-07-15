@@ -21,7 +21,7 @@ export function useTalleresInscripciones(
 ) {
   const [enrollForm, setEnrollForm] = useState(INITIAL_ENROLL_FORM);
   const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
   const [selectedTallerInscripciones, setSelectedTallerInscripciones] = useState<any>(null);
   const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
   const [isOpenEnroll, setIsOpenEnroll] = useState(false);
@@ -67,7 +67,7 @@ export function useTalleresInscripciones(
       setError("Los menores de edad requieren nombre y cédula del representante.");
       return;
     }
-    setIsSubmitting(true);
+    setIsEnrolling(true);
     try {
       const payload: any = {
         tallerId: enrollForm.tallerId,
@@ -91,7 +91,7 @@ export function useTalleresInscripciones(
     } catch (error: any) {
       toast.error(error.message || "Error al inscribir al alumno.");
     } finally {
-      setIsSubmitting(false);
+      setIsEnrolling(false);
     }
   };
 
@@ -141,7 +141,7 @@ export function useTalleresInscripciones(
   return {
     enrollForm, setEnrollForm,
     selectedTallerEnroll, setSelectedTallerEnroll,
-    isSubmitting,
+    isEnrolling,
     selectedTallerInscripciones, setSelectedTallerInscripciones,
     tallerInscripciones, setTallerInscripciones,
     edadNum, esMenor,

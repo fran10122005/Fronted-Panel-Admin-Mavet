@@ -592,7 +592,8 @@ export default function InventarioBoveda() {
     );
   }, [artistsList, artistSearch]);
 
-  // Filtrado reactivo de las obras
+  const sortKey = sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : "";
+
   const filteredObras = useMemo(() => {
     const result = obras.filter((obra) => {
       const matchesSearch = 
@@ -607,22 +608,21 @@ export default function InventarioBoveda() {
     });
     if (!sortConfig) return result;
     return [...result].sort((a: any, b: any) => {
-      const sortId = (v: any) => {
-        const s = (v ?? "").toString();
-        const n = parseInt(s.replace(/\D/g, ""), 10);
-        return isNaN(n) ? s.toLowerCase() : n;
-      };
       if (sortConfig.key === "codigo_inventario") {
-        const aN = sortId(a.codigo_inventario), bN = sortId(b.codigo_inventario);
-        return typeof aN === "number" && typeof bN === "number"
-          ? (sortConfig.direction === "asc" ? aN - bN : bN - aN)
-          : 0;
+        const getNum = (obra: any) => {
+          const raw = String(obra.codigo_inventario || obra.id || "");
+          const n = parseInt(raw.replace(/\D/g, ""), 10);
+          return isNaN(n) ? 0 : n;
+        };
+        return sortConfig.direction === "asc"
+          ? getNum(a) - getNum(b)
+          : getNum(b) - getNum(a);
       }
       const aVal = (a[sortConfig.key] ?? "").toString().toLowerCase();
       const bVal = (b[sortConfig.key] ?? "").toString().toLowerCase();
       return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
-  }, [obras, searchTerm, filterEstado, sortConfig]);
+  }, [obras, searchTerm, filterEstado, sortKey]);
 
   return (
     <div className="space-y-6 relative">
@@ -726,7 +726,14 @@ export default function InventarioBoveda() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 uppercase text-xs font-semibold border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-5 py-2">Código</th>
+                    <th className="px-5 py-2">
+                      Código
+                      {sortConfig?.key === "codigo_inventario" && (
+                        <span className="ml-1 font-bold">
+                          {sortConfig.direction === "asc" ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </th>
                     <th className="px-5 py-2">Título</th>
                     <th className="px-5 py-2">Autor</th>
                     <th className="px-5 py-2">Categoría/Modalidad</th>

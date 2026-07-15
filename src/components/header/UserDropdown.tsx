@@ -1,24 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fotoUrl = user?.foto_url;
 
@@ -36,24 +27,34 @@ export default function UserDropdown() {
     navigate("/signin");
   }
 
-  function toggleDropdown() {
+  const toggleDropdown = useCallback(() => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
     setIsOpen(!isOpen);
-  }
+  }, [isOpen]);
 
   function closeDropdown() {
     setIsOpen(false);
   }
 
   useEffect(() => {
-    if (!isOpen || !isMobile) return;
+    if (!isOpen) return;
     const handler = (e: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        closeDropdown();
-      }
+      const target = e.target as HTMLElement;
+
+      if (buttonRef.current && buttonRef.current.contains(target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+
+      closeDropdown();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [isOpen, isMobile]);
+  }, [isOpen]);
 
   const dropdownContent = (
     <>
@@ -149,28 +150,17 @@ export default function UserDropdown() {
         </span>
       </button>
 
-      {isOpen && isMobile && (
-        <div
-          className="fixed inset-0 z-[99999]"
-          onClick={closeDropdown}
-        >
-          <div
-            className="fixed right-3 top-[72px] w-[92vw] rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
-            onClick={(e) => e.stopPropagation()}
-          >
+      {isOpen && (
+        <div ref={dropdownRef} className="w-[260px] md:w-[260px] max-[767px]:w-[92vw]" style={{
+          position: "fixed",
+          top: dropdownPos.top,
+          right: dropdownPos.right,
+          zIndex: 99999,
+        }}>
+          <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark">
             {dropdownContent}
           </div>
         </div>
-      )}
-
-      {!isMobile && (
-        <Dropdown
-          isOpen={isOpen}
-          onClose={closeDropdown}
-          className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
-        >
-          {dropdownContent}
-        </Dropdown>
       )}
     </div>
   );

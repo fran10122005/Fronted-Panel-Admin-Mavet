@@ -61,6 +61,7 @@ export default function Talleres() {
     planificarForm, setPlanificarForm,
     enrollForm,
     isSubmitting,
+    isEnrolling,
     esMenor, inscripcionesAgrupadas,
     totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
@@ -561,7 +562,7 @@ export default function Talleres() {
 
             <div className="flex justify-end">
               <button type="button" onClick={handleCrearInstructor} disabled={isSubmitting || !personaEncontrada}
-                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
                 {isSubmitting ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : "Crear Instructor"}
@@ -657,7 +658,7 @@ export default function Talleres() {
         selectedTallerEnroll={selectedTallerEnroll}
         enrollForm={enrollForm}
         esMenor={esMenor}
-        isSubmitting={isSubmitting}
+        isSubmitting={isEnrolling}
         formError={formError}
         onChange={handleEnrollChange}
         onSubmit={handleSubmitInscripcion}
@@ -741,13 +742,23 @@ export default function Talleres() {
         </div>
       </Modal>
 
-      <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl p-6">
+      <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl p-6" showCloseButton={false}>
         <div>
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Asistentes Check-In</h3>
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full dark:bg-amber-900/30 dark:text-amber-400">
-              Total: {tallerAsistentes.length} {tallerAsistentes.length === 1 ? 'persona' : 'personas'}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full dark:bg-amber-900/30 dark:text-amber-400">
+                Total: {tallerAsistentes.length} {tallerAsistentes.length === 1 ? 'persona' : 'personas'}
+              </span>
+              <button
+                onClick={closeAsistentesModal}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M6.04289 16.5413C5.65237 16.9318 5.65237 17.565 6.04289 17.9555C6.43342 18.346 7.06658 18.346 7.45711 17.9555L12 13.4126L16.5429 17.9555C16.9334 18.346 17.5666 18.346 17.9571 17.9555C18.3476 17.565 18.3476 16.9318 17.9571 16.5413L13.4142 11.9984L17.9571 7.45549C18.3476 7.06497 18.3476 6.43181 17.9571 6.04128C17.5666 5.65076 16.9334 5.65076 16.5429 6.04128L12 10.5842L7.45711 6.04128C7.06658 5.65076 6.43342 5.65076 6.04289 6.04128C5.65237 6.43181 5.65237 7.06497 6.04289 7.45549L10.5858 11.9984L6.04289 16.5413Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
             Visitantes confirmados en recepci&oacute;n o por QR para: <span className="font-semibold text-brand-600 dark:text-brand-400">{selectedTaller?.nombre_curso || ""}</span>
