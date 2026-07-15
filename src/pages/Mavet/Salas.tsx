@@ -4,7 +4,7 @@ import { Modal } from "../../components/ui/modal";
 import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
 import { generateNextCode } from "../../utils/codeGenerator";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, AlertCircle } from "lucide-react";
 
 import ComponentCard from "../../components/common/ComponentCard";
 
@@ -17,6 +17,7 @@ export default function Salas() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     codigo_espacio: "",
@@ -49,6 +50,7 @@ export default function Salas() {
   const openCrear = async () => {
     setIsEditing(false);
     setSelectedId(null);
+    setFieldErrors({});
     
     // Generar código automático
     const all = espacios;
@@ -65,6 +67,7 @@ export default function Salas() {
   const openEditar = (espacio: any) => {
     setIsEditing(true);
     setSelectedId(espacio.id_espacio || espacio.id);
+    setFieldErrors({});
     setFormData({
       codigo_espacio: espacio.id_espacio || espacio.codigo_espacio || "",
       nombre_espacio: espacio.nombre_espacio || "",
@@ -75,7 +78,23 @@ export default function Salas() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === "capacidad_maxima") {
+      let error = "";
+      if (value) {
+        const cap = Number(value);
+        if (cap < 1) {
+          error = "La capacidad debe ser al menos 1 persona.";
+        } else if (cap > 80) {
+          error = "La capacidad máxima permitida es de 80 personas.";
+        }
+      }
+      setFieldErrors(prev => ({ ...prev, capacidad_maxima: error }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, capacidad_maxima: "" }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +102,18 @@ export default function Salas() {
     if (!formData.nombre_espacio.trim()) {
       toast.error("El nombre del espacio es obligatorio");
       return;
+    }
+
+    if (formData.capacidad_maxima) {
+      const cap = Number(formData.capacidad_maxima);
+      if (cap < 1) {
+        toast.error("La capacidad debe ser al menos 1 persona");
+        return;
+      }
+      if (cap > 80) {
+        toast.error("La capacidad máxima permitida es de 80 personas");
+        return;
+      }
     }
 
     const trimmedName = formData.nombre_espacio.trim();
@@ -168,8 +199,6 @@ export default function Salas() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 uppercase border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">ID</th>
-                  <th className="px-6 py-4 font-semibold">Código</th>
                   <th className="px-6 py-4 font-semibold">Nombre</th>
                   <th className="px-6 py-4 font-semibold">Capacidad</th>
                   <th className="px-6 py-4 font-semibold">Descripción</th>
@@ -179,8 +208,6 @@ export default function Salas() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {espacios.map((esp) => (
                   <tr key={esp.id_espacio || esp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                    <td className="px-6 py-4 font-mono text-gray-500 dark:text-gray-400">{esp.id_espacio || esp.id}</td>
-                    <td className="px-6 py-4 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{esp.codigo_espacio || "—"}</td>
                     <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-200">{esp.nombre_espacio}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                       {esp.capacidad_maxima ? `${esp.capacidad_maxima} personas` : "No definida"}
@@ -250,9 +277,16 @@ export default function Salas() {
                 onChange={handleChange}
                 onKeyDown={limitNumericInput}
                 min="1"
+                max="80"
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-                placeholder="Ej. 50"
+                placeholder="Ej. 50 (máx. 80)"
               />
+              {fieldErrors.capacidad_maxima && (
+                <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg border border-red-200 dark:border-red-900/30 mt-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs font-medium">{fieldErrors.capacidad_maxima}</p>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>

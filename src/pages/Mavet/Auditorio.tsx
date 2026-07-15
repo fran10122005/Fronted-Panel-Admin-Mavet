@@ -39,8 +39,8 @@ const Auditorio: React.FC = () => {
   const [codigoReserva, setCodigoReserva] = useState("");
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
-  const [horaInicio, setHoraInicio] = useState("08:00");
-  const [horaFin, setHoraFin] = useState("18:00");
+  const [horaInicio, setHoraInicio] = useState("09:00");
+  const [horaFin, setHoraFin] = useState("16:00");
   const [organizador, setOrganizador] = useState("");
   const [cedulaOrganizador, setCedulaOrganizador] = useState("");
   const [organizadorLoading, setOrganizadorLoading] = useState(false);
@@ -54,7 +54,18 @@ const Auditorio: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-  
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const maxDateStr = useMemo(() => {
+    const today = new Date();
+    const d = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const targetDay = Math.min(today.getDate(), lastDay);
+    const maxDate = new Date(d.getFullYear(), d.getMonth(), targetDay);
+    const offset = maxDate.getTimezoneOffset();
+    return new Date(maxDate.getTime() - offset * 60000).toISOString().split("T")[0];
+  }, []);
+
   const [filterTipo, setFilterTipo] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -72,9 +83,10 @@ const Auditorio: React.FC = () => {
       organizador.trim() !== "" &&
       horaInicio !== "" &&
       horaFin !== "" &&
-      horaInicio < horaFin
+      horaInicio < horaFin &&
+      Object.values(fieldErrors).every(e => !e)
     );
-  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, horaInicio, horaFin]);
+  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, horaInicio, horaFin, fieldErrors]);
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
@@ -185,6 +197,48 @@ const Auditorio: React.FC = () => {
     }
   }, [eventDate, horaInicio, horaFin, events, selectedEvent, isOpen]);
 
+  useEffect(() => {
+    const errors: Record<string, string> = {};
+
+    if (eventDate) {
+      const selectedDate = new Date(eventDate + "T00:00:00");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        errors.eventDate = "La fecha debe ser igual o posterior a la fecha actual.";
+      } else {
+        const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+        const lastDay = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0).getDate();
+        maxDate.setDate(Math.min(today.getDate(), lastDay));
+        if (selectedDate > maxDate) {
+          errors.eventDate = "La fecha no puede superar los 2 meses desde el día actual.";
+        }
+      }
+    }
+
+    if (horaInicio) {
+      const [h, m] = horaInicio.split(":").map(Number);
+      if (h < 9 || h > 16 || (h === 16 && m > 0)) {
+        errors.horaInicio = "La hora de inicio debe estar entre las 09:00 AM y las 04:00 PM.";
+      }
+    }
+
+    if (horaFin) {
+      const [h, m] = horaFin.split(":").map(Number);
+      if (h < 9 || h > 16 || (h === 16 && m > 0)) {
+        errors.horaFin = "La hora de fin debe estar entre las 09:00 AM y las 04:00 PM.";
+      } else if (horaInicio && horaFin) {
+        const [hI, mI] = horaInicio.split(":").map(Number);
+        const [hF, mF] = horaFin.split(":").map(Number);
+        if (hF * 60 + mF <= hI * 60 + mI) {
+          errors.horaFin = "La hora de fin debe ser posterior a la hora de inicio.";
+        }
+      }
+    }
+
+    setFieldErrors(errors);
+  }, [eventDate, horaInicio, horaFin]);
+
   const filteredEvents = useMemo(() => {
     return events.filter(ev => {
       const matchTipo = filterTipo === "Todos" || ev.extendedProps.tipoEvento === filterTipo;
@@ -269,8 +323,11 @@ const Auditorio: React.FC = () => {
       return;
     }
 
-    if (selectedDate.getMonth() !== today.getMonth() || selectedDate.getFullYear() !== today.getFullYear()) {
-      toast.warning("Las reservas solo están permitidas para el mes en curso.");
+    const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    const lastDay = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0).getDate();
+    maxDate.setDate(Math.min(today.getDate(), lastDay));
+    if (selectedDate > maxDate) {
+      toast.warning("Las reservas solo están permitidas hasta 2 meses desde la fecha actual.");
       return;
     }
     
@@ -284,8 +341,8 @@ const Auditorio: React.FC = () => {
     setCodigoReserva(nextCode);
 
     setEventDate(dateStr);
-    setHoraInicio("08:00");
-    setHoraFin("18:00");
+    setHoraInicio("09:00");
+    setHoraFin("16:00");
     setIsPastEvent(false);
     setIsDateLocked(true); // Bloquear fecha si se seleccionó del calendario
     openModal();
@@ -370,11 +427,6 @@ const Auditorio: React.FC = () => {
       return;
     }
 
-    if (selectedDate.getMonth() !== today.getMonth() || selectedDate.getFullYear() !== today.getFullYear()) {
-      setFormError("Las reservas solo están permitidas para el mes en curso.");
-      return;
-    }
-
     if (selectedDate.getTime() === today.getTime()) {
       const now = new Date();
       const currentHour = now.getHours();
@@ -387,6 +439,14 @@ const Auditorio: React.FC = () => {
       }
     }
 
+    const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    const lastDay = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0).getDate();
+    maxDate.setDate(Math.min(today.getDate(), lastDay));
+    if (selectedDate > maxDate) {
+      setFormError("Las reservas solo están permitidas hasta 2 meses desde la fecha actual.");
+      return;
+    }
+
     if (!cedulaOrganizador || !organizador) {
       setFormError("Debe buscar y seleccionar un organizador válido.");
       return;
@@ -395,6 +455,21 @@ const Auditorio: React.FC = () => {
     if (horaInicio >= horaFin) {
       setFormError("La hora de inicio debe ser anterior a la hora de finalización.");
       return;
+    }
+
+    if (horaInicio) {
+      const [h, m] = horaInicio.split(':').map(Number);
+      if (h < 9 || h > 16 || (h === 16 && m > 0)) {
+        setFormError("La hora de inicio debe estar entre las 09:00 AM y las 04:00 PM.");
+        return;
+      }
+    }
+    if (horaFin) {
+      const [h, m] = horaFin.split(':').map(Number);
+      if (h < 9 || h > 16 || (h === 16 && m > 0)) {
+        setFormError("La hora de fin debe estar entre las 09:00 AM y las 04:00 PM.");
+        return;
+      }
     }
 
     if (formError.includes("no esta disponible") || formError.includes("ya han pasado en el día de hoy")) {
@@ -467,8 +542,8 @@ const Auditorio: React.FC = () => {
     setCodigoReserva("");
     setEventTitle("");
     setEventDate("");
-    setHoraInicio("08:00");
-    setHoraFin("18:00");
+    setHoraInicio("09:00");
+    setHoraFin("16:00");
     setOrganizador("");
     setCedulaOrganizador("");
     setOrganizadorLoading(false);
@@ -486,6 +561,7 @@ const Auditorio: React.FC = () => {
     
     setSelectedEvent(null);
     setFormError("");
+    setFieldErrors({});
     setIsPastEvent(false);
     setIsDateLocked(false);
   };
@@ -897,11 +973,18 @@ const Auditorio: React.FC = () => {
                   required
                   type="date"
                   min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]}
+                  max={maxDateStr}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   disabled={isGerente || isPastEvent || isDateLocked}
                   className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {fieldErrors.eventDate && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium">{fieldErrors.eventDate}</p>
+                  </div>
+                )}
               </div>
 
               <div className="col-span-2 md:col-span-1 space-y-2">
@@ -949,8 +1032,16 @@ const Auditorio: React.FC = () => {
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
                   disabled={isGerente || isPastEvent}
+                  min="09:00"
+                  max="16:00"
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
                 />
+                {fieldErrors.horaInicio && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium">{fieldErrors.horaInicio}</p>
+                  </div>
+                )}
               </div>
 
               <div className="col-span-2 md:col-span-1 space-y-2">
@@ -961,8 +1052,16 @@ const Auditorio: React.FC = () => {
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
                   disabled={isGerente || isPastEvent}
+                  min="09:00"
+                  max="16:00"
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
                 />
+                {fieldErrors.horaFin && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium">{fieldErrors.horaFin}</p>
+                  </div>
+                )}
               </div>
 
               <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">

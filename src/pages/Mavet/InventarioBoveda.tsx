@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { mavetApi } from "../../services/api";
 import { exportarInventarioObras } from "../../services/pdf.service";
 import { Artista, Obra } from "../../types";
+import { AlertCircle } from "lucide-react";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
@@ -16,7 +17,8 @@ const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: numb
   id: "",
   codigo_inventario: "",
   titulo: "",
-  medidas: "",
+  ancho: undefined,
+  largo: undefined,
   ano: new Date().getFullYear(),
   id_categoria_obra: undefined,
   tipo_ingreso: "",
@@ -145,8 +147,14 @@ export default function InventarioBoveda() {
     openModal();
   };
 
+  const parseMedidas = (medidas?: string) => {
+    if (!medidas) return { ancho: undefined, largo: undefined };
+    const parts = medidas.split(/[xX×]/).map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+    return parts.length >= 2 ? { ancho: parts[0], largo: parts[1] } : { ancho: undefined, largo: undefined };
+  };
+
   const handleEdit = (obra: Obra) => {
-    setFormData(obra);
+    setFormData((prev) => ({ ...prev, ...obra, ...parseMedidas(obra.medidas), medidas: undefined }));
     setImagenFile(null);
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = null;
@@ -189,6 +197,43 @@ export default function InventarioBoveda() {
 
   const isPintura = selectedCategoryName?.toLowerCase() === 'pintura';
 
+  const validateObraField = (name: string, value: any, allData?: any): string => {
+    if (["titulo", "ubicacion", "id_estado_actual", "tipo_ingreso"].includes(name) && (!value || !String(value).trim())) {
+      const labels: Record<string, string> = { titulo: "El título", ubicacion: "La ubicación", id_estado_actual: "El estado", tipo_ingreso: "El tipo de ingreso" };
+      return `${labels[name] || "Este campo"} es obligatorio.`;
+    }
+    if (name === "id_artista" && (value == null || value === "")) return "Debe seleccionar un autor/artista.";
+    if (name === "id_categoria_obra" && (!value || value === "")) return "Seleccione una categoría.";
+    if (name === "id_tecnica" && (!value || value === "")) return "Seleccione una técnica.";
+    if (name === "ano") {
+      const num = Number(value);
+      if (!value || isNaN(num) || num < 1000 || num > new Date().getFullYear() + 5)
+        return `Año inválido (1000-${new Date().getFullYear() + 5}).`;
+    }
+    if (name === "piezas") {
+      const num = Number(value);
+      if (!value || isNaN(num) || num < 1) return "Debe ser al menos 1 pieza.";
+    }
+    if (name === "ancho") {
+      const num = Number(value);
+      if (value === "" || value === undefined || value === null) return "El ancho es obligatorio.";
+      if (isNaN(num) || num <= 0) return "El ancho debe ser un número positivo.";
+      if (num > 1000) return "El ancho no puede superar los 1000 cm.";
+    }
+    if (name === "largo") {
+      const num = Number(value);
+      if (value === "" || value === undefined || value === null) return "El largo es obligatorio.";
+      if (isNaN(num) || num <= 0) return "El largo debe ser un número positivo.";
+      if (num > 1000) return "El largo no puede superar los 1000 cm.";
+    }
+    if (name === "peso" && value !== undefined && value !== "" && value !== null) {
+      const num = Number(value);
+      if (isNaN(num) || num < 0) return "El peso debe ser un número válido.";
+      if (num > 300) return "El peso no puede superar los 300 kg.";
+    }
+    return "";
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
@@ -203,6 +248,14 @@ export default function InventarioBoveda() {
       }
       
       return newData;
+    });
+
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      const err = validateObraField(name, value, formData);
+      if (err) next[name] = err;
+      return next;
     });
     
     if (name === "id_tecnica" && value !== "other") {
@@ -219,21 +272,15 @@ export default function InventarioBoveda() {
     const isOtherTecnica = String(formData.id_tecnica) === "other";
     const isOtherCategoria = String(formData.id_categoria_obra) === "other";
 
+    const fieldsToCheck = ["titulo", "id_artista", "id_estado_actual", "id_categoria_obra", "tipo_ingreso", "ubicacion", "ano", "piezas", "ancho", "largo", "peso"];
     const errors: Record<string, string> = {};
-    if (!formData.titulo?.trim()) errors.titulo = "El título es obligatorio";
-    if (formData.id_artista == null) errors.id_artista = "Debe seleccionar un autor/artista";
-    if (!formData.medidas?.trim()) errors.medidas = "Las medidas son obligatorias";
-    if (!formData.ano || isNaN(formData.ano) || formData.ano < 1000 || formData.ano > new Date().getFullYear() + 5) {
-      errors.ano = "Año inválido (1000-" + (new Date().getFullYear() + 5) + ")";
+    for (const f of fieldsToCheck) {
+      const err = validateObraField(f, formData[f], formData);
+      if (err) errors[f] = err;
     }
-    if (!formData.id_estado_actual) errors.id_estado_actual = "Seleccione un estado";
-    if (!formData.id_categoria_obra && !isOtherCategoria) errors.id_categoria_obra = "Seleccione una categoría";
     if (isOtherCategoria && !customCategoria.trim()) errors.customCategoria = "Especifique la categoría";
     if (isPintura && !formData.id_tecnica && !isOtherTecnica) errors.id_tecnica = "Seleccione una técnica";
     if (isPintura && isOtherTecnica && !customTecnica.trim()) errors.customTecnica = "Especifique la técnica";
-    if (!formData.tipo_ingreso) errors.tipo_ingreso = "Seleccione tipo de ingreso";
-    if (!formData.ubicacion?.trim()) errors.ubicacion = "La ubicación es obligatoria";
-    if (!formData.piezas || formData.piezas < 1) errors.piezas = "Debe ser al menos 1";
 
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -259,9 +306,11 @@ export default function InventarioBoveda() {
         setCategorias(catData);
       }
 
-      const { id: _omitId, ubicacion, ano, ...restForm } = formData;
+      const { id: _omitId, ubicacion, ano, ancho, largo, ...restForm } = formData;
+      const medidasStr = formData.ancho && formData.largo ? `${Number(formData.ancho)}x${Number(formData.largo)}` : undefined;
       const payloadBase = {
         ...restForm,
+        medidas: medidasStr,
         ubicacion_actual: ubicacion,
         anio: ano !== undefined && ano !== "" ? parseInt(ano.toString(), 10) : null,
         id_tecnica: tecnicaId,
@@ -317,6 +366,97 @@ export default function InventarioBoveda() {
   const [isEditingArtist, setIsEditingArtist] = useState(false);
   const [isArtistPreloaded, setIsArtistPreloaded] = useState(false);
   const [isArtistSubmitting, setIsArtistSubmitting] = useState(false);
+  const [artistFieldErrors, setArtistFieldErrors] = useState<Record<string, string>>({});
+
+  const parseCedula = (value: string) => {
+    let raw = (value || "").trim().toUpperCase();
+    let prefix = "";
+    if (raw.startsWith("V-") || raw.startsWith("E-")) {
+      prefix = raw.substring(0, 1);
+      raw = raw.substring(2);
+    } else if (raw.startsWith("V") || raw.startsWith("E")) {
+      prefix = raw.substring(0, 1);
+      raw = raw.substring(1);
+    }
+    const digits = raw.replace(/\D/g, "");
+    return { prefix, digits };
+  };
+
+  const normalizeCedula = (value: string) => {
+    const { prefix, digits } = parseCedula(value);
+    if (!digits) return value;
+    return prefix ? `${prefix}-${digits}` : digits;
+  };
+
+  const validateCedula = (value: string): string => {
+    if (!value || !value.trim()) return "";
+    const { prefix, digits } = parseCedula(value);
+    if (!digits) return "Formato de cédula inválido.";
+    if (prefix === "V" && digits.length > 8) return "La cédula venezolana no puede tener más de 8 dígitos.";
+    if (digits.length > 11) return "La cédula no puede tener más de 11 dígitos.";
+    return "";
+  };
+
+  const validateArtistField = (field: string, value: string, allData?: any) => {
+    let error = "";
+    const trimmed = (value || "").trim();
+
+    switch (field) {
+      case "nombres":
+        if (!trimmed) error = "El nombre del artista es obligatorio.";
+        break;
+      case "apellidos":
+        if (!trimmed) error = "Los apellidos del artista son obligatorios.";
+        break;
+      case "ci":
+        if (trimmed) error = validateCedula(trimmed);
+        break;
+      case "correo":
+        if (trimmed) {
+          const emailErr = validateEmail(trimmed, "El correo");
+          if (emailErr) error = emailErr;
+        }
+        break;
+      case "telefono":
+        if (trimmed) {
+          const phoneErr = validatePhone(trimmed, "El teléfono");
+          if (phoneErr) error = phoneErr;
+        }
+        break;
+      case "fecha_nacimiento":
+        if (trimmed) {
+          const birthDate = new Date(trimmed + "T00:00:00");
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (birthDate > today) {
+            error = "La fecha de nacimiento no puede ser futura.";
+          } else {
+            const ageMs = today.getTime() - birthDate.getTime();
+            const ageYears = ageMs / (365.25 * 24 * 60 * 60 * 1000);
+            if (ageYears < 4) {
+              error = "La edad debe ser de al menos 4 años.";
+            } else if (ageYears > 150) {
+              error = "La edad no puede superar los 150 años.";
+            }
+          }
+        }
+        break;
+    }
+
+    return error;
+  };
+
+  const birthMinDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 150);
+    return d.toISOString().split("T")[0];
+  }, []);
+
+  const birthMaxDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 4);
+    return d.toISOString().split("T")[0];
+  }, []);
 
   const fetchArtistsList = async () => {
     const data = await mavetApi.getArtistas().catch(() => []);
@@ -377,6 +517,7 @@ export default function InventarioBoveda() {
     setArtistSearchResults([]);
     setArtistSearchQuery("");
     setIsArtistPreloaded(false);
+    setArtistFieldErrors({});
     if (artista) {
       setArtistFormData(artista);
       setIsEditingArtist(true);
@@ -409,23 +550,27 @@ export default function InventarioBoveda() {
 
   const handleArtistSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!artistFormData.nombres?.trim()) { toast.error("El nombre del artista es obligatorio."); return; }
-    if (!artistFormData.apellidos?.trim()) { toast.error("Los apellidos del artista son obligatorios."); return; }
-    if (artistFormData.correo?.trim()) {
-      const emailErr = validateEmail(artistFormData.correo, "El correo");
-      if (emailErr) { toast.error(emailErr); return; }
+
+    const fieldsToCheck = ["nombres", "apellidos", "ci", "correo", "telefono", "fecha_nacimiento"];
+    const newErrors: Record<string, string> = {};
+    for (const f of fieldsToCheck) {
+      const err = validateArtistField(f, artistFormData[f] || "", artistFormData);
+      if (err) newErrors[f] = err;
     }
-    if (artistFormData.telefono?.trim()) {
-      const phoneErr = validatePhone(artistFormData.telefono, "El teléfono");
-      if (phoneErr) { toast.error(phoneErr); return; }
+    setArtistFieldErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Corrige los errores en el formulario antes de guardar.");
+      return;
     }
+    const payload = { ...artistFormData };
+    if (payload.ci) payload.ci = normalizeCedula(payload.ci);
     setIsArtistSubmitting(true);
     try {
       if (isEditingArtist) {
-        await mavetApi.actualizarArtista(artistFormData.id_artista, artistFormData);
+        await mavetApi.actualizarArtista(payload.id_artista, payload);
         toast.success("Artista actualizado");
       } else {
-        await mavetApi.crearArtista(artistFormData);
+        await mavetApi.crearArtista(payload);
         toast.success("Artista registrado");
       }
       await fetchArtistsList();
@@ -811,20 +956,46 @@ export default function InventarioBoveda() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medidas</label>
-                <input
-                  type="text"
-                  name="medidas"
-                  value={formData.medidas}
-                  onChange={handleChange}
-                  placeholder="Ej. 120x80 cm"
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                    formErrors.medidas
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                  }`}
-                  required
-                />
-                {formErrors.medidas && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.medidas}</p>}
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      name="ancho"
+                      placeholder="Ancho"
+                      min={1}
+                      max={1000}
+                      value={formData.ancho ?? ""}
+                      onChange={handleChange}
+                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        formErrors.ancho
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                      }`}
+                      required
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-gray-400 dark:text-gray-500 px-0.5 select-none">x</span>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      name="largo"
+                      placeholder="Largo"
+                      min={1}
+                      max={1000}
+                      value={formData.largo ?? ""}
+                      onChange={handleChange}
+                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        formErrors.largo
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                      }`}
+                      required
+                    />
+                  </div>
+                </div>
+                {(formErrors.ancho || formErrors.largo) && (
+                  <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ancho || formErrors.largo}</p>
+                )}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Año</label>
@@ -982,7 +1153,7 @@ export default function InventarioBoveda() {
                   required
                 >
                   <option value="" disabled>Seleccione una ubicación...</option>
-                  {espacios.map((e: any) => (
+                  {espacios.filter((e: any) => (e.nombre_espacio || "").toLowerCase() !== "auditorio").map((e: any) => (
                     <option key={e.id_espacio} value={e.nombre_espacio}>
                       {e.nombre_espacio}
                     </option>
@@ -1019,10 +1190,16 @@ export default function InventarioBoveda() {
                   name="peso"
                   step="0.01"
                   min={0}
-                  value={formData.peso || ""}
+                  max={300}
+                  value={formData.peso ?? ""}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.peso
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
                 />
+                {formErrors.peso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.peso}</p>}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Ingreso</label>
@@ -1390,18 +1567,36 @@ export default function InventarioBoveda() {
           <form onSubmit={handleArtistSave} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres</label>
-                <input type="text" name="nombres" value={artistFormData.nombres || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, nombres: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres <span className="text-red-500">*</span></label>
+                <input type="text" name="nombres" value={artistFormData.nombres || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, nombres: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, nombres: validateArtistField("nombres", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                {artistFieldErrors.nombres && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.nombres}</p>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos</label>
-                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, apellidos: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos <span className="text-red-500">*</span></label>
+                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, apellidos: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, apellidos: validateArtistField("apellidos", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                {artistFieldErrors.apellidos && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.apellidos}</p>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula</label>
-                <input type="text" name="ci" value={artistFormData.ci || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, ci: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <input type="text" name="ci" value={artistFormData.ci || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, ci: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, ci: validateArtistField("ci", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                {artistFieldErrors.ci && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.ci}</p>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nacionalidad</label>
@@ -1411,17 +1606,35 @@ export default function InventarioBoveda() {
             {!artistFormData.id_artista && (
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento</label>
-                <input type="date" name="fecha_nacimiento" value={artistFormData.fecha_nacimiento || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, fecha_nacimiento: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <input type="date" name="fecha_nacimiento" value={artistFormData.fecha_nacimiento || ""} readOnly={isArtistPreloaded} min={birthMinDate} max={birthMaxDate} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, fecha_nacimiento: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, fecha_nacimiento: validateArtistField("fecha_nacimiento", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                {artistFieldErrors.fecha_nacimiento && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.fecha_nacimiento}</p>
+                  </div>
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono</label>
-                <input type="tel" name="telefono" value={artistFormData.telefono || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, telefono: e.target.value }))} onKeyDown={limitNumericInput} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <input type="tel" name="telefono" value={artistFormData.telefono || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, telefono: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, telefono: validateArtistField("telefono", v) })); }} onKeyDown={limitNumericInput} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                {artistFieldErrors.telefono && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.telefono}</p>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo</label>
-                <input type="email" name="correo" value={artistFormData.correo || ""} readOnly={isArtistPreloaded} onChange={(e) => setArtistFormData((p: any) => ({ ...p, correo: e.target.value }))} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <input type="email" name="correo" value={artistFormData.correo || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, correo: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, correo: validateArtistField("correo", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                {artistFieldErrors.correo && !isArtistPreloaded && (
+                  <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-medium">{artistFieldErrors.correo}</p>
+                  </div>
+                )}
               </div>
             </div>
             <div>
