@@ -107,6 +107,7 @@ export default function TallerDetailModal({
               <label className={labelCls}>Fecha del Taller</label>
               <input type="date" name="fecha" value={formData.fecha}
                 min={new Date().toISOString().split("T")[0]}
+                max="9999-12-31"
                 onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls + " show-date-picker"} />
             </div>
             {Number(formData.sesiones) > 1 && (
@@ -114,7 +115,8 @@ export default function TallerDetailModal({
                 <label className={labelCls}>Fecha de Fin</label>
                 <input type="date" name="fecha_fin" value={formData.fecha_fin}
                   min={formData.fecha || new Date().toISOString().split("T")[0]}
-                  onChange={onChange} className={inputCls + " show-date-picker"} />
+                  max="9999-12-31"
+                  onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls + " show-date-picker"} />
               </div>
             )}
           </div>
