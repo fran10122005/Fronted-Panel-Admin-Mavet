@@ -52,6 +52,7 @@ const Auditorio: React.FC = () => {
   const [organizadorAuto, setOrganizadorAuto] = useState(false);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
   const [customTipoEvento, setCustomTipoEvento] = useState("");
+  const [estatusAprobacion, setEstatusAprobacion] = useState("pendiente");
   
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
   const [espacios, setEspacios] = useState<any[]>([]);
@@ -508,6 +509,7 @@ const Auditorio: React.FC = () => {
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
+        estatus_aprobacion: estatusAprobacion,
       };
 
       if (selectedEvent) {
@@ -582,6 +584,7 @@ const Auditorio: React.FC = () => {
     setFieldErrors({});
     setIsPastEvent(false);
     setIsDateLocked(false);
+    setEstatusAprobacion("pendiente");
   };
 
   const handleAprobar = async (id: string) => {
@@ -772,13 +775,11 @@ const Auditorio: React.FC = () => {
             />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div>
             {isLoading ? (
-              <div className="col-span-full flex items-center justify-center py-16">
-                <LoadingSkeleton variant="table" rows={8} cols={6} />
-              </div>
+              <LoadingSkeleton variant="table" rows={8} cols={6} />
             ) : events.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
+              <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
                 <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas que coincidan con la búsqueda.</p>
@@ -796,101 +797,111 @@ const Auditorio: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <table className="w-full">
-                <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Expediente</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Evento</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Organizador</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Horario</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aprobación</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredEvents.map(ev => (
-                      <tr key={ev.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                        <td className="px-4 py-3 text-xs font-mono text-brand-600 dark:text-brand-400 font-semibold whitespace-nowrap">
-                          {ev.extendedProps?.numero_expediente || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-800 dark:text-white/90 max-w-[200px] truncate">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredEvents.map(ev => {
+                  const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
+                  const t = new Date(); t.setHours(0, 0, 0, 0);
+                  const evIsPast = d < t || ev.extendedProps?.estado === 'Realizada';
+                  const estAprob = ev.extendedProps?.estatus_aprobacion || 'pendiente';
+                  return (
+                    <div key={ev.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm hover:shadow-theme-md transition-all duration-200 flex flex-col">
+                      {/* Tipo + Aprobación badges */}
+                      <div className="flex items-start justify-between px-4 pt-3.5 pb-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
+                          {ev.extendedProps.tipoEvento || "Conferencia"}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          estAprob === 'aprobado'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
+                            : estAprob === 'rechazado'
+                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
+                            : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
+                        }`}>
+                          {estAprob === 'aprobado' ? 'Aprobado'
+                            : estAprob === 'rechazado' ? 'Rechazado'
+                            : 'Pendiente'}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <div className="px-4 py-1.5">
+                        <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 leading-snug line-clamp-2">
                           {ev.title}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          {ev.extendedProps?.organizador || "—"}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
-                            {ev.extendedProps.tipoEvento || "Conferencia"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          {formatDateForList(ev.start)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          {getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}
-                        </td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            ev.extendedProps?.estatus_aprobacion === 'aprobado'
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-                              : ev.extendedProps?.estatus_aprobacion === 'rechazado'
-                              ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
-                              : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
-                          }`}>
-                            {ev.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
-                              : ev.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
-                              : 'Pendiente'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1.5">
+                        </h4>
+                      </div>
+
+                      {/* Meta row */}
+                      <div className="px-4 pb-2 space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <span>👤</span>
+                          <span className="truncate">{ev.extendedProps?.organizador || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span>📅</span>
+                          <span>{formatDateForList(ev.start)}</span>
+                          <span className="mx-1">·</span>
+                          <span>⏰</span>
+                          <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-mono text-[10px] text-brand-600 dark:text-brand-400">
+                          <span>📁</span>
+                          <span className="truncate">{ev.extendedProps?.numero_expediente || "—"}</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="mt-auto px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1 flex-wrap">
+                        <button
+                          onClick={async () => {
+                            const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                            exportarComprobanteReserva(ev);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors"
+                          title="Descargar comprobante"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Comprobante
+                        </button>
+                        <button
+                          onClick={() => handleVerAsistentes(ev)}
+                          className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                          title="Ver asistentes"
+                        >
+                          <AlertCircle className="h-3.5 w-3.5" />
+                        </button>
+                        {canApprove && estAprob === 'pendiente' && (
+                          <>
                             <button
-                              onClick={async () => {
-                                const { exportarComprobanteReserva } = await import("../../services/pdf.service");
-                                exportarComprobanteReserva(ev);
-                              }}
-                              className="p-1.5 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                              title="Comprobante"
+                              onClick={() => handleAprobar(ev.id)}
+                              className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                              title="Aprobar"
                             >
-                              <Download className="h-4 w-4" />
+                              <CheckCircle className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => handleVerAsistentes(ev)} className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors" title="Ver asistentes">
-                              <AlertCircle className="h-4 w-4" />
+                            <button
+                              onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })}
+                              className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Rechazar"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
                             </button>
-                            {canApprove && ev.extendedProps?.estatus_aprobacion === 'pendiente' && (
-                              <>
-                                <button onClick={() => handleAprobar(ev.id)} className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Aprobar">
-                                  <CheckCircle className="h-4 w-4" />
-                                </button>
-                                <button onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })} className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Rechazar">
-                                  <XCircle className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
-                            {!isGerente && (() => {
-                              const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
-                              const t = new Date(); t.setHours(0, 0, 0, 0);
-                              const isPast = d < t || ev.extendedProps?.estado === 'Realizada';
-                              return (
-                                <button
-                                  onClick={() => !isPast && handleEditFromList(ev)}
-                                  disabled={isPast}
-                                  className={`p-1.5 rounded-lg transition-colors ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                                  title={isPast ? "No se puede editar evento histórico" : "Editar"}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                              );
-                            })()}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </>
+                        )}
+                        {!isGerente && (
+                          <button
+                            onClick={() => !evIsPast && handleEditFromList(ev)}
+                            disabled={evIsPast}
+                            className={`p-1.5 rounded-lg transition-colors ml-auto ${evIsPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                            title={evIsPast ? "No se puede editar evento histórico" : "Editar"}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
@@ -1223,6 +1234,50 @@ const Auditorio: React.FC = () => {
                     <p className="text-xs font-medium">{fieldErrors.horaFin}</p>
                   </div>
                 )}
+              </div>
+
+              <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Estado de la Reserva</h4>
+                <div className="flex gap-4">
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all ${
+                    estatusAprobacion === "pendiente"
+                      ? "border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20 ring-1 ring-blue-400/30"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="estatusAprobacion"
+                      value="pendiente"
+                      checked={estatusAprobacion === "pendiente"}
+                      onChange={() => setEstatusAprobacion("pendiente")}
+                      disabled={isGerente || isPastEvent}
+                      className="accent-brand-600"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">Pendiente</span>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Requiere aprobación</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all ${
+                    estatusAprobacion === "confirmado"
+                      ? "border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-900/20 ring-1 ring-emerald-400/30"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="estatusAprobacion"
+                      value="confirmado"
+                      checked={estatusAprobacion === "confirmado"}
+                      onChange={() => setEstatusAprobacion("confirmado")}
+                      disabled={isGerente || isPastEvent}
+                      className="accent-emerald-600"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">Confirmado</span>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Aprobación directa</p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">

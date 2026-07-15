@@ -9,6 +9,7 @@ const C = {
   line: [228, 228, 228] as [number, number, number],
   rowOdd: [253, 248, 246] as [number, number, number],
 };
+const COORDINADORA = "Lic. Clara Inés Barragán de Contramaestre";
 
 const LOGO_PATH = "/images/logo/mavet2.png";
 const MARGIN = 18;
@@ -70,6 +71,91 @@ async function addHeader(doc: any, title: string) {
   doc.line(MARGIN, barY + 1, pw - MARGIN, barY + 1);
 }
 
+// ─── Reusable: Signature block for the coordinator ──────────────────────────
+function addSignatureBlock(doc: any, y: number): number {
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.3);
+  doc.line(cx - 30, y, cx + 30, y);
+  y += 3;
+
+  doc.setTextColor(...C.brand);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text(COORDINADORA, cx, y, { align: "center" });
+  y += 4;
+
+  doc.setTextColor(...C.textMuted);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text("Coordinadora – MAVET", cx, y, { align: "center" });
+  y += 3;
+
+  doc.setTextColor(...C.textMuted);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(6);
+  doc.text("Sello y firma de la coordinación", cx, y, { align: "center" });
+  y += 2;
+
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN, y, pw - MARGIN, y);
+
+  return y + 3;
+}
+
+// ─── Reusable: Page numbers + footer ──────────────────────────────────────
+function addPageNumbers(doc: any, pw: number) {
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  const today = new Date().toLocaleDateString("es-VE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const ph = doc.internal.pageSize.getHeight();
+
+    doc.setDrawColor(...C.line);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.text(today, MARGIN, ph - 9);
+    doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
+      align: "right",
+    });
+  }
+}
+
+// ─── Reusable: didDrawPage for multipage header re-draw ─────────────────────
+function makeDidDrawPage(title: string, pw: number) {
+  return (data: any) => {
+    if (data.pageNumber > 1) {
+      const doc2 = data.doc;
+      doc2.setTextColor(...C.text);
+      doc2.setFont("helvetica", "bold");
+      doc2.setFontSize(11);
+      doc2.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
+      doc2.setTextColor(...C.brand);
+      doc2.setFont("helvetica", "bold");
+      doc2.setFontSize(10);
+      doc2.text(title, MARGIN, 16);
+      doc2.setDrawColor(...C.brand);
+      doc2.setLineWidth(0.8);
+      doc2.line(MARGIN, 24, pw - MARGIN, 24);
+      doc2.setDrawColor(...C.line);
+      doc2.setLineWidth(0.2);
+      doc2.line(MARGIN, 25, pw - MARGIN, 25);
+    }
+  };
+}
+
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
 export async function exportarInventarioObras(obras: Obra[]) {
   try {
@@ -86,7 +172,8 @@ export async function exportarInventarioObras(obras: Obra[]) {
     });
     const pw = doc.internal.pageSize.getWidth();
 
-    await addHeader(doc, "INVENTARIO DE BÓVEDA – OBRAS DE ARTE");
+    const title = "INVENTARIO DE BÓVEDA – OBRAS DE ARTE";
+    await addHeader(doc, title);
 
     const tableData = obras.map((o) => [
       o.codigo_inventario || o.id?.toString() || "—",
@@ -130,49 +217,18 @@ export async function exportarInventarioObras(obras: Obra[]) {
         6: { cellWidth: 34 },
       },
       margin: { left: MARGIN, right: MARGIN, top: 32 },
-      didDrawPage: (data: any) => {
-        if (data.pageNumber > 1) {
-          const pw2 = doc.internal.pageSize.getWidth();
-          doc.setTextColor(...C.text);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(11);
-          doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
-          doc.setTextColor(...C.brand);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(10);
-          doc.text("INVENTARIO DE BÓVEDA – OBRAS DE ARTE", MARGIN, 16);
-          doc.setDrawColor(...C.brand);
-          doc.setLineWidth(0.8);
-          doc.line(MARGIN, 24, pw2 - MARGIN, 24);
-          doc.setDrawColor(...C.line);
-          doc.setLineWidth(0.2);
-          doc.line(MARGIN, 25, pw2 - MARGIN, 25);
-        }
-      },
+      didDrawPage: makeDidDrawPage(title, pw),
     });
 
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    addPageNumbers(doc, pw);
 
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      const ph = doc.internal.pageSize.getHeight();
-
-      doc.setDrawColor(...C.line);
-      doc.setLineWidth(0.2);
-      doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
-
-      doc.setFontSize(7);
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "normal");
-      doc.text(today, MARGIN, ph - 9);
-      doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
-        align: "right",
-      });
+    // Signature block on the last page
+    const ph = doc.internal.pageSize.getHeight();
+    const finalY = (doc as any).lastAutoTable.finalY || 32;
+    const signatureY = Math.min(finalY + 15, ph - 35);
+    if (signatureY + 20 < ph - 14) {
+      doc.setPage((doc as any).internal.getNumberOfPages());
+      addSignatureBlock(doc, signatureY);
     }
 
     doc.save(
@@ -209,7 +265,8 @@ export async function exportarReporteIngresos(
     const pw = doc.internal.pageSize.getWidth();
 
     const tituloPeriodo = periodo ? ` (${periodo})` : "";
-    await addHeader(doc, `REPORTE DE INGRESOS${tituloPeriodo}`);
+    const title = `REPORTE DE INGRESOS${tituloPeriodo}`;
+    await addHeader(doc, title);
 
     const tableData = ingresos.map((i: any) => {
       const nombre =
@@ -265,49 +322,18 @@ export async function exportarReporteIngresos(
         5: { cellWidth: 20, halign: "center" },
       },
       margin: { left: MARGIN, right: MARGIN, top: 32 },
-      didDrawPage: (data: any) => {
-        if (data.pageNumber > 1) {
-          const pw2 = doc.internal.pageSize.getWidth();
-          doc.setTextColor(...C.text);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(11);
-          doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
-          doc.setTextColor(...C.brand);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(10);
-          doc.text(`REPORTE DE INGRESOS${tituloPeriodo}`, MARGIN, 16);
-          doc.setDrawColor(...C.brand);
-          doc.setLineWidth(0.8);
-          doc.line(MARGIN, 24, pw2 - MARGIN, 24);
-          doc.setDrawColor(...C.line);
-          doc.setLineWidth(0.2);
-          doc.line(MARGIN, 25, pw2 - MARGIN, 25);
-        }
-      },
+      didDrawPage: makeDidDrawPage(title, pw),
     });
 
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    addPageNumbers(doc, pw);
 
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      const ph = doc.internal.pageSize.getHeight();
-
-      doc.setDrawColor(...C.line);
-      doc.setLineWidth(0.2);
-      doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
-
-      doc.setFontSize(7);
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "normal");
-      doc.text(today, MARGIN, ph - 9);
-      doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
-        align: "right",
-      });
+    // Signature block on the last page
+    const ph = doc.internal.pageSize.getHeight();
+    const finalY = (doc as any).lastAutoTable.finalY || 32;
+    const signatureY = Math.min(finalY + 15, ph - 35);
+    if (signatureY + 20 < ph - 14) {
+      doc.setPage((doc as any).internal.getNumberOfPages());
+      addSignatureBlock(doc, signatureY);
     }
 
     doc.save(`MAVET_Ingresos_${new Date().toISOString().split("T")[0]}.pdf`);
@@ -449,35 +475,31 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
     const { jsPDF } = await import("jspdf");
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
 
     await addHeader(doc, "COMPROBANTE DE RESERVA DE ESPACIO");
 
-    const bodyColor = [248, 245, 242] as [number, number, number];
-
-    // Fecha de emisión
+    // ── Datestamp ──
     const now = new Date();
     doc.setTextColor(...C.textMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    const emitStr = `Emitido: ${now.toLocaleDateString("es-VE", {
-      day: "2-digit", month: "long", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    })}`;
-    doc.text(emitStr, MARGIN, 30);
+    doc.text(
+      `Emitido: ${now.toLocaleDateString("es-VE", {
+        day: "2-digit", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })}`,
+      MARGIN, 30,
+    );
 
-    // Línea decorativa delgada
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.15);
-    doc.line(MARGIN, 32.5, pw - MARGIN, 32.5);
-
-    // ── DATOS DE LA RESERVA (tabla vertical limpia) ──
-    const rows: { label: string; value: string }[] = [
+    // ── Info box ──
+    const info: { label: string; value: string }[] = [
       { label: "N° de Expediente", value: ev.extendedProps?.numero_expediente || ev.numero_expediente || "—" },
       { label: "Código de Reserva", value: ev.codigo_reserva || "—" },
       { label: "Motivo / Evento", value: ev.title || "—" },
       { label: "Tipo de Evento", value: ev.extendedProps?.tipoEvento || "—" },
       { label: "Organizador", value: ev.extendedProps?.organizador || "—" },
-      { label: "Cédula", value: ev.extendedProps?.cedula || "—" },
+      { label: "Cédula / RIF", value: ev.extendedProps?.cedula || "—" },
       { label: "Fecha del Evento", value: ev.start?.split("T")[0] || "—" },
       {
         label: "Horario",
@@ -485,84 +507,93 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       },
     ];
 
-    let y = 40;
-    const colLabel = MARGIN + 2;
-    const colVal = 60;
-    const rowH = 6.2;
+    const bkg = [248, 245, 242] as [number, number, number];
+    let y = 38;
+    const lx = MARGIN + 6;
+    const vx = 62;
+    const rh = 6.5;
 
-    doc.setDrawColor(225, 220, 215);
-    doc.setLineWidth(0.1);
+    // Section title
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.15);
+    doc.line(MARGIN, y - 2, MARGIN + 22, y - 2);
+    doc.setTextColor(...C.brand);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("DATOS DE LA RESERVA", MARGIN, y);
+    y += 5;
 
-    rows.forEach((r, i) => {
-      // Fondo alternado
+    info.forEach((r, i) => {
+      const rowTop = y - 4.5;
       if (i % 2 === 0) {
-        doc.setFillColor(...bodyColor);
-        doc.rect(MARGIN, y - 4.5, pw - MARGIN * 2, rowH, "F");
+        doc.setFillColor(...bkg);
+        doc.rect(MARGIN, rowTop, pw - MARGIN * 2, rh, "F");
       }
-      // Label
       doc.setTextColor(...C.textMuted);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.text(r.label, colLabel, y);
-      // Value
+      doc.setFontSize(7.5);
+      doc.text(r.label + ":", lx, y);
       doc.setTextColor(...C.text);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.text(r.value, colVal, y);
-      y += rowH;
+      doc.setFontSize(8.5);
+      doc.text(r.value, vx, y);
+      y += rh;
     });
 
-    // ── ESTATUS DE APROBACIÓN ──
-    y += 3;
+    // ── Estatus ──
+    y += 4;
     doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.3);
-    doc.line(MARGIN, y, pw - MARGIN, y);
-    y += 6;
-
-    doc.setTextColor(...C.textMuted);
+    doc.setLineWidth(0.15);
+    doc.line(MARGIN, y - 2, MARGIN + 30, y - 2);
+    doc.setTextColor(...C.brand);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.text("ESTATUS DE APROBACIÓN", MARGIN, y);
-    y += 5;
+    y += 7;
 
     const estatus = ev.extendedProps?.estatus_aprobacion || "pendiente";
-    const estatusColor = estatus === "aprobado" ? [22, 163, 74] as [number, number, number]
-      : estatus === "rechazado" ? [220, 38, 38] as [number, number, number]
-      : [200, 140, 0] as [number, number, number];
-    const estatusBg = estatus === "aprobado" ? [230, 250, 235] as [number, number, number]
-      : estatus === "rechazado" ? [255, 235, 235] as [number, number, number]
-      : [255, 248, 225] as [number, number, number];
-    const estatusText = estatus === "aprobado" ? "APROBADO"
-      : estatus === "rechazado" ? "RECHAZADO"
-      : "PENDIENTE DE APROBACIÓN";
+    const estatusColor = estatus === "aprobado"
+      ? [22, 163, 74] as [number, number, number]
+      : estatus === "rechazado"
+        ? [220, 38, 38] as [number, number, number]
+        : [200, 140, 0] as [number, number, number];
+    const estatusBg = estatus === "aprobado"
+      ? [230, 250, 235] as [number, number, number]
+      : estatus === "rechazado"
+        ? [255, 235, 235] as [number, number, number]
+        : [255, 248, 225] as [number, number, number];
+    const estatusText = estatus === "aprobado"
+      ? "APROBADO"
+      : estatus === "rechazado"
+        ? "RECHAZADO"
+        : "PENDIENTE DE APROBACIÓN";
 
-    // Caja de estatus
-    const boxW = 70;
-    const boxH = 8;
+    const bw = 72;
+    const bh = 9;
     doc.setFillColor(...estatusBg);
     doc.setDrawColor(...estatusColor);
-    doc.rect(MARGIN, y - 5, boxW, boxH, "FD");
+    doc.setLineWidth(0.4);
+    doc.rect(MARGIN, y - 6, bw, bh, "FD");
     doc.setTextColor(...estatusColor);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(estatusText, MARGIN + 4, y + 0.5);
+    doc.setFontSize(10);
+    doc.text(estatusText, MARGIN + 5, y + 0.5);
     y += 8;
 
     if (estatus === "aprobado" && ev.extendedProps?.aprobado_por_nombre) {
       doc.setTextColor(...C.textMuted);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.text(`Aprobado por: ${ev.extendedProps.aprobado_por_nombre}`, MARGIN, y);
       y += 5;
     }
 
     if (estatus === "rechazado" && ev.extendedProps?.motivo_rechazo) {
-      doc.setTextColor(...C.textMuted);
+      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
       doc.text("Motivo del rechazo:", MARGIN, y);
       y += 4.5;
-      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       const lines = doc.splitTextToSize(ev.extendedProps.motivo_rechazo, pw - MARGIN * 2 - 10);
@@ -570,40 +601,17 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       y += lines.length * 4.5 + 2;
     }
 
-    // ── SELLO DE RECIBIDO ──
-    y = Math.max(y, 210);
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.4);
-    doc.line(MARGIN, y, pw - MARGIN, y);
-    y += 5;
+    // ── Firma de la coordinadora ──
+    y = Math.max(y, ph - 80);
+    y = addSignatureBlock(doc, y);
 
-    // Cuadro de sello
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.3);
-    doc.rect(pw / 2 - 35, y - 3, 70, 18);
-    doc.setTextColor(...C.brand);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.text("SELLO DE RECIBIDO", pw / 2, y + 2, { align: "center" });
-    doc.setTextColor(...C.textMuted);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    doc.text("Museo de Artes Visuales y del Espacio del Táchira", pw / 2, y + 7, { align: "center" });
-    doc.text("Dirección: Calle 8 entre Carreras 6 y 7, Edif. MAVET", pw / 2, y + 10, { align: "center" });
-    doc.text("San Cristóbal, Estado Táchira", pw / 2, y + 13, { align: "center" });
-
-    // Pie de página
-    y += 24;
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.25);
-    doc.line(MARGIN, y, pw - MARGIN, y);
-    y += 2.5;
-    doc.setTextColor(...C.textMuted);
+    // ── Footer ──
     doc.setFont("helvetica", "italic");
     doc.setFontSize(5.5);
+    doc.setTextColor(...C.textMuted);
     doc.text(
       "Documento de constancia digital — Este comprobante acredita la recepción de la solicitud de reserva de espacio en el MAVET.",
-      MARGIN, y, { maxWidth: pw - MARGIN * 2 }
+      MARGIN, y, { maxWidth: pw - MARGIN * 2 },
     );
 
     doc.save(`comprobante-${ev.codigo_reserva || ev.id || "reserva"}.pdf`);
@@ -629,5 +637,3 @@ export async function exportarCarnetTrabajador(trabajador: Trabajador) {
     alert("Error al generar la credencial.");
   }
 }
-
-
