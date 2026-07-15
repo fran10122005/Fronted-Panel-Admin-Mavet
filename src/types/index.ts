@@ -81,6 +81,7 @@ export interface TallerInscripcionPayload {
 export interface EventoAuditorio {
   id: string;
   codigo_reserva?: string;
+  numero_expediente?: string;
   title: string;
   start: string;
   end?: string;
@@ -89,6 +90,11 @@ export interface EventoAuditorio {
     organizador: string;
     tipoEvento: string;
     cedula?: string;
+    estado: string;
+    estatus_aprobacion: 'pendiente' | 'aprobado' | 'rechazado';
+    numero_expediente?: string;
+    motivo_rechazo?: string;
+    aprobado_por_nombre?: string;
   };
 }
 

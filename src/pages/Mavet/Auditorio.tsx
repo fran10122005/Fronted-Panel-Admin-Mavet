@@ -11,7 +11,9 @@ import {
   Trash2,
   Download,
   Search,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -31,6 +33,7 @@ const Auditorio: React.FC = () => {
   const { user } = useAuth();
   const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
+  const canApprove = userRole === "Administrador" || userRole === "admin" || userRole === "Coordinador";
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [isPastEvent, setIsPastEvent] = useState(false);
@@ -67,7 +70,12 @@ const Auditorio: React.FC = () => {
   }, []);
 
   const [filterTipo, setFilterTipo] = useState("Todos");
+  const [filterAprobacion, setFilterAprobacion] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [rechazoModal, setRechazoModal] = useState<{ open: boolean; id: string; motivo: string }>({
+    open: false, id: "", motivo: "",
+  });
   
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
@@ -242,12 +250,14 @@ const Auditorio: React.FC = () => {
   const filteredEvents = useMemo(() => {
     return events.filter(ev => {
       const matchTipo = filterTipo === "Todos" || ev.extendedProps.tipoEvento === filterTipo;
+      const matchAprobacion = filterAprobacion === "todas" || ev.extendedProps.estatus_aprobacion === filterAprobacion;
       const matchSearch = searchTerm === "" || 
         ev.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase());
-      return matchTipo && matchSearch;
+        (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ev.extendedProps.numero_expediente || "").toLowerCase().includes(searchTerm.toLowerCase());
+      return matchTipo && matchAprobacion && matchSearch;
     }).sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
-  }, [events, filterTipo, searchTerm]);
+  }, [events, filterTipo, filterAprobacion, searchTerm]);
 
   const handleCedulaBlur = async () => {
     const cedula = cedulaOrganizador.trim();
@@ -355,11 +365,17 @@ const Auditorio: React.FC = () => {
       start: event.start,
       end: event.end,
       allDay: event.allDay ?? false,
+      codigo_reserva: (event as any).codigo_reserva || "",
+      numero_expediente: (event as any).numero_expediente || "",
       extendedProps: {
         organizador: event.extendedProps?.organizador || "",
         tipoEvento: event.extendedProps?.tipoEvento || "",
         cedula: event.extendedProps?.cedula,
-        estado: event.extendedProps?.estado || "Pendiente"
+        estado: event.extendedProps?.estado || "Pendiente",
+        estatus_aprobacion: (event.extendedProps as any)?.estatus_aprobacion || "pendiente",
+        numero_expediente: (event.extendedProps as any)?.numero_expediente || "",
+        motivo_rechazo: (event.extendedProps as any)?.motivo_rechazo || "",
+        aprobado_por_nombre: (event.extendedProps as any)?.aprobado_por_nombre || "",
       }
     });
     setCodigoReserva((event as any).codigo_reserva || event.id || "");
@@ -381,6 +397,7 @@ const Auditorio: React.FC = () => {
   const handleEditFromList = (ev: EventoAuditorio) => {
     setSelectedEvent(ev);
     setEventTitle(ev.title);
+    setCodigoReserva(ev.codigo_reserva || "");
     setEventDate(ev.start?.split("T")[0] || "");
     setHoraInicio((ev.start?.split("T")[1]?.substring(0, 5)) || "08:00");
     setHoraFin((ev.end?.split("T")[1]?.substring(0, 5)) || "18:00");
@@ -566,6 +583,35 @@ const Auditorio: React.FC = () => {
     setIsDateLocked(false);
   };
 
+  const handleAprobar = async (id: string) => {
+    try {
+      await mavetApi.aprobarReservaAuditorio(id);
+      toast.success("Reserva aprobada exitosamente");
+      closeModal();
+      resetModalFields();
+      loadEventos();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al aprobar");
+    }
+  };
+
+  const handleRechazarConfirm = async () => {
+    if (!rechazoModal.motivo.trim()) {
+      toast.error("Debe indicar el motivo del rechazo");
+      return;
+    }
+    try {
+      await mavetApi.rechazarReservaAuditorio(rechazoModal.id, rechazoModal.motivo);
+      toast.success("Reserva rechazada");
+      setRechazoModal({ open: false, id: "", motivo: "" });
+      closeModal();
+      resetModalFields();
+      loadEventos();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error al rechazar");
+    }
+  };
+
   const getColorClass = (tipo: string) => {
     switch(tipo) {
       case "Taller": return "bg-green-500 text-white border-green-600";
@@ -631,6 +677,16 @@ const Auditorio: React.FC = () => {
               <option value="Todos">Todos los tipos</option>
               <option value="Conferencia">Conferencia</option>
               <option value="Reunión">Reunión Interna</option>
+            </select>
+            <select
+              value={filterAprobacion}
+              onChange={(e) => setFilterAprobacion(e.target.value)}
+              className="py-2 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              <option value="todas">Todas las aprobaciones</option>
+              <option value="pendiente">Pendiente de aprobación</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
             </select>
           </div>
 
@@ -755,6 +811,29 @@ const Auditorio: React.FC = () => {
                         }`}>
                           {ev.extendedProps?.estado || "Pendiente"}
                         </div>
+                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${
+                          ev.extendedProps?.estatus_aprobacion === 'aprobado'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
+                            : ev.extendedProps?.estatus_aprobacion === 'rechazado'
+                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
+                            : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
+                        }`}>
+                          {ev.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
+                            : ev.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
+                            : 'Pendiente'}
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {canApprove && ev.extendedProps?.estatus_aprobacion === 'pendiente' && (
+                          <>
+                            <button onClick={() => handleAprobar(ev.id)} className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Aprobar">
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })} className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Rechazar">
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                       {!isGerente && (() => {
                         const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
@@ -789,6 +868,13 @@ const Auditorio: React.FC = () => {
                         <Clock className="h-3.5 w-3.5 text-gray-400" />
                         <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
                       </div>
+                      {ev.extendedProps?.numero_expediente && (
+                        <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                          <span className="font-mono text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
+                            {ev.extendedProps.numero_expediente}
+                          </span>
+                        </div>
+                      )}
                       <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 mb-3">
                         <MapPin className="h-3.5 w-3.5 text-gray-400" />
                         <span className="truncate">Auditorio Principal</span>
@@ -858,6 +944,56 @@ const Auditorio: React.FC = () => {
               </span>
             </div>
 
+            {/* Tarjeta Estatus de Aprobación */}
+            <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${
+                  selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado'
+                    ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                    : selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado'
+                    ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400'
+                    : 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
+                }`}>
+                  <CheckCircle className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Aprobación</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    {selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
+                      : selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
+                      : 'Pendiente de aprobación'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {canApprove && selectedEvent.extendedProps?.estatus_aprobacion === 'pendiente' && (
+                  <>
+                    <button onClick={() => handleAprobar(selectedEvent.id)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">
+                      Aprobar
+                    </button>
+                    <button onClick={() => setRechazoModal({ open: true, id: selectedEvent.id, motivo: "" })} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-500 text-white hover:bg-red-600 transition-colors">
+                      Rechazar
+                    </button>
+                  </>
+                )}
+                {selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado' && selectedEvent.extendedProps?.aprobado_por_nombre && (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    por {selectedEvent.extendedProps.aprobado_por_nombre}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado' && selectedEvent.extendedProps?.motivo_rechazo && (
+              <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-3 rounded-xl border border-red-200 dark:border-red-900/30 mb-4">
+                <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider">Motivo de Rechazo</span>
+                  <span className="text-sm">{selectedEvent.extendedProps.motivo_rechazo}</span>
+                </div>
+              </div>
+            )}
+
             {/* Grilla de Parámetros */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
               <div className="flex items-center gap-3">
@@ -869,6 +1005,17 @@ const Auditorio: React.FC = () => {
                   <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{codigoReserva || '—'}</span>
                 </div>
               </div>
+              {selectedEvent?.numero_expediente && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </div>
+                  <div>
+                    <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">N° Expediente</span>
+                    <span className="text-xs font-semibold font-mono text-brand-600 dark:text-brand-400">{selectedEvent.numero_expediente}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -1276,6 +1423,48 @@ const Auditorio: React.FC = () => {
         onConfirm={confirm.onConfirm}
         onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
       />
+
+      {/* ══════════════════════════════════════════
+          MODAL: Motivo de Rechazo
+         ══════════════════════════════════════════ */}
+      <Modal isOpen={rechazoModal.open} onClose={() => setRechazoModal({ open: false, id: "", motivo: "" })} className="max-w-lg w-full mx-4">
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Rechazar Reserva</h3>
+            <button onClick={() => setRechazoModal({ open: false, id: "", motivo: "" })} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Indique el motivo por el cual se rechaza esta solicitud de reserva. Este motivo será visible para el solicitante.
+          </p>
+          <textarea
+            value={rechazoModal.motivo}
+            onChange={(e) => setRechazoModal(prev => ({ ...prev, motivo: e.target.value }))}
+            rows={4}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 resize-none"
+            placeholder="Ej. La fecha solicitada no está disponible debido a mantenimiento programado del auditorio..."
+            autoFocus
+          />
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setRechazoModal({ open: false, id: "", motivo: "" })}
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleRechazarConfirm}
+              disabled={!rechazoModal.motivo.trim()}
+              className="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Rechazar Reserva
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

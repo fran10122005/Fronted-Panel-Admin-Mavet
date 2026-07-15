@@ -1,29 +1,37 @@
 import { axiosInstance, extractList } from "./client";
 import type { EventoAuditorio } from "../../types";
 
+const mapEvento = (item: any): EventoAuditorio => {
+  const p = item.Persona || {};
+  const orgName = item.nombre_responsable || [p.nombres, p.apellidos].filter(Boolean).join(" ") || "";
+  const ap = item.Usuario ? `${item.Usuario.nombre_usuario || item.Usuario.correo || ""}` : "";
+  return {
+    id: item.id_solicitud.toString(),
+    codigo_reserva: item.codigo_reserva || "",
+    numero_expediente: item.numero_expediente || "",
+    title: item.motivo || "Evento",
+    start: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_inicio || "00:00:00"}`,
+    end: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_fin || "23:59:59"}`,
+    allDay: !item.hora_inicio,
+    extendedProps: {
+      organizador: orgName,
+      tipoEvento: item.institucion || "Conferencia",
+      cedula: p.cedula || item.cedula || "",
+      estado: item.estado || "Pendiente",
+      estatus_aprobacion: item.estatus_aprobacion || "pendiente",
+      numero_expediente: item.numero_expediente || "",
+      motivo_rechazo: item.motivo_rechazo || "",
+      aprobado_por_nombre: ap,
+    },
+  };
+};
+
 export const auditorio = {
   getEventos: async (): Promise<EventoAuditorio[]> => {
     try {
       const res = await axiosInstance.get("/api/educacion/solicitudes-espacio");
       const data = extractList(res);
-      return data.map((item: any) => {
-        const p = item.Persona || {};
-        const orgName = item.nombre_responsable || [p.nombres, p.apellidos].filter(Boolean).join(" ") || "";
-        return {
-          id: item.id_solicitud.toString(),
-          codigo_reserva: item.codigo_reserva || "",
-          title: item.motivo || "Evento",
-          start: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_inicio || "00:00:00"}`,
-          end: `${item.fecha_uso || item.fecha_solicitada}T${item.hora_fin || "23:59:59"}`,
-          allDay: !item.hora_inicio,
-          extendedProps: {
-            organizador: orgName,
-            tipoEvento: item.institucion || "Conferencia",
-            cedula: p.cedula || item.cedula || "",
-            estado: item.estado || "Pendiente",
-          },
-        };
-      });
+      return data.map(mapEvento);
     } catch (e: any) {
       throw new Error(`Error fetching eventos: ${e.message}`);
     }
@@ -53,6 +61,22 @@ export const auditorio = {
       return { success: true, message: "Reserva eliminada" };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al eliminar reserva");
+    }
+  },
+
+  aprobarReservaAuditorio: async (id: string): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/educacion/solicitudes-espacio/${id}/aprobar`);
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al aprobar reserva");
+    }
+  },
+
+  rechazarReservaAuditorio: async (id: string, motivo: string): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/educacion/solicitudes-espacio/${id}/rechazar`, { motivo_rechazo: motivo });
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al rechazar reserva");
     }
   },
 };
