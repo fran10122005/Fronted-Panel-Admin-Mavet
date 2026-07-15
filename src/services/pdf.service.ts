@@ -452,108 +452,157 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
 
     await addHeader(doc, "COMPROBANTE DE RESERVA DE ESPACIO");
 
+    const bodyColor = [248, 245, 242] as [number, number, number];
+
     // Fecha de emisión
     const now = new Date();
     doc.setTextColor(...C.textMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    doc.text(
-      `Emitido: ${now.toLocaleDateString("es-VE", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`,
-      MARGIN, 30
-    );
+    const emitStr = `Emitido: ${now.toLocaleDateString("es-VE", {
+      day: "2-digit", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    })}`;
+    doc.text(emitStr, MARGIN, 30);
 
-    // Datos de la reserva
-    let y = 38;
-    const col1 = MARGIN;
-    const col2 = 65;
-    const labelW = 30;
+    // Línea decorativa delgada
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.15);
+    doc.line(MARGIN, 32.5, pw - MARGIN, 32.5);
 
-    function row(label: string, value: string, col: number) {
+    // ── DATOS DE LA RESERVA (tabla vertical limpia) ──
+    const rows: { label: string; value: string }[] = [
+      { label: "N° de Expediente", value: ev.extendedProps?.numero_expediente || ev.numero_expediente || "—" },
+      { label: "Código de Reserva", value: ev.codigo_reserva || "—" },
+      { label: "Motivo / Evento", value: ev.title || "—" },
+      { label: "Tipo de Evento", value: ev.extendedProps?.tipoEvento || "—" },
+      { label: "Organizador", value: ev.extendedProps?.organizador || "—" },
+      { label: "Cédula", value: ev.extendedProps?.cedula || "—" },
+      { label: "Fecha del Evento", value: ev.start?.split("T")[0] || "—" },
+      {
+        label: "Horario",
+        value: `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
+      },
+    ];
+
+    let y = 40;
+    const colLabel = MARGIN + 2;
+    const colVal = 60;
+    const rowH = 6.2;
+
+    doc.setDrawColor(225, 220, 215);
+    doc.setLineWidth(0.1);
+
+    rows.forEach((r, i) => {
+      // Fondo alternado
+      if (i % 2 === 0) {
+        doc.setFillColor(...bodyColor);
+        doc.rect(MARGIN, y - 4.5, pw - MARGIN * 2, rowH, "F");
+      }
+      // Label
       doc.setTextColor(...C.textMuted);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text(label, col, y);
+      doc.text(r.label, colLabel, y);
+      // Value
       doc.setTextColor(...C.text);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      doc.text(value, col + labelW, y);
-      y += 5.5;
-    }
+      doc.text(r.value, colVal, y);
+      y += rowH;
+    });
 
-    row("Expediente:", ev.extendedProps?.numero_expediente || ev.numero_expediente || "—", col1);
-    row("Código:", ev.codigo_reserva || "—", col1);
-    row("Motivo:", ev.title || "—", col1);
-    row("Tipo:", ev.extendedProps?.tipoEvento || "—", col1);
-
-    y = 38;
-    row("Organizador:", ev.extendedProps?.organizador || "—", col2);
-    row("Cédula:", ev.extendedProps?.cedula || "—", col2);
-    row("Fecha:", ev.start?.split("T")[0] || "—", col2);
-    row("Horario:",
-      `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
-      col2
-    );
-
-    // Línea separadora
-    y += 2;
-    doc.setDrawColor(...C.line);
+    // ── ESTATUS DE APROBACIÓN ──
+    y += 3;
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.3);
     doc.line(MARGIN, y, pw - MARGIN, y);
-    y += 5;
+    y += 6;
 
-    // Estado de aprobación
     doc.setTextColor(...C.textMuted);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.text("ESTATUS DE APROBACIÓN", MARGIN, y);
-    y += 4;
+    y += 5;
 
     const estatus = ev.extendedProps?.estatus_aprobacion || "pendiente";
     const estatusColor = estatus === "aprobado" ? [22, 163, 74] as [number, number, number]
       : estatus === "rechazado" ? [220, 38, 38] as [number, number, number]
-      : [200, 160, 0] as [number, number, number];
+      : [200, 140, 0] as [number, number, number];
+    const estatusBg = estatus === "aprobado" ? [230, 250, 235] as [number, number, number]
+      : estatus === "rechazado" ? [255, 235, 235] as [number, number, number]
+      : [255, 248, 225] as [number, number, number];
     const estatusText = estatus === "aprobado" ? "APROBADO"
       : estatus === "rechazado" ? "RECHAZADO"
       : "PENDIENTE DE APROBACIÓN";
 
+    // Caja de estatus
+    const boxW = 70;
+    const boxH = 8;
+    doc.setFillColor(...estatusBg);
+    doc.setDrawColor(...estatusColor);
+    doc.rect(MARGIN, y - 5, boxW, boxH, "FD");
     doc.setTextColor(...estatusColor);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(estatusText, MARGIN, y);
-    y += 5;
-
-    if (estatus === "rechazado" && ev.extendedProps?.motivo_rechazo) {
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.text("Motivo:", MARGIN, y);
-      y += 4;
-      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      const lines = doc.splitTextToSize(ev.extendedProps.motivo_rechazo, pw - MARGIN * 2);
-      doc.text(lines, MARGIN, y);
-      y += lines.length * 4;
-    }
+    doc.setFontSize(9);
+    doc.text(estatusText, MARGIN + 4, y + 0.5);
+    y += 8;
 
     if (estatus === "aprobado" && ev.extendedProps?.aprobado_por_nombre) {
       doc.setTextColor(...C.textMuted);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.text(`Aprobado por: ${ev.extendedProps.aprobado_por_nombre}`, MARGIN, y);
-      y += 4;
+      y += 5;
     }
 
-    // Pie de página
-    y = Math.max(y, 260);
+    if (estatus === "rechazado" && ev.extendedProps?.motivo_rechazo) {
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text("Motivo del rechazo:", MARGIN, y);
+      y += 4.5;
+      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(ev.extendedProps.motivo_rechazo, pw - MARGIN * 2 - 10);
+      doc.text(lines, MARGIN + 2, y);
+      y += lines.length * 4.5 + 2;
+    }
+
+    // ── SELLO DE RECIBIDO ──
+    y = Math.max(y, 210);
     doc.setDrawColor(...C.brand);
     doc.setLineWidth(0.4);
     doc.line(MARGIN, y, pw - MARGIN, y);
-    y += 3;
+    y += 5;
+
+    // Cuadro de sello
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.3);
+    doc.rect(pw / 2 - 35, y - 3, 70, 18);
+    doc.setTextColor(...C.brand);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("SELLO DE RECIBIDO", pw / 2, y + 2, { align: "center" });
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    doc.text("Museo de Artes Visuales y del Espacio del Táchira", pw / 2, y + 7, { align: "center" });
+    doc.text("Dirección: Calle 8 entre Carreras 6 y 7, Edif. MAVET", pw / 2, y + 10, { align: "center" });
+    doc.text("San Cristóbal, Estado Táchira", pw / 2, y + 13, { align: "center" });
+
+    // Pie de página
+    y += 24;
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.25);
+    doc.line(MARGIN, y, pw - MARGIN, y);
+    y += 2.5;
     doc.setTextColor(...C.textMuted);
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.text(
-      "Museo de Artes Visuales y del Espacio del Táchira (MAVET) — Este documento es una constancia digital de recepción de solicitud.",
+      "Documento de constancia digital — Este comprobante acredita la recepción de la solicitud de reserva de espacio en el MAVET.",
       MARGIN, y, { maxWidth: pw - MARGIN * 2 }
     );
 
