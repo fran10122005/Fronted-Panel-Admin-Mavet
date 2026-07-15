@@ -13,7 +13,7 @@ export const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !window.location.pathname.startsWith("/sign")) {
       localStorage.removeItem("user");
       window.location.href = "/signin";
     }
