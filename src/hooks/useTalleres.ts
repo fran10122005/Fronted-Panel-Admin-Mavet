@@ -61,6 +61,7 @@ export function useTalleres() {
   const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
   const [tallerSesiones, setTallerSesiones] = useState<any[]>([]);
   const [metricasTaller, setMetricasTaller] = useState<any>(null);
+
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
   const { isOpen: isOpenSesiones, openModal: openSesionesModal, closeModal: closeSesionesModal } = useModal();
 

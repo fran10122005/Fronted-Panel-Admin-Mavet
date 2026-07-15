@@ -22,7 +22,7 @@ export function useTalleresInscripciones(
   const [enrollForm, setEnrollForm] = useState(INITIAL_ENROLL_FORM);
   const [selectedTallerEnroll, setSelectedTallerEnroll] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTaller, setSelectedTaller] = useState<any>(null);
+  const [selectedTallerInscripciones, setSelectedTallerInscripciones] = useState<any>(null);
   const [tallerInscripciones, setTallerInscripciones] = useState<any[]>([]);
   const [isOpenEnroll, setIsOpenEnroll] = useState(false);
   const [isOpenInscr, setIsOpenInscr] = useState(false);
@@ -96,7 +96,7 @@ export function useTalleresInscripciones(
   };
 
   const openEnrolments = async (taller: any) => {
-    setSelectedTaller(taller);
+    setSelectedTallerInscripciones(taller);
     try {
       const data = await mavetApi.getInscripcionesPorTaller(taller.id_taller);
       setTallerInscripciones(data);
@@ -128,7 +128,7 @@ export function useTalleresInscripciones(
   };
 
   const exportInscripcionesFn = async (format: "pdf" | "excel") => {
-    const target = selectedTaller || selectedTallerFromParent;
+    const target = selectedTallerInscripciones || selectedTallerFromParent;
     if (!target) return;
     try {
       await mavetApi.exportInscripciones(target.id_taller, format);
@@ -142,7 +142,7 @@ export function useTalleresInscripciones(
     enrollForm, setEnrollForm,
     selectedTallerEnroll, setSelectedTallerEnroll,
     isSubmitting,
-    selectedTaller,
+    selectedTallerInscripciones, setSelectedTallerInscripciones,
     tallerInscripciones, setTallerInscripciones,
     edadNum, esMenor,
     isOpenEnroll: isOpenEnroll, closeEnrollModal: () => setIsOpenEnroll(false),
@@ -153,6 +153,5 @@ export function useTalleresInscripciones(
     openEnrolments,
     handleDesinscribir,
     exportInscripcionesFn,
-    setSelectedTaller,
   };
 }
