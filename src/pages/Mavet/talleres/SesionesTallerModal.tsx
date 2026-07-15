@@ -31,6 +31,8 @@ export default function SesionesTallerModal({
 
   const handleCrearSesion = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!taller?.id_taller) return toast.error("Error: el taller no está definido");
+    if (taller?.sesiones && sesiones.length >= taller.sesiones) return toast.error("Se ha alcanzado el límite máximo de sesiones");
     if (!nuevaFecha || !nuevoTema) return toast.error("Fecha y tema son obligatorios");
     setIsSubmitting(true);
     try {
@@ -104,8 +106,8 @@ export default function SesionesTallerModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <div className="flex justify-between items-center mb-3">
-                <h4 className="text-sm font-bold text-gray-800 dark:text-white">Sesiones ({sesiones.length})</h4>
-                <Button size="sm" onClick={() => setView("crear")} startIcon={
+                <h4 className="text-sm font-bold text-gray-800 dark:text-white">Sesiones ({sesiones.length}{taller?.sesiones ? ` de ${taller.sesiones}` : ""})</h4>
+                <Button size="sm" onClick={() => setView("crear")} disabled={taller?.sesiones && sesiones.length >= taller.sesiones} startIcon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
                 }>Nueva Sesión</Button>
               </div>
@@ -187,7 +189,8 @@ export default function SesionesTallerModal({
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 uppercase">Fecha *</label>
                 <input type="date" required value={nuevaFecha} onChange={e => setNuevaFecha(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={taller?.fecha ? taller.fecha.split("T")[0] : ""}
+                  max={taller?.fecha_fin ? taller.fecha_fin.split("T")[0] : ""}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white show-date-picker" />
               </div>
               <div>
