@@ -1,4 +1,4 @@
-import { Obra, RegistroAsistencia, Trabajador } from "../types";
+import { Obra, RegistroAsistencia, Trabajador, EventoAuditorio } from "../types";
 import { axiosInstance } from "./api";
 
 // ─── Premium color palette ──────────────────────────────────────────────────
@@ -440,6 +440,127 @@ export async function exportarQRPublico(
   } catch (e) {
     console.error("[exportarQRPublico]", e);
     alert("Error al generar el PDF del código QR. Verifique su conexión.");
+  }
+}
+
+// ─── PDF: Comprobante de Reserva de Auditorio ────────────────────────────────
+export async function exportarComprobanteReserva(ev: EventoAuditorio) {
+  try {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+
+    await addHeader(doc, "COMPROBANTE DE RESERVA DE ESPACIO");
+
+    // Fecha de emisión
+    const now = new Date();
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.text(
+      `Emitido: ${now.toLocaleDateString("es-VE", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`,
+      MARGIN, 30
+    );
+
+    // Datos de la reserva
+    let y = 38;
+    const col1 = MARGIN;
+    const col2 = 65;
+    const labelW = 30;
+
+    function row(label: string, value: string, col: number) {
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text(label, col, y);
+      doc.setTextColor(...C.text);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(value, col + labelW, y);
+      y += 5.5;
+    }
+
+    row("Expediente:", ev.extendedProps?.numero_expediente || ev.numero_expediente || "—", col1);
+    row("Código:", ev.codigo_reserva || "—", col1);
+    row("Motivo:", ev.title || "—", col1);
+    row("Tipo:", ev.extendedProps?.tipoEvento || "—", col1);
+
+    y = 38;
+    row("Organizador:", ev.extendedProps?.organizador || "—", col2);
+    row("Cédula:", ev.extendedProps?.cedula || "—", col2);
+    row("Fecha:", ev.start?.split("T")[0] || "—", col2);
+    row("Horario:",
+      `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
+      col2
+    );
+
+    // Línea separadora
+    y += 2;
+    doc.setDrawColor(...C.line);
+    doc.line(MARGIN, y, pw - MARGIN, y);
+    y += 5;
+
+    // Estado de aprobación
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("ESTATUS DE APROBACIÓN", MARGIN, y);
+    y += 4;
+
+    const estatus = ev.extendedProps?.estatus_aprobacion || "pendiente";
+    const estatusColor = estatus === "aprobado" ? [22, 163, 74] as [number, number, number]
+      : estatus === "rechazado" ? [220, 38, 38] as [number, number, number]
+      : [200, 160, 0] as [number, number, number];
+    const estatusText = estatus === "aprobado" ? "APROBADO"
+      : estatus === "rechazado" ? "RECHAZADO"
+      : "PENDIENTE DE APROBACIÓN";
+
+    doc.setTextColor(...estatusColor);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(estatusText, MARGIN, y);
+    y += 5;
+
+    if (estatus === "rechazado" && ev.extendedProps?.motivo_rechazo) {
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("Motivo:", MARGIN, y);
+      y += 4;
+      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(ev.extendedProps.motivo_rechazo, pw - MARGIN * 2);
+      doc.text(lines, MARGIN, y);
+      y += lines.length * 4;
+    }
+
+    if (estatus === "aprobado" && ev.extendedProps?.aprobado_por_nombre) {
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`Aprobado por: ${ev.extendedProps.aprobado_por_nombre}`, MARGIN, y);
+      y += 4;
+    }
+
+    // Pie de página
+    y = Math.max(y, 260);
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.4);
+    doc.line(MARGIN, y, pw - MARGIN, y);
+    y += 3;
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(6);
+    doc.text(
+      "Museo de Artes Visuales y del Espacio del Táchira (MAVET) — Este documento es una constancia digital de recepción de solicitud.",
+      MARGIN, y, { maxWidth: pw - MARGIN * 2 }
+    );
+
+    doc.save(`comprobante-${ev.codigo_reserva || ev.id || "reserva"}.pdf`);
+  } catch (e) {
+    console.error("[exportarComprobanteReserva]", e);
+    alert("Error al generar el comprobante.");
   }
 }
 

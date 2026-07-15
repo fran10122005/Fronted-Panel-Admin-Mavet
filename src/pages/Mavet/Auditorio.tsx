@@ -34,7 +34,7 @@ const Auditorio: React.FC = () => {
   const { user } = useAuth();
   const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
-  const canApprove = userRole === "Administrador" || userRole === "admin" || userRole === "Coordinador";
+  const canApprove = userRole === "Administrador" || userRole === "admin" || userRole === "Coordinador" || userRole === "Gerente";
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [isPastEvent, setIsPastEvent] = useState(false);
@@ -796,100 +796,103 @@ const Auditorio: React.FC = () => {
                 </button>
               </div>
             ) : (
-              filteredEvents.map(ev => {
-                const badgeClass = getColorClass(ev.extendedProps.tipoEvento || "Conferencia");
-                return (
-                  <div key={ev.id} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-theme-md hover:-translate-y-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex gap-2">
-                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
-                          {ev.extendedProps.tipoEvento || "Conferencia"}
-                        </div>
-                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${
-                          ev.extendedProps?.estado === 'Realizada' 
-                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50' 
-                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50'
-                        }`}>
-                          {ev.extendedProps?.estado || "Pendiente"}
-                        </div>
-                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${
-                          ev.extendedProps?.estatus_aprobacion === 'aprobado'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-                            : ev.extendedProps?.estatus_aprobacion === 'rechazado'
-                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
-                            : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
-                        }`}>
-                          {ev.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
-                            : ev.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
-                            : 'Pendiente'}
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5">
-                        {canApprove && ev.extendedProps?.estatus_aprobacion === 'pendiente' && (
-                          <>
-                            <button onClick={() => handleAprobar(ev.id)} className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Aprobar">
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })} className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Rechazar">
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      {!isGerente && (() => {
-                        const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
-                        const t = new Date(); t.setHours(0, 0, 0, 0);
-                        const isPast = d < t || ev.extendedProps?.estado === 'Realizada';
-                        return (
-                          <div className="flex gap-1.5">
-                            <button 
-                              onClick={() => !isPast && handleEditFromList(ev)} 
-                              disabled={isPast}
-                              className={`p-1.5 transition-colors ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500'}`} 
-                              title={isPast ? "No se puede editar evento histórico" : "Editar evento"}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-1">{ev.title}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 flex-1">
-                      Organizado por: <span className="font-semibold text-gray-700 dark:text-gray-300">{ev.extendedProps.organizador}</span>
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <CalendarIcon className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{formatDateForList(ev.start)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <Clock className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
-                      </div>
-                      {ev.extendedProps?.numero_expediente && (
-                        <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                          <span className="font-mono text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
-                            {ev.extendedProps.numero_expediente}
+              <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 shadow-theme-sm">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Expediente</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Evento</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Organizador</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipo</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Horario</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Aprobación</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredEvents.map(ev => (
+                      <tr key={ev.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                        <td className="px-4 py-3 text-xs font-mono text-brand-600 dark:text-brand-400 font-semibold whitespace-nowrap">
+                          {ev.extendedProps?.numero_expediente || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800 dark:text-white/90 max-w-[200px] truncate">
+                          {ev.title}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          {ev.extendedProps?.organizador || "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
+                            {ev.extendedProps.tipoEvento || "Conferencia"}
                           </span>
-                        </div>
-                      )}
-                      <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 mb-3">
-                        <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="truncate">Auditorio Principal</span>
-                      </div>
-                      <div className="col-span-2">
-                        <button onClick={() => handleVerAsistentes(ev)} className="w-full inline-flex justify-center items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
-                          <AlertCircle className="w-4 h-4" />
-                          Ver Asistentes (Check-In)
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          {formatDateForList(ev.start)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          {getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}
+                        </td>
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            ev.extendedProps?.estatus_aprobacion === 'aprobado'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
+                              : ev.extendedProps?.estatus_aprobacion === 'rechazado'
+                              ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
+                              : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
+                          }`}>
+                            {ev.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
+                              : ev.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
+                              : 'Pendiente'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={async () => {
+                                const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                                exportarComprobanteReserva(ev);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                              title="Comprobante"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => handleVerAsistentes(ev)} className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors" title="Ver asistentes">
+                              <AlertCircle className="h-4 w-4" />
+                            </button>
+                            {canApprove && ev.extendedProps?.estatus_aprobacion === 'pendiente' && (
+                              <>
+                                <button onClick={() => handleAprobar(ev.id)} className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title="Aprobar">
+                                  <CheckCircle className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })} className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Rechazar">
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                            {!isGerente && (() => {
+                              const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
+                              const t = new Date(); t.setHours(0, 0, 0, 0);
+                              const isPast = d < t || ev.extendedProps?.estado === 'Realizada';
+                              return (
+                                <button
+                                  onClick={() => !isPast && handleEditFromList(ev)}
+                                  disabled={isPast}
+                                  className={`p-1.5 rounded-lg transition-colors ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                                  title={isPast ? "No se puede editar evento histórico" : "Editar"}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
