@@ -53,6 +53,7 @@ export default function InventarioBoveda() {
   // Estados para búsqueda y filtrado
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("Todos");
+  const [filterCodigo, setFilterCodigo] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
   const handleSort = (key: string) => {
@@ -595,16 +596,20 @@ export default function InventarioBoveda() {
   const sortKey = sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : "";
 
   const filteredObras = useMemo(() => {
+    const q = (searchTerm || "").toLowerCase();
+    const cod = (filterCodigo || "").toLowerCase();
+
     const result = obras.filter((obra) => {
-      const matchesSearch = 
-        obra.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        obra.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (obra.codigo_inventario && obra.codigo_inventario.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        obra.autor.toLowerCase().includes(searchTerm.toLowerCase());
-        
+      const titulo = (obra.titulo || "").toLowerCase();
+      const obraId = (obra.id || "").toLowerCase();
+      const codigo = (obra.codigo_inventario || "").toLowerCase();
+      const autor = (obra.autor || "").toLowerCase();
+
+      const matchesSearch = !q || titulo.includes(q) || obraId.includes(q) || codigo.includes(q) || autor.includes(q);
       const matchesEstado = filterEstado === "Todos" || obra.estado === filterEstado;
-      
-      return matchesSearch && matchesEstado;
+      const matchesCodigo = !cod || codigo.includes(cod) || obraId.includes(cod);
+
+      return matchesSearch && matchesEstado && matchesCodigo;
     });
     if (!sortConfig) return result;
     return [...result].sort((a: any, b: any) => {
@@ -622,7 +627,7 @@ export default function InventarioBoveda() {
       const bVal = (b[sortConfig.key] ?? "").toString().toLowerCase();
       return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
-  }, [obras, searchTerm, filterEstado, sortKey]);
+  }, [obras, searchTerm, filterEstado, filterCodigo, sortKey]);
 
   return (
     <div className="space-y-6 relative">
@@ -687,6 +692,14 @@ export default function InventarioBoveda() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">ID:</span>
+            <input
+              type="text"
+              placeholder="MVT-001"
+              value={filterCodigo}
+              onChange={(e) => setFilterCodigo(e.target.value)}
+              className="w-full sm:w-[130px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 placeholder:text-gray-400"
+            />
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
             <select
               data-tour="filtro-estado"
