@@ -162,8 +162,8 @@ export default function SesionesTallerModal({
                   ) : (
                     metricas.alumnos.map((a: any) => (
                       <div key={a.id_alumno} className="flex justify-between items-center bg-white dark:bg-gray-800 rounded p-2 shadow-sm text-xs">
-                        <span className="truncate pr-2 font-medium text-gray-800 dark:text-gray-200" title={`${a.nombres} ${a.apellidos}`}>
-                          {a.nombres.split(' ')[0]} {a.apellidos.split(' ')[0]}
+                        <span className="truncate pr-2 font-medium text-gray-800 dark:text-gray-200" title={`${a.nombres || ""} ${a.apellidos || ""}`}>
+                          {(a.nombres || "").split(' ')[0]} {(a.apellidos || "").split(' ')[0]}
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-gray-500 tabular-nums">{a.asistidas}/{a.totalSesiones}</span>
