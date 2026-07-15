@@ -77,9 +77,9 @@ function addSignatureBlock(doc: any, y: number): number {
   const cx = pw / 2;
 
   doc.setDrawColor(...C.brand);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.4);
   doc.line(cx - 30, y, cx + 30, y);
-  y += 3;
+  y += 4;
 
   doc.setTextColor(...C.brand);
   doc.setFont("helvetica", "bold");
@@ -97,13 +97,8 @@ function addSignatureBlock(doc: any, y: number): number {
   doc.setFont("helvetica", "italic");
   doc.setFontSize(6);
   doc.text("Sello y firma de la coordinación", cx, y, { align: "center" });
-  y += 2;
 
-  doc.setDrawColor(...C.brand);
-  doc.setLineWidth(0.4);
-  doc.line(MARGIN, y, pw - MARGIN, y);
-
-  return y + 3;
+  return y + 4;
 }
 
 // ─── Reusable: Page numbers + footer ──────────────────────────────────────
@@ -513,11 +508,7 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
     const vx = 62;
     const rh = 6.5;
 
-    // Section title
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.15);
-    doc.line(MARGIN, y - 2, MARGIN + 22, y - 2);
-    doc.setTextColor(...C.brand);
+    doc.setTextColor(...C.text);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.text("DATOS DE LA RESERVA", MARGIN, y);
@@ -541,11 +532,8 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
     });
 
     // ── Estatus ──
-    y += 4;
-    doc.setDrawColor(...C.brand);
-    doc.setLineWidth(0.15);
-    doc.line(MARGIN, y - 2, MARGIN + 30, y - 2);
-    doc.setTextColor(...C.brand);
+    y += 6;
+    doc.setTextColor(...C.text);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.text("ESTATUS DE APROBACIÓN", MARGIN, y);
