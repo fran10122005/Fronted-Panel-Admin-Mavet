@@ -89,26 +89,26 @@ export default function TallerDetailModal({
             <div>
               <label className={labelCls}>Sesiones</label>
               <input type="number" name="sesiones" value={formData.sesiones}
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} onKeyDown={limitNumericInput} className={inputCls} min={1} max={20} />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput} className={inputCls} min={1} max={20} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
             <div>
               <label className={labelCls}>Cupo Mínimo</label>
               <input type="number" name="cupo_minimo" value={formData.cupo_minimo}
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} onKeyDown={limitNumericInput} className={inputCls} min={2} max={30} />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput} className={inputCls} min={2} max={30} />
             </div>
             <div>
               <label className={labelCls}>Cupo Máximo</label>
               <input type="number" name="cupo_maximo" value={formData.cupo_maximo}
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} onKeyDown={limitNumericInput} className={inputCls} min={2} max={30} />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput} className={inputCls} min={2} max={30} />
             </div>
             <div>
               <label className={labelCls}>Fecha del Taller</label>
               <input type="date" name="fecha" value={formData.fecha}
                 min={new Date().toISOString().split("T")[0]}
                 max="9999-12-31"
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls + " show-date-picker"} />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={inputCls + " show-date-picker"} />
             </div>
             {Number(formData.sesiones) > 1 && (
               <div>
@@ -116,7 +116,7 @@ export default function TallerDetailModal({
                 <input type="date" name="fecha_fin" value={formData.fecha_fin}
                   min={formData.fecha || new Date().toISOString().split("T")[0]}
                   max="9999-12-31"
-                  onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls + " show-date-picker"} />
+                  onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={inputCls + " show-date-picker"} />
               </div>
             )}
           </div>
@@ -124,12 +124,12 @@ export default function TallerDetailModal({
             <div>
               <label className={labelCls}>Hora Inicio</label>
               <input type="time" name="hora_inicio" value={formData.hora_inicio}
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls} min="09:00" max="17:00" />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={inputCls} min="09:00" max="17:00" />
             </div>
             <div>
               <label className={labelCls}>Hora Fin</label>
               <input type="time" name="hora_fin" value={formData.hora_fin}
-                onChange={(e) => { onChange(e); e.target.reportValidity(); }} className={inputCls} min="09:00" max="17:00" />
+                onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={inputCls} min="09:00" max="17:00" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
