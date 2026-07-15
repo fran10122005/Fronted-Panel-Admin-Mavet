@@ -357,8 +357,16 @@ export function useTalleres() {
       setFormError("La fecha del taller es obligatoria.");
       return;
     }
-    if (planificarForm.cupo_minimo && Number(planificarForm.cupo_minimo) < 1) {
-      setFormError("El cupo mínimo debe ser mayor a 0.");
+    if (planificarForm.sesiones && Number(planificarForm.sesiones) > 20) {
+      setFormError("El máximo de sesiones permitidas es 20.");
+      return;
+    }
+    if (planificarForm.cupo_minimo && Number(planificarForm.cupo_minimo) < 2) {
+      setFormError("El cupo mínimo debe ser al menos 2.");
+      return;
+    }
+    if (planificarForm.cupo_maximo && Number(planificarForm.cupo_maximo) > 30) {
+      setFormError("El cupo máximo no puede exceder de 30.");
       return;
     }
     if (planificarForm.cupo_maximo && Number(planificarForm.cupo_maximo) < 1) {
@@ -370,10 +378,37 @@ export function useTalleres() {
       setIsSubmitting(false);
       return;
     }
+    if (planificarForm.fecha) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [year, month, day] = planificarForm.fecha.split("-").map(Number);
+      const inputDate = new Date(year, month - 1, day);
+      if (inputDate < today) {
+        setFormError("La fecha del taller no puede ser anterior al día actual.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
     if (planificarForm.fecha && planificarForm.fecha_fin && planificarForm.fecha > planificarForm.fecha_fin) {
       setFormError('La fecha de inicio debe ser anterior o igual a la fecha de fin');
       setIsSubmitting(false);
       return;
+    }
+    if (planificarForm.hora_inicio) {
+      const [h, m] = planificarForm.hora_inicio.split(':').map(Number);
+      if (h < 9 || h > 17 || (h === 17 && m > 0)) {
+        setFormError("La hora de inicio debe estar entre las 09:00 AM y las 05:00 PM.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    if (planificarForm.hora_fin) {
+      const [h, m] = planificarForm.hora_fin.split(':').map(Number);
+      if (h < 9 || h > 17 || (h === 17 && m > 0)) {
+        setFormError("La hora de fin debe estar entre las 09:00 AM y las 05:00 PM.");
+        setIsSubmitting(false);
+        return;
+      }
     }
     if (planificarForm.hora_inicio && planificarForm.hora_fin) {
       const [hI, mI] = planificarForm.hora_inicio.split(':').map(Number);
