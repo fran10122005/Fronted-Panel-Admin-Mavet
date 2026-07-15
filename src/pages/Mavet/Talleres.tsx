@@ -252,10 +252,10 @@ export default function Talleres() {
                   {t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "-"}
                 </td>
                 <td className={`${tdCls} text-gray-500`}>
-                  {t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : "-"}
+                  {t.fecha ? new Date(t.fecha + "T12:00:00").toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : "-"}
                 </td>
                 <td className={`${tdCls} tabular-nums`}>
-                  <span className="text-xs font-medium">{t.cupo_minimo || 0}/{t.cupo_maximo || 0}</span>
+                  <span className="text-[11px] font-medium">Mín: {t.cupo_minimo || 0} - Máx: {t.cupo_maximo || 0}</span>
                   {t.sesiones && <span className="text-[11px] text-gray-400 ml-1.5">· {t.sesiones} ses.</span>}
                 </td>
                 <td className="px-3 py-2 text-center whitespace-nowrap">
