@@ -27,6 +27,7 @@ const Auditorio = lazy(() => import("./pages/Mavet/Auditorio"));
 const Educacion = lazy(() => import("./pages/Mavet/Educacion"));
 const Papelera = lazy(() => import("./pages/Mavet/Papelera"));
 const ManualUsuario = lazy(() => import("./pages/Mavet/ManualUsuario"));
+const AuditLogs = lazy(() => import("./pages/Mavet/AuditLogs"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 
 // Fallback loader for Suspense
@@ -123,6 +124,10 @@ export default function App() {
                 </Route>
                 {/* Manual de Usuario (todos los roles autenticados) */}
                 <Route path="/manual" element={<ManualUsuario />} />
+                {/* Auditoría (solo administradores y gerentes) */}
+                <Route element={<RoleProtectedRoute allowedRoles={["Administrador", "Gerente"]} />}>
+                  <Route path="/auditoria" element={<AuditLogs />} />
+                </Route>
               </Route>
             </Route>
 

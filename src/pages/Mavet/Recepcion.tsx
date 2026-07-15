@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
 import { limitNumericInput } from "../../utils/validation";
 import AsistenciaModal from "../../components/AsistenciaModal";
+import PrivacyConsent from "../../components/ui/PrivacyConsent";
 import { useRecepcion } from "../../hooks/useRecepcion";
 
 export default function Recepcion() {
+  const [consentimiento, setConsentimiento] = useState(false);
   const {
     searchQuery, setSearchQuery,
     searchResults,
@@ -157,7 +160,10 @@ export default function Recepcion() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={(e) => {
+              if (!consentimiento) { e.preventDefault(); toast.error("Debe aceptar el Aviso de Privacidad"); return; }
+              handleSubmit(e);
+            }} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
@@ -262,6 +268,13 @@ export default function Recepcion() {
                   </div>
                 </div>
               )}
+
+              <div className="mt-5">
+                <PrivacyConsent
+                  checked={consentimiento}
+                  onChange={setConsentimiento}
+                />
+              </div>
 
               <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center">
                 <div className="flex gap-3">

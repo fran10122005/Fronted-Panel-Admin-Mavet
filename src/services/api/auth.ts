@@ -129,6 +129,14 @@ export const auth = {
     }
   },
 
+  logout: async (): Promise<void> => {
+    try {
+      await axiosInstance.post("/api/auth/logout");
+    } catch {
+      // Silently fail, cookie will be cleared on frontend
+    }
+  },
+
   subirFotoPerfil: async (file: File): Promise<{ url: string }> => {
     try {
       const formData = new FormData();
@@ -147,6 +155,18 @@ export const auth = {
       await axiosInstance.delete("/api/auth/me/foto");
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al eliminar la foto");
+    }
+  },
+
+  getAuditLogs: async (params?: { page?: number; limit?: number; desde?: string; hasta?: string; tipo?: string }): Promise<{ data: any[]; meta: { totalItems: number; totalPages: number; currentPage: number } }> => {
+    try {
+      const res = await axiosInstance.get("/api/auth/logs", { params });
+      const body = res.data;
+      const list = Array.isArray(body) ? body : Array.isArray(body.data) ? body.data : [];
+      const meta = body?.meta || { totalItems: list.length, totalPages: 1, currentPage: 1 };
+      return { data: list, meta };
+    } catch {
+      return { data: [], meta: { totalItems: 0, totalPages: 1, currentPage: 1 } };
     }
   },
 };

@@ -38,4 +38,48 @@ export function limitNumericInput(e: React.KeyboardEvent<HTMLInputElement>) {
   if (!NUMERIC_REGEX.test(e.key)) e.preventDefault();
 }
 
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_RULES = {
+  minLength: PASSWORD_MIN_LENGTH,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumber: true,
+  requireSpecialChar: true,
+} as const;
+
+export type PasswordStrength = "none" | "weak" | "medium" | "strong" | "very-strong";
+
+export function getPasswordStrength(password: string): { level: PasswordStrength; score: number; label: string } {
+  if (!password) return { level: "none", score: 0, label: "" };
+
+  let score = 0;
+
+  if (password.length >= PASSWORD_MIN_LENGTH) score += 25;
+  else if (password.length >= 6) score += 10;
+
+  if (/[a-z]/.test(password)) score += 15;
+  if (/[A-Z]/.test(password)) score += 20;
+  if (/[0-9]/.test(password)) score += 20;
+  if (/[^a-zA-Z0-9]/.test(password)) score += 20;
+
+  if (password.length >= 12) score += 10;
+  if (password.length >= 16) score += 10;
+
+  if (score >= 100) return { level: "very-strong", score: 100, label: "Muy fuerte" };
+  if (score >= 80) return { level: "strong", score, label: "Fuerte" };
+  if (score >= 60) return { level: "medium", score, label: "Media" };
+  return { level: "weak", score, label: "Débil" };
+}
+
+export function getPasswordErrors(password: string): string[] {
+  const errors: string[] = [];
+  if (!password) return errors;
+  if (password.length < PASSWORD_MIN_LENGTH) errors.push(`Mínimo ${PASSWORD_MIN_LENGTH} caracteres`);
+  if (!/[a-z]/.test(password)) errors.push("Al menos una minúscula");
+  if (!/[A-Z]/.test(password)) errors.push("Al menos una mayúscula");
+  if (!/[0-9]/.test(password)) errors.push("Al menos un número");
+  if (!/[^a-zA-Z0-9]/.test(password)) errors.push("Al menos un carácter especial");
+  return errors;
+}
+
 

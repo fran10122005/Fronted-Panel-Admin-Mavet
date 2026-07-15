@@ -3,6 +3,7 @@ import { mavetApi } from '../../services/api';
 import { limitNumericInput, validatePhone } from '../../utils/validation';
 import { normalizeCedula } from '../../utils/formatters';
 import { Modal } from '../../components/ui/modal';
+import PrivacyConsent from '../../components/ui/PrivacyConsent';
 
 export default function RegistroPublico() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -30,6 +31,7 @@ export default function RegistroPublico() {
 
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
   const [menorData, setMenorData] = useState({ nombres: '', apellidos: '', fecha_nacimiento: '', cedula: '' });
+  const [consentimiento, setConsentimiento] = useState(false);
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -113,6 +115,11 @@ export default function RegistroPublico() {
       return;
     }
 
+    if (!consentimiento) {
+      setError("Debe aceptar el Aviso de Privacidad para continuar.");
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -156,6 +163,7 @@ export default function RegistroPublico() {
       }
 
       payload.cedula = normalizeCedula(payload.cedula);
+      payload.consentimiento_datos = true;
       await mavetApi.registrarAutoIngreso(payload);
       setStep(3);
     } catch (err: any) {
@@ -476,8 +484,16 @@ export default function RegistroPublico() {
                 </div>
               )}
 
+              {/* Aviso de Privacidad */}
+              <div className="mt-5">
+                <PrivacyConsent
+                  checked={consentimiento}
+                  onChange={setConsentimiento}
+                />
+              </div>
+
               {/* Actions */}
-              <div className="mt-6 space-y-3">
+              <div className="mt-4 space-y-3">
                 <button
                   type="submit"
                   disabled={isLoading}

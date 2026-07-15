@@ -3,6 +3,8 @@ import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import { mavetApi } from "../../services/api";
 import toast from "react-hot-toast";
+import PasswordStrengthMeter from "../ui/PasswordStrengthMeter";
+import PasswordRules from "../ui/PasswordRules";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const labelCls = "block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
@@ -62,8 +64,8 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
       toast.error("Las contraseñas nuevas no coinciden");
       return;
     }
-    if (passwordData.password_nuevo.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    if (passwordData.password_nuevo.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres, incluir mayúscula, minúscula, número y carácter especial");
       return;
     }
     setIsSubmitting(true);
@@ -199,13 +201,15 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
                   <label className={labelCls}>Nueva Contraseña <span className="text-red-500">*</span></label>
                   <input type="password" value={passwordData.password_nuevo}
                     onChange={e => setPasswordData({...passwordData, password_nuevo: e.target.value})}
-                    className={inputCls} required minLength={6} placeholder="Mín. 6 caracteres" />
+                    className={inputCls} required minLength={8} placeholder="Mín. 8 caracteres" />
+                  <PasswordStrengthMeter password={passwordData.password_nuevo} />
+                  <PasswordRules password={passwordData.password_nuevo} />
                 </div>
                 <div>
                   <label className={labelCls}>Confirmar Contraseña <span className="text-red-500">*</span></label>
                   <input type="password" value={passwordData.password_confirmar}
                     onChange={e => setPasswordData({...passwordData, password_confirmar: e.target.value})}
-                    className={inputCls} required minLength={6} placeholder="Repite la contraseña" />
+                    className={inputCls} required minLength={8} placeholder="Repite la contraseña" />
                 </div>
               </div>
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">

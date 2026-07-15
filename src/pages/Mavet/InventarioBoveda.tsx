@@ -10,6 +10,7 @@ import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
 import { limitNumericInput, validateEmail, validatePhone } from "../../utils/validation";
 import Pagination from "../../components/ui/Pagination";
+import HistorialObraModal from "../../components/ui/HistorialObraModal";
 import toast from "react-hot-toast";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 
@@ -26,6 +27,7 @@ const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: numb
   peso: undefined,
   descripcion: "",
   ubicacion: "",
+  clasificacion_patrimonial: "no_clasificado",
 };
 
 export default function InventarioBoveda() {
@@ -69,6 +71,7 @@ export default function InventarioBoveda() {
   const [customCategoria, setCustomCategoria] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedObraForDetail, setSelectedObraForDetail] = useState<Obra | null>(null);
+  const [selectedObraForHistorial, setSelectedObraForHistorial] = useState<Obra | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -307,11 +310,12 @@ export default function InventarioBoveda() {
         setCategorias(catData);
       }
 
-      const { id: _omitId, ubicacion, ano, ancho, largo, ...restForm } = formData;
+      const { id: _omitId, ubicacion, ano, ancho, largo, clasificacion_patrimonial: _cp, ...restForm } = formData;
       const medidasStr = formData.ancho && formData.largo ? `${Number(formData.ancho)}x${Number(formData.largo)}` : undefined;
       const payloadBase = {
         ...restForm,
         medidas: medidasStr,
+        clasificacion_patrimonial: _cp || 'no_clasificado',
         ubicacion_actual: ubicacion,
         anio: ano !== undefined && ano !== "" ? parseInt(ano.toString(), 10) : null,
         id_tecnica: tecnicaId,
@@ -1240,6 +1244,20 @@ export default function InventarioBoveda() {
                 </select>
                 {formErrors.tipo_ingreso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.tipo_ingreso}</p>}
               </div>
+              <div>
+                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Clasificación Patrimonial</label>
+                <select
+                  name="clasificacion_patrimonial"
+                  value={formData.clasificacion_patrimonial || "no_clasificado"}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                >
+                  <option value="no_clasificado">No clasificado</option>
+                  <option value="BIC">BIC — Bien de Interés Cultural</option>
+                  <option value="monumento">Monumento</option>
+                  <option value="bien_cultural">Bien Cultural</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -1470,6 +1488,32 @@ export default function InventarioBoveda() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Clasificación Patrimonial */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Clasificación Patrimonial</span>
+                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                        selectedObraForDetail.clasificacion_patrimonial === 'BIC'
+                          ? 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/30'
+                          : selectedObraForDetail.clasificacion_patrimonial === 'monumento'
+                          ? 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30'
+                          : selectedObraForDetail.clasificacion_patrimonial === 'bien_cultural'
+                          ? 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/20 dark:border-blue-900/30'
+                          : 'text-gray-500 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-700'
+                      }`}>
+                        {selectedObraForDetail.clasificacion_patrimonial === 'BIC' ? 'BIC — Bien de Interés Cultural' :
+                         selectedObraForDetail.clasificacion_patrimonial === 'monumento' ? 'Monumento' :
+                         selectedObraForDetail.clasificacion_patrimonial === 'bien_cultural' ? 'Bien Cultural' :
+                         'No clasificado'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Descripción (si existe) */}
@@ -1485,6 +1529,17 @@ export default function InventarioBoveda() {
 
               {/* Acciones del pie */}
               <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
+                <button
+                  onClick={() => {
+                    setSelectedObraForHistorial(selectedObraForDetail);
+                  }}
+                  className="px-5 py-2 text-xs font-semibold text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/50 rounded-xl hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Historial
+                </button>
                 <button
                   onClick={() => setSelectedObraForDetail(null)}
                   className="px-5 py-2 text-xs font-semibold text-gray-650 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -1507,6 +1562,10 @@ export default function InventarioBoveda() {
             </div>
         )}
       </Modal>
+      <HistorialObraModal
+        obra={selectedObraForHistorial}
+        onClose={() => setSelectedObraForHistorial(null)}
+      />
       <ConfirmDialog
         open={confirm.open}
         title={confirm.title}

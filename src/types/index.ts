@@ -30,6 +30,7 @@ export interface Obra {
   estado: string;
   ubicacion: string;
   imagen_url?: string;
+  clasificacion_patrimonial?: string;
 }
 
 export interface Libro {

@@ -7,9 +7,12 @@ import { TourProvider } from "../context/TourContext";
 import WelcomeTourModal from "../components/WelcomeTourModal";
 import Footer from "../components/Footer";
 import ErrorBoundary from "../components/common/ErrorBoundary";
+import { useSessionTimeout } from "../hooks/useSessionTimeout";
+import SessionTimeoutModal from "../components/ui/SessionTimeoutModal";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { showWarning, extendSession, logout } = useSessionTimeout();
 
   return (
     <div className="min-h-screen xl:flex bg-gray-50 dark:bg-[#0c0e17] text-gray-900 dark:text-gray-100 overflow-x-hidden">
@@ -29,6 +32,7 @@ const LayoutContent: React.FC = () => {
         </div>
       </div>
       <WelcomeTourModal />
+      <SessionTimeoutModal show={showWarning} onExtend={extendSession} onLogout={logout} />
     </div>
   );
 };

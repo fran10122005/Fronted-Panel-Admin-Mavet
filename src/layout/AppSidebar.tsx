@@ -13,6 +13,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons";
+
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth, getUserRole } from "../context/AuthContext";
 
@@ -59,6 +60,15 @@ const navItems: NavItem[] = [
     name: "Recursos Humanos",
     path: "/rrhh",
   },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    name: "Auditoría",
+    path: "/auditoria",
+  },
 ];
 
 const othersItems: NavItem[] = [
@@ -83,6 +93,7 @@ const routePermissions: Record<string, string[]> = {
   "/biblioteca": ["Administrador", "admin", "Gerente", "Bibliotecario", "Bibliotecaria"],
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["*"],
+  "/auditoria": ["Administrador", "admin", "Gerente"],
   "/papelera": ["Administrador", "admin"],
   "/manual": ["*"],
 };
