@@ -20,6 +20,7 @@ const Ingresos = lazy(() => import("./pages/Mavet/Ingresos"));
 const RegistroPublico = lazy(() => import("./pages/Mavet/RegistroPublico"));
 const RRHH = lazy(() => import("./pages/Mavet/RRHH"));
 const Recepcion = lazy(() => import("./pages/Mavet/Recepcion"));
+const AsistenciaPersonal = lazy(() => import("./pages/Mavet/AsistenciaPersonal"));
 const Biblioteca = lazy(() => import("./pages/Mavet/Biblioteca"));
 const InventarioBoveda = lazy(() => import("./pages/Mavet/InventarioBoveda"));
 const Talleres = lazy(() => import("./pages/Mavet/Talleres"));
@@ -122,8 +123,9 @@ export default function App() {
                 <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
                   <Route path="/papelera" element={<Papelera />} />
                 </Route>
-                {/* Manual de Usuario (todos los roles autenticados) */}
+                {/* Manual de Usuario y Asistencia (todos los roles autenticados) */}
                 <Route path="/manual" element={<ManualUsuario />} />
+                <Route path="/asistencia" element={<ErrorBoundary><AsistenciaPersonal /></ErrorBoundary>} />
                 {/* Auditoría (solo administradores y gerentes) */}
                 <Route element={<RoleProtectedRoute allowedRoles={["Administrador", "Gerente"]} />}>
                   <Route path="/auditoria" element={<AuditLogs />} />
@@ -131,7 +133,7 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ - PARA EL QR) --- */}
+            {/* --- GRUPO 2: RUTAS PÚBLICAS (SIN MENÚ) --- */}
             <Route path="/registro-visitante" element={<ErrorBoundary><RegistroPublico /></ErrorBoundary>} />
 
             {/* --- GRUPO 3: AUTENTICACIÓN Y ERRORES --- */}

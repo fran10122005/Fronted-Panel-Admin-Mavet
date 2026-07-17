@@ -65,6 +65,44 @@ export interface AsistenciaPayload {
   observaciones?: string;
 }
 
+export interface PinVerificarPayload {
+  cedulaTrabajador?: string;
+  qr_uuid?: string;
+  pin: string;
+}
+
+export interface PinConfirmarPayload {
+  tokenConfirmacion: string;
+  dispositivo?: string;
+  coordenadas?: { lat: number; lng: number };
+}
+
+export interface PinCambiarPayload {
+  cedulaTrabajador?: string;
+  qr_uuid?: string;
+  pin_actual: string;
+  pin_nuevo: string;
+}
+
+export interface PinVerificarResponse {
+  valido: boolean;
+  token: string;
+  trabajador: {
+    nombres: string;
+    apellidos: string;
+    cedula: string;
+    id: string;
+  };
+  siguienteMovimiento: string | null;
+  serverTime: string;
+}
+
+export interface ConfirmarAsistenciaResponse {
+  message: string;
+  tipoMovimiento: string;
+  timestamp: string;
+}
+
 export interface TallerInscripcionPayload {
   tallerId: string;
   alumno: {
@@ -114,6 +152,11 @@ export interface Trabajador {
   estado: "Activo" | "Inactivo";
   qr_uuid?: string;
   foto_url?: string;
+  pin_hash?: string;
+  descriptor_facial?: string;
+  usarFacial?: boolean;
+  consentimientoFacial?: boolean;
+  fechaConsentimiento?: string;
   Persona?: {
     nombres: string;
     apellidos: string;
@@ -122,6 +165,20 @@ export interface Trabajador {
   Cargo?: {
     nombre_cargo: string;
   };
+}
+
+export interface EstadoAsistencia {
+  trabajador: { nombres: string; apellidos: string; cedula: string; id: string };
+  siguienteMovimiento: string | null;
+  entradaActual: string | null;
+  horasTranscurridas: number | null;
+  tienePin: boolean;
+  usarFacial: boolean;
+  asistencia: {
+    entrada_manana: string | null;
+    salida_manana: string | null;
+    horas_cumplidas_dia: number | null;
+  } | null;
 }
 
 export interface Usuario {

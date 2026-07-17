@@ -1,5 +1,16 @@
 import { axiosInstance, extractPagination, extractList } from "./client";
-import type { Trabajador, TrabajadorPayload, AsistenciaPayload, RegistroAsistencia } from "../../types";
+import type {
+  Trabajador,
+  TrabajadorPayload,
+  AsistenciaPayload,
+  RegistroAsistencia,
+  PinVerificarPayload,
+  PinConfirmarPayload,
+  PinCambiarPayload,
+  PinVerificarResponse,
+  ConfirmarAsistenciaResponse,
+  EstadoAsistencia,
+} from "../../types";
 
 export const rrhh = {
   getTrabajadores: async (page?: number, limit?: number): Promise<{ data: Trabajador[]; totalItems: number; totalPages: number; currentPage: number }> => {
@@ -23,6 +34,7 @@ export const rrhh = {
         id: item.id_trabajador,
         qr_uuid: item.qr_uuid || undefined,
         foto_url: item.foto_url || undefined,
+        pin_hash: item.pin_hash || undefined,
       }));
       return extractPagination(res, list);
     } catch (e) {
@@ -129,7 +141,7 @@ export const rrhh = {
     }
   },
 
-  getEstadoAsistencia: async (params: { qr_uuid?: string; cedulaTrabajador?: string }): Promise<any> => {
+  getEstadoAsistencia: async (params: { qr_uuid?: string; cedulaTrabajador?: string }): Promise<EstadoAsistencia> => {
     const query = new URLSearchParams();
     if (params.qr_uuid) query.set("qr_uuid", params.qr_uuid);
     if (params.cedulaTrabajador) query.set("cedulaTrabajador", params.cedulaTrabajador);
@@ -177,5 +189,54 @@ export const rrhh = {
 
   justificarHoras: async (cedula: string, observaciones: string, horas_justificadas: number): Promise<void> => {
     await axiosInstance.post('/api/rrhh/asistencias/justificar', { cedula, observaciones, horas_justificadas });
+  },
+
+  verificarPin: async (payload: PinVerificarPayload): Promise<PinVerificarResponse> => {
+    try {
+      const res = await axiosInstance.post('/api/rrhh/asistencias/verificar-pin', payload);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error al verificar PIN');
+    }
+  },
+
+  confirmarAsistenciaConPin: async (payload: PinConfirmarPayload): Promise<ConfirmarAsistenciaResponse> => {
+    try {
+      const res = await axiosInstance.post('/api/rrhh/asistencias/confirmar', payload);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error al confirmar asistencia');
+    }
+  },
+
+  cambiarPinPropio: async (payload: PinCambiarPayload): Promise<{ message: string }> => {
+    try {
+      const res = await axiosInstance.post('/api/rrhh/asistencias/cambiar-pin', payload);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error al cambiar PIN');
+    }
+  },
+
+  resetPinTrabajador: async (id: string): Promise<{ pinTemporal: string; message: string }> => {
+    try {
+      const res = await axiosInstance.post(`/api/rrhh/asistencias/${id}/reset-pin`);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error al restablecer PIN');
+    }
+  },
+
+  verificarFacial: async (payload: { cedulaTrabajador?: string; qr_uuid?: string }): Promise<PinVerificarResponse> => {
+    try {
+      const res = await axiosInstance.post('/api/rrhh/asistencias/verificar-facial', payload);
+      return res.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || 'Error en verificación facial');
+    }
+  },
+
+  actualizarTrabajadorFacial: async (id: string, data: { descriptor_facial?: string; usarFacial?: boolean; consentimientoFacial?: boolean; fechaConsentimiento?: string }): Promise<void> => {
+    await axiosInstance.put(`/api/rrhh/trabajadores/${id}`, data);
   },
 };

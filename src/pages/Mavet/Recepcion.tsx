@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { Modal } from "../../components/ui/modal";
 import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
 import { limitNumericInput } from "../../utils/validation";
-import AsistenciaModal from "../../components/AsistenciaModal";
 import PrivacyConsent from "../../components/ui/PrivacyConsent";
 import { useRecepcion } from "../../hooks/useRecepcion";
 
@@ -27,7 +26,6 @@ export default function Recepcion() {
     isQrModalOpen, setIsQrModalOpen,
     isMenorModalOpen, setIsMenorModalOpen,
     menorData, setMenorData,
-    isAsistenciaModalOpen, setIsAsistenciaModalOpen,
     age, ageMenor,
     publicRegistrationUrl,
     qrImageUrl,
@@ -42,15 +40,6 @@ export default function Recepcion() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAsistenciaModalOpen(true)}
-            className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Asistencia Personal
-          </button>
           <button
             onClick={() => setIsQrModalOpen(true)}
             className="bg-brand-100 text-brand-700 hover:bg-brand-200 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
@@ -538,12 +527,6 @@ export default function Recepcion() {
           </div>
         </div>
       </Modal>
-
-      {/* Modal de Asistencia Personal (Empleados) */}
-      <AsistenciaModal
-        isOpen={isAsistenciaModalOpen}
-        onClose={() => setIsAsistenciaModalOpen(false)}
-      />
 
     </div>
   );

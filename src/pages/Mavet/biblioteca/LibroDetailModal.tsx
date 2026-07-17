@@ -56,12 +56,12 @@ export default function LibroDetailModal({ libro, onClose, onEdit }: Props) {
                   </svg>
                 </div>
                 <div>
-                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Estado del Ejemplar</span>
+
                 </div>
               </div>
               <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold border ${l.estado === 'Aprobado' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800/40' :
-                  l.estado === 'Pendiente' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800/40' :
-                    'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/40'
+                l.estado === 'Pendiente' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800/40' :
+                  'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/40'
                 }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
                 {l.estado}
@@ -151,8 +151,8 @@ export default function LibroDetailModal({ libro, onClose, onEdit }: Props) {
                   <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cantidad y Disponibilidad en Sala</span>
                   <div className="mt-1">
                     <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded border ${l.cantidad_disponible <= 0
-                        ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400'
-                        : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400'
+                      ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400'
+                      : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400'
                       }`}>
                       {l.cantidad_disponible} disponibles de {l.cantidad_total} ejemplares
                     </span>

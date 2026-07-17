@@ -192,6 +192,7 @@ export default function RRHH() {
                       <th className="px-5 py-2">Nombres</th>
                       <th className="px-5 py-2">Apellidos</th>
                       <th className="px-5 py-2">Cargo</th>
+                      <th className="px-5 py-2 text-center">PIN</th>
                       <th className="px-5 py-2">Estado</th>
                       <th className="px-5 py-2 text-center">Acciones</th>
                     </tr>
@@ -214,6 +215,15 @@ export default function RRHH() {
                         <td className="px-5 py-2 font-semibold">{t.nombre}</td>
                         <td className="px-5 py-2 font-semibold">{t.apellido}</td>
                         <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{t.cargo}</td>
+                        <td className="px-5 py-2 text-center">
+                          <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                            (t as any).pin_hash
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-gray-400 dark:text-gray-500"
+                          }`}>
+                            {(t as any).pin_hash ? "🔒" : "⚪"}
+                          </span>
+                        </td>
                         <td className="px-5 py-2">
                           <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                             t.estado === "Activo" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400"
