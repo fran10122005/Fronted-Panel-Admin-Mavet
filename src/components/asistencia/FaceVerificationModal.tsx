@@ -29,6 +29,14 @@ export default function FaceVerificationModal({
   const [errorMsg, setErrorMsg] = useState("");
   const mounted = useRef(true);
 
+  const fallbackRef = useRef(onFallbackToPin);
+  const successRef = useRef(onSuccess);
+
+  useEffect(() => {
+    fallbackRef.current = onFallbackToPin;
+    successRef.current = onSuccess;
+  }, [onFallbackToPin, onSuccess]);
+
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -63,7 +71,7 @@ export default function FaceVerificationModal({
       } catch (err: any) {
         if (!mounted.current) return;
         setErrorMsg("No se pudo acceder a la cámara. Usará PIN.");
-        onFallbackToPin();
+        fallbackRef.current();
       }
     };
     init();
@@ -72,7 +80,7 @@ export default function FaceVerificationModal({
       mounted.current = false;
       stopCamera();
     };
-  }, [isOpen, onFallbackToPin, stopCamera]);
+  }, [isOpen, stopCamera]);
 
   const handleVerify = useCallback(async () => {
     if (!videoRef.current || status !== "ready") return;
@@ -82,13 +90,13 @@ export default function FaceVerificationModal({
       if (!desc) {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-        if (newAttempts >= 2) {
+        if (newAttempts >= 10) {
           setStatus("error");
-          setErrorMsg("No se detectó rostro después de 2 intentos. Usará PIN.");
-          setTimeout(() => onFallbackToPin(), 1000);
+          setErrorMsg("No se detectó rostro de forma clara. Usará PIN.");
+          setTimeout(() => fallbackRef.current(), 1500);
         } else {
           setStatus("no-face");
-          setTimeout(() => setStatus("ready"), 1500);
+          setTimeout(() => setStatus("ready"), 400);
         }
         return;
       }
@@ -103,37 +111,37 @@ export default function FaceVerificationModal({
             cedulaTrabajador: trabajador.cedula,
           });
           if (mounted.current) {
-            onSuccess(data.token, data);
+            successRef.current(data.token, data);
           }
         } catch {
           setErrorMsg("Error al confirmar identidad facial. Usará PIN.");
-          setTimeout(() => onFallbackToPin(), 1000);
+          setTimeout(() => fallbackRef.current(), 1500);
         }
       } else {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-        if (newAttempts >= 2) {
+        if (newAttempts >= 10) {
           setStatus("error");
-          setErrorMsg("El rostro no coincide después de 2 intentos. Usará PIN.");
-          setTimeout(() => onFallbackToPin(), 1000);
+          setErrorMsg("El rostro no coincide. Usará PIN.");
+          setTimeout(() => fallbackRef.current(), 1500);
         } else {
-          setErrorMsg("El rostro no coincide. Intente nuevamente.");
+          setErrorMsg("El rostro no coincide. Reintentando...");
           setTimeout(() => {
             setStatus("ready");
             setErrorMsg("");
-          }, 1500);
+          }, 800);
         }
       }
     } catch {
       setStatus("error");
       setErrorMsg("Error al procesar el rostro. Usará PIN.");
-      setTimeout(() => onFallbackToPin(), 1000);
+      setTimeout(() => fallbackRef.current(), 1500);
     }
-  }, [status, attempts, descriptorFacial, trabajador.cedula, onSuccess, onFallbackToPin]);
+  }, [status, attempts, descriptorFacial, trabajador.cedula]);
 
   useEffect(() => {
     if (status === "ready") {
-      const timer = setTimeout(() => handleVerify(), 500);
+      const timer = setTimeout(() => handleVerify(), 400);
       return () => clearTimeout(timer);
     }
   }, [status, handleVerify]);

@@ -88,12 +88,21 @@ function QRScannerPane({ onScan }: QRScannerProps) {
       mounted = false;
       clearTimeout(t);
       if (scanner.current && started.current) {
-        scanner.current.stop().catch(() => {}).finally(() => {
-          const s = scanner.current;
-          scanner.current = null;
-          started.current = false;
-          if (s) s.clear().catch(() => {});
-        });
+        const s = scanner.current;
+        scanner.current = null;
+        started.current = false;
+        try {
+          const stopResult = s.stop();
+          if (stopResult && typeof stopResult.then === "function") {
+            stopResult.catch(() => {}).finally(() => {
+              try { s.clear(); } catch { /* ignore */ }
+            });
+          } else {
+            try { s.clear(); } catch { /* ignore */ }
+          }
+        } catch {
+          try { s.clear(); } catch { /* ignore */ }
+        }
       }
     };
   }, [elementId, onScan]);
@@ -170,16 +179,15 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
       setEstado(data);
       if (!data.tienePin) {
         showAlert("PIN no configurado. Contacte al departamento de RRHH.", false);
+      } else if (data.usarFacial && data.descriptorFacial && data.trabajador) {
+        // Siempre intentar verificación facial primero si el trabajador tiene datos faciales
+        setIsFacialOpen(true);
       } else {
-        const facialProb = parseFloat(import.meta.env.VITE_FACIAL_PROBABILITY || "0");
-        if (data.usarFacial && data.trabajador && facialProb > 0 && Math.random() < facialProb) {
-          setIsFacialOpen(true);
-        } else {
-          setStep("pin");
-          setPinValue("");
-          setPinIntentos(0);
-          setPinBloqueado(false);
-        }
+        // Sin datos faciales → ir directo al PIN
+        setStep("pin");
+        setPinValue("");
+        setPinIntentos(0);
+        setPinBloqueado(false);
       }
     } catch (err: any) {
       showAlert(err.message || "Trabajador no encontrado.", false);
