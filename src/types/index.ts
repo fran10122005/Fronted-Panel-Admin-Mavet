@@ -133,6 +133,8 @@ export interface EventoAuditorio {
     numero_expediente?: string;
     motivo_rechazo?: string;
     aprobado_por_nombre?: string;
+    correo_electronico?: string;
+    recursos_solicitados?: string[];
   };
 }
 

@@ -9,8 +9,6 @@ const C = {
   line: [228, 228, 228] as [number, number, number],
   rowOdd: [253, 248, 246] as [number, number, number],
 };
-const COORDINADORA = "Lic. Clara Inés Barragán de Contramaestre";
-
 const LOGO_PATH = "/images/logo/mavet2.png";
 const MARGIN = 18;
 
@@ -84,19 +82,40 @@ function addSignatureBlock(doc: any, y: number): number {
   doc.setTextColor(...C.brand);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text(COORDINADORA, cx, y, { align: "center" });
-  y += 4;
-
-  doc.setTextColor(...C.textMuted);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
   doc.text("Coordinadora – MAVET", cx, y, { align: "center" });
-  y += 3;
+  y += 4;
 
   doc.setTextColor(...C.textMuted);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(6);
-  doc.text("Sello y firma de la coordinación", cx, y, { align: "center" });
+  doc.text("(Sello y firma de la coordinación)", cx, y, { align: "center" });
+
+  return y + 4;
+}
+
+function addTwoSignatureBlocks(doc: any, y: number): number {
+  const pw = doc.internal.pageSize.getWidth();
+  const cx1 = pw * 0.3;
+  const cx2 = pw * 0.7;
+
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.4);
+  doc.line(cx1 - 25, y, cx1 + 25, y);
+  doc.line(cx2 - 25, y, cx2 + 25, y);
+  y += 4;
+
+  doc.setTextColor(...C.text);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Coordinadora – MAVET", cx1, y, { align: "center" });
+  doc.text("Firma y Cédula del Solicitante", cx2, y, { align: "center" });
+  y += 4;
+
+  doc.setTextColor(...C.textMuted);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(6);
+  doc.text("(Sello y firma de la coordinación)", cx1, y, { align: "center" });
+  doc.text("(Aceptación de términos)", cx2, y, { align: "center" });
 
   return y + 4;
 }
@@ -495,10 +514,17 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       { label: "Tipo de Evento", value: ev.extendedProps?.tipoEvento || "—" },
       { label: "Organizador", value: ev.extendedProps?.organizador || "—" },
       { label: "Cédula / RIF", value: ev.extendedProps?.cedula || "—" },
+      { label: "Correo Electrónico", value: ev.extendedProps?.correo_electronico || "—" },
       { label: "Fecha del Evento", value: ev.start?.split("T")[0] || "—" },
       {
         label: "Horario",
         value: `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
+      },
+      { 
+        label: "Recursos", 
+        value: ev.extendedProps?.recursos_solicitados && Array.isArray(ev.extendedProps.recursos_solicitados) && ev.extendedProps.recursos_solicitados.length > 0
+          ? ev.extendedProps.recursos_solicitados.join(", ") 
+          : "Ninguno" 
       },
     ];
 
@@ -531,67 +557,55 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       y += rh;
     });
 
-    // ── Estatus ──
-    y += 6;
+    // ── Términos y Responsabilidades ──
+    y += 10;
     doc.setTextColor(...C.text);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("ESTATUS DE APROBACIÓN", MARGIN, y);
-    y += 7;
+    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN, y);
+    y += 6;
 
-    const estatus = ev.extendedProps?.estatus_aprobacion || "pendiente";
-    const estatusColor = estatus === "aprobado"
-      ? [22, 163, 74] as [number, number, number]
-      : estatus === "rechazado"
-        ? [220, 38, 38] as [number, number, number]
-        : [200, 140, 0] as [number, number, number];
-    const estatusBg = estatus === "aprobado"
-      ? [230, 250, 235] as [number, number, number]
-      : estatus === "rechazado"
-        ? [255, 235, 235] as [number, number, number]
-        : [255, 248, 225] as [number, number, number];
-    const estatusText = estatus === "aprobado"
-      ? "APROBADO"
-      : estatus === "rechazado"
-        ? "RECHAZADO"
-        : "PENDIENTE DE APROBACIÓN";
+    const terminos = [
+      "Primera: El solicitante declara recibir las instalaciones y recursos mobiliarios en perfectas condiciones de uso, orden y limpieza.",
+      "Segunda: El solicitante asume la responsabilidad absoluta por cualquier daño, deterioro o pérdida que sufran las instalaciones o mobiliario durante el préstamo, comprometiéndose a resarcir económicamente al MAVET o reponer el bien afectado de forma inmediata.",
+      "Tercera: El espacio será utilizado única y exclusivamente para el motivo declarado.",
+      "Cuarta: Al finalizar, el solicitante se compromete a entregar el espacio en las mismas condiciones en las que fue recibido, respetando el horario."
+    ];
 
-    const bw = 72;
-    const bh = 9;
-    doc.setFillColor(...estatusBg);
-    doc.setDrawColor(...estatusColor);
-    doc.setLineWidth(0.4);
-    doc.rect(MARGIN, y - 6, bw, bh, "FD");
-    doc.setTextColor(...estatusColor);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(estatusText, MARGIN + 5, y + 0.5);
-    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C.textMuted);
+    doc.setFillColor(250, 248, 246); // Light warm background
+    doc.rect(MARGIN, y - 4, pw - MARGIN * 2, 45, "F"); // Background box
+    
+    // Left accent line
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(1);
+    doc.line(MARGIN, y - 4, MARGIN, y - 4 + 45);
 
-    if (estatus === "aprobado" && ev.extendedProps?.aprobado_por_nombre) {
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.text(`Aprobado por: ${ev.extendedProps.aprobado_por_nombre}`, MARGIN, y);
-      y += 5;
-    }
+    y += 1;
+    terminos.forEach((term) => {
+      // Bold the clause title (e.g. "Primera:")
+      const colonIndex = term.indexOf(":");
+      const title = term.substring(0, colonIndex + 1);
+      const text = term.substring(colonIndex + 1);
 
-    if (estatus === "rechazado" && ev.extendedProps?.motivo_rechazo) {
-      doc.setTextColor(...[180, 40, 40] as [number, number, number]);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
-      doc.text("Motivo del rechazo:", MARGIN, y);
-      y += 4.5;
+      doc.setTextColor(...C.text);
+      doc.text(title, MARGIN + 4, y);
+      
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      const lines = doc.splitTextToSize(ev.extendedProps.motivo_rechazo, pw - MARGIN * 2 - 10);
-      doc.text(lines, MARGIN + 2, y);
-      y += lines.length * 4.5 + 2;
-    }
+      doc.setTextColor(...C.textMuted);
+      const titleWidth = doc.getTextWidth(title);
+      const lines = doc.splitTextToSize(text, pw - MARGIN * 2 - 6 - titleWidth);
+      doc.text(lines, MARGIN + 4 + titleWidth + 1, y, { align: "justify", maxWidth: pw - MARGIN * 2 - 6 - titleWidth });
+      y += lines.length * 4;
+    });
 
-    // ── Firma de la coordinadora ──
-    y = Math.max(y, ph - 80);
-    y = addSignatureBlock(doc, y);
+    // ── Firmas ──
+    y = Math.max(y + 25, ph - 45);
+    y = addTwoSignatureBlocks(doc, y);
 
     // ── Footer ──
     doc.setFont("helvetica", "italic");

@@ -22,6 +22,8 @@ const mapEvento = (item: any): EventoAuditorio => {
       numero_expediente: item.numero_expediente || "",
       motivo_rechazo: item.motivo_rechazo || "",
       aprobado_por_nombre: ap,
+      correo_electronico: item.correo_electronico || "",
+      recursos_solicitados: item.recursos_solicitados || [],
     },
   };
 };

@@ -22,7 +22,7 @@ import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
-import { exportarHistorialEventos } from "../../services/pdf.service";
+import { exportarHistorialEventos, exportarComprobanteReserva } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { validateRequired } from "../../utils/validation";
 import { formatCedula, normalizeCedula } from "../../utils/formatters";
@@ -52,8 +52,8 @@ const Auditorio: React.FC = () => {
   const [organizadorAuto, setOrganizadorAuto] = useState(false);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
   const [customTipoEvento, setCustomTipoEvento] = useState("");
-  const [estatusAprobacion, setEstatusAprobacion] = useState("pendiente");
-  
+  const [correoElectronico, setCorreoElectronico] = useState("");
+  const [recursosSolicitados, setRecursosSolicitados] = useState<string[]>([]);
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
   const [espacios, setEspacios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,12 +91,14 @@ const Auditorio: React.FC = () => {
       eventDate !== "" &&
       cedulaOrganizador.trim() !== "" &&
       organizador.trim() !== "" &&
+      correoElectronico.trim() !== "" &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoElectronico) &&
       horaInicio !== "" &&
       horaFin !== "" &&
       horaInicio < horaFin &&
       Object.values(fieldErrors).every(e => !e)
     );
-  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, horaInicio, horaFin, fieldErrors]);
+  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, correoElectronico, horaInicio, horaFin, fieldErrors]);
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
@@ -406,6 +408,9 @@ const Auditorio: React.FC = () => {
     setOrganizador(ev.extendedProps.organizador || "");
     setCedulaOrganizador(ev.extendedProps?.cedula || ""); 
     setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
+    setCorreoElectronico(ev.extendedProps?.correo_electronico || "");
+    setRecursosSolicitados(ev.extendedProps?.recursos_solicitados || []);
+    
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
     setIsPastEvent(evDate < today || ev.extendedProps?.estado === 'Realizada');
@@ -509,15 +514,32 @@ const Auditorio: React.FC = () => {
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
-        estatus_aprobacion: estatusAprobacion,
+        estatus_aprobacion: "aprobado",
+        correo_electronico: correoElectronico,
+        recursos_solicitados: recursosSolicitados,
       };
 
       if (selectedEvent) {
         await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
         toast.success("Reserva actualizada exitosamente");
       } else {
-        await mavetApi.registrarReservaAuditorio(payload);
+        const response = await mavetApi.registrarReservaAuditorio(payload);
         toast.success("Reserva creada exitosamente");
+        // Convertir el payload a formato EventoAuditorio para el PDF
+        const evToExport = {
+          id: response.data?.id || response.data?.data?.id_solicitud || "nuevo",
+          title: eventTitle,
+          start: `${eventDate}T${horaInicio}:00`,
+          end: `${eventDate}T${horaFin}:00`,
+          codigo_reserva: codigoReserva,
+          extendedProps: {
+            organizador: organizador,
+            cedula: cedulaOrganizador,
+            tipoEvento: tipoFinal,
+            recursos_solicitados: recursosSolicitados,
+          }
+        } as EventoAuditorio;
+        exportarComprobanteReserva(evToExport);
       }
       
       const data = await mavetApi.getEventos();
@@ -584,7 +606,8 @@ const Auditorio: React.FC = () => {
     setFieldErrors({});
     setIsPastEvent(false);
     setIsDateLocked(false);
-    setEstatusAprobacion("pendiente");
+    setCorreoElectronico("");
+    setRecursosSolicitados([]);
   };
 
   const handleAprobar = async (id: string) => {
@@ -1237,46 +1260,26 @@ const Auditorio: React.FC = () => {
               </div>
 
               <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Estado de la Reserva</h4>
-                <div className="flex gap-4">
-                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all ${
-                    estatusAprobacion === "pendiente"
-                      ? "border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20 ring-1 ring-blue-400/30"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                  }`}>
-                    <input
-                      type="radio"
-                      name="estatusAprobacion"
-                      value="pendiente"
-                      checked={estatusAprobacion === "pendiente"}
-                      onChange={() => setEstatusAprobacion("pendiente")}
-                      disabled={isGerente || isPastEvent}
-                      className="accent-brand-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">Pendiente</span>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Requiere aprobación</p>
-                    </div>
-                  </label>
-                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all ${
-                    estatusAprobacion === "confirmado"
-                      ? "border-emerald-400 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-900/20 ring-1 ring-emerald-400/30"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                  }`}>
-                    <input
-                      type="radio"
-                      name="estatusAprobacion"
-                      value="confirmado"
-                      checked={estatusAprobacion === "confirmado"}
-                      onChange={() => setEstatusAprobacion("confirmado")}
-                      disabled={isGerente || isPastEvent}
-                      className="accent-emerald-600"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">Confirmado</span>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Aprobación directa</p>
-                    </div>
-                  </label>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Recursos Solicitados</h4>
+                <div className="flex flex-wrap gap-3">
+                  {["Sillas", "Mesas", "Cortinas", "Sonido", "Proyector", "Micrófono"].map((recurso) => (
+                    <label key={recurso} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={recursosSolicitados.includes(recurso)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setRecursosSolicitados([...recursosSolicitados, recurso]);
+                          } else {
+                            setRecursosSolicitados(recursosSolicitados.filter(r => r !== recurso));
+                          }
+                        }}
+                        disabled={isGerente || isPastEvent}
+                        className="accent-brand-600 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{recurso}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -1347,6 +1350,19 @@ const Auditorio: React.FC = () => {
                       placeholder="Se autocompleta con cédula"
                     />
                   </div>
+
+                  <div className="space-y-2 col-span-1 md:col-span-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Correo Electrónico *</label>
+                    <input
+                      required
+                      type="email"
+                      value={correoElectronico}
+                      onChange={(e) => setCorreoElectronico(e.target.value)}
+                      disabled={isGerente || isPastEvent}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
+                      placeholder="ejemplo@correo.com"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1390,6 +1406,20 @@ const Auditorio: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
+                    {selectedEvent && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!selectedEvent) return;
+                          const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                          exportarComprobanteReserva(selectedEvent);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Descargar PDF</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={closeModal}
