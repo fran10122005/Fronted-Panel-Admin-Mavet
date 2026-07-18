@@ -528,6 +528,8 @@ const Auditorio: React.FC = () => {
             cedula: cedulaOrganizador,
             tipoEvento: tipoFinal,
             recursos_solicitados: recursosSolicitados,
+            correo_electronico: correoElectronico,
+            numero_expediente: response.data?.numero_expediente || "",
           }
         } as EventoAuditorio;
         exportarComprobanteReserva(evToExport);
