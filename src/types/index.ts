@@ -210,6 +210,8 @@ export interface RegistroAsistencia {
   salida: string;
   horasCumplidas: number | null;
   observaciones: string;
+  horas_justificadas?: number | null;
+  tipo_justificacion?: TipoJustificacion | null;
 }
 
 export interface Prestamo {
@@ -224,6 +226,21 @@ export interface Prestamo {
   estado: "ACTIVO" | "DEVUELTO";
 }
 
+export type TipoJustificacion = "medica" | "personal" | "permiso" | "lottt" | "otro";
+
+export interface DiaResumen {
+  id: string;
+  fecha: string;
+  entrada: string | null;
+  salida: string | null;
+  horas: number | null;
+  observaciones: string | null;
+  horas_justificadas: number | null;
+  tipo_justificacion?: TipoJustificacion | null;
+  retardo?: boolean;
+  salida_temprano?: boolean;
+}
+
 export interface ResumenSemanalTrabajador {
   id_trabajador: number;
   cedula: string;
@@ -236,15 +253,7 @@ export interface ResumenSemanalTrabajador {
   cumplio: boolean;
   justificado?: boolean;
   observaciones: string | null;
-  dias: Array<{
-    id: string;
-    fecha: string;
-    entrada: string | null;
-    salida: string | null;
-    horas: number | null;
-    observaciones: string | null;
-    horas_justificadas: number | null;
-  }>;
+  dias: DiaResumen[];
 }
 
 export interface TopVisitante {

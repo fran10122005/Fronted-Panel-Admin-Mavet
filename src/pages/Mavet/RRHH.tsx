@@ -5,12 +5,14 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
+import FacialEnrollModal from "./rrhh/FacialEnrollModal";
 import JustificacionModal from "./rrhh/JustificacionModal";
 import ObservacionModal from "./rrhh/ObservacionModal";
 import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import { formatHoras } from "../../utils/formatters";
+import { DiaResumen } from "../../types";
 import Pagination from "../../components/ui/Pagination";
 
 const IconEdit = () => (
@@ -21,6 +23,26 @@ const IconEdit = () => (
 );
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
+
+const HORA_APERTURA = 8 * 60;
+const HORA_CIERRE = 17 * 60;
+const DESCANSO = 60;
+const HORA_SALIDA_MINIMA = HORA_CIERRE - DESCANSO;
+
+function minutosDesdeMediaNoche(horaStr: string): number {
+  const [h, m] = horaStr.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function esRetardo(entrada: string | null): boolean {
+  if (!entrada || entrada === "-") return false;
+  return minutosDesdeMediaNoche(entrada) > HORA_APERTURA + 5;
+}
+
+function esSalidaTemprano(salida: string | null): boolean {
+  if (!salida || salida === "-") return false;
+  return minutosDesdeMediaNoche(salida) < HORA_SALIDA_MINIMA;
+}
 
 export default function RRHH() {
   const { user } = useAuth();
@@ -74,8 +96,10 @@ export default function RRHH() {
     handleResetPassword,
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
-    handleDeleteTrabajador, handleDeleteUsuario,
-    resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
+    handleDeleteTrabajador,
+    handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
+    pendingFacialEnroll, setPendingFacialEnroll,
+    resumenSemanal, handleUpdateObservaciones, handleJustificarDia,
     selectedForJustificacion, setSelectedForJustificacion,
     usuarios,
   } = useRRHH();
@@ -253,7 +277,24 @@ export default function RRHH() {
               )}
 
               {activeTab === "usuarios" && (
-                <table className="w-full text-left border-collapse">
+                <>
+                  <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Filtrar:</span>
+                    {(["activos", "suspendidos", "todos"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setFiltroEstadoUsuarios(f)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          filtroEstadoUsuarios === f
+                            ? "bg-brand-500 text-white shadow-sm"
+                            : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        {f === "activos" ? "Activos" : f === "suspendidos" ? "Suspendidos" : "Todos"}
+                      </button>
+                    ))}
+                  </div>
+                  <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
                       <th className="px-3 py-2 w-10"></th>
@@ -302,9 +343,21 @@ export default function RRHH() {
                               <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                               </button>
-                              {!(u.rol === "Administrador" && activeAdminsCount <= 1) && (
-                                <button onClick={() => handleDeleteUsuario(u)} title="Eliminar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              {(!(u.rol === "Administrador" && activeAdminsCount <= 1 && u.estado === true)) && (
+                                <button
+                                  onClick={() => handleToggleEstadoUsuario(u)}
+                                  title={u.estado === true ? "Suspender usuario" : "Activar usuario"}
+                                  className={`inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                                    u.estado === true
+                                      ? "border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                      : "border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                  }`}
+                                >
+                                  {u.estado === true ? (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                  ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                  )}
                                 </button>
                               )}
                            </div>
@@ -313,6 +366,7 @@ export default function RRHH() {
                     ))}
                   </tbody>
                 </table>
+                </>
               )}
 
               {activeTab === "asistencias" && (
@@ -325,10 +379,15 @@ export default function RRHH() {
                         <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">({resumenSemanal.length} trabajadores)</span>
                       </summary>
                       
-                      <div className="mt-2 pl-6 flex items-center gap-4 text-[11px] text-gray-500 dark:text-gray-400">
+                      <div className="mt-2 pl-6 flex items-center gap-4 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap">
                         <div className="flex items-center gap-1"><span className="text-green-600 dark:text-green-400 text-sm">✓</span> Completo</div>
                         <div className="flex items-center gap-1"><span className="text-blue-600 dark:text-blue-400 text-sm">📝</span> Justificado</div>
                         <div className="flex items-center gap-1"><span className="text-amber-500 text-sm">⚠</span> Incompleto</div>
+                        <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Asistió</div>
+                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Retardo</div>
+                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Justificado</div>
+                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Ausente</div>
                       </div>
 
                       <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -363,26 +422,36 @@ export default function RRHH() {
                                     <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-2">
+                        <td className="px-3 py-2">
                                   <div className="flex items-center gap-2">
-                                    {r.observaciones ? (
-                                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={r.observaciones}>
-                                        {r.observaciones}
-                                      </span>
-                                    ) : null}
-                                    {!r.cumplio && !r.justificado && !isGerente && new Date().getDay() === 3 && (
+                                    <div className="flex items-center gap-1" title={r.dias.map((d) => {
+                                      const fecha = new Date(d.fecha + "T12:00:00").toLocaleDateString("es-VE", { weekday: "short" });
+                                      if (d.horas_justificadas && d.tipo_justificacion) return `${fecha}: Justificado`;
+                                      if (d.retardo) return `${fecha}: Retardo`;
+                                      if (d.horas && d.horas > 0) return `${fecha}: ${d.horas}h`;
+                                      return `${fecha}: Ausente`;
+                                    }).join(", ")}>
+                                      {r.dias.map((d, i) => {
+                                        let color = "bg-red-400";
+                                        if (d.horas_justificadas && d.tipo_justificacion) color = "bg-blue-500";
+                                        else if (d.retardo) color = "bg-amber-500";
+                                        else if (d.horas && d.horas > 0) color = "bg-green-500";
+                                        return <span key={i} className={`w-2 h-2 rounded-full ${color} inline-block`} />;
+                                      })}
+                                    </div>
+                                    {!r.cumplio && !r.justificado && !isGerente && (
                                       <button
                                         onClick={() => setSelectedForJustificacion(r)}
-                                        className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
+                                        className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-2 py-1 transition-colors"
                                       >
                                         Justificar
                                       </button>
                                     )}
                                     {r.cumplio && (
-                                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">Completo</span>
+                                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800/50">Completo</span>
                                     )}
                                     {r.justificado && (
-                                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">Justificado</span>
+                                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800/50">Justificado</span>
                                     )}
                                   </div>
                                 </td>
@@ -404,26 +473,52 @@ export default function RRHH() {
                         <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
                         <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
                         <th className="px-4 py-2 text-center">Horas</th>
+                        <th className="px-4 py-2 text-center">Estado</th>
                         <th className="px-4 py-2">Observaciones</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredAsistencias.length === 0 ? (
-                        <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
-                      ) : filteredAsistencias.map((a) => (
+                        <tr><td colSpan={9} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
+                      ) : filteredAsistencias.map((a) => {
+                        const retardo = esRetardo(a.entrada);
+                        const salidaTemprano = esSalidaTemprano(a.salida);
+                        const justificadoTipo = a.tipo_justificacion;
+                        return (
                         <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                           <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
                           <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
                           <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
                           <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
                           <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
-                            <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
+                            <span className={`${a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"} ${retardo ? "after:content-['⚠'] after:ml-1 after:text-amber-500" : ""}`}>{a.entrada}</span>
                           </td>
                           <td className="px-4 py-2 text-center font-mono text-xs">
-                            <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
+                            <span className={`${a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"} ${salidaTemprano ? "after:content-['⚠'] after:ml-1 after:text-amber-500" : ""}`}>{a.salida}</span>
                           </td>
                           <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                        <td className="px-4 py-2 max-w-[160px]">
+                          <td className="px-4 py-2 text-center">
+                            {justificadoTipo ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
+                                Justificado
+                              </span>
+                            ) : retardo ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400" title="Llegó después de las 8:00am">
+                                Retardo
+                              </span>
+                            ) : salidaTemprano ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400" title="Salió antes de las 4:00pm">
+                                Temprano
+                              </span>
+                            ) : a.horasCumplidas !== null ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400">
+                                A tiempo
+                              </span>
+                            ) : (
+                              <span className="text-gray-300 dark:text-gray-600">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 max-w-[160px]">
                             {isGerente ? (
                               <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
                                 {a.observaciones || "—"}
@@ -444,7 +539,8 @@ export default function RRHH() {
                               )}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </>
@@ -519,7 +615,7 @@ export default function RRHH() {
       <JustificacionModal
         trabajador={selectedForJustificacion}
         onClose={() => setSelectedForJustificacion(null)}
-        onSave={handleJustificarSemana}
+        onSave={handleJustificarDia}
       />
 
       <ObservacionModal
@@ -536,6 +632,16 @@ export default function RRHH() {
           import("../../services/pdf.service").then(m => m.exportarReporteAsistencia(params));
         }}
       />
+
+      {pendingFacialEnroll && (
+        <FacialEnrollModal
+          isOpen={!!pendingFacialEnroll}
+          onClose={() => setPendingFacialEnroll(null)}
+          trabajadorId={pendingFacialEnroll.id}
+          trabajadorNombre={pendingFacialEnroll.nombre}
+          onSuccess={() => setPendingFacialEnroll(null)}
+        />
+      )}
 
       <ConfirmDialog {...confirm} />
     </div>

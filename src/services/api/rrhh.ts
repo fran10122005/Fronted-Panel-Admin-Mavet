@@ -67,6 +67,8 @@ export const rrhh = {
             : "-",
           horasCumplidas: item.horas_cumplidas_dia ?? null,
           observaciones: item.observaciones || "",
+          horas_justificadas: item.horas_justificadas ?? null,
+          tipo_justificacion: item.tipo_justificacion || null,
         };
       });
       return extractPagination(res, list);
@@ -181,15 +183,14 @@ export const rrhh = {
     }
   },
 
-  updateAsistenciaObservaciones: async (id: string, observaciones: string, horas_justificadas?: number): Promise<void> => {
+  updateAsistenciaObservaciones: async (id: string, observaciones: string, horas_justificadas?: number, tipo_justificacion?: string): Promise<void> => {
     const body: any = { observaciones };
     if (horas_justificadas !== undefined) body.horas_justificadas = horas_justificadas;
+    if (tipo_justificacion !== undefined) body.tipo_justificacion = tipo_justificacion;
     await axiosInstance.patch(`/api/rrhh/asistencias/${id}`, body);
   },
 
-  justificarHoras: async (cedula: string, observaciones: string, horas_justificadas: number): Promise<void> => {
-    await axiosInstance.post('/api/rrhh/asistencias/justificar', { cedula, observaciones, horas_justificadas });
-  },
+
 
   verificarPin: async (payload: PinVerificarPayload): Promise<PinVerificarResponse> => {
     try {

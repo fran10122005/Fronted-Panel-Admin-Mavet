@@ -50,7 +50,7 @@ interface Props {
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;
-  onSubmit: (data: TrabajadorFormValues, photoFile: File | null) => void;
+  onSubmit: (data: TrabajadorFormValues, photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean) => void;
   inputCls: string;
 }
 
@@ -67,6 +67,9 @@ export default function TrabajadorFormModal({
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState("");
+  const [generarPin, setGenerarPin] = useState(false);
+  const [habilitarFacial, setHabilitarFacial] = useState(false);
   
   const [nacionalidad, setNacionalidad] = useState("V-");
   const [numeroCedula, setNumeroCedula] = useState("");
@@ -107,6 +110,9 @@ export default function TrabajadorFormModal({
       reset(formattedInitialData);
       setPhotoFile(null);
       setPhotoPreview(initialData.foto_url || null);
+      setPhotoError("");
+      setGenerarPin(false);
+      setHabilitarFacial(false);
 
       setTimeout(() => {
         fps = flatpickr(".flatpickr-wrap", {
@@ -142,6 +148,11 @@ export default function TrabajadorFormModal({
   }, [nacionalidad, numeroCedula, setValue]);
 
   const handleFormSubmit = (data: TrabajadorFormValues) => {
+    if (!editingTrabajadorId && !photoPreview) {
+      setPhotoError("La foto es obligatoria");
+      return;
+    }
+
     const parseDate = (dateStr?: string) => {
       if (!dateStr) return dateStr;
       if (dateStr.includes('/')) {
@@ -157,7 +168,7 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData, photoFile);
+    onSubmit(finalData, photoFile, generarPin, habilitarFacial);
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,10 +179,12 @@ export default function TrabajadorFormModal({
         const compressed = await compressImage(file, 400, 400, 0.8);
         setPhotoFile(compressed);
         setPhotoPreview(URL.createObjectURL(compressed));
+        setPhotoError("");
       } catch (error) {
         console.error("Error al comprimir imagen", error);
         setPhotoFile(file);
         setPhotoPreview(URL.createObjectURL(file));
+        setPhotoError("");
       }
     }
   };
@@ -203,6 +216,7 @@ export default function TrabajadorFormModal({
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </label>
                 </div>
+                {photoError && <p className="text-red-500 text-xs mt-1">{photoError}</p>}
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
@@ -373,6 +387,38 @@ export default function TrabajadorFormModal({
               </div>
             </div>
           </div>
+
+          {!editingTrabajadorId && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Opciones de Asistencia</h5>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={generarPin}
+                    onChange={(e) => setGenerarPin(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generar PIN</span>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={habilitarFacial}
+                    onChange={(e) => setHabilitarFacial(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Reconocimiento Facial</span>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Habilitar verificación facial en el kiosko</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700">
             <button

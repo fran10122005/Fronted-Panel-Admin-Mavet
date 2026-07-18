@@ -47,6 +47,7 @@ export function useRRHH() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const [filtroEstadoUsuarios, setFiltroEstadoUsuarios] = useState<"todos" | "activos" | "suspendidos">("activos");
   const [formData, setFormData] = useState(initialTrabajadorState);
   const [formUsuario, setFormUsuario] = useState(initialUsuarioState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +70,7 @@ export function useRRHH() {
   const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
   const [selectedTrabajadorForDetail, setSelectedTrabajadorForDetail] = useState<Trabajador | null>(null);
   const [selectedForJustificacion, setSelectedForJustificacion] = useState<ResumenSemanalTrabajador | null>(null);
+  const [pendingFacialEnroll, setPendingFacialEnroll] = useState<{ id: string; nombre: string } | null>(null);
 
   const refreshData = async () => {
     const [dataCargos, dataUsers, dataRoles] = await Promise.all([
@@ -137,9 +139,9 @@ export function useRRHH() {
     }
   };
 
-  const handleJustificarSemana = async (cedula: string, observaciones: string, horas_justificadas: number) => {
+  const handleJustificarDia = async (id: string, observaciones: string, horas_justificadas: number, tipo_justificacion: string) => {
     try {
-      await mavetApi.justificarHoras(cedula, observaciones, horas_justificadas);
+      await mavetApi.updateAsistenciaObservaciones(id, observaciones, horas_justificadas, tipo_justificacion);
       await refreshResumenSemanal();
     } catch (error) {
       toast.error("Error al guardar justificación");
@@ -261,9 +263,27 @@ export function useRRHH() {
     });
   };
 
+  const handleToggleEstadoUsuario = async (u: Usuario) => {
+    const nuevoEstado = !u.estado;
+    const accion = nuevoEstado ? "activar" : "suspender";
+    requestConfirm({
+      title: `${accion === "activar" ? "Activar" : "Suspender"} usuario`,
+      message: `¿Está seguro de que desea ${accion} al usuario "${u.correo}"?`,
+      variant: accion === "suspender" ? "danger" : "default",
+      confirmLabel: accion === "activar" ? "Activar" : "Suspender",
+      onConfirm: async () => {
+        try {
+          await mavetApi.actualizarUsuario(u.id, { estado: nuevoEstado } as any);
+          toast.success(`Usuario ${accion === "activar" ? "activado" : "suspendido"} exitosamente.`);
+          await refreshData();
+        } catch (err: any) {
+          toast.error(err.message || `Error al ${accion} usuario.`);
+        }
+      },
+    });
+  };
 
-
-  const handleSubmitTrabajador = async (data: any, photoFile?: File | null) => {
+  const handleSubmitTrabajador = async (data: any, photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean) => {
     setIsSubmitting(true);
     try {
       let trabajadorId = editingTrabajadorId;
@@ -281,6 +301,21 @@ export function useRRHH() {
         toast.loading("Subiendo foto...", { id: "upload-photo" });
         await mavetApi.subirFotoTrabajador(trabajadorId, photoFile);
         toast.success("Foto subida correctamente.", { id: "upload-photo" });
+      }
+
+      if (trabajadorId && editingTrabajadorId === null) {
+        if (generarPin) {
+          try {
+            const result = await mavetApi.resetPinTrabajador(trabajadorId.toString());
+            toast.success(`PIN generado para ${data.nombres} ${data.apellidos}: ${result.pinTemporal}`, { duration: 10000 });
+          } catch (err: any) {
+            toast.error(err.message || "Error al generar PIN");
+          }
+        }
+
+        if (habilitarFacial) {
+          setPendingFacialEnroll({ id: trabajadorId.toString(), nombre: `${data.nombres} ${data.apellidos}` });
+        }
       }
 
       closeTrabajador();
@@ -380,11 +415,16 @@ export function useRRHH() {
     ), [trabajadores, debouncedSearch]);
 
   const filteredUsuarios = useMemo(() =>
-    usuarios.filter((u) =>
-      u.correo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (u.trabajador?.cedula || "").toLowerCase().includes(debouncedSearch.toLowerCase().replace(/^[VEve]-/, ''))
-    ), [usuarios, debouncedSearch]);
+    usuarios.filter((u) => {
+      const matchesSearch =
+        u.correo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (u.trabajador?.nombre || "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (u.trabajador?.cedula || "").toLowerCase().includes(debouncedSearch.toLowerCase().replace(/^[VEve]-/, ''));
+      if (!matchesSearch) return false;
+      if (filtroEstadoUsuarios === "activos") return u.estado === true;
+      if (filtroEstadoUsuarios === "suspendidos") return u.estado === false;
+      return true;
+    }), [usuarios, debouncedSearch, filtroEstadoUsuarios]);
 
   return {
     asistencias, trabajadores, usuarios, cargos, roles,
@@ -399,7 +439,7 @@ export function useRRHH() {
     asistPage, asistTotalPages, asistTotalItems, asistFecha, setAsistFecha,
     refreshTrabajadores, refreshAsistencias, refreshData,
     refreshResumenSemanal,
-    resumenSemanal, handleUpdateObservaciones, handleJustificarSemana,
+    resumenSemanal, handleUpdateObservaciones, handleJustificarDia,
     filteredAsistencias, filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
@@ -409,6 +449,8 @@ export function useRRHH() {
     handleSubmitTrabajador, handleSubmitUsuario,
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleCartaAval, handleDeleteTrabajador, handleDeleteUsuario,
+    handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
+    pendingFacialEnroll, setPendingFacialEnroll,
 
   };
 }
