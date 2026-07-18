@@ -380,6 +380,8 @@ const Auditorio: React.FC = () => {
         numero_expediente: (event.extendedProps as any)?.numero_expediente || "",
         motivo_rechazo: (event.extendedProps as any)?.motivo_rechazo || "",
         aprobado_por_nombre: (event.extendedProps as any)?.aprobado_por_nombre || "",
+        correo_electronico: (event.extendedProps as any)?.correo_electronico || "",
+        recursos_solicitados: (event.extendedProps as any)?.recursos_solicitados || [],
       }
     });
     setCodigoReserva((event as any).codigo_reserva || event.id || "");
@@ -390,6 +392,8 @@ const Auditorio: React.FC = () => {
     setOrganizador(event.extendedProps?.organizador || "");
     setCedulaOrganizador(event.extendedProps?.cedula || "");
     setTipoEvento(event.extendedProps?.tipoEvento || "Conferencia");
+    setCorreoElectronico((event.extendedProps as any)?.correo_electronico || "");
+    setRecursosSolicitados((event.extendedProps as any)?.recursos_solicitados || []);
     // Bloquear edición si la fecha ya pasó
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((event.start?.split("T")[0] || "") + "T00:00:00");
@@ -514,7 +518,6 @@ const Auditorio: React.FC = () => {
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
-        estatus_aprobacion: "aprobado",
         correo_electronico: correoElectronico,
         recursos_solicitados: recursosSolicitados,
       };
