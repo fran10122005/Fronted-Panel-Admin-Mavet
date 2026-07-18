@@ -1,4 +1,4 @@
-import { Obra, RegistroAsistencia, Trabajador } from "../types";
+import { Obra, RegistroAsistencia, Trabajador, EventoAuditorio } from "../types";
 import { axiosInstance } from "./api";
 
 // ─── Premium color palette ──────────────────────────────────────────────────
@@ -9,7 +9,6 @@ const C = {
   line: [228, 228, 228] as [number, number, number],
   rowOdd: [253, 248, 246] as [number, number, number],
 };
-
 const LOGO_PATH = "/images/logo/mavet2.png";
 const MARGIN = 18;
 
@@ -70,6 +69,107 @@ async function addHeader(doc: any, title: string) {
   doc.line(MARGIN, barY + 1, pw - MARGIN, barY + 1);
 }
 
+// ─── Reusable: Signature block for the coordinator ──────────────────────────
+function addSignatureBlock(doc: any, y: number): number {
+  const pw = doc.internal.pageSize.getWidth();
+  const cx = pw / 2;
+
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.4);
+  doc.line(cx - 30, y, cx + 30, y);
+  y += 4;
+
+  doc.setTextColor(...C.brand);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Coordinador (a) - MAVET", cx, y, { align: "center" });
+  y += 4;
+
+  doc.setTextColor(...C.textMuted);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(6);
+  doc.text("(Sello y firma)", cx, y, { align: "center" });
+
+  return y + 4;
+}
+
+function addTwoSignatureBlocks(doc: any, y: number): number {
+  const pw = doc.internal.pageSize.getWidth();
+  const cx1 = pw * 0.3;
+  const cx2 = pw * 0.7;
+
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.4);
+  doc.line(cx1 - 25, y, cx1 + 25, y);
+  doc.line(cx2 - 25, y, cx2 + 25, y);
+  y += 4;
+
+  doc.setTextColor(...C.text);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Coordinador (a) - MAVET", cx1, y, { align: "center" });
+  doc.text("Firma y Cédula del Solicitante", cx2, y, { align: "center" });
+  y += 4;
+
+  doc.setTextColor(...C.textMuted);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(6);
+  doc.text("(Sello y firma)", cx1, y, { align: "center" });
+  doc.text("(Aceptación de términos)", cx2, y, { align: "center" });
+
+  return y + 4;
+}
+
+// ─── Reusable: Page numbers + footer ──────────────────────────────────────
+function addPageNumbers(doc: any, pw: number) {
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  const today = new Date().toLocaleDateString("es-VE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const ph = doc.internal.pageSize.getHeight();
+
+    doc.setDrawColor(...C.line);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.text(today, MARGIN, ph - 9);
+    doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
+      align: "right",
+    });
+  }
+}
+
+// ─── Reusable: didDrawPage for multipage header re-draw ─────────────────────
+function makeDidDrawPage(title: string, pw: number) {
+  return (data: any) => {
+    if (data.pageNumber > 1) {
+      const doc2 = data.doc;
+      doc2.setTextColor(...C.text);
+      doc2.setFont("helvetica", "bold");
+      doc2.setFontSize(11);
+      doc2.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
+      doc2.setTextColor(...C.brand);
+      doc2.setFont("helvetica", "bold");
+      doc2.setFontSize(10);
+      doc2.text(title, MARGIN, 16);
+      doc2.setDrawColor(...C.brand);
+      doc2.setLineWidth(0.8);
+      doc2.line(MARGIN, 24, pw - MARGIN, 24);
+      doc2.setDrawColor(...C.line);
+      doc2.setLineWidth(0.2);
+      doc2.line(MARGIN, 25, pw - MARGIN, 25);
+    }
+  };
+}
+
 // ─── PDF: Inventario de Obras ───────────────────────────────────────────────
 export async function exportarInventarioObras(obras: Obra[]) {
   try {
@@ -86,7 +186,8 @@ export async function exportarInventarioObras(obras: Obra[]) {
     });
     const pw = doc.internal.pageSize.getWidth();
 
-    await addHeader(doc, "INVENTARIO DE BÓVEDA – OBRAS DE ARTE");
+    const title = "INVENTARIO DE BÓVEDA – OBRAS DE ARTE";
+    await addHeader(doc, title);
 
     const tableData = obras.map((o) => [
       o.codigo_inventario || o.id?.toString() || "—",
@@ -130,49 +231,18 @@ export async function exportarInventarioObras(obras: Obra[]) {
         6: { cellWidth: 34 },
       },
       margin: { left: MARGIN, right: MARGIN, top: 32 },
-      didDrawPage: (data: any) => {
-        if (data.pageNumber > 1) {
-          const pw2 = doc.internal.pageSize.getWidth();
-          doc.setTextColor(...C.text);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(11);
-          doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
-          doc.setTextColor(...C.brand);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(10);
-          doc.text("INVENTARIO DE BÓVEDA – OBRAS DE ARTE", MARGIN, 16);
-          doc.setDrawColor(...C.brand);
-          doc.setLineWidth(0.8);
-          doc.line(MARGIN, 24, pw2 - MARGIN, 24);
-          doc.setDrawColor(...C.line);
-          doc.setLineWidth(0.2);
-          doc.line(MARGIN, 25, pw2 - MARGIN, 25);
-        }
-      },
+      didDrawPage: makeDidDrawPage(title, pw),
     });
 
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    addPageNumbers(doc, pw);
 
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      const ph = doc.internal.pageSize.getHeight();
-
-      doc.setDrawColor(...C.line);
-      doc.setLineWidth(0.2);
-      doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
-
-      doc.setFontSize(7);
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "normal");
-      doc.text(today, MARGIN, ph - 9);
-      doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
-        align: "right",
-      });
+    // Signature block on the last page
+    const ph = doc.internal.pageSize.getHeight();
+    const finalY = (doc as any).lastAutoTable.finalY || 32;
+    const signatureY = Math.min(finalY + 15, ph - 35);
+    if (signatureY + 20 < ph - 14) {
+      doc.setPage((doc as any).internal.getNumberOfPages());
+      addSignatureBlock(doc, signatureY);
     }
 
     doc.save(
@@ -209,7 +279,8 @@ export async function exportarReporteIngresos(
     const pw = doc.internal.pageSize.getWidth();
 
     const tituloPeriodo = periodo ? ` (${periodo})` : "";
-    await addHeader(doc, `REPORTE DE INGRESOS${tituloPeriodo}`);
+    const title = `REPORTE DE INGRESOS${tituloPeriodo}`;
+    await addHeader(doc, title);
 
     const tableData = ingresos.map((i: any) => {
       const nombre =
@@ -265,49 +336,18 @@ export async function exportarReporteIngresos(
         5: { cellWidth: 20, halign: "center" },
       },
       margin: { left: MARGIN, right: MARGIN, top: 32 },
-      didDrawPage: (data: any) => {
-        if (data.pageNumber > 1) {
-          const pw2 = doc.internal.pageSize.getWidth();
-          doc.setTextColor(...C.text);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(11);
-          doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
-          doc.setTextColor(...C.brand);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(10);
-          doc.text(`REPORTE DE INGRESOS${tituloPeriodo}`, MARGIN, 16);
-          doc.setDrawColor(...C.brand);
-          doc.setLineWidth(0.8);
-          doc.line(MARGIN, 24, pw2 - MARGIN, 24);
-          doc.setDrawColor(...C.line);
-          doc.setLineWidth(0.2);
-          doc.line(MARGIN, 25, pw2 - MARGIN, 25);
-        }
-      },
+      didDrawPage: makeDidDrawPage(title, pw),
     });
 
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    const today = new Date().toLocaleDateString("es-VE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    addPageNumbers(doc, pw);
 
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      const ph = doc.internal.pageSize.getHeight();
-
-      doc.setDrawColor(...C.line);
-      doc.setLineWidth(0.2);
-      doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
-
-      doc.setFontSize(7);
-      doc.setTextColor(...C.textMuted);
-      doc.setFont("helvetica", "normal");
-      doc.text(today, MARGIN, ph - 9);
-      doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
-        align: "right",
-      });
+    // Signature block on the last page
+    const ph = doc.internal.pageSize.getHeight();
+    const finalY = (doc as any).lastAutoTable.finalY || 32;
+    const signatureY = Math.min(finalY + 15, ph - 35);
+    if (signatureY + 20 < ph - 14) {
+      doc.setPage((doc as any).internal.getNumberOfPages());
+      addSignatureBlock(doc, signatureY);
     }
 
     doc.save(`MAVET_Ingresos_${new Date().toISOString().split("T")[0]}.pdf`);
@@ -443,6 +483,146 @@ export async function exportarQRPublico(
   }
 }
 
+// ─── PDF: Comprobante de Reserva de Auditorio ────────────────────────────────
+export async function exportarComprobanteReserva(ev: EventoAuditorio) {
+  try {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+
+    await addHeader(doc, "COMPROBANTE DE RESERVA DE ESPACIO");
+
+    // ── Datestamp ──
+    const now = new Date();
+    doc.setTextColor(...C.textMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.text(
+      `Emitido: ${now.toLocaleDateString("es-VE", {
+        day: "2-digit", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })}`,
+      MARGIN, 30,
+    );
+
+    // ── Info box ──
+    const info: { label: string; value: string }[] = [
+      { label: "N° de Expediente", value: ev.extendedProps?.numero_expediente || ev.numero_expediente || "—" },
+      { label: "Código de Reserva", value: ev.codigo_reserva || "—" },
+      { label: "Motivo / Evento", value: ev.title || "—" },
+      { label: "Tipo de Evento", value: ev.extendedProps?.tipoEvento || "—" },
+      { label: "Organizador", value: ev.extendedProps?.organizador || "—" },
+      { label: "Cédula / RIF", value: ev.extendedProps?.cedula || "—" },
+      { label: "Correo Electrónico", value: ev.extendedProps?.correo_electronico || "—" },
+      { label: "Fecha del Evento", value: ev.start?.split("T")[0] || "—" },
+      {
+        label: "Horario",
+        value: `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
+      },
+      { 
+        label: "Recursos", 
+        value: ev.extendedProps?.recursos_solicitados && Array.isArray(ev.extendedProps.recursos_solicitados) && ev.extendedProps.recursos_solicitados.length > 0
+          ? ev.extendedProps.recursos_solicitados.join(", ") 
+          : "Ninguno" 
+      },
+    ];
+
+    const bkg = [248, 245, 242] as [number, number, number];
+    let y = 38;
+    const lx = MARGIN + 6;
+    const vx = 62;
+    const rh = 6.5;
+
+    doc.setTextColor(...C.text);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("DATOS DE LA RESERVA", MARGIN, y);
+    y += 5;
+
+    info.forEach((r, i) => {
+      const rowTop = y - 4.5;
+      if (i % 2 === 0) {
+        doc.setFillColor(...bkg);
+        doc.rect(MARGIN, rowTop, pw - MARGIN * 2, rh, "F");
+      }
+      doc.setTextColor(...C.textMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text(r.label + ":", lx, y);
+      doc.setTextColor(...C.text);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text(r.value, vx, y);
+      y += rh;
+    });
+
+    // ── Términos y Responsabilidades ──
+    y += 10;
+    doc.setTextColor(...C.text);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN, y);
+    y += 6;
+
+    const terminos = [
+      "Primera: El solicitante declara recibir las instalaciones y recursos mobiliarios en perfectas condiciones de uso, orden y limpieza.",
+      "Segunda: El solicitante asume la responsabilidad absoluta por cualquier daño, deterioro o pérdida que sufran las instalaciones o mobiliario durante el préstamo, comprometiéndose a resarcir económicamente al MAVET o reponer el bien afectado de forma inmediata.",
+      "Tercera: El espacio será utilizado única y exclusivamente para el motivo declarado.",
+      "Cuarta: Al finalizar, el solicitante se compromete a entregar el espacio en las mismas condiciones en las que fue recibido, respetando el horario."
+    ];
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C.textMuted);
+    doc.setFillColor(250, 248, 246); // Light warm background
+    doc.rect(MARGIN, y - 4, pw - MARGIN * 2, 45, "F"); // Background box
+    
+    // Left accent line
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(1);
+    doc.line(MARGIN, y - 4, MARGIN, y - 4 + 45);
+
+    y += 1;
+    terminos.forEach((term) => {
+      // Bold the clause title (e.g. "Primera:")
+      const colonIndex = term.indexOf(":");
+      const title = term.substring(0, colonIndex + 1);
+      const text = term.substring(colonIndex + 1);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C.text);
+      doc.text(title, MARGIN + 4, y);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...C.textMuted);
+      const titleWidth = doc.getTextWidth(title);
+      const lines = doc.splitTextToSize(text, pw - MARGIN * 2 - 6 - titleWidth);
+      doc.text(lines, MARGIN + 4 + titleWidth + 1, y, { align: "justify", maxWidth: pw - MARGIN * 2 - 6 - titleWidth });
+      y += lines.length * 4;
+    });
+
+    // ── Firmas ──
+    y = Math.max(y + 25, ph - 45);
+    y = addTwoSignatureBlocks(doc, y);
+
+    // ── Footer ──
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(5.5);
+    doc.setTextColor(...C.textMuted);
+    doc.text(
+      "Documento de constancia digital — Este comprobante acredita la recepción de la solicitud de reserva de espacio en el MAVET.",
+      MARGIN, y, { maxWidth: pw - MARGIN * 2 },
+    );
+
+    doc.save(`comprobante-${ev.codigo_reserva || ev.id || "reserva"}.pdf`);
+  } catch (e) {
+    console.error("[exportarComprobanteReserva]", e);
+    alert("Error al generar el comprobante.");
+  }
+}
+
 // ─── PDF: Credencial de Trabajador (Carnet tipo ID Card) ─────────────────────
 export async function exportarCarnetTrabajador(trabajador: Trabajador) {
   try {
@@ -459,5 +639,3 @@ export async function exportarCarnetTrabajador(trabajador: Trabajador) {
     alert("Error al generar la credencial.");
   }
 }
-
-

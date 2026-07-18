@@ -31,6 +31,7 @@ export const obras = {
         estado: item.EstadoObra?.nombre_estado || "Bueno",
         ubicacion: item.ubicacion_actual || "Depósito",
         imagen_url: item.imagen_url || undefined,
+        clasificacion_patrimonial: item.clasificacion_patrimonial || "no_clasificado",
       }));
       return extractPagination(res, list);
     } catch {
@@ -173,5 +174,15 @@ export const obras = {
   crearCategoria: async (payload: { nombre_categoria: string; descripcion?: string }): Promise<any> => {
     const res = await axiosInstance.post("/api/obras/categorias", payload);
     return res.data?.data || res.data;
+  },
+
+  getHistorialObra: async (id: string): Promise<{ data: any[]; meta?: any }> => {
+    const res = await axiosInstance.get(`/api/obras/obras/${id}/historial`);
+    return res.data;
+  },
+
+  registrarMovimientoObra: async (id: string, payload: any): Promise<any> => {
+    const res = await axiosInstance.post(`/api/obras/obras/${id}/historial`, payload);
+    return res.data?.data;
   },
 };

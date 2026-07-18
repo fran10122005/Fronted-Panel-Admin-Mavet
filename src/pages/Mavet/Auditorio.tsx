@@ -11,7 +11,10 @@ import {
   Trash2,
   Download,
   Search,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -19,7 +22,7 @@ import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
-import { exportarHistorialEventos } from "../../services/pdf.service";
+import { exportarHistorialEventos, exportarComprobanteReserva } from "../../services/pdf.service";
 import { EventoAuditorio } from "../../types";
 import { validateRequired } from "../../utils/validation";
 import { formatCedula, normalizeCedula } from "../../utils/formatters";
@@ -31,6 +34,7 @@ const Auditorio: React.FC = () => {
   const { user } = useAuth();
   const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
+  const canApprove = userRole === "Administrador" || userRole === "admin" || userRole === "Coordinador" || userRole === "Gerente";
 
   const [selectedEvent, setSelectedEvent] = useState<EventoAuditorio | null>(null);
   const [isPastEvent, setIsPastEvent] = useState(false);
@@ -48,7 +52,8 @@ const Auditorio: React.FC = () => {
   const [organizadorAuto, setOrganizadorAuto] = useState(false);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
   const [customTipoEvento, setCustomTipoEvento] = useState("");
-  
+  const [correoElectronico, setCorreoElectronico] = useState("");
+  const [recursosSolicitados, setRecursosSolicitados] = useState<string[]>([]);
   const [events, setEvents] = useState<EventoAuditorio[]>([]);
   const [espacios, setEspacios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +72,7 @@ const Auditorio: React.FC = () => {
   }, []);
 
   const [filterTipo, setFilterTipo] = useState("Todos");
+  const [filterAprobacion, setFilterAprobacion] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
   
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
@@ -81,12 +87,14 @@ const Auditorio: React.FC = () => {
       eventDate !== "" &&
       cedulaOrganizador.trim() !== "" &&
       organizador.trim() !== "" &&
+      correoElectronico.trim() !== "" &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoElectronico) &&
       horaInicio !== "" &&
       horaFin !== "" &&
       horaInicio < horaFin &&
       Object.values(fieldErrors).every(e => !e)
     );
-  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, horaInicio, horaFin, fieldErrors]);
+  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, correoElectronico, horaInicio, horaFin, fieldErrors]);
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
@@ -242,12 +250,14 @@ const Auditorio: React.FC = () => {
   const filteredEvents = useMemo(() => {
     return events.filter(ev => {
       const matchTipo = filterTipo === "Todos" || ev.extendedProps.tipoEvento === filterTipo;
+      const matchAprobacion = filterAprobacion === "todas" || ev.extendedProps.estatus_aprobacion === filterAprobacion;
       const matchSearch = searchTerm === "" || 
         ev.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase());
-      return matchTipo && matchSearch;
+        (ev.extendedProps.organizador || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ev.extendedProps.numero_expediente || "").toLowerCase().includes(searchTerm.toLowerCase());
+      return matchTipo && matchAprobacion && matchSearch;
     }).sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
-  }, [events, filterTipo, searchTerm]);
+  }, [events, filterTipo, filterAprobacion, searchTerm]);
 
   const handleCedulaBlur = async () => {
     const cedula = cedulaOrganizador.trim();
@@ -261,15 +271,10 @@ const Auditorio: React.FC = () => {
     try {
       let result = await mavetApi.checkVisitante(cedula);
       
-      // Fallback search formats if not found on the first try
       if (!result.existe) {
         const cleanDigits = cedula.replace(/\D/g, "");
-        
-        // Format 1: V-XX.XXX.XXX
         const vDotted = `V-${cedula}`;
-        // Format 2: Just clean digits (e.g. 31619791)
         const cleanVal = cleanDigits;
-        // Format 3: V-XXXXXXXX (clean digits with V-)
         const vClean = `V-${cleanDigits}`;
         
         const formatsToTry = [vDotted, cleanVal, vClean];
@@ -283,7 +288,6 @@ const Auditorio: React.FC = () => {
                 break;
               }
             } catch {
-              // Ignore failure for individual format try
             }
           }
         }
@@ -344,7 +348,7 @@ const Auditorio: React.FC = () => {
     setHoraInicio("09:00");
     setHoraFin("16:00");
     setIsPastEvent(false);
-    setIsDateLocked(true); // Bloquear fecha si se seleccionó del calendario
+    setIsDateLocked(true); 
     openModal();
   };
 
@@ -355,11 +359,19 @@ const Auditorio: React.FC = () => {
       start: event.start,
       end: event.end,
       allDay: event.allDay ?? false,
+      codigo_reserva: (event as any).codigo_reserva || "",
+      numero_expediente: (event as any).numero_expediente || "",
       extendedProps: {
         organizador: event.extendedProps?.organizador || "",
         tipoEvento: event.extendedProps?.tipoEvento || "",
         cedula: event.extendedProps?.cedula,
-        estado: event.extendedProps?.estado || "Pendiente"
+        estado: event.extendedProps?.estado || "Pendiente",
+        estatus_aprobacion: (event.extendedProps as any)?.estatus_aprobacion || "pendiente",
+        numero_expediente: (event.extendedProps as any)?.numero_expediente || "",
+        motivo_rechazo: (event.extendedProps as any)?.motivo_rechazo || "",
+        aprobado_por_nombre: (event.extendedProps as any)?.aprobado_por_nombre || "",
+        correo_electronico: (event.extendedProps as any)?.correo_electronico || "",
+        recursos_solicitados: (event.extendedProps as any)?.recursos_solicitados || [],
       }
     });
     setCodigoReserva((event as any).codigo_reserva || event.id || "");
@@ -370,23 +382,28 @@ const Auditorio: React.FC = () => {
     setOrganizador(event.extendedProps?.organizador || "");
     setCedulaOrganizador(event.extendedProps?.cedula || "");
     setTipoEvento(event.extendedProps?.tipoEvento || "Conferencia");
-    // Bloquear edición si la fecha ya pasó
+    setCorreoElectronico((event.extendedProps as any)?.correo_electronico || "");
+    setRecursosSolicitados((event.extendedProps as any)?.recursos_solicitados || []);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((event.start?.split("T")[0] || "") + "T00:00:00");
     setIsPastEvent(evDate < today || event.extendedProps?.estado === 'Realizada');
-    setIsDateLocked(true); // Bloquear fecha también al editar desde calendario
+    setIsDateLocked(true); 
     openModal();
   };
   
   const handleEditFromList = (ev: EventoAuditorio) => {
     setSelectedEvent(ev);
     setEventTitle(ev.title);
+    setCodigoReserva(ev.codigo_reserva || "");
     setEventDate(ev.start?.split("T")[0] || "");
     setHoraInicio((ev.start?.split("T")[1]?.substring(0, 5)) || "08:00");
     setHoraFin((ev.end?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(ev.extendedProps.organizador || "");
     setCedulaOrganizador(ev.extendedProps?.cedula || ""); 
     setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
+    setCorreoElectronico(ev.extendedProps?.correo_electronico || "");
+    setRecursosSolicitados(ev.extendedProps?.recursos_solicitados || []);
+    
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
     setIsPastEvent(evDate < today || ev.extendedProps?.estado === 'Realizada');
@@ -473,7 +490,7 @@ const Auditorio: React.FC = () => {
     }
 
     if (formError.includes("no esta disponible") || formError.includes("ya han pasado en el día de hoy")) {
-      return; // Prevenir guardado si hay solapamiento o fecha pasada detectado por useEffect
+      return; 
     }
 
     try {
@@ -490,14 +507,30 @@ const Auditorio: React.FC = () => {
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
         motivo: eventTitle,
+        correo_electronico: correoElectronico,
+        recursos_solicitados: recursosSolicitados,
       };
 
       if (selectedEvent) {
         await mavetApi.actualizarReservaAuditorio(selectedEvent.id, payload);
         toast.success("Reserva actualizada exitosamente");
       } else {
-        await mavetApi.registrarReservaAuditorio(payload);
+        const response = await mavetApi.registrarReservaAuditorio(payload);
         toast.success("Reserva creada exitosamente");
+        const evToExport = {
+          id: response.data?.id || response.data?.data?.id_solicitud || "nuevo",
+          title: eventTitle,
+          start: `${eventDate}T${horaInicio}:00`,
+          end: `${eventDate}T${horaFin}:00`,
+          codigo_reserva: codigoReserva,
+          extendedProps: {
+            organizador: organizador,
+            cedula: cedulaOrganizador,
+            tipoEvento: tipoFinal,
+            recursos_solicitados: recursosSolicitados,
+          }
+        } as EventoAuditorio;
+        exportarComprobanteReserva(evToExport);
       }
       
       const data = await mavetApi.getEventos();
@@ -564,7 +597,10 @@ const Auditorio: React.FC = () => {
     setFieldErrors({});
     setIsPastEvent(false);
     setIsDateLocked(false);
+    setCorreoElectronico("");
+    setRecursosSolicitados([]);
   };
+
 
   const getColorClass = (tipo: string) => {
     switch(tipo) {
@@ -607,7 +643,6 @@ const Auditorio: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap gap-3">
-          {/* Filtros */}
           <div className="flex gap-2">
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -631,6 +666,16 @@ const Auditorio: React.FC = () => {
               <option value="Todos">Todos los tipos</option>
               <option value="Conferencia">Conferencia</option>
               <option value="Reunión">Reunión Interna</option>
+            </select>
+            <select
+              value={filterAprobacion}
+              onChange={(e) => setFilterAprobacion(e.target.value)}
+              className="py-2 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              <option value="todas">Todas las aprobaciones</option>
+              <option value="pendiente">Pendiente de aprobación</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
             </select>
           </div>
 
@@ -694,7 +739,6 @@ const Auditorio: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Leyenda solo en vista de calendario */}
         {viewMode === "calendar" && (
           <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-theme-xs text-sm w-full">
             <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">Leyenda:</span>
@@ -715,13 +759,11 @@ const Auditorio: React.FC = () => {
             />
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div>
             {isLoading ? (
-              <div className="col-span-full flex items-center justify-center py-16">
-                <LoadingSkeleton variant="table" rows={8} cols={6} />
-              </div>
+              <LoadingSkeleton variant="table" rows={8} cols={6} />
             ) : events.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
+              <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
                 <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">No hay reservas que coincidan con la búsqueda.</p>
@@ -739,70 +781,84 @@ const Auditorio: React.FC = () => {
                 </button>
               </div>
             ) : (
-              filteredEvents.map(ev => {
-                const badgeClass = getColorClass(ev.extendedProps.tipoEvento || "Conferencia");
-                return (
-                  <div key={ev.id} className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-theme-md hover:-translate-y-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex gap-2">
-                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${badgeClass}`}>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredEvents.map(ev => {
+                  const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
+                  const t = new Date(); t.setHours(0, 0, 0, 0);
+                  const evIsPast = d < t || ev.extendedProps?.estado === 'Realizada';
+                  return (
+                    <div key={ev.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm hover:shadow-theme-md transition-all duration-200 flex flex-col">
+                      <div className="flex items-start justify-between px-4 pt-3.5 pb-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
                           {ev.extendedProps.tipoEvento || "Conferencia"}
-                        </div>
-                        <div className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide border ${
-                          ev.extendedProps?.estado === 'Realizada' 
-                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50' 
-                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50'
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                          evIsPast
+                            ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                            : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
                         }`}>
-                          {ev.extendedProps?.estado || "Pendiente"}
+                          {evIsPast ? 'Realizada' : 'Pendiente'}
+                        </span>
+                      </div>
+
+                      <div className="px-4 py-1.5">
+                        <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 leading-snug line-clamp-2">
+                          {ev.title}
+                        </h4>
+                      </div>
+
+                      <div className="px-4 pb-2 space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <span>👤</span>
+                          <span className="truncate">{ev.extendedProps?.organizador || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span>📅</span>
+                          <span>{formatDateForList(ev.start)}</span>
+                          <span className="mx-1">·</span>
+                          <span>⏰</span>
+                          <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-mono text-[10px] text-brand-600 dark:text-brand-400">
+                          <span>📁</span>
+                          <span className="truncate">{ev.extendedProps?.numero_expediente || "—"}</span>
                         </div>
                       </div>
-                      {!isGerente && (() => {
-                        const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
-                        const t = new Date(); t.setHours(0, 0, 0, 0);
-                        const isPast = d < t || ev.extendedProps?.estado === 'Realizada';
-                        return (
-                          <div className="flex gap-1.5">
-                            <button 
-                              onClick={() => !isPast && handleEditFromList(ev)} 
-                              disabled={isPast}
-                              className={`p-1.5 transition-colors ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500'}`} 
-                              title={isPast ? "No se puede editar evento histórico" : "Editar evento"}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 mb-1">{ev.title}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 flex-1">
-                      Organizado por: <span className="font-semibold text-gray-700 dark:text-gray-300">{ev.extendedProps.organizador}</span>
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <CalendarIcon className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{formatDateForList(ev.start)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <Clock className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{getTimeFromISO(ev.start)} - {getTimeFromISO(ev.end)}</span>
-                      </div>
-                      <div className="col-span-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 mb-3">
-                        <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="truncate">Auditorio Principal</span>
-                      </div>
-                      <div className="col-span-2">
-                        <button onClick={() => handleVerAsistentes(ev)} className="w-full inline-flex justify-center items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
-                          <AlertCircle className="w-4 h-4" />
-                          Ver Asistentes (Check-In)
+
+                      <div className="mt-auto px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1 flex-wrap">
+                        <button
+                          onClick={async () => {
+                            const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                            exportarComprobanteReserva(ev);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors"
+                          title="Descargar comprobante"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Comprobante
                         </button>
+                        <button
+                          onClick={() => handleVerAsistentes(ev)}
+                          className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                          title="Ver asistentes"
+                        >
+                          <AlertCircle className="h-3.5 w-3.5" />
+                        </button>
+                        {!isGerente && (
+                          <button
+                            onClick={() => !evIsPast && handleEditFromList(ev)}
+                            disabled={evIsPast}
+                            className={`p-1.5 rounded-lg transition-colors ml-auto ${evIsPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                            title={evIsPast ? "No se puede editar evento histórico" : "Editar"}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
@@ -815,7 +871,6 @@ const Auditorio: React.FC = () => {
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
         { (isGerente || isPastEvent) && selectedEvent ? (
           <div className="p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
-            {/* Header read-only */}
             <div className="flex items-start justify-between mb-6 pr-4">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-sm font-serif">
@@ -836,7 +891,6 @@ const Auditorio: React.FC = () => {
               </button>
             </div>
 
-            {/* Tarjeta Estado de Reserva */}
             <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-xl">
@@ -858,7 +912,6 @@ const Auditorio: React.FC = () => {
               </span>
             </div>
 
-            {/* Grilla de Parámetros */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
@@ -869,6 +922,17 @@ const Auditorio: React.FC = () => {
                   <span className="text-xs font-semibold text-gray-850 dark:text-gray-200">{codigoReserva || '—'}</span>
                 </div>
               </div>
+              {selectedEvent?.numero_expediente && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </div>
+                  <div>
+                    <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">N° Expediente</span>
+                    <span className="text-xs font-semibold font-mono text-brand-600 dark:text-brand-400">{selectedEvent.numero_expediente}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -907,7 +971,19 @@ const Auditorio: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-8 flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!selectedEvent) return;
+                  const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                  exportarComprobanteReserva(selectedEvent);
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Comprobante
+              </button>
               <button
                 type="button"
                 onClick={closeModal}
@@ -1065,6 +1141,30 @@ const Auditorio: React.FC = () => {
               </div>
 
               <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Recursos Solicitados</h4>
+                <div className="flex flex-wrap gap-3">
+                  {["Sillas", "Mesas", "Cortinas", "Sonido", "Proyector", "Micrófono"].map((recurso) => (
+                    <label key={recurso} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={recursosSolicitados.includes(recurso)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setRecursosSolicitados([...recursosSolicitados, recurso]);
+                          } else {
+                            setRecursosSolicitados(recursosSolicitados.filter(r => r !== recurso));
+                          }
+                        }}
+                        disabled={isGerente || isPastEvent}
+                        className="accent-brand-600 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{recurso}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="col-span-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Datos del Organizador</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
@@ -1131,6 +1231,19 @@ const Auditorio: React.FC = () => {
                       placeholder="Se autocompleta con cédula"
                     />
                   </div>
+
+                  <div className="space-y-2 col-span-1 md:col-span-2">
+                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Correo Electrónico *</label>
+                    <input
+                      required
+                      type="email"
+                      value={correoElectronico}
+                      onChange={(e) => setCorreoElectronico(e.target.value)}
+                      disabled={isGerente || isPastEvent}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
+                      placeholder="ejemplo@correo.com"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1174,6 +1287,20 @@ const Auditorio: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
+                    {selectedEvent && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!selectedEvent) return;
+                          const { exportarComprobanteReserva } = await import("../../services/pdf.service");
+                          exportarComprobanteReserva(selectedEvent);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Descargar PDF</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={closeModal}
@@ -1198,9 +1325,6 @@ const Auditorio: React.FC = () => {
         )}
       </Modal>
 
-      {/* ══════════════════════════════════════════
-          MODAL: Ver Asistentes (Recepción / QR)
-         ══════════════════════════════════════════ */}
       <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl" showCloseButton={false}>
         <div className="p-6">
           <div className="flex items-start justify-between mb-1">
@@ -1276,6 +1400,7 @@ const Auditorio: React.FC = () => {
         onConfirm={confirm.onConfirm}
         onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
       />
+
     </div>
   );
 };

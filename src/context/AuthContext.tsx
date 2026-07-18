@@ -25,30 +25,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const storedToken = localStorage.getItem("token");
-      const storedUser = localStorage.getItem("user");
-      
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        try {
-          setUser(JSON.parse(storedUser));
-          // Refresh user data from server in background
-          mavetApi.getMe().then((res) => {
-             if (res && res.usuario) {
-               setUser(res.usuario);
-               localStorage.setItem("user", JSON.stringify(res.usuario));
-             }
-          }).catch(console.error);
-        } catch (e) {
-          console.error("Error parsing stored user", e);
-        }
+  const isAuthenticated = async () => {
+    try {
+      const res = await mavetApi.getMe();
+      if (res && res.usuario) {
+        setUser(res.usuario);
+        setToken("authenticated");
+        localStorage.setItem("user", JSON.stringify(res.usuario));
       }
+    } catch {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("user");
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
-    initializeAuth();
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try { setUser(JSON.parse(storedUser)); } catch { /* ignore */ }
+      setToken("authenticated");
+    }
+    isAuthenticated();
   }, []);
 
   const updateUser = (newUser: User) => {
@@ -58,16 +58,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (correo: string, password: string) => {
     const data = await mavetApi.login(correo, password);
-    setToken(data.token);
+    setToken("authenticated");
     setUser(data.usuario);
-    localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.usuario));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await mavetApi.logout();
+    } catch {
+      // Even if logout API fails, clear local state
+    }
     setToken(null);
     setUser(null);
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
   };
 

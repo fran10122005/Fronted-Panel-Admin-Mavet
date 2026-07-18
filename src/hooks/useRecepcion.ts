@@ -240,6 +240,7 @@ export function useRecepcion() {
         fecha_de_nac: formData.fecha_nacimiento,
         id_motivo: finalMotivo,
         cantidad_acompanantes: isVisitaInstitucional ? Number(formData.cantidad_acompanantes) : 0,
+        consentimiento_datos: true,
       };
       if (finalTaller?.startsWith("TAL-")) ingresoPayload.id_taller = finalTaller;
       if (finalSolicitud) ingresoPayload.id_solicitud = finalSolicitud;

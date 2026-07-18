@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Modal } from "../../../components/ui/modal";
 import { Trabajador } from "../../../types";
 import { mavetApi } from "../../../services/api";
 import toast from "react-hot-toast";
+import { loadModels, extractDescriptor, getDetectionWithQuality, serializeDescriptor } from "../../../services/face.service";
 
 interface Props {
   trabajador: Trabajador | null;
@@ -15,6 +16,16 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
   const inputRef = useRef<HTMLInputElement>(null);
   const [localFotoUrl, setLocalFotoUrl] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState(false);
+  const [isResettingPin, setIsResettingPin] = useState(false);
+  const [pinResetResult, setPinResetResult] = useState<{ pinTemporal: string; message: string } | null>(null);
+  const [isFacialEnrollOpen, setIsFacialEnrollOpen] = useState(false);
+  const [facialEnrollStatus, setFacialEnrollStatus] = useState<"idle" | "camera" | "capturing" | "done" | "error">("idle");
+  const [facialCaptureStep, setFacialCaptureStep] = useState(1);
+  const [facialDescs, setFacialDescs] = useState<string[]>([]);
+  const [facialQualityMsg, setFacialQualityMsg] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,6 +191,20 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PIN de Asistencia</span>
+                    <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">
+                      {(t as any).pin_hash ? "Configurado" : "No configurado"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
@@ -227,22 +252,54 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
               <button
-                onClick={onClose}
-                className="px-5 py-2 text-xs font-semibold text-gray-655 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                onClick={async () => {
+                  if (!t?.id) return;
+                  setIsResettingPin(true);
+                  try {
+                    const result = await mavetApi.resetPinTrabajador(t.id.toString());
+                    setPinResetResult(result);
+                  } catch (err: any) {
+                    toast.error(err.message || "Error al restablecer PIN");
+                  } finally {
+                    setIsResettingPin(false);
+                  }
+                }}
+                disabled={isResettingPin}
+                className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm disabled:opacity-60"
               >
-                Cerrar
-              </button>
-              <button
-                onClick={() => { onEdit(t); onClose(); }}
-                className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
-              >
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
-                Editar Trabajador
+                {isResettingPin ? "Restableciendo..." : "Restablecer PIN"}
               </button>
+              <button
+                onClick={() => setIsFacialEnrollOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
+                </svg>
+                Enrolar Facial
+              </button>
+              <div className="flex gap-2.5">
+                <button
+                  onClick={onClose}
+                  className="px-5 py-2 text-xs font-semibold text-gray-655 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => { onEdit(t); onClose(); }}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Editar Trabajador
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -261,6 +318,229 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
           alt="Foto del trabajador"
           className="w-full h-auto max-h-[85vh] object-contain rounded-md"
         />
+      )}
+    </Modal>
+
+    <Modal
+      isOpen={!!pinResetResult}
+      onClose={() => setPinResetResult(null)}
+      className="max-w-md"
+    >
+      {pinResetResult && (
+        <div className="p-6 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+            <svg className="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">PIN Restablecido</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            El PIN temporal para <strong>{t?.nombre} {t?.apellido}</strong> es:
+          </p>
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-amber-300 dark:border-amber-700">
+            <p className="text-4xl font-black tracking-widest text-amber-700 dark:text-amber-400">
+              {pinResetResult.pinTemporal}
+            </p>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Entregue este PIN al trabajador. Deberá cambiarlo en su primer ingreso.
+          </p>
+          <button
+            onClick={() => setPinResetResult(null)}
+            className="w-full p-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+    </Modal>
+
+    <Modal
+      isOpen={isFacialEnrollOpen}
+      onClose={() => {
+        if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+        setIsFacialEnrollOpen(false);
+        setFacialEnrollStatus("idle");
+        setFacialCaptureStep(1);
+        setFacialDescs([]);
+      }}
+      className="max-w-md"
+    >
+      {t && (
+        <div className="p-4 text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+            <svg className="w-7 h-7 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
+            </svg>
+          </div>
+          <p className="text-lg font-bold text-gray-900 dark:text-white">Enrolar Reconocimiento Facial</p>
+          <p className="text-sm text-gray-500">{t.nombre} {t.apellido}</p>
+
+          {facialEnrollStatus === "idle" && (
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Se tomarán <strong>3 fotos</strong> en diferentes condiciones para mejorar el reconocimiento.<br />
+                La imagen no se almacena, solo vectores numéricos.
+              </p>
+              <button
+                onClick={async () => {
+                  setFacialEnrollStatus("camera");
+                  setFacialCaptureStep(1);
+                  setFacialDescs([]);
+                  try {
+                    await loadModels();
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    streamRef.current = stream;
+                    if (videoRef.current) {
+                      videoRef.current.srcObject = stream;
+                      await videoRef.current.play();
+                    }
+                  } catch {
+                    toast.error("No se pudo acceder a la cámara");
+                    setFacialEnrollStatus("idle");
+                  }
+                }}
+                className="w-full p-3 bg-violet-500 text-white rounded-xl font-bold hover:bg-violet-600 transition"
+              >
+                Iniciar Cámara
+              </button>
+            </div>
+          )}
+
+          {(facialEnrollStatus === "camera" || facialEnrollStatus === "capturing") && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3].map((step) => (
+                  <div
+                    key={step}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                      step === facialCaptureStep
+                        ? "bg-violet-500 text-white border-violet-500"
+                        : step < facialCaptureStep
+                        ? "bg-green-500 text-white border-green-500"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-400 border-gray-300 dark:border-gray-600"
+                    }`}
+                  >
+                    {step < facialCaptureStep ? "✓" : step}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs font-semibold text-violet-600 dark:text-violet-400">
+                {facialCaptureStep === 1 && "Foto 1: Mire de frente, con buena iluminación"}
+                {facialCaptureStep === 2 && "Foto 2: Gire ligeramente el rostro (o colóquese gafas si aplica)"}
+                {facialCaptureStep === 3 && "Foto 3: Cambie el ángulo de luz o sonría ligeramente"}
+              </p>
+
+              <div className="relative mx-auto w-64 h-48 rounded-xl overflow-hidden bg-gray-900 border-2 border-violet-500">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+                />
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+
+              {facialQualityMsg && (
+                <p className="text-xs text-amber-600">{facialQualityMsg}</p>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!videoRef.current || !t?.id) return;
+                  setFacialEnrollStatus("capturing");
+                  setFacialQualityMsg("");
+                  try {
+                    const { detection, quality } = await getDetectionWithQuality(videoRef.current);
+                    if (!detection) {
+                      setFacialQualityMsg("No se detecta rostro. Asegúrese de estar frente a la cámara.");
+                      setFacialEnrollStatus("camera");
+                      return;
+                    }
+                    if (!quality.ok) {
+                      setFacialQualityMsg(quality.reason || "Ajuste su posición e iluminación.");
+                      setFacialEnrollStatus("camera");
+                      return;
+                    }
+                    const serialized = serializeDescriptor(detection.descriptor);
+                    const newDescs = [...facialDescs, serialized];
+                    setFacialDescs(newDescs);
+
+                    if (facialCaptureStep < 3) {
+                      setFacialCaptureStep(facialCaptureStep + 1);
+                      setFacialEnrollStatus("camera");
+                    } else {
+                      await mavetApi.actualizarTrabajadorFacial(t.id.toString(), {
+                        descriptores_faciales: newDescs,
+                        usarFacial: true,
+                        consentimientoFacial: true,
+                        fechaConsentimiento: new Date().toISOString().split("T")[0],
+                      });
+                      setFacialEnrollStatus("done");
+                      toast.success("Rostro enrolado exitosamente (3 capturas)");
+                      onRefresh?.();
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Error al enrolar rostro");
+                    setFacialEnrollStatus("error");
+                  }
+                }}
+                disabled={facialEnrollStatus === "capturing"}
+                className="w-full p-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition disabled:opacity-60"
+              >
+                {facialEnrollStatus === "capturing" ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                ) : facialCaptureStep < 3 ? (
+                  `Capturar Foto ${facialCaptureStep}/3`
+                ) : (
+                  "Capturar y Guardar (3/3)"
+                )}
+              </button>
+            </div>
+          )}
+
+          {facialEnrollStatus === "done" && (
+            <div className="space-y-4">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                  ✅ Rostro enrolado correctamente (3 capturas)
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                  El trabajador podrá usar verificación facial en el kiosko.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+                  setIsFacialEnrollOpen(false);
+                  setFacialEnrollStatus("idle");
+                  setFacialCaptureStep(1);
+                  setFacialDescs([]);
+                }}
+                className="w-full p-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
+
+          {facialEnrollStatus === "error" && (
+            <div className="space-y-4">
+              <p className="text-sm text-red-600">Error al enrolar. Intente nuevamente.</p>
+              <button
+                onClick={() => {
+                  setFacialEnrollStatus("idle");
+                  setFacialCaptureStep(1);
+                  setFacialDescs([]);
+                }}
+                className="w-full p-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </Modal>
     </>
