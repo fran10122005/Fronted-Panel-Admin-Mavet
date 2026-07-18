@@ -8,15 +8,10 @@ import { limitNumericInput } from "../../../utils/validation";
 import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 
-const trabajadorSchema = z.object({
+const step1Schema = z.object({
   cedula: z.string().min(1, "La cédula es obligatoria"),
   nombres: z.string().min(1, "Los nombres son obligatorios"),
   apellidos: z.string().min(1, "Los apellidos son obligatorios"),
-  telefono: z.string().min(1, "El teléfono es obligatorio"),
-  correo_personal: z.string().min(1, "El correo es obligatorio").email("Debe ser un correo válido"),
-  id_cargo: z.string().min(1, "El cargo es obligatorio"),
-  horas_semanales: z.preprocess((val) => val === "" || val === undefined ? undefined : Number(val), z.number({ required_error: "Las horas son obligatorias" }).min(5, "Mínimo 5 horas")),
-  estado: z.enum(["Activo", "Inactivo"], { required_error: "El estado es obligatorio" }),
   fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria").regex(/^\d{2}\/\d{2}\/\d{4}$/, "Formato debe ser DD/MM/AAAA").refine(val => {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return true;
     const [d, m, y] = val.split('/');
@@ -29,7 +24,7 @@ const trabajadorSchema = z.object({
     }
     return age >= 18 && age <= 80;
   }, "El trabajador debe tener entre 18 y 80 años"),
-  direccion: z.string().min(1, "La dirección es obligatoria"),
+  id_cargo: z.string().min(1, "El cargo es obligatorio"),
   fecha_ingreso: z.string().min(1, "La fecha de ingreso es obligatoria").regex(/^\d{2}\/\d{2}\/\d{4}$/, "Formato debe ser DD/MM/AAAA").refine(val => {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return true;
     const [d, m, y] = val.split('/');
@@ -38,8 +33,20 @@ const trabajadorSchema = z.object({
     today.setHours(0, 0, 0, 0);
     return inputDate <= today;
   }, "La fecha no puede ser mayor a hoy"),
+  estado: z.enum(["Activo", "Inactivo"], { required_error: "El estado es obligatorio" }),
+});
+
+const step2Schema = z.object({
+  telefono: z.string().min(1, "El teléfono es obligatorio"),
+  correo_personal: z.string().min(1, "El correo es obligatorio").email("Debe ser un correo válido"),
+  direccion: z.string().min(1, "La dirección es obligatoria"),
+});
+
+const step3Schema = z.object({
   foto_url: z.string().optional(),
 });
+
+const trabajadorSchema = step1Schema.merge(step2Schema).merge(step3Schema);
 
 export type TrabajadorFormValues = z.infer<typeof trabajadorSchema>;
 
@@ -56,11 +63,18 @@ interface Props {
 
 const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 
+const steps = [
+  { id: 0, label: "Información Básica" },
+  { id: 1, label: "Contacto" },
+  { id: 2, label: "Escaneo" },
+];
+
 export default function TrabajadorFormModal({
   isOpen, onClose, editingTrabajadorId, initialData,
   cargos, isSubmitting, onSubmit, inputCls,
 }: Props) {
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<TrabajadorFormValues>({
+  const [currentStep, setCurrentStep] = useState(0);
+  const { register, handleSubmit, reset, setValue, trigger, formState: { errors } } = useForm<TrabajadorFormValues>({
     resolver: zodResolver(trabajadorSchema) as any,
     defaultValues: initialData,
   });
@@ -70,7 +84,7 @@ export default function TrabajadorFormModal({
   const [photoError, setPhotoError] = useState("");
   const [generarPin, setGenerarPin] = useState(false);
   const [habilitarFacial, setHabilitarFacial] = useState(false);
-  
+
   const [nacionalidad, setNacionalidad] = useState("V-");
   const [numeroCedula, setNumeroCedula] = useState("");
 
@@ -113,6 +127,7 @@ export default function TrabajadorFormModal({
       setPhotoError("");
       setGenerarPin(false);
       setHabilitarFacial(false);
+      setCurrentStep(0);
 
       setTimeout(() => {
         fps = flatpickr(".flatpickr-wrap", {
@@ -146,6 +161,18 @@ export default function TrabajadorFormModal({
       setValue("cedula", "", { shouldValidate: true });
     }
   }, [nacionalidad, numeroCedula, setValue]);
+
+  const handleNext = async () => {
+    const fieldsToValidate = currentStep === 0
+      ? ["cedula", "nombres", "apellidos", "fecha_nacimiento", "id_cargo", "fecha_ingreso", "estado"]
+      : ["telefono", "correo_personal", "direccion"];
+    const valid = await trigger(fieldsToValidate as any);
+    if (valid) setCurrentStep(prev => prev + 1);
+  };
+
+  const handlePrev = () => {
+    setCurrentStep(prev => Math.max(0, prev - 1));
+  };
 
   const handleFormSubmit = (data: TrabajadorFormValues) => {
     if (!editingTrabajadorId && !photoPreview) {
@@ -198,201 +225,245 @@ export default function TrabajadorFormModal({
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           Complete los datos del trabajador. Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
         </p>
+
+        {!editingTrabajadorId && (
+          <div className="flex items-center gap-0 mb-6">
+            {steps.map((step, idx) => (
+              <React.Fragment key={step.id}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                    currentStep === step.id
+                      ? "bg-brand-500 text-white"
+                      : currentStep > step.id
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}>
+                    {currentStep > step.id ? (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    ) : step.id + 1}
+                  </div>
+                  <span className={`text-[11px] font-semibold whitespace-nowrap ${
+                    currentStep === step.id
+                      ? "text-brand-600 dark:text-brand-400"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+                {idx < steps.length - 1 && (
+                  <div className={`flex-1 h-px mx-3 ${
+                    currentStep > idx ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"
+                  }`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
-          <div>
-            <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Datos Personales</h5>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mb-3">
-              {/* Foto de Perfil */}
-              <div className="flex-shrink-0 flex flex-col items-center gap-2">
-                <div className="w-24 h-24 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden relative group">
+          {currentStep === 0 && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Datos Personales</h5>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-3">
+                <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                  <div className="w-24 h-24 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden relative group">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    )}
+                    <label className="absolute inset-0 bg-black/50 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white text-[10px] font-bold uppercase text-center transition-all">
+                      <span>Cambiar<br/>Foto</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                    </label>
+                  </div>
+                  {photoError && <p className="text-red-500 text-xs mt-1">{photoError}</p>}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                  <div>
+                    <label className={labelCls}>Nombres <span className="text-red-500">*</span></label>
+                    <input
+                      type="text" placeholder="Ej. Ricardo Andrés"
+                      className={`${inputCls} ${errors.nombres ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                      {...register("nombres", {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/\d/g, '');
+                        }
+                      })}
+                    />
+                    {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Apellidos <span className="text-red-500">*</span></label>
+                    <input
+                      type="text" placeholder="Ej. López Martínez"
+                      className={`${inputCls} ${errors.apellidos ? 'border-red-500' : ''}`}
+                      {...register("apellidos", {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/\d/g, '');
+                        }
+                      })}
+                    />
+                    {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Cédula <span className="text-red-500">*</span></label>
+                    <div className="flex w-full">
+                      <select
+                        className={`${inputCls.replace('w-full', '')} w-16 px-2 rounded-r-none border-r-0 text-center`}
+                        value={nacionalidad}
+                        onChange={(e) => setNacionalidad(e.target.value)}
+                        disabled={editingTrabajadorId !== null}
+                      >
+                        <option value="V-">V-</option>
+                        <option value="E-">E-</option>
+                      </select>
+                      <input
+                        type="text" placeholder="12.345.678" onKeyDown={limitNumericInput}
+                        className={`${inputCls.replace('w-full', '')} flex-1 min-w-0 rounded-l-none border-l-0 ${errors.cedula ? 'border-red-500' : ''}`}
+                        value={numeroCedula}
+                        onChange={(e) => {
+                          let num = e.target.value.replace(/\D/g, '');
+                          num = num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                          setNumeroCedula(num);
+                        }}
+                        readOnly={editingTrabajadorId !== null}
+                      />
+                      <input type="hidden" {...register("cedula")} />
+                    </div>
+                    {errors.cedula && <p className="text-red-500 text-xs mt-1">{errors.cedula.message}</p>}
+                  </div>
+                  <div>
+                    <label className={labelCls}>Fecha de Nacimiento <span className="text-red-500">*</span></label>
+                    <div className="flatpickr-wrap relative flex items-center">
+                      <input
+                        type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
+                        className={`${inputCls} w-full pr-10 ${errors.fecha_nacimiento ? 'border-red-500' : ''}`}
+                        {...register("fecha_nacimiento", {
+                          onChange: (e) => {
+                            let val = e.target.value.replace(/\D/g, '');
+                            if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+                            if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
+                            e.target.value = val;
+                          }
+                        })}
+                      />
+                      <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      </button>
+                    </div>
+                    {errors.fecha_nacimiento && <p className="text-red-500 text-xs mt-1">{errors.fecha_nacimiento.message}</p>}
+                  </div>
+                </div>
+              </div>
+
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Información Laboral</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Cargo <span className="text-red-500">*</span></label>
+                  <select
+                    className={`${inputCls} ${errors.id_cargo ? 'border-red-500' : ''}`}
+                    {...register("id_cargo")}
+                  >
+                    <option value={0} disabled>Seleccione un cargo...</option>
+                    {cargos.map((c) => (
+                      <option key={c.id_cargo} value={c.id_cargo}>{c.nombre_cargo}</option>
+                    ))}
+                  </select>
+                  {errors.id_cargo && <p className="text-red-500 text-xs mt-1">{errors.id_cargo.message}</p>}
+                </div>
+                <div>
+                  <label className={labelCls}>Fecha de Ingreso <span className="text-red-500">*</span></label>
+                  <div className="flatpickr-wrap relative flex items-center">
+                    <input
+                      type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
+                      className={`${inputCls} w-full pr-10 ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
+                      {...register("fecha_ingreso", {
+                        onChange: (e) => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
+                          if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
+                          e.target.value = val;
+                        }
+                      })}
+                    />
+                    <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </button>
+                  </div>
+                  {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
+                </div>
+                <div>
+                  <label className={labelCls}>Estado <span className="text-red-500">*</span></label>
+                  <select className={inputCls} {...register("estado")}>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 1 && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Contacto</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Teléfono <span className="text-red-500">*</span></label>
+                  <input
+                    type="tel" placeholder="0414-1234567" onKeyDown={limitNumericInput}
+                    className={`${inputCls} ${errors.telefono ? 'border-red-500' : ''}`}
+                    {...register("telefono")}
+                  />
+                  {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
+                </div>
+                <div>
+                  <label className={labelCls}>Correo Personal <span className="text-red-500">*</span></label>
+                  <input
+                    type="email" placeholder="ejemplo@correo.com"
+                    className={`${inputCls} ${errors.correo_personal ? 'border-red-500' : ''}`}
+                    {...register("correo_personal")}
+                  />
+                  {errors.correo_personal && <p className="text-red-500 text-xs mt-1">{errors.correo_personal.message}</p>}
+                  {!errors.correo_personal && <p className="text-[10px] text-gray-400 mt-0.5">Solo informativo. No se usa como acceso al sistema.</p>}
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className={labelCls}>Dirección <span className="text-red-500">*</span></label>
+                <input
+                  type="text" placeholder="Ej. Av. Principal, Urb. Las Flores, Casa N° 10"
+                  className={`${inputCls} ${errors.direccion ? 'border-red-500' : ''}`}
+                  {...register("direccion")}
+                />
+                {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 2 && !editingTrabajadorId && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Foto</h5>
+              <div className="flex flex-col items-center gap-3 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
+                <div className="w-32 h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                   {photoPreview ? (
                     <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
                   ) : (
-                    <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   )}
-                  <label className="absolute inset-0 bg-black/50 hidden group-hover:flex flex-col items-center justify-center cursor-pointer text-white text-[10px] font-bold uppercase text-center transition-all">
-                    <span>Cambiar<br/>Foto</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                  </label>
                 </div>
-                {photoError && <p className="text-red-500 text-xs mt-1">{photoError}</p>}
+                <label className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 cursor-pointer transition shadow-sm">
+                  {photoPreview ? "Cambiar Foto" : "Seleccionar Foto"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
+                {photoError && <p className="text-red-500 text-xs">{photoError}</p>}
+                <p className="text-[10px] text-gray-400">La foto será usada para el carnet y reconocimiento facial</p>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
-              <div>
-                <label className={labelCls}>Nombres <span className="text-red-500">*</span></label>
-                <input
-                  type="text" placeholder="Ej. Ricardo Andrés"
-                  className={`${inputCls} ${errors.nombres ? 'border-red-500 focus:ring-red-500/20' : ''}`}
-                  {...register("nombres", {
-                    onChange: (e) => {
-                      e.target.value = e.target.value.replace(/\d/g, '');
-                    }
-                  })}
-                />
-                {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Apellidos <span className="text-red-500">*</span></label>
-                <input
-                  type="text" placeholder="Ej. López Martínez"
-                  className={`${inputCls} ${errors.apellidos ? 'border-red-500' : ''}`}
-                  {...register("apellidos", {
-                    onChange: (e) => {
-                      e.target.value = e.target.value.replace(/\d/g, '');
-                    }
-                  })}
-                />
-                {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Cédula <span className="text-red-500">*</span></label>
-                <div className="flex w-full">
-                  <select 
-                    className={`${inputCls.replace('w-full', '')} w-16 px-2 rounded-r-none border-r-0 text-center`}
-                    value={nacionalidad}
-                    onChange={(e) => setNacionalidad(e.target.value)}
-                    disabled={editingTrabajadorId !== null}
-                  >
-                    <option value="V-">V-</option>
-                    <option value="E-">E-</option>
-                  </select>
-                  <input
-                    type="text" placeholder="12.345.678" onKeyDown={limitNumericInput}
-                    className={`${inputCls.replace('w-full', '')} flex-1 min-w-0 rounded-l-none border-l-0 ${errors.cedula ? 'border-red-500' : ''}`}
-                    value={numeroCedula}
-                    onChange={(e) => {
-                      let num = e.target.value.replace(/\D/g, '');
-                      num = num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                      setNumeroCedula(num);
-                    }}
-                    readOnly={editingTrabajadorId !== null}
-                  />
-                  <input type="hidden" {...register("cedula")} />
-                </div>
-                {errors.cedula && <p className="text-red-500 text-xs mt-1">{errors.cedula.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Fecha de Nacimiento <span className="text-red-500">*</span></label>
-                <div className="flatpickr-wrap relative flex items-center">
-                  <input
-                    type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
-                    className={`${inputCls} w-full pr-10 ${errors.fecha_nacimiento ? 'border-red-500' : ''}`}
-                    {...register("fecha_nacimiento", {
-                      onChange: (e) => {
-                        let val = e.target.value.replace(/\D/g, '');
-                        if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
-                        if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
-                        e.target.value = val;
-                      }
-                    })}
-                  />
-                  <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                  </button>
-                </div>
-                {errors.fecha_nacimiento && <p className="text-red-500 text-xs mt-1">{errors.fecha_nacimiento.message}</p>}
-              </div>
-              </div>
-            </div>
-          </div>
 
-          <div>
-            <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Contacto</h5>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Teléfono <span className="text-red-500">*</span></label>
-                <input
-                  type="tel" placeholder="0414-1234567" onKeyDown={limitNumericInput}
-                  className={`${inputCls} ${errors.telefono ? 'border-red-500' : ''}`}
-                  {...register("telefono")}
-                />
-                {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Correo Personal <span className="text-red-500">*</span></label>
-                <input
-                  type="email" placeholder="ejemplo@correo.com"
-                  className={`${inputCls} ${errors.correo_personal ? 'border-red-500' : ''}`}
-                  {...register("correo_personal")}
-                />
-                {errors.correo_personal && <p className="text-red-500 text-xs mt-1">{errors.correo_personal.message}</p>}
-                {!errors.correo_personal && <p className="text-[10px] text-gray-400 mt-0.5">Solo informativo. No se usa como acceso al sistema.</p>}
-              </div>
-            </div>
-            <div className="mt-3">
-              <label className={labelCls}>Dirección <span className="text-red-500">*</span></label>
-              <input
-                type="text" placeholder="Ej. Av. Principal, Urb. Las Flores, Casa N° 10"
-                className={`${inputCls} ${errors.direccion ? 'border-red-500' : ''}`}
-                {...register("direccion")}
-              />
-              {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>}
-            </div>
-          </div>
-
-          <div>
-            <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Información Laboral</h5>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Cargo <span className="text-red-500">*</span></label>
-                <select
-                  className={`${inputCls} ${errors.id_cargo ? 'border-red-500' : ''}`}
-                  {...register("id_cargo")}
-                >
-                  <option value={0} disabled>Seleccione un cargo...</option>
-                  {cargos.map((c) => (
-                    <option key={c.id_cargo} value={c.id_cargo}>{c.nombre_cargo}</option>
-                  ))}
-                </select>
-                {errors.id_cargo && <p className="text-red-500 text-xs mt-1">{errors.id_cargo.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Horas Semanales <span className="text-red-500">*</span></label>
-                <input
-                  type="number" onKeyDown={limitNumericInput} placeholder="Ej. 40" min={0} max={168}
-                  className={`${inputCls} ${errors.horas_semanales ? 'border-red-500' : ''}`}
-                  {...register("horas_semanales")}
-                />
-                {errors.horas_semanales && <p className="text-red-500 text-xs mt-1">{errors.horas_semanales.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Fecha de Ingreso <span className="text-red-500">*</span></label>
-                <div className="flatpickr-wrap relative flex items-center">
-                  <input
-                    type="text" placeholder="DD/MM/AAAA" data-input maxLength={10}
-                    className={`${inputCls} w-full pr-10 ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
-                    {...register("fecha_ingreso", {
-                      onChange: (e) => {
-                        let val = e.target.value.replace(/\D/g, '');
-                        if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2);
-                        if (val.length > 5) val = val.slice(0,5) + '/' + val.slice(5,9);
-                        e.target.value = val;
-                      }
-                    })}
-                  />
-                  <button type="button" title="Abrir calendario" data-toggle className="absolute right-2 text-gray-400 hover:text-brand-500 focus:outline-none">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                  </button>
-                </div>
-                {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
-              </div>
-              <div>
-                <label className={labelCls}>Estado <span className="text-red-500">*</span></label>
-                <select className={inputCls} {...register("estado")}>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {!editingTrabajadorId && (
-            <div>
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Opciones de Asistencia</h5>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Opciones de Asistencia</h5>
               <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
                   <input
                     type="checkbox"
                     checked={generarPin}
@@ -404,7 +475,7 @@ export default function TrabajadorFormModal({
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
                   </div>
                 </label>
-                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
                   <input
                     type="checkbox"
                     checked={habilitarFacial}
@@ -420,21 +491,61 @@ export default function TrabajadorFormModal({
             </div>
           )}
 
-          <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <button
-              type="button" onClick={onClose} disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit" disabled={isSubmitting}
-              className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait"
-            >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : editingTrabajadorId !== null ? "Guardar Cambios" : "Registrar Trabajador"}
-            </button>
+          {currentStep === 2 && editingTrabajadorId && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Foto</h5>
+              <div className="flex flex-col items-center gap-3 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
+                <div className="w-32 h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  )}
+                </div>
+                <label className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 cursor-pointer transition shadow-sm">
+                  {photoPreview ? "Cambiar Foto" : "Seleccionar Foto"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div>
+              {currentStep > 0 && (
+                <button
+                  type="button" onClick={handlePrev} disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                type="button" onClick={onClose} disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              {currentStep < 2 ? (
+                <button
+                  type="button" onClick={handleNext}
+                  className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition"
+                >
+                  Siguiente
+                </button>
+              ) : (
+                <button
+                  type="submit" disabled={isSubmitting}
+                  className="flex items-center justify-center min-w-[130px] px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait"
+                >
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : editingTrabajadorId !== null ? "Guardar Cambios" : "Registrar Trabajador"}
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </div>
