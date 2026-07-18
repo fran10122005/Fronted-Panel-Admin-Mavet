@@ -82,13 +82,13 @@ function addSignatureBlock(doc: any, y: number): number {
   doc.setTextColor(...C.brand);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text("Coordinadora – MAVET", cx, y, { align: "center" });
+  doc.text("Coordinador (a) - MAVET", cx, y, { align: "center" });
   y += 4;
 
   doc.setTextColor(...C.textMuted);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(6);
-  doc.text("(Sello y firma de la coordinación)", cx, y, { align: "center" });
+  doc.text("(Sello y firma)", cx, y, { align: "center" });
 
   return y + 4;
 }
@@ -107,14 +107,14 @@ function addTwoSignatureBlocks(doc: any, y: number): number {
   doc.setTextColor(...C.text);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text("Coordinadora – MAVET", cx1, y, { align: "center" });
+  doc.text("Coordinador (a) - MAVET", cx1, y, { align: "center" });
   doc.text("Firma y Cédula del Solicitante", cx2, y, { align: "center" });
   y += 4;
 
   doc.setTextColor(...C.textMuted);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(6);
-  doc.text("(Sello y firma de la coordinación)", cx1, y, { align: "center" });
+  doc.text("(Sello y firma)", cx1, y, { align: "center" });
   doc.text("(Aceptación de términos)", cx2, y, { align: "center" });
 
   return y + 4;

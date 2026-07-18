@@ -786,23 +786,18 @@ const Auditorio: React.FC = () => {
                   const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
                   const t = new Date(); t.setHours(0, 0, 0, 0);
                   const evIsPast = d < t || ev.extendedProps?.estado === 'Realizada';
-                  const estAprob = ev.extendedProps?.estatus_aprobacion || 'pendiente';
                   return (
                     <div key={ev.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm hover:shadow-theme-md transition-all duration-200 flex flex-col">
                       <div className="flex items-start justify-between px-4 pt-3.5 pb-1">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
                           {ev.extendedProps.tipoEvento || "Conferencia"}
                         </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          estAprob === 'aprobado'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50'
-                            : estAprob === 'rechazado'
-                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50'
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                          evIsPast
+                            ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
                             : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50'
                         }`}>
-                          {estAprob === 'aprobado' ? 'Aprobado'
-                            : estAprob === 'rechazado' ? 'Rechazado'
-                            : 'Pendiente'}
+                          {evIsPast ? 'Realizada' : 'Pendiente'}
                         </span>
                       </div>
 
