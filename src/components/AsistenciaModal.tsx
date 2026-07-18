@@ -18,6 +18,8 @@ interface EstadoAsistencia {
   tienePin: boolean;
   usarFacial: boolean;
   descriptorFacial?: string | null;
+  descriptoresFaciales?: string[] | null;
+  cantidadDescriptores?: number;
   asistencia: {
     entrada_manana: string | null;
     salida_manana: string | null;
@@ -179,7 +181,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
       setEstado(data);
       if (!data.tienePin) {
         showAlert("PIN no configurado. Contacte al departamento de RRHH.", false);
-      } else if (data.usarFacial && data.descriptorFacial && data.trabajador) {
+      } else if (data.usarFacial && (data.descriptorFacial || (data.descriptoresFaciales?.length ?? 0) > 0) && data.trabajador) {
         // Siempre intentar verificación facial primero si el trabajador tiene datos faciales
         setIsFacialOpen(true);
       } else {
@@ -725,6 +727,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
           onClose={() => setIsFacialOpen(false)}
           trabajador={estado.trabajador}
           descriptorFacial={estado.descriptorFacial || ""}
+          descriptoresFaciales={estado.descriptoresFaciales || undefined}
           onSuccess={handleFacialSuccess}
           onFallbackToPin={handleFacialFallback}
         />

@@ -227,7 +227,7 @@ export const rrhh = {
     }
   },
 
-  verificarFacial: async (payload: { cedulaTrabajador?: string; qr_uuid?: string }): Promise<PinVerificarResponse> => {
+  verificarFacial: async (payload: { cedulaTrabajador?: string; qr_uuid?: string; intento?: number; total_intentos?: number }): Promise<PinVerificarResponse> => {
     try {
       const res = await axiosInstance.post('/api/rrhh/asistencias/verificar-facial', payload);
       return res.data.data;
@@ -236,7 +236,13 @@ export const rrhh = {
     }
   },
 
-  actualizarTrabajadorFacial: async (id: string, data: { descriptor_facial?: string; usarFacial?: boolean; consentimientoFacial?: boolean; fechaConsentimiento?: string }): Promise<void> => {
+  registrarFacialFallido: async (payload: { cedulaTrabajador?: string; qr_uuid?: string; motivo?: string }): Promise<void> => {
+    try {
+      await axiosInstance.post('/api/rrhh/asistencias/facial-fallido', payload);
+    } catch {}
+  },
+
+  actualizarTrabajadorFacial: async (id: string, data: { descriptor_facial?: string; descriptores_faciales?: string[]; usarFacial?: boolean; consentimientoFacial?: boolean; fechaConsentimiento?: string }): Promise<void> => {
     await axiosInstance.put(`/api/rrhh/trabajadores/${id}`, data);
   },
 };

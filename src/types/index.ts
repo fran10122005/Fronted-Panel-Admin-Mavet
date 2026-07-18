@@ -154,6 +154,7 @@ export interface Trabajador {
   foto_url?: string;
   pin_hash?: string;
   descriptor_facial?: string;
+  descriptores_faciales?: string[];
   usarFacial?: boolean;
   consentimientoFacial?: boolean;
   fechaConsentimiento?: string;
@@ -174,6 +175,9 @@ export interface EstadoAsistencia {
   horasTranscurridas: number | null;
   tienePin: boolean;
   usarFacial: boolean;
+  descriptorFacial?: string | null;
+  descriptoresFaciales?: string[] | null;
+  cantidadDescriptores?: number;
   asistencia: {
     entrada_manana: string | null;
     salida_manana: string | null;
