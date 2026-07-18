@@ -74,10 +74,6 @@ const Auditorio: React.FC = () => {
   const [filterTipo, setFilterTipo] = useState("Todos");
   const [filterAprobacion, setFilterAprobacion] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [rechazoModal, setRechazoModal] = useState<{ open: boolean; id: string; motivo: string }>({
-    open: false, id: "", motivo: "",
-  });
   
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
@@ -275,15 +271,10 @@ const Auditorio: React.FC = () => {
     try {
       let result = await mavetApi.checkVisitante(cedula);
       
-      // Fallback search formats if not found on the first try
       if (!result.existe) {
         const cleanDigits = cedula.replace(/\D/g, "");
-        
-        // Format 1: V-XX.XXX.XXX
         const vDotted = `V-${cedula}`;
-        // Format 2: Just clean digits (e.g. 31619791)
         const cleanVal = cleanDigits;
-        // Format 3: V-XXXXXXXX (clean digits with V-)
         const vClean = `V-${cleanDigits}`;
         
         const formatsToTry = [vDotted, cleanVal, vClean];
@@ -297,7 +288,6 @@ const Auditorio: React.FC = () => {
                 break;
               }
             } catch {
-              // Ignore failure for individual format try
             }
           }
         }
@@ -358,7 +348,7 @@ const Auditorio: React.FC = () => {
     setHoraInicio("09:00");
     setHoraFin("16:00");
     setIsPastEvent(false);
-    setIsDateLocked(true); // Bloquear fecha si se seleccionó del calendario
+    setIsDateLocked(true); 
     openModal();
   };
 
@@ -394,11 +384,10 @@ const Auditorio: React.FC = () => {
     setTipoEvento(event.extendedProps?.tipoEvento || "Conferencia");
     setCorreoElectronico((event.extendedProps as any)?.correo_electronico || "");
     setRecursosSolicitados((event.extendedProps as any)?.recursos_solicitados || []);
-    // Bloquear edición si la fecha ya pasó
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const evDate = new Date((event.start?.split("T")[0] || "") + "T00:00:00");
     setIsPastEvent(evDate < today || event.extendedProps?.estado === 'Realizada');
-    setIsDateLocked(true); // Bloquear fecha también al editar desde calendario
+    setIsDateLocked(true); 
     openModal();
   };
   
@@ -501,7 +490,7 @@ const Auditorio: React.FC = () => {
     }
 
     if (formError.includes("no esta disponible") || formError.includes("ya han pasado en el día de hoy")) {
-      return; // Prevenir guardado si hay solapamiento o fecha pasada detectado por useEffect
+      return; 
     }
 
     try {
@@ -528,7 +517,6 @@ const Auditorio: React.FC = () => {
       } else {
         const response = await mavetApi.registrarReservaAuditorio(payload);
         toast.success("Reserva creada exitosamente");
-        // Convertir el payload a formato EventoAuditorio para el PDF
         const evToExport = {
           id: response.data?.id || response.data?.data?.id_solicitud || "nuevo",
           title: eventTitle,
@@ -613,34 +601,6 @@ const Auditorio: React.FC = () => {
     setRecursosSolicitados([]);
   };
 
-  const handleAprobar = async (id: string) => {
-    try {
-      await mavetApi.aprobarReservaAuditorio(id);
-      toast.success("Reserva aprobada exitosamente");
-      closeModal();
-      resetModalFields();
-      loadEventos();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al aprobar");
-    }
-  };
-
-  const handleRechazarConfirm = async () => {
-    if (!rechazoModal.motivo.trim()) {
-      toast.error("Debe indicar el motivo del rechazo");
-      return;
-    }
-    try {
-      await mavetApi.rechazarReservaAuditorio(rechazoModal.id, rechazoModal.motivo);
-      toast.success("Reserva rechazada");
-      setRechazoModal({ open: false, id: "", motivo: "" });
-      closeModal();
-      resetModalFields();
-      loadEventos();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al rechazar");
-    }
-  };
 
   const getColorClass = (tipo: string) => {
     switch(tipo) {
@@ -683,7 +643,6 @@ const Auditorio: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap gap-3">
-          {/* Filtros */}
           <div className="flex gap-2">
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -780,7 +739,6 @@ const Auditorio: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Leyenda solo en vista de calendario */}
         {viewMode === "calendar" && (
           <div className="flex flex-wrap gap-4 items-center bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-theme-xs text-sm w-full">
             <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">Leyenda:</span>
@@ -831,7 +789,6 @@ const Auditorio: React.FC = () => {
                   const estAprob = ev.extendedProps?.estatus_aprobacion || 'pendiente';
                   return (
                     <div key={ev.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm hover:shadow-theme-md transition-all duration-200 flex flex-col">
-                      {/* Tipo + Aprobación badges */}
                       <div className="flex items-start justify-between px-4 pt-3.5 pb-1">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getColorClass(ev.extendedProps.tipoEvento || "Conferencia")}`}>
                           {ev.extendedProps.tipoEvento || "Conferencia"}
@@ -849,14 +806,12 @@ const Auditorio: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Title */}
                       <div className="px-4 py-1.5">
                         <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90 leading-snug line-clamp-2">
                           {ev.title}
                         </h4>
                       </div>
 
-                      {/* Meta row */}
                       <div className="px-4 pb-2 space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-1.5">
                           <span>👤</span>
@@ -875,7 +830,6 @@ const Auditorio: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Actions */}
                       <div className="mt-auto px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-1 flex-wrap">
                         <button
                           onClick={async () => {
@@ -895,24 +849,6 @@ const Auditorio: React.FC = () => {
                         >
                           <AlertCircle className="h-3.5 w-3.5" />
                         </button>
-                        {canApprove && estAprob === 'pendiente' && (
-                          <>
-                            <button
-                              onClick={() => handleAprobar(ev.id)}
-                              className="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                              title="Aprobar"
-                            >
-                              <CheckCircle className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setRechazoModal({ open: true, id: ev.id, motivo: "" })}
-                              className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Rechazar"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                            </button>
-                          </>
-                        )}
                         {!isGerente && (
                           <button
                             onClick={() => !evIsPast && handleEditFromList(ev)}
@@ -940,7 +876,6 @@ const Auditorio: React.FC = () => {
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
         { (isGerente || isPastEvent) && selectedEvent ? (
           <div className="p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
-            {/* Header read-only */}
             <div className="flex items-start justify-between mb-6 pr-4">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-sm font-serif">
@@ -961,7 +896,6 @@ const Auditorio: React.FC = () => {
               </button>
             </div>
 
-            {/* Tarjeta Estado de Reserva */}
             <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-xl">
@@ -983,57 +917,6 @@ const Auditorio: React.FC = () => {
               </span>
             </div>
 
-            {/* Tarjeta Estatus de Aprobación */}
-            <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${
-                  selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado'
-                    ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
-                    : selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado'
-                    ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400'
-                    : 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
-                }`}>
-                  <CheckCircle className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Aprobación</span>
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    {selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado' ? 'Aprobado'
-                      : selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado' ? 'Rechazado'
-                      : 'Pendiente de aprobación'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {canApprove && selectedEvent.extendedProps?.estatus_aprobacion === 'pendiente' && (
-                  <>
-                    <button onClick={() => handleAprobar(selectedEvent.id)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors">
-                      Aprobar
-                    </button>
-                    <button onClick={() => setRechazoModal({ open: true, id: selectedEvent.id, motivo: "" })} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-500 text-white hover:bg-red-600 transition-colors">
-                      Rechazar
-                    </button>
-                  </>
-                )}
-                {selectedEvent.extendedProps?.estatus_aprobacion === 'aprobado' && selectedEvent.extendedProps?.aprobado_por_nombre && (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                    por {selectedEvent.extendedProps.aprobado_por_nombre}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {selectedEvent.extendedProps?.estatus_aprobacion === 'rechazado' && selectedEvent.extendedProps?.motivo_rechazo && (
-              <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-3 rounded-xl border border-red-200 dark:border-red-900/30 mb-4">
-                <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider">Motivo de Rechazo</span>
-                  <span className="text-sm">{selectedEvent.extendedProps.motivo_rechazo}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Grilla de Parámetros */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
@@ -1447,9 +1330,6 @@ const Auditorio: React.FC = () => {
         )}
       </Modal>
 
-      {/* ══════════════════════════════════════════
-          MODAL: Ver Asistentes (Recepción / QR)
-         ══════════════════════════════════════════ */}
       <Modal isOpen={isOpenAsistentes} onClose={closeAsistentesModal} className="max-w-4xl" showCloseButton={false}>
         <div className="p-6">
           <div className="flex items-start justify-between mb-1">
@@ -1526,47 +1406,6 @@ const Auditorio: React.FC = () => {
         onCancel={() => setConfirm(prev => ({ ...prev, open: false }))}
       />
 
-      {/* ══════════════════════════════════════════
-          MODAL: Motivo de Rechazo
-         ══════════════════════════════════════════ */}
-      <Modal isOpen={rechazoModal.open} onClose={() => setRechazoModal({ open: false, id: "", motivo: "" })} className="max-w-lg w-full mx-4">
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Rechazar Reserva</h3>
-            <button onClick={() => setRechazoModal({ open: false, id: "", motivo: "" })} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Indique el motivo por el cual se rechaza esta solicitud de reserva. Este motivo será visible para el solicitante.
-          </p>
-          <textarea
-            value={rechazoModal.motivo}
-            onChange={(e) => setRechazoModal(prev => ({ ...prev, motivo: e.target.value }))}
-            rows={4}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 resize-none"
-            placeholder="Ej. La fecha solicitada no está disponible debido a mantenimiento programado del auditorio..."
-            autoFocus
-          />
-          <div className="flex items-center justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => setRechazoModal({ open: false, id: "", motivo: "" })}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleRechazarConfirm}
-              disabled={!rechazoModal.motivo.trim()}
-              className="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              Rechazar Reserva
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
