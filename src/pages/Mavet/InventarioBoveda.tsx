@@ -38,10 +38,20 @@ export default function InventarioBoveda() {
   const canDeleteObra = userRole === "Administrador" || userRole === "admin";
 
   const previewUrlRef = useRef<string | null>(null);
+  const artistDropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
+  }, []);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (artistDropdownRef.current && !artistDropdownRef.current.contains(e.target as Node)) {
+        setArtistDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const [obras, setObras] = useState<Obra[]>([]);
@@ -74,6 +84,7 @@ export default function InventarioBoveda() {
   const [selectedObraForHistorial, setSelectedObraForHistorial] = useState<Obra | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
@@ -140,6 +151,7 @@ export default function InventarioBoveda() {
       3
     );
     setFormData({ ...initialFormState, codigo_inventario: nextCode });
+    setArtistInput("");
     setImagenFile(null);
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = null;
@@ -159,6 +171,7 @@ export default function InventarioBoveda() {
 
   const handleEdit = (obra: Obra) => {
     setFormData((prev) => ({ ...prev, ...obra, ...parseMedidas(obra.medidas), medidas: undefined }));
+    setArtistInput(obra.autor || "");
     setImagenFile(null);
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = null;
@@ -219,14 +232,14 @@ export default function InventarioBoveda() {
       if (!value || isNaN(num) || num < 1) return "Debe ser al menos 1 pieza.";
     }
     if (name === "ancho") {
+      if (value === "" || value === undefined || value === null) return "";
       const num = Number(value);
-      if (value === "" || value === undefined || value === null) return "El ancho es obligatorio.";
       if (isNaN(num) || num <= 0) return "El ancho debe ser un número positivo.";
       if (num > 1000) return "El ancho no puede superar los 1000 cm.";
     }
     if (name === "largo") {
+      if (value === "" || value === undefined || value === null) return "";
       const num = Number(value);
-      if (value === "" || value === undefined || value === null) return "El largo es obligatorio.";
       if (isNaN(num) || num <= 0) return "El largo debe ser un número positivo.";
       if (num > 1000) return "El largo no puede superar los 1000 cm.";
     }
@@ -273,6 +286,7 @@ export default function InventarioBoveda() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
     const isOtherTecnica = String(formData.id_tecnica) === "other";
     const isOtherCategoria = String(formData.id_categoria_obra) === "other";
 
@@ -290,8 +304,10 @@ export default function InventarioBoveda() {
     if (Object.keys(errors).length > 0) return;
 
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
 
     try {
+      const artistaId = formData.id_artista;
       let tecnicaId = formData.id_tecnica;
       const estadoId = formData.id_estado_actual;
       let categoriaId = formData.id_categoria_obra;
@@ -318,6 +334,7 @@ export default function InventarioBoveda() {
         clasificacion_patrimonial: _cp || 'no_clasificado',
         ubicacion_actual: ubicacion,
         anio: ano !== undefined && ano !== "" ? parseInt(ano.toString(), 10) : null,
+        id_artista: artistaId,
         id_tecnica: tecnicaId,
         id_estado_actual: estadoId,
         id_categoria_obra: categoriaId,
@@ -357,6 +374,7 @@ export default function InventarioBoveda() {
       toast.error(error.message || "Error al guardar obra");
     } finally {
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -372,6 +390,8 @@ export default function InventarioBoveda() {
   const [isArtistPreloaded, setIsArtistPreloaded] = useState(false);
   const [isArtistSubmitting, setIsArtistSubmitting] = useState(false);
   const [artistFieldErrors, setArtistFieldErrors] = useState<Record<string, string>>({});
+  const [artistInput, setArtistInput] = useState("");
+  const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
 
   const parseCedula = (value: string) => {
     let raw = (value || "").trim().toUpperCase();
@@ -575,7 +595,15 @@ export default function InventarioBoveda() {
         await mavetApi.actualizarArtista(payload.id_artista, payload);
         toast.success("Artista actualizado");
       } else {
-        await mavetApi.crearArtista(payload);
+        const result = await mavetApi.crearArtista(payload);
+        if (result.data) {
+          setFormData((prev: any) => ({
+            ...prev,
+            id_artista: result.data.id_artista,
+            autor: `${result.data.nombres || ""} ${result.data.apellidos || ""}`.trim(),
+          }));
+          setArtistInput(`${result.data.nombres || ""} ${result.data.apellidos || ""}`.trim());
+        }
         toast.success("Artista registrado");
       }
       await fetchArtistsList();
@@ -655,15 +683,6 @@ export default function InventarioBoveda() {
           </button>
           {canEditObra && (
             <>
-              <button
-                data-tour="agregar-artista"
-                onClick={() => handleArtistFormOpen()}
-                className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-              >
-                <svg className="w-5 h-5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span className="hidden sm:inline">Agregar Artista</span>
-                <span className="sm:hidden">Artista</span>
-              </button>
               <button 
                 data-tour="agregar-nueva-obra"
                 onClick={handleOpenAdd}
@@ -957,22 +976,88 @@ export default function InventarioBoveda() {
               </div>
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Autor / Artista</label>
-                <select
-                  name="id_artista"
-                  value={formData.id_artista ?? ""}
-                  onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                    formErrors.id_artista
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                  }`}
-                  required
-                >
-                  <option value="" disabled>Seleccione un artista...</option>
-                  {artistas.map((a: any) => (
-                    <option key={a.id_artista} value={a.id_artista}>{a.nombres} {a.apellidos}</option>
-                  ))}
-                </select>
+                <div className="relative" ref={artistDropdownRef}>
+                  <input
+                    type="text"
+                    placeholder="Buscar o escribir nombre del artista..."
+                    value={artistInput}
+                    onChange={(e) => {
+                      setArtistInput(e.target.value);
+                      setArtistDropdownOpen(true);
+                      if (!e.target.value.trim()) {
+                        setFormData((prev: any) => ({ ...prev, id_artista: undefined, autor: undefined }));
+                      }
+                    }}
+                    onFocus={() => setArtistDropdownOpen(true)}
+                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      formErrors.id_artista
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                    }`}
+                    required
+                  />
+                  {artistDropdownOpen && (() => {
+                    const query = artistInput.trim().toLowerCase();
+                    const filtered = query
+                      ? artistas.filter((a: any) => {
+                          const fullName = `${a.nombres || ""} ${a.apellidos || ""}`.trim().toLowerCase();
+                          return fullName.includes(query) || (a.ci && a.ci.includes(query));
+                        })
+                      : artistas;
+                    if (filtered.length === 0 && query.length >= 2) {
+                      return (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Sin coincidencias</div>
+                          <div
+                            onClick={() => {
+                              const [nombres, ...apellidosArr] = query.split(" ");
+                              setArtistFormData({
+                                nombres: nombres || "",
+                                apellidos: apellidosArr.join(" ") || "",
+                                ci: "", fecha_nacimiento: "", telefono: "", correo: "", direccion: "", nacionalidad: "",
+                              });
+                              setIsEditingArtist(false);
+                              setIsArtistPreloaded(false);
+                              setArtistFieldErrors({});
+                              setArtistSearchResults([]);
+                              setArtistSearchQuery("");
+                              setArtistFormOpen(true);
+                              setArtistDropdownOpen(false);
+                            }}
+                            className="px-3 py-2 text-sm text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer flex items-center gap-2 font-medium"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                            Agregar &quot;{query}&quot;
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (filtered.length === 0) return null;
+                    return (
+                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filtered.map((a: any) => (
+                          <div
+                            key={a.id_artista}
+                            onClick={() => {
+                              setFormData((prev: any) => ({
+                                ...prev,
+                                id_artista: a.id_artista,
+                                autor: `${a.nombres || ""} ${a.apellidos || ""}`.trim(),
+                              }));
+                              setArtistInput(`${a.nombres || ""} ${a.apellidos || ""}`.trim());
+                              setArtistDropdownOpen(false);
+                              setFormErrors((prev) => { const n = { ...prev }; delete n.id_artista; return n; });
+                            }}
+                            className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between"
+                          >
+                            <span className="text-gray-800 dark:text-white">{a.nombres} {a.apellidos}</span>
+                            {a.ci && <span className="text-[11px] text-gray-400">{a.ci}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
                 {formErrors.id_artista && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.id_artista}</p>}
               </div>
             </div>
@@ -981,7 +1066,7 @@ export default function InventarioBoveda() {
               <div>
                 <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medidas</label>
                 <div className="flex items-center gap-1.5">
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <input
                       type="number"
                       name="ancho"
@@ -990,16 +1075,17 @@ export default function InventarioBoveda() {
                       max={1000}
                       value={formData.ancho ?? ""}
                       onChange={handleChange}
-                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.ancho
                           ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
                     />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
                   </div>
                   <span className="text-sm font-bold text-gray-400 dark:text-gray-500 px-0.5 select-none">x</span>
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <input
                       type="number"
                       name="largo"
@@ -1008,13 +1094,14 @@ export default function InventarioBoveda() {
                       max={1000}
                       value={formData.largo ?? ""}
                       onChange={handleChange}
-                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.largo
                           ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
                     />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
                   </div>
                 </div>
                 {(formErrors.ancho || formErrors.largo) && (
@@ -1274,28 +1361,37 @@ export default function InventarioBoveda() {
 
             <div>
               <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen de la Obra</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setImagenFile(file);
-                  if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-                  const url = file ? URL.createObjectURL(file) : null;
-                  previewUrlRef.current = url;
-                  setImagenPreviewUrl(url);
-                }}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-              />
+              {isEditing && formData.imagen_url ? (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">La imagen de esta obra no se puede cambiar.</p>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">Si necesita actualizarla, elimine la obra y regístrela nuevamente.</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setImagenFile(file);
+                    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+                    const url = file ? URL.createObjectURL(file) : null;
+                    previewUrlRef.current = url;
+                    setImagenPreviewUrl(url);
+                  }}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                />
+              )}
               {imagenPreviewUrl && (
                 <div className="mt-3 w-full max-w-xs h-48 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center mx-auto sm:mx-0">
                   <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-contain p-2" />
                 </div>
               )}
-              {isEditing && formData.imagen_url && !imagenFile && (
-                <p className="mt-1 text-xs text-gray-500">Ya existe una imagen cargada. Suba un archivo solo si desea reemplazarla.</p>
-              )}
-              {!imagenPreviewUrl && formData.imagen_url && !imagenFile && (
+              {!imagenPreviewUrl && formData.imagen_url && (
                 <div className="mt-3 w-full max-w-xs h-48 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center mx-auto sm:mx-0">
                   <img src={formData.imagen_url} alt="Imagen actual" className="w-full h-full object-contain p-2" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 </div>

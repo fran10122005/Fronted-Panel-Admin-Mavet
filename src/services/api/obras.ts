@@ -1,5 +1,4 @@
-import axios from "axios";
-import { axiosInstance, API_BASE, extractPagination, extractList } from "./client";
+import { axiosInstance, extractPagination, extractList } from "./client";
 import type { Artista, Obra } from "../../types";
 
 export const obras = {
@@ -41,13 +40,7 @@ export const obras = {
 
   crearObra: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      if (payload instanceof FormData) {
-        await axios.post(`${API_BASE}/api/obras/obras`, payload, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-      } else {
-        await axiosInstance.post("/api/obras/obras", payload);
-      }
+      await axiosInstance.post("/api/obras/obras", payload);
       return { success: true, message: "Obra agregada exitosamente al inventario." };
     } catch (e: any) {
       console.error("[crearObra]", e.response?.data);
@@ -57,13 +50,7 @@ export const obras = {
 
   actualizarObra: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      if (payload instanceof FormData) {
-        await axios.put(`${API_BASE}/api/obras/obras/${id}`, payload, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-      } else {
-        await axiosInstance.put(`/api/obras/obras/${id}`, payload);
-      }
+      await axiosInstance.put(`/api/obras/obras/${id}`, payload);
       return { success: true, message: "Obra actualizada exitosamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar la obra");
@@ -88,10 +75,10 @@ export const obras = {
     }
   },
 
-  crearArtista: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  crearArtista: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
-      await axiosInstance.post("/api/obras/artistas", payload);
-      return { success: true, message: "Artista registrado exitosamente." };
+      const res = await axiosInstance.post("/api/obras/artistas", payload);
+      return { success: true, message: "Artista registrado exitosamente.", data: res.data?.data };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear artista");
     }
