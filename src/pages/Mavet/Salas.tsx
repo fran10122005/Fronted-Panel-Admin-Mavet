@@ -1,18 +1,29 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { mavetApi } from "../../services/api";
 import { Modal } from "../../components/ui/modal";
+import Button from "../../components/ui/button/Button";
+import TextField from "../../components/ui/TextField";
+import Badge from "../../components/ui/Badge";
 import toast from "react-hot-toast";
 import { limitNumericInput } from "../../utils/validation";
 import { generateNextCode } from "../../utils/codeGenerator";
-import { Pencil, Trash2, AlertCircle } from "lucide-react";
 
 import ComponentCard from "../../components/common/ComponentCard";
 
+interface Espacio {
+  id_espacio?: number;
+  id?: number;
+  codigo_espacio?: string;
+  nombre_espacio: string;
+  capacidad_maxima?: number;
+  descripcion?: string;
+  imagen_url?: string;
+}
+
 export default function Salas() {
-  const [espacios, setEspacios] = useState<any[]>([]);
+  const [espacios, setEspacios] = useState<Espacio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Modal states
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -23,8 +34,19 @@ export default function Salas() {
     codigo_espacio: "",
     nombre_espacio: "",
     capacidad_maxima: "",
-    descripcion: ""
+    descripcion: "",
+    imagen_url: ""
   });
+
+  const [imagenFile, setImagenFile] = useState<File | null>(null);
+  const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null }>({
     open: false,
@@ -47,49 +69,55 @@ export default function Salas() {
     loadEspacios();
   }, []);
 
+  const cleanImagePreview = () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setImagenFile(null);
+    setImagenPreviewUrl(null);
+  };
+
   const openCrear = async () => {
     setIsEditing(false);
     setSelectedId(null);
     setFieldErrors({});
-    
-    // Generar código automático
+    cleanImagePreview();
+
     const all = espacios;
     const nextCode = generateNextCode(
-      all.map(e => e.id_espacio || e.id),
+      all.map(e => e.id_espacio || e.id || 0),
       "EMU",
       5
     );
-    
-    setFormData({ codigo_espacio: nextCode, nombre_espacio: "", capacidad_maxima: "", descripcion: "" });
+
+    setFormData({ codigo_espacio: nextCode, nombre_espacio: "", capacidad_maxima: "", descripcion: "", imagen_url: "" });
     setIsModalOpen(true);
   };
 
-  const openEditar = (espacio: any) => {
+  const openEditar = (espacio: Espacio) => {
     setIsEditing(true);
-    setSelectedId(espacio.id_espacio || espacio.id);
+    setSelectedId(espacio.id_espacio || espacio.id || null);
     setFieldErrors({});
+    cleanImagePreview();
     setFormData({
-      codigo_espacio: espacio.id_espacio || espacio.codigo_espacio || "",
+      codigo_espacio: espacio.codigo_espacio || "",
       nombre_espacio: espacio.nombre_espacio || "",
-      capacidad_maxima: espacio.capacidad_maxima || "",
-      descripcion: espacio.descripcion || ""
+      capacidad_maxima: espacio.capacidad_maxima?.toString() || "",
+      descripcion: espacio.descripcion || "",
+      imagen_url: espacio.imagen_url || ""
     });
     setIsModalOpen(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
 
     if (name === "capacidad_maxima") {
       let error = "";
       if (value) {
         const cap = Number(value);
-        if (cap < 1) {
-          error = "La capacidad debe ser al menos 1 persona.";
-        } else if (cap > 80) {
-          error = "La capacidad máxima permitida es de 80 personas.";
-        }
+        if (cap < 1) error = "La capacidad debe ser al menos 1 persona.";
+        else if (cap > 80) error = "La capacidad máxima permitida es de 80 personas.";
       }
       setFieldErrors(prev => ({ ...prev, capacidad_maxima: error }));
     } else {
@@ -106,19 +134,13 @@ export default function Salas() {
 
     if (formData.capacidad_maxima) {
       const cap = Number(formData.capacidad_maxima);
-      if (cap < 1) {
-        toast.error("La capacidad debe ser al menos 1 persona");
-        return;
-      }
-      if (cap > 80) {
-        toast.error("La capacidad máxima permitida es de 80 personas");
-        return;
-      }
+      if (cap < 1) { toast.error("La capacidad debe ser al menos 1 persona"); return; }
+      if (cap > 80) { toast.error("La capacidad máxima permitida es de 80 personas"); return; }
     }
 
     const trimmedName = formData.nombre_espacio.trim();
-    const isDuplicate = espacios.some(e => 
-      e.nombre_espacio.toLowerCase() === trimmedName.toLowerCase() && 
+    const isDuplicate = espacios.some(e =>
+      e.nombre_espacio.toLowerCase() === trimmedName.toLowerCase() &&
       (isEditing ? (e.id_espacio || e.id) !== selectedId : true)
     );
 
@@ -126,15 +148,21 @@ export default function Salas() {
       toast.error("Ya existe un espacio con ese nombre");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
-      const payload: any = {
+      let payload: any = {
+        codigo_espacio: formData.codigo_espacio || undefined,
         nombre_espacio: formData.nombre_espacio,
-        descripcion: formData.descripcion
+        descripcion: formData.descripcion || undefined,
       };
-      if (formData.capacidad_maxima) {
-        payload.capacidad_maxima = Number(formData.capacidad_maxima);
+      if (formData.capacidad_maxima) payload.capacidad_maxima = Number(formData.capacidad_maxima);
+
+      if (imagenFile) {
+        const fd = new FormData();
+        Object.keys(payload).forEach(key => fd.append(key, payload[key]));
+        fd.append("imagen", imagenFile);
+        payload = fd;
       }
 
       if (isEditing && selectedId) {
@@ -145,6 +173,7 @@ export default function Salas() {
         toast.success("Espacio creado correctamente");
       }
       setIsModalOpen(false);
+      cleanImagePreview();
       loadEspacios();
     } catch (error: any) {
       toast.error(error.message || "Error al guardar el espacio");
@@ -172,14 +201,10 @@ export default function Salas() {
         title="Gestión de Salas y Espacios"
         desc="Administración de los espacios disponibles en el museo."
         action={
-          <button
-            data-tour="nuevo-espacio"
-            onClick={openCrear}
-            className="bg-brand-600 text-white hover:bg-brand-700 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          <Button size="sm" onClick={openCrear} data-tour="nuevo-espacio"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
             Nuevo Espacio
-          </button>
+          </Button>
         }
       >
         <div className="overflow-hidden border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
@@ -208,28 +233,38 @@ export default function Salas() {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {espacios.map((esp) => (
                   <tr key={esp.id_espacio || esp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                    <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-200">{esp.nombre_espacio}</td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                      {esp.capacidad_maxima ? `${esp.capacidad_maxima} personas` : "No definida"}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {esp.imagen_url && (
+                          <img src={esp.imagen_url} alt="" className="w-9 h-9 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-gray-700 shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        )}
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{esp.nombre_espacio}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 max-w-xs truncate" title={esp.descripcion}>
-                      {esp.descripcion || "Sin descripción"}
+                    <td className="px-6 py-4">
+                      {esp.capacidad_maxima ? (
+                        <Badge scheme={esp.capacidad_maxima <= 10 ? "danger" : esp.capacidad_maxima <= 30 ? "warning" : "success"}>
+                          {esp.capacidad_maxima} personas
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">No definida</span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-right space-x-2 flex justify-end">
-                      <button
-                        onClick={() => openEditar(esp)}
-                        title="Editar"
-                        className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
-                      >
-                        <Pencil className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete({ open: true, id: esp.id_espacio || esp.id })}
-                        title="Eliminar"
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium ml-3 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 max-w-xs truncate text-sm" title={esp.descripcion}>
+                      {esp.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="xs" onClick={() => openEditar(esp)} title="Editar"
+                          startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}>
+                          Editar
+                        </Button>
+                        <Button variant="danger" size="xs" onClick={() => setConfirmDelete({ open: true, id: esp.id_espacio || esp.id || null })} title="Eliminar"
+                          startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}>
+                          Eliminar
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -240,88 +275,82 @@ export default function Salas() {
         </div>
       </ComponentCard>
 
-      {/* Modal Crear/Editar */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="p-2">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); cleanImagePreview(); }} className="max-w-lg p-0 overflow-hidden">
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5">
             {isEditing ? "Editar Espacio" : "Nuevo Espacio"}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <TextField label="Código de Espacio" value={formData.codigo_espacio} readOnly
+              className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono" />
+
+            <TextField label="Nombre del Espacio *" name="nombre_espacio" value={formData.nombre_espacio}
+              onChange={handleChange} required placeholder="Ej. Sala 1, Auditorio..." />
+
+            <TextField label="Capacidad Máxima" name="capacidad_maxima" type="number"
+              value={formData.capacidad_maxima} onChange={handleChange}
+              onKeyDown={limitNumericInput} placeholder="Ej. 50 (máx. 80)"
+              error={fieldErrors.capacidad_maxima}
+              hint="Máximo 80 personas" />
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Código de Espacio</label>
-              <input
-                type="text"
-                value={formData.codigo_espacio}
-                readOnly
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 focus:outline-none font-mono cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Espacio *</label>
-              <input
-                type="text"
-                name="nombre_espacio"
-                value={formData.nombre_espacio}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-                placeholder="Ej. Sala 1, Auditorio..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capacidad Máxima</label>
-              <input
-                type="number"
-                name="capacidad_maxima"
-                value={formData.capacidad_maxima}
-                onChange={handleChange}
-                onKeyDown={limitNumericInput}
-                min="1"
-                max="80"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-                placeholder="Ej. 50 (máx. 80)"
-              />
-              {fieldErrors.capacidad_maxima && (
-                <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2.5 rounded-lg border border-red-200 dark:border-red-900/30 mt-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs font-medium">{fieldErrors.capacidad_maxima}</p>
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Descripción
+              </label>
               <textarea
                 name="descripcion"
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows={3}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                 placeholder="Detalles sobre el espacio..."
-              ></textarea>
+              />
             </div>
-            <div className="flex justify-end pt-4 gap-3">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
-              >
+
+            <div>
+              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Imagen del Espacio
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImagenFile(file);
+                  if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+                  const url = file ? URL.createObjectURL(file) : null;
+                  previewUrlRef.current = url;
+                  setImagenPreviewUrl(url);
+                }}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+              />
+              {imagenPreviewUrl && (
+                <div className="mt-3 w-full max-w-xs h-44 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
+                  <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-contain p-2" />
+                </div>
+              )}
+              {!imagenPreviewUrl && formData.imagen_url && (
+                <div className="mt-3 w-full max-w-xs h-44 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
+                  <img src={formData.imagen_url} alt="Imagen actual" className="w-full h-full object-contain p-2"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" type="button" onClick={() => { setIsModalOpen(false); cleanImagePreview(); }}>
                 Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition shadow-sm disabled:opacity-50"
-              >
+              </Button>
+              <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
                 {isSubmitting ? "Guardando..." : "Guardar"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
       </Modal>
 
-      {/* Modal Confirmar Eliminación */}
-      <Modal isOpen={confirmDelete.open} onClose={() => setConfirmDelete({ open: false, id: null })}>
-        <div className="p-4 text-center">
+      <Modal isOpen={confirmDelete.open} onClose={() => setConfirmDelete({ open: false, id: null })} className="max-w-sm p-0 overflow-hidden">
+        <div className="p-6 text-center">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
             <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -332,18 +361,12 @@ export default function Salas() {
             ¿Está seguro de que desea eliminar este espacio? Esta acción no se puede deshacer.
           </p>
           <div className="flex justify-center gap-3">
-            <button
-              onClick={() => setConfirmDelete({ open: false, id: null })}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-            >
+            <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, id: null })}>
               Cancelar
-            </button>
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
               Sí, eliminar
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

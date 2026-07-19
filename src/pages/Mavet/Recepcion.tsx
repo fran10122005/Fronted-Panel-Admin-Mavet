@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { Modal } from "../../components/ui/modal";
+import Button from "../../components/ui/button/Button";
+import TextField from "../../components/ui/TextField";
+import Select from "../../components/ui/Select";
+import Badge from "../../components/ui/Badge";
 import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
 import { limitNumericInput } from "../../utils/validation";
 import PrivacyConsent from "../../components/ui/PrivacyConsent";
@@ -39,25 +43,17 @@ export default function Recepcion() {
     <div className="space-y-6 max-w-7xl mx-auto relative">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsQrModalOpen(true)}
-            className="bg-brand-100 text-brand-700 hover:bg-brand-200 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60 font-semibold py-2 px-4 rounded-lg text-sm transition shadow-sm flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
-            </svg>
-            Generar QR Público
-          </button>
-        </div>
+        <Button size="sm" variant="secondary" onClick={() => setIsQrModalOpen(true)}
+          startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" /></svg>}>
+          Generar QR Público
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         {/* Columna Izquierda (Buscador y Formulario) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Panel de Búsqueda Resiliente */}
+          {/* Panel de Búsqueda */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
@@ -72,7 +68,7 @@ export default function Recepcion() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 pr-10 focus:border-brand-500 focus:outline-none transition"
+                  className="w-full rounded-lg border bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600 pr-10"
                   placeholder="Cédula, nombre, tel..."
                 />
                 {isSearching && (
@@ -84,13 +80,9 @@ export default function Recepcion() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleSearch}
-                disabled={searchQuery.length < 3}
-                className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button onClick={handleSearch} disabled={searchQuery.length < 3}>
                 Buscar
-              </button>
+              </Button>
             </div>
             {searchQuery.length > 0 && searchQuery.length < 3 && (
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Escribe al menos 3 caracteres para buscar automáticamente.</p>
@@ -108,9 +100,9 @@ export default function Recepcion() {
                     <p className="font-semibold text-gray-800 dark:text-white">{p.nombres} {p.apellidos}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{p.cedula || 'Sin cédula'}</p>
                     {p.representante && (
-                      <p className="text-xs mt-1 text-brand-600 bg-brand-50 dark:bg-brand-900/30 inline-block px-2 py-0.5 rounded">
+                      <Badge scheme="info" className="mt-1.5">
                         Acompañado por: {p.representante.nombres} {p.representante.apellidos}
-                      </p>
+                      </Badge>
                     )}
                   </div>
                 ))}
@@ -132,19 +124,13 @@ export default function Recepcion() {
               </h2>
               <div className="flex items-center gap-2">
                 {selectedPersona && (
-                  <span className="text-xs bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-2.5 py-1 rounded-full font-medium">
-                    {selectedPersona.nombres} {selectedPersona.apellidos}
-                  </span>
+                  <Badge scheme="info">{selectedPersona.nombres} {selectedPersona.apellidos}</Badge>
                 )}
                 {selectedPersona && (!selectedPersona.edad || selectedPersona.edad >= 18) && (
-                  <button
-                    type="button"
-                    onClick={() => setIsMenorModalOpen(true)}
-                    className="bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 font-semibold py-1.5 px-3 rounded-lg text-sm transition flex items-center gap-1"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  <Button variant="primary" size="xs" onClick={() => setIsMenorModalOpen(true)}
+                    startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}>
                     Registrar Menor
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -154,41 +140,41 @@ export default function Recepcion() {
               handleSubmit(e);
             }} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <TextField label="Fecha de Nacimiento" type="date" name="fecha_nacimiento"
+                  min="1900-01-01" max={new Date().toISOString().split("T")[0]}
+                  value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker" />
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
-                  <input type="date" name="fecha_nacimiento" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={formData.fecha_nacimiento} onChange={handleChange} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula {formData.fecha_nacimiento && age >= 9 ? "*" : "(opcional < 9 años)"}</label>
+                  <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {formData.fecha_nacimiento && age >= 9 ? "Cédula *" : "Cédula (opcional < 9 años)"}
+                  </label>
                   <div className="flex">
-                    <select
-                      name="nacionalidad"
-                      value={formData.nacionalidad}
-                      onChange={handleChange}
+                    <select name="nacionalidad" value={formData.nacionalidad} onChange={handleChange}
                       disabled={formData.fecha_nacimiento !== "" && age < 9}
-                      className="border rounded-l-lg px-2 py-2 bg-gray-50 dark:bg-gray-600 dark:border-gray-600 focus:outline-none dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                      className="border border-r-0 border-gray-300 dark:border-gray-600 rounded-l-lg px-2 py-2 bg-gray-50 dark:bg-gray-800 text-sm text-gray-700 dark:text-white/90 focus:outline-none disabled:opacity-50">
                       <option value="V-">V-</option>
                       <option value="E-">E-</option>
                     </select>
-                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange} disabled={formData.fecha_nacimiento !== "" && age < 9} className="w-full border-y border-r rounded-r-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Ej. 31.243.332" />
+                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange}
+                      disabled={formData.fecha_nacimiento !== "" && age < 9}
+                      placeholder="Ej. 31.243.332"
+                      className="w-full rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 disabled:opacity-50" />
                   </div>
                 </div>
+
+                <TextField label="Nombres *" name="nombres" value={formData.nombres}
+                  onChange={handleChange} required placeholder="Ej. Ana" />
+
+                <TextField label="Apellidos *" name="apellidos" value={formData.apellidos}
+                  onChange={handleChange} required placeholder="Ej. Silva" />
+
+                <TextField label="Teléfono" type="tel" name="telefono" value={formData.telefono}
+                  onChange={handleChange} onKeyDown={limitNumericInput} />
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres *</label>
-                  <input type="text" name="nombres" value={formData.nombres} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. Ana" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos *</label>
-                  <input type="text" name="apellidos" value={formData.apellidos} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" placeholder="Ej. Silva" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                  <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} onKeyDown={limitNumericInput} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">Motivo *</label>
-                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required style={{ colorScheme: 'dark' }} className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:outline-none">
+                  <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Motivo *</label>
+                  <select name="id_motivo" value={formData.id_motivo} onChange={handleChange} required
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
                     <option value="">Seleccione...</option>
                     {motivos.map(m => (
                       <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.nombre}</option>
@@ -208,32 +194,22 @@ export default function Recepcion() {
                     )}
                   </select>
                 </div>
+
                 <div className="sm:col-span-2 flex flex-col gap-2">
                   <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="checkbox"
-                      id="visitaInst"
-                      checked={isVisitaInstitucional}
+                    <input type="checkbox" id="visitaInst" checked={isVisitaInstitucional}
                       onChange={(e) => setIsVisitaInstitucional(e.target.checked)}
-                      className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
-                    />
+                      className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500" />
                     <label htmlFor="visitaInst" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
                       Es Visita Institucional / Grupal
                     </label>
                   </div>
                   {isVisitaInstitucional && (
                     <div className="w-full sm:w-1/2 mt-1 animate-fade-in">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cantidad de Acompañantes / Niños</label>
-                      <input
-                        type="number"
-                        min={0}
-                        name="cantidad_acompanantes"
-                        value={formData.cantidad_acompanantes}
-                        onChange={handleChange}
-                        onKeyDown={limitNumericInput}
-                        className="w-full border rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 focus:border-brand-500 focus:outline-none dark:text-white"
-                        placeholder="Ej. 30"
-                      />
+                      <TextField label="Cantidad de Acompañantes / Niños" type="number" min={0}
+                        name="cantidad_acompanantes" value={formData.cantidad_acompanantes}
+                        onChange={handleChange} onKeyDown={limitNumericInput}
+                        placeholder="Ej. 30" />
                     </div>
                   )}
                 </div>
@@ -244,39 +220,28 @@ export default function Recepcion() {
                   <h4 className="text-sm font-bold text-brand-800 dark:text-brand-300 mb-2">Menores Asociados (Ingreso Rápido)</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedPersona.menores_asociados.map((m: any) => (
-                      <button
-                        type="button"
-                        key={m.id_persona}
+                      <Button key={m.id_persona} variant="secondary" size="xs" type="button"
                         disabled={isSubmitting}
-                        onClick={() => handleIngresarMenorAsociado(m)}
-                        className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-brand-200 text-brand-700 dark:text-brand-400 rounded-lg text-sm hover:bg-brand-100 dark:hover:bg-brand-900/40 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
+                        onClick={() => handleIngresarMenorAsociado(m)}>
                         Ingresar a {m.nombres}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
               )}
 
               <div className="mt-5">
-                <PrivacyConsent
-                  checked={consentimiento}
-                  onChange={setConsentimiento}
-                />
+                <PrivacyConsent checked={consentimiento} onChange={setConsentimiento} />
               </div>
 
               <div className="pt-5 mt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center">
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-bold py-2.5 px-6 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
-                  >
+                  <Button variant="secondary" type="button" onClick={resetForm}>
                     Limpiar Formulario
-                  </button>
-                  <button type="submit" disabled={isSubmitting} className="bg-brand-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-brand-700 transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed">
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
                     {isSubmitting ? "Registrando..." : "Registrar Ingreso"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </form>
@@ -293,17 +258,12 @@ export default function Recepcion() {
               <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                 <span className="text-xl">📅</span> Agenda de Hoy
                 {eventosHoy.length > 0 && (
-                  <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-mono">
-                    {eventosHoy.length}
-                  </span>
+                  <Badge scheme="info">{eventosHoy.length}</Badge>
                 )}
               </h2>
-              <button
-                onClick={fetchDashboardData}
-                disabled={isLoadingDashboard}
+              <button onClick={fetchDashboardData} disabled={isLoadingDashboard}
                 className="text-gray-400 hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400 transition p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Actualizar agenda"
-              >
+                title="Actualizar agenda">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-4 h-4 ${isLoadingDashboard ? 'animate-spin' : ''}`}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
                 </svg>
@@ -348,41 +308,31 @@ export default function Recepcion() {
             </svg>
             Ingresos Registrados
             {ingresos.length > 0 && (
-              <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 px-2 py-0.5 rounded-full font-mono">
-                {ingresos.length}
-              </span>
+              <Badge scheme="info">{ingresos.length}</Badge>
             )}
           </h2>
           <div className="flex items-center gap-2">
-            <select
+            <Select
               value={ingresosFiltro}
               onChange={(e) => setIngresosFiltro(e.target.value as any)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:border-brand-500 focus:outline-none"
-            >
-              <option value="hoy">Hoy</option>
-              <option value="mes">Este Mes</option>
-              <option value="ano">Este Año</option>
-            </select>
-            <button
-              onClick={() => {
-                const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
-                exportarReporteIngresos(ingresos, etiquetas[ingresosFiltro]);
-              }}
-              disabled={ingresos.length === 0}
-              className="bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed border border-red-200 dark:border-red-800/50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-              </svg>
+              options={[
+                { value: "hoy", label: "Hoy" },
+                { value: "mes", label: "Este Mes" },
+                { value: "ano", label: "Este Año" },
+              ]}
+              className="w-auto min-w-[120px]"
+            />
+            <Button variant="danger" size="xs" onClick={() => {
+              const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
+              exportarReporteIngresos(ingresos, etiquetas[ingresosFiltro]);
+            }} disabled={ingresos.length === 0}
+              startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>}>
               PDF
-            </button>
+            </Button>
             {!isLoadingIngresos && ingresos.length > INGRESOS_PAGE_SIZE && (
-              <button
-                onClick={() => setShowAllIngresos(!showAllIngresos)}
-                className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition px-2"
-              >
+              <Button variant="ghost" size="xs" onClick={() => setShowAllIngresos(!showAllIngresos)}>
                 {showAllIngresos ? 'Ver menos' : `Ver más (${ingresos.length - INGRESOS_PAGE_SIZE} restantes)`}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -434,70 +384,57 @@ export default function Recepcion() {
       </div>
 
       {/* Modal para Registrar Menor */}
-      <Modal isOpen={isMenorModalOpen} onClose={() => setIsMenorModalOpen(false)}>
-        <div className="p-2">
-          <h3 className="text-lg font-bold mb-4 dark:text-gray-200">Registrar Menor Acompañante</h3>
-          <p className="text-sm text-gray-600 mb-4 dark:text-gray-200">Representante: {selectedPersona?.nombres} {selectedPersona?.apellidos}</p>
+      <Modal isOpen={isMenorModalOpen} onClose={() => setIsMenorModalOpen(false)} className="max-w-md p-0 overflow-hidden">
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Registrar Menor Acompañante</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+            Representante: {selectedPersona?.nombres} {selectedPersona?.apellidos}
+          </p>
           <form onSubmit={handleRegistrarMenor} className="space-y-4">
-            <div>
-              <label className="block text-sm mb-1 dark:text-gray-200">Nombres del Menor *</label>
-              <input required type="text" value={menorData.nombres} onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1 dark:text-gray-200">Apellidos del Menor *</label>
-              <input required type="text" value={menorData.apellidos} onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1 dark:text-gray-200">Fecha de Nacimiento *</label>
-              <input required type="date" min="1900-01-01" max={new Date().toISOString().split("T")[0]} value={menorData.fecha_nacimiento} onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })} className="show-date-picker w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1 dark:text-gray-200">Cédula {menorData.fecha_nacimiento && ageMenor >= 9 ? "*" : "(Opcional si es < 9 años)"}</label>
-              <input
-                type="text"
-                value={menorData.cedula}
-                onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })}
-                onKeyDown={limitNumericInput}
-                className="w-full border rounded-lg px-3 py-2 dark:border-gray-700 dark:bg-gray-700 dark:text-white"
-                placeholder="Ej. 12345678"
-                required={!!menorData.fecha_nacimiento && ageMenor >= 9}
-              />
-            </div>
+            <TextField label="Nombres del Menor *" required type="text" value={menorData.nombres}
+              onChange={(e) => setMenorData({ ...menorData, nombres: e.target.value })} />
+            <TextField label="Apellidos del Menor *" required type="text" value={menorData.apellidos}
+              onChange={(e) => setMenorData({ ...menorData, apellidos: e.target.value })} />
+            <TextField label="Fecha de Nacimiento *" required type="date"
+              min="1900-01-01" max={new Date().toISOString().split("T")[0]}
+              value={menorData.fecha_nacimiento}
+              onChange={(e) => setMenorData({ ...menorData, fecha_nacimiento: e.target.value })}
+              className="show-date-picker" />
+            <TextField
+              label={menorData.fecha_nacimiento && ageMenor >= 9 ? "Cédula *" : "Cédula (Opcional si es < 9 años)"}
+              type="text" value={menorData.cedula}
+              onChange={(e) => setMenorData({ ...menorData, cedula: e.target.value })}
+              onKeyDown={limitNumericInput} placeholder="Ej. 12345678"
+              required={!!menorData.fecha_nacimiento && ageMenor >= 9} />
             {menorData.fecha_nacimiento && ageMenor >= 9 && ageMenor <= 13 && (
-              <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
                 <span>⚠️</span> Este menor tiene {ageMenor} años. Se recomienda tramitar su cédula de identidad pronto.
               </div>
             )}
             {menorData.fecha_nacimiento && ageMenor >= 12 && (
-              <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
                 <span>🚫</span> No se puede registrar como menor. A partir de 12 años debe registrarse como visitante regular.
               </div>
             )}
-            <div className="flex justify-end pt-4">
-              <button
-                type="submit"
-                disabled={!!menorData.fecha_nacimiento && ageMenor >= 12}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >Guardar e Ingresar</button>
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={!!menorData.fecha_nacimiento && ageMenor >= 12}>
+                Guardar e Ingresar
+              </Button>
             </div>
           </form>
         </div>
       </Modal>
 
       {/* Modal de Código QR */}
-      <Modal isOpen={isQrModalOpen} onClose={() => setIsQrModalOpen(false)}>
-        <div className="p-4 flex flex-col items-center text-center">
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">QR de Auto-Ingreso</h3>
+      <Modal isOpen={isQrModalOpen} onClose={() => setIsQrModalOpen(false)} className="max-w-md p-0 overflow-hidden">
+        <div className="p-6 flex flex-col items-center text-center">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">QR de Auto-Ingreso</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Imprima este código y colóquelo en la entrada. Los visitantes podrán escanearlo para registrar su acceso automáticamente.
           </p>
 
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 mb-6">
-            <img
-              src={qrImageUrl}
-              alt="Código QR de Auto Ingreso"
-              className="w-64 h-64 object-contain"
-            />
+            <img src={qrImageUrl} alt="Código QR de Auto Ingreso" className="w-64 h-64 object-contain" />
           </div>
 
           <div className="w-full bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
@@ -507,23 +444,13 @@ export default function Recepcion() {
           </div>
 
           <div className="flex gap-3 w-full">
-            <button
-              type="button"
-              onClick={() => setIsQrModalOpen(false)}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium"
-            >
+            <Button variant="secondary" className="flex-1" onClick={() => setIsQrModalOpen(false)}>
               Cerrar
-            </button>
-            <button
-              type="button"
-              onClick={() => exportarQRPublico(qrImageUrl, publicRegistrationUrl)}
-              className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition font-bold shadow-sm inline-flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-2a2 2 0 00-2-2H5a2 2 0 00-2 2v2a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
+            </Button>
+            <Button className="flex-1" onClick={() => exportarQRPublico(qrImageUrl, publicRegistrationUrl)}
+              startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-2a2 2 0 00-2-2H5a2 2 0 00-2 2v2a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-2a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>}>
               Imprimir QR
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

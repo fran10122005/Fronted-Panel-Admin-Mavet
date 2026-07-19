@@ -449,6 +449,23 @@ export async function exportarReporteTrabajadores() {
   }
 }
 
+// ─── PDF: Reporte de Auditoría (Bitácora) ─────────────────────────────────────
+export async function exportarReporteAuditoria(params?: { tipo?: string; desde?: string; hasta?: string }) {
+  try {
+    const res = await axiosInstance.get("/api/reportes/auditoria", {
+      params,
+      responseType: "blob",
+    });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank");
+  } catch (e) {
+    console.error("[exportarReporteAuditoria]", e);
+    alert(
+      "Error al generar el reporte de auditoría. Verifica tu conexión e inicia sesión nuevamente.",
+    );
+  }
+}
+
 // ─── PDF: Listado de Usuarios ──────────────────────────────────────────────
 export async function exportarReporteUsuarios() {
   try {

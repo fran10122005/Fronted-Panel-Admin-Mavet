@@ -3,6 +3,9 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useLibros, ITEMS_PER_PAGE } from "../../hooks/useLibros";
 import Pagination from "../../components/ui/Pagination";
+import Button from "../../components/ui/button/Button";
+import TextField from "../../components/ui/TextField";
+import Badge from "../../components/ui/Badge";
 import { exportarCatalogoBiblioteca } from "../../services/pdf.service";
 import LibroFormModal from "./biblioteca/LibroFormModal";
 import ConsultaFormModal from "./biblioteca/PrestamoFormModal";
@@ -17,6 +20,12 @@ import { mavetApi } from "../../services/api";
 
 type Periodo = "todas" | "hoy" | "semana" | "mes" | "personalizado";
 type Tab = "inventario" | "consultas";
+
+const estadoScheme: Record<string, "success" | "warning" | "danger" | "neutral"> = {
+  Aprobado: "success",
+  Pendiente: "warning",
+  "Descartado/Venta": "danger",
+};
 
 export default function Biblioteca() {
   const { user } = useAuth();
@@ -83,61 +92,39 @@ export default function Biblioteca() {
           <p className="text-sm text-gray-500">Gestión de libros, consultas en sala y registro de consultas.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={exportarCatalogoBiblioteca}
-            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-          >
-            <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+          <Button variant="secondary" size="sm" onClick={exportarCatalogoBiblioteca}
+            startIcon={<svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
             <span className="hidden sm:inline">Exportar PDF</span>
             <span className="sm:hidden">PDF</span>
-          </button>
+          </Button>
           {canEditLibro && (
-            <button
-              onClick={handleOpenAddLibro}
-              className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
-            >
-              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
+            <Button size="sm" onClick={handleOpenAddLibro}
+              startIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
               <span className="hidden sm:inline">Registrar Nuevo Libro</span>
               <span className="sm:hidden">Nuevo Libro</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {/* ── Tabs ── */}
       <div className="flex border-b border-gray-200 dark:border-gray-700 gap-1">
-        <button
-          onClick={() => setActiveTab("inventario")}
-          data-tour="tab-inventario"
-          className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
-            activeTab === "inventario"
-              ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
-              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-          }`}
-        >
-          <svg className="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          Inventario y Consultas
-        </button>
-        <button
-          onClick={() => setActiveTab("consultas")}
-          data-tour="tab-consultas"
-          className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] ${
-            activeTab === "consultas"
-              ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
-              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-          }`}
-        >
-          <svg className="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Registro de Consultas
-        </button>
+        {(["inventario", "consultas"] as Tab[]).map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            data-tour={tab === "inventario" ? "tab-inventario" : "tab-consultas"}
+            className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 ${
+              activeTab === tab
+                ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            }`}>
+            {tab === "inventario" ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            )}
+            {tab === "inventario" ? "Inventario y Consultas" : "Registro de Consultas"}
+          </button>
+        ))}
       </div>
 
       {activeTab === "inventario" ? (
@@ -153,54 +140,45 @@ export default function Biblioteca() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Buscar por unidad, título o autor..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
+                <input type="text" placeholder="Buscar por unidad, título o autor..."
+                  value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
-                <select
-                  value={filterEstado}
-                  onChange={(e) => setFilterEstado(e.target.value)}
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
-                >
-                  <option value="Todos">Todos</option>
-                  <option value="Aprobado">Aprobado</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Descartado/Venta">Descartado/Venta</option>
-                </select>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
-                <select
-                  value={filterCategoria}
-                  onChange={(e) => setFilterCategoria(e.target.value)}
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[140px]"
-                >
-                  <option value="Todas">Todas</option>
-                  {categorias.map((c: any) => (
-                    <option key={c.id_categoria} value={c.nombre_categoria}>{c.nombre_categoria}</option>
-                  ))}
-                </select>
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
-                <input
-                  type="text" value={filterAutor === "Todos" ? "" : filterAutor}
-                  onChange={(e) => setFilterAutor(e.target.value || "Todos")}
-                  placeholder="Buscar autor..."
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[160px]"
-                />
-                <select
-                  value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+                  <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    <option value="Todos">Todos</option>
+                    <option value="Aprobado">Aprobado</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Descartado/Venta">Descartado/Venta</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
+                  <select value={filterCategoria} onChange={(e) => setFilterCategoria(e.target.value)}
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    <option value="Todas">Todas</option>
+                    {categorias.map((c: any) => (
+                      <option key={c.id_categoria} value={c.nombre_categoria}>{c.nombre_categoria}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
+                  <input type="text" value={filterAutor === "Todos" ? "" : filterAutor}
+                    onChange={(e) => setFilterAutor(e.target.value || "Todos")} placeholder="Buscar..."
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 w-32" />
+                </div>
+                <select value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     if (!val) { setSortConfig(null); return; }
                     const [key, direction] = val.split("_");
                     setSortConfig({ key, direction: direction as "asc" | "desc" });
                   }}
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 min-w-[110px]"
-                >
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                   <option value="">Ord. predet.</option>
                   <option value="unidad_asc">ID ↑</option>
                   <option value="unidad_desc">ID ↓</option>
@@ -214,86 +192,72 @@ export default function Biblioteca() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto flex-1">
-                  <table className="w-full text-left border-collapse">
+                <div className="flex-1">
+                  <table className="w-full text-left table-auto">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                        <th className="px-3 py-3">Unidad</th>
-                        <th className="px-3 py-3">Título</th>
-                        <th className="px-3 py-3">Autor</th>
-                        <th className="px-3 py-3">Estante</th>
-                        <th className="px-3 py-3">Categoría</th>
-                        <th className="px-3 py-3 text-center">Cant. Disp.</th>
-                        <th className="px-3 py-3 text-center">Estado</th>
-                        <th className="px-3 py-3 text-center">Acciones</th>
+                        <th className="px-2 py-2.5">Unidad</th>
+                        <th className="px-2 py-2.5">Título</th>
+                        <th className="px-2 py-2.5">Autor</th>
+                        <th className="px-2 py-2.5">Estante</th>
+                        <th className="px-2 py-2.5">Categoría</th>
+                        <th className="px-2 py-2.5 text-center">Cant. Disp.</th>
+                        <th className="px-2 py-2.5 text-center">Estado</th>
+                        <th className="px-2 py-2.5 text-center">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                       {filteredLibros.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="px-5 py-14 text-center text-gray-500">
-                            <svg className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
+                            <svg className="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
-                            <p className="text-base font-medium">No se encontraron libros</p>
-                            <p className="text-sm text-gray-400 mt-1">Prueba con otro término de búsqueda o registra un nuevo libro.</p>
+                            <p className="text-sm font-medium">No se encontraron libros</p>
+                            <p className="text-xs text-gray-400 mt-1">Prueba con otro término de búsqueda o registra un nuevo libro.</p>
                           </td>
                         </tr>
                       ) : (
                         filteredLibros.map((libro) => (
-                          <tr
-                            key={libro.id}
-                            onClick={() => setSelectedLibroForDetail(libro)}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
-                          >
-                            <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
+                          <tr key={libro.id} onClick={() => setSelectedLibroForDetail(libro)}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors">
+                            <td className="px-2 py-2.5 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
                               {libro.unidad || "—"}
                             </td>
-                            <td className="px-3 py-3 font-semibold max-w-[250px]">
+                            <td className="px-2 py-2.5 font-semibold max-w-[200px]">
                               <span className="block truncate" title={libro.titulo}>{libro.titulo}</span>
                             </td>
-                            <td className="px-3 py-3 text-gray-700 dark:text-gray-300">{libro.autor}</td>
-                            <td className="px-3 py-3 text-gray-500 dark:text-gray-400">{libro.estante || "—"}</td>
-                            <td className="px-3 py-3">
+                            <td className="px-2 py-2.5 text-gray-700 dark:text-gray-300 text-xs">{libro.autor}</td>
+                            <td className="px-2 py-2.5 text-gray-500 dark:text-gray-400 text-xs">{libro.estante || "—"}</td>
+                            <td className="px-2 py-2.5">
                               {libro.categoria ? (
-                                <span className="inline-block px-2.5 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-medium border border-blue-200 dark:border-blue-500/30">
-                                  {libro.categoria}
-                                </span>
+                                <Badge scheme="info">{libro.categoria}</Badge>
                               ) : "—"}
                             </td>
-                            <td className="px-3 py-3 text-center">
-                              <span className={`inline-flex items-center gap-1 font-mono text-xs font-semibold ${
-                                Number(libro.cantidad_disponible) === 0 ? "text-red-600" : "text-gray-700 dark:text-gray-300"
-                              }`}>
+                            <td className="px-2 py-2.5 text-center">
+                              <Badge scheme={Number(libro.cantidad_disponible) === 0 ? "danger" : "neutral"}>
                                 {libro.cantidad_disponible}/{libro.cantidad_total}
-                              </span>
+                              </Badge>
                             </td>
-                            <td className="px-3 py-3 text-center">
-                              <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                                libro.estado === "Aprobado"
-                                  ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
-                                  : libro.estado === "Pendiente"
-                                  ? "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/30"
-                                  : "bg-red-100 text-red-800 border-red-300 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30"
-                              }`}>{libro.estado}</span>
+                            <td className="px-2 py-2.5 text-center">
+                              <Badge scheme={estadoScheme[libro.estado] || "neutral"} dot pulse={libro.estado === "Pendiente"}>
+                                {libro.estado}
+                              </Badge>
                             </td>
-                            <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="px-2 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-center gap-1">
                                 {canPrestarDevolver && (
                                   <>
                                     {libro.cantidad_disponible > 0 && (
-                                      <button
+                                      <Button variant="ghost" size="xs"
                                         onClick={() => handleOpenConsulta(libro.id, libro.titulo, Number(libro.cantidad_disponible))}
                                         disabled={libro.estado === "Descartado/Venta"}
-                                        className={`font-semibold text-xs border px-2 py-1 rounded transition w-18 ${
-                                          libro.estado === "Descartado/Venta"
-                                            ? "text-gray-400 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50"
-                                            : "text-brand-600 border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-                                        }`}
-                                      >Consultar</button>
+                                        className="text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10">
+                                        Consultar
+                                      </Button>
                                     )}
                                     {libro.cantidad_disponible < libro.cantidad_total && (
-                                      <button
+                                      <Button variant="ghost" size="xs"
                                         onClick={() => setConfirm({
                                           open: true,
                                           title: "Devolver libro",
@@ -306,8 +270,9 @@ export default function Biblioteca() {
                                           },
                                         })}
                                         disabled={libro.estado === "Descartado/Venta"}
-                                        className="font-semibold text-xs border px-2 py-1 rounded transition w-18 text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                                      >Devolver</button>
+                                        className="text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10">
+                                        Devolver
+                                      </Button>
                                     )}
                                     {(libro.cantidad_disponible > 0 || libro.cantidad_disponible < libro.cantidad_total) && (canEditLibro || canDeleteLibro) && (
                                       <div className="h-4 w-[1px] bg-gray-250 dark:bg-gray-700 mx-1"></div>
@@ -315,26 +280,14 @@ export default function Biblioteca() {
                                   </>
                                 )}
                                 {canEditLibro && (
-                                  <button
-                                    onClick={() => handleEditLibro(libro)}
-                                    className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded transition-colors"
-                                    title="Editar libro"
-                                  >
-                                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                  </button>
+                                  <Button variant="ghost" size="xs" onClick={() => handleEditLibro(libro)}
+                                    title="Editar libro" className="text-gray-500 hover:text-brand-600"
+                                    startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}>Editar</Button>
                                 )}
                                 {canDeleteLibro && (
-                                  <button
-                                    onClick={() => handleDeleteLibro(libro.id)}
-                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
-                                    title="Eliminar libro"
-                                  >
-                                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
+                                  <Button variant="ghost" size="xs" onClick={() => handleDeleteLibro(libro.id)}
+                                    title="Eliminar libro" className="text-gray-500 hover:text-red-600"
+                                    startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}>Eliminar</Button>
                                 )}
                                 {!canPrestarDevolver && !canEditLibro && !canDeleteLibro && (
                                   <span className="text-xs text-gray-400 italic font-semibold">Solo Lectura</span>
@@ -371,33 +324,30 @@ export default function Biblioteca() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">Busque por cédula para ver el historial de consultas de una persona</p>
               </div>
               <div className="relative w-full sm:w-64">
-                <input
-                  type="text" placeholder="Buscar por cédula..."
-                  value={searchCedula}
+                <input type="text" placeholder="Buscar por cédula..." value={searchCedula}
                   onChange={(e) => setSearchCedula(e.target.value)}
-                  className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
+                  className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div>
+              <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-3 py-3">Cédula</th>
-                    <th className="px-3 py-3">Solicitante</th>
-                    <th className="px-3 py-3">Libro</th>
-                    <th className="px-3 py-3">Unidad</th>
-                    <th className="px-3 py-3 text-center">Estado</th>
-                    <th className="px-3 py-3 text-center">Acción</th>
+                    <th className="px-2 py-2.5">Cédula</th>
+                    <th className="px-2 py-2.5">Solicitante</th>
+                    <th className="px-2 py-2.5">Libro</th>
+                    <th className="px-2 py-2.5">Unidad</th>
+                    <th className="px-2 py-2.5 text-center">Estado</th>
+                    <th className="px-2 py-2.5 text-center">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredConsultas.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-5 text-center text-gray-500">
                         <p className="text-sm font-medium">
                           {searchCedula.trim() ? "No se encontraron consultas para esta cédula." : "No hay consultas activas."}
                         </p>
@@ -405,25 +355,20 @@ export default function Biblioteca() {
                     </tr>
                     ) : filteredConsultas.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                      <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">{p.cedulaSolicitante}</td>
-                      <td className="px-3 py-3 font-medium">{p.nombreSolicitante}</td>
-                      <td className="px-3 py-3 max-w-[200px]">
-                        <span className="block truncate" title={p.libroTitulo}>{p.libroTitulo}</span>
+                      <td className="px-2 py-2.5 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">{p.cedulaSolicitante}</td>
+                      <td className="px-2 py-2.5 font-medium text-xs">{p.nombreSolicitante}</td>
+                      <td className="px-2 py-2.5 max-w-[180px]">
+                        <span className="block truncate text-xs" title={p.libroTitulo}>{p.libroTitulo}</span>
                       </td>
-                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
-                      <td className="px-3 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                          p.estado === "ACTIVO"
-                            ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"
-                            : "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${p.estado === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}></span>
+                      <td className="px-2 py-2.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{p.libroUnidad || "—"}</td>
+                      <td className="px-2 py-2.5 text-center">
+                        <Badge scheme={p.estado === "ACTIVO" ? "warning" : "success"} dot pulse={p.estado === "ACTIVO"}>
                           {p.estado === "ACTIVO" ? "En lectura" : "Devuelto"}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-2 py-2.5 text-center">
                         {p.estado === "ACTIVO" && canPrestarDevolver ? (
-                          <button
+                          <Button variant="ghost" size="xs" className="text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
                             onClick={() => setConfirm({
                               open: true,
                               title: "Devolver libro",
@@ -434,11 +379,9 @@ export default function Biblioteca() {
                                 setConfirm(prev => ({ ...prev, open: false }));
                                 handleReturnBook(p.libroId);
                               },
-                            })}
-                            className="font-semibold text-xs border px-2 py-1 rounded transition text-green-600 border-green-500 hover:bg-green-50 dark:hover:bg-green-500/10"
-                          >
+                            })}>
                             Devolver
-                          </button>
+                          </Button>
                         ) : p.estado === "DEVUELTO" ? (
                           <span className="text-xs text-gray-400">—</span>
                         ) : null}
@@ -567,8 +510,6 @@ function ConsultasTab() {
   const totalItems = meta?.totalItems ?? 0;
   const totalPages = meta?.totalPages ?? 1;
 
-  const buttonBase = "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors";
-
   const formatFecha = (fechaStr: string | null) => {
     if (!fechaStr) return "—";
     const d = new Date(fechaStr);
@@ -582,11 +523,11 @@ function ConsultasTab() {
   };
 
   const statsCards = [
-    { label: "Consultas Hoy", value: estadisticas.totales.hoy, color: "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400" },
-    { label: "Esta Semana", value: estadisticas.totales.semana, color: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-400" },
-    { label: "Este Mes", value: estadisticas.totales.mes, color: "bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400" },
-    { label: "En lectura", value: estadisticas.totales.activas, color: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400" },
-    { label: "Devueltas", value: estadisticas.totales.devueltas, color: "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400" },
+    { label: "Consultas Hoy", value: estadisticas.totales.hoy, scheme: "info" as const },
+    { label: "Esta Semana", value: estadisticas.totales.semana, scheme: "brand" as const },
+    { label: "Este Mes", value: estadisticas.totales.mes, scheme: "warning" as const },
+    { label: "En lectura", value: estadisticas.totales.activas, scheme: "danger" as const },
+    { label: "Devueltas", value: estadisticas.totales.devueltas, scheme: "success" as const },
   ];
 
   return (
@@ -598,15 +539,13 @@ function ConsultasTab() {
           <p className="text-xs text-gray-500 dark:text-gray-400">Resumen de actividad en sala de lectura</p>
         </div>
         <div className="p-4">
-          {/* Totales */}
-          <div             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
             {statsCards.map((card) => (
-              <div
-                key={card.label}
-                className={`rounded-xl border px-4 py-3 flex flex-col items-center text-center ${card.color}`}
-              >
-                <span className="text-2xl font-bold">{card.value}</span>
-                <span className="text-xs font-medium mt-1 opacity-80">{card.label}</span>
+              <div key={card.label} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 flex flex-col items-center text-center">
+                <Badge scheme={card.scheme} className="text-lg font-bold px-3 py-1 mb-1">
+                  {card.value}
+                </Badge>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{card.label}</span>
               </div>
             ))}
           </div>
@@ -618,61 +557,36 @@ function ConsultasTab() {
 
         <div className="flex flex-wrap gap-2">
           {(["todas", "hoy", "semana", "mes", "personalizado"] as Periodo[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => handlePeriodoChange(p)}
-              className={`${buttonBase} ${
-                periodo === p
-                  ? "bg-brand-500 text-white border-brand-500 shadow-sm"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-              } capitalize`}
-            >
+            <Button key={p} size="sm"
+              variant={periodo === p ? "primary" : "secondary"}
+              onClick={() => handlePeriodoChange(p)} className="capitalize">
               {p === "todas" ? "Todas" : p === "hoy" ? "Hoy" : p === "semana" ? "Esta Semana" : p === "mes" ? "Este Mes" : "Por Fecha"}
-            </button>
+            </Button>
           ))}
         </div>
 
         {periodo === "personalizado" && (
           <div className="flex flex-wrap items-end gap-3 pt-1">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Desde</label>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Hasta</label>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
-              />
-            </div>
+            <TextField label="Desde" type="date" value={fechaDesde}
+              onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }} />
+            <TextField label="Hasta" type="date" value={fechaHasta}
+              onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }} />
           </div>
         )}
 
         <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-gray-100 dark:border-gray-700">
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Estado:</span>
-          <select
-            value={estadoFilter}
-            onChange={(e) => { setEstadoFilter(e.target.value); setPage(1); }}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90"
-          >
+          <select value={estadoFilter} onChange={(e) => { setEstadoFilter(e.target.value); setPage(1); }}
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
             <option value="">Todos</option>
             <option value="ACTIVO">En lectura</option>
             <option value="Devuelto">Devuelto</option>
           </select>
 
-          <button
-            onClick={() => { setPage(1); fetchConsultas(); }}
-            className="bg-brand-500 text-white font-semibold py-1.5 px-4 rounded-lg text-sm hover:bg-brand-600 transition-colors ml-auto"
-          >
+          <Button size="sm" onClick={() => { setPage(1); fetchConsultas(); }}
+            className="ml-auto">
             Buscar
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -685,15 +599,15 @@ function ConsultasTab() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div>
+              <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-3 py-3">Persona</th>
-                    <th className="px-3 py-3">Cédula</th>
-                    <th className="px-3 py-3">Libro</th>
-                    <th className="px-3 py-3">Fecha Consulta</th>
-                    <th className="px-3 py-3 text-center">Estado</th>
+                    <th className="px-2 py-2.5">Persona</th>
+                    <th className="px-2 py-2.5">Cédula</th>
+                    <th className="px-2 py-2.5">Libro</th>
+                    <th className="px-2 py-2.5">Fecha Consulta</th>
+                    <th className="px-2 py-2.5 text-center">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
@@ -710,29 +624,24 @@ function ConsultasTab() {
                   ) : (
                     consultas.data.map((c: ConsultaSalaFiltrada) => (
                       <tr key={c.id_consulta} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                        <td className="px-3 py-3 font-medium">
+                        <td className="px-2 py-2.5 font-medium text-xs">
                           {c.Persona ? `${c.Persona.nombres} ${c.Persona.apellidos}` : "—"}
                         </td>
-                        <td className="px-3 py-3 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
+                        <td className="px-2 py-2.5 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold">
                           {c.Persona?.cedula || "—"}
                         </td>
-                        <td className="px-3 py-3 max-w-[220px]">
-                          <span className="block truncate" title={c.Libro?.titulo || ""}>
+                        <td className="px-2 py-2.5 max-w-[180px]">
+                          <span className="block truncate text-xs" title={c.Libro?.titulo || ""}>
                             {c.Libro?.titulo || "—"}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">
+                        <td className="px-2 py-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">
                           {formatFecha(c.hora_entrega)}
                         </td>
-                        <td className="px-3 py-3 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                            c.estado?.toUpperCase() === "ACTIVO"
-                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30"
-                              : "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/30"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${c.estado?.toUpperCase() === "ACTIVO" ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}></span>
+                        <td className="px-2 py-2.5 text-center">
+                          <Badge scheme={c.estado?.toUpperCase() === "ACTIVO" ? "warning" : "success"} dot pulse={c.estado?.toUpperCase() === "ACTIVO"}>
                             {c.estado?.toUpperCase() === "ACTIVO" ? "En lectura" : "Devuelto"}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))
@@ -781,9 +690,7 @@ function ConsultasTab() {
                       <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{lector.cedula}</p>
                     </div>
                   </div>
-                  <span className="font-bold text-brand-600 dark:text-brand-400 text-sm shrink-0 ml-2">
-                    {lector.total_consultas}
-                  </span>
+                  <Badge scheme="brand">{lector.total_consultas}</Badge>
                 </div>
               ))}
             </div>
@@ -811,9 +718,7 @@ function ConsultasTab() {
                       <p className="font-medium text-gray-800 dark:text-white truncate">{libro.titulo}</p>
                     </div>
                   </div>
-                  <span className="font-bold text-brand-600 dark:text-brand-400 text-sm shrink-0 ml-2">
-                    {libro.total_consultas}
-                  </span>
+                  <Badge scheme="brand">{libro.total_consultas}</Badge>
                 </div>
               ))}
             </div>

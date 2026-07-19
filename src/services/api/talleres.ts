@@ -10,18 +10,32 @@ export const talleres = {
     }
   },
 
-  crearTaller: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  crearTaller: async (payload: any, file?: File | null): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.post("/api/educacion/talleres", payload);
+      const body = file ? new FormData() : payload;
+      if (file) {
+        body.append("data", JSON.stringify(payload));
+        body.append("documento_plan", file);
+      }
+      await axiosInstance.post("/api/educacion/talleres", body, {
+        headers: file ? { "Content-Type": "multipart/form-data" } : undefined,
+      });
       return { success: true, message: "Taller creado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear taller");
     }
   },
 
-  actualizarTaller: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+  actualizarTaller: async (id: number, payload: any, file?: File | null): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.put(`/api/educacion/talleres/${id}`, payload);
+      const body = file ? new FormData() : payload;
+      if (file) {
+        body.append("data", JSON.stringify(payload));
+        body.append("documento_plan", file);
+      }
+      await axiosInstance.put(`/api/educacion/talleres/${id}`, body, {
+        headers: file ? { "Content-Type": "multipart/form-data" } : undefined,
+      });
       return { success: true, message: "Taller actualizado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar taller");
@@ -34,51 +48,6 @@ export const talleres = {
       return { success: true, message: "Taller eliminado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al eliminar taller");
-    }
-  },
-
-  getSesionesTaller: async (id_taller: number | string): Promise<any[]> => {
-    try {
-      const res = await axiosInstance.get(`/api/educacion/sesiones/taller/${id_taller}`);
-      return Array.isArray(res.data?.data) ? res.data.data : [];
-    } catch {
-      return [];
-    }
-  },
-
-  crearSesionTaller: async (id_taller: number | string, payload: { fecha: string; tema_impartido: string }): Promise<any> => {
-    try {
-      const res = await axiosInstance.post(`/api/educacion/sesiones/taller/${id_taller}`, payload);
-      return res.data;
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || "Error al crear sesión");
-    }
-  },
-
-  getAsistenciaSesion: async (id_sesion: number | string): Promise<any[]> => {
-    try {
-      const res = await axiosInstance.get(`/api/educacion/sesiones/${id_sesion}/asistencia`);
-      return Array.isArray(res.data?.data) ? res.data.data : [];
-    } catch {
-      return [];
-    }
-  },
-
-  guardarAsistenciaSesion: async (id_sesion: number | string, asistencias: { id_alumno: number; asistio: boolean }[]): Promise<any> => {
-    try {
-      const res = await axiosInstance.put(`/api/educacion/sesiones/${id_sesion}/asistencia`, { asistencias });
-      return res.data;
-    } catch (e: any) {
-      throw new Error(e.response?.data?.message || "Error al guardar asistencia");
-    }
-  },
-
-  getMetricasTaller: async (id_taller: number | string): Promise<any> => {
-    try {
-      const res = await axiosInstance.get(`/api/educacion/sesiones/taller/${id_taller}/metricas`);
-      return res.data?.data;
-    } catch {
-      return null;
     }
   },
 
@@ -167,6 +136,7 @@ export const talleres = {
         nombre_espacio: item.nombre || item.nombre_espacio,
         capacidad_maxima: item.capacidad || item.capacidad_maxima,
         descripcion: item.descripcion || "",
+        imagen_url: item.imagen_url || undefined,
       }));
       return list;
     } catch {
@@ -174,28 +144,18 @@ export const talleres = {
     }
   },
 
-  crearEspacio: async (payload: { nombre_espacio: string; capacidad_maxima?: number; descripcion?: string; codigo_espacio?: string }): Promise<{ success: boolean; message: string }> => {
+  crearEspacio: async (payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.post("/api/educacion/espacios", {
-        codigo_espacio: payload.codigo_espacio,
-        nombre: payload.nombre_espacio,
-        capacidad: payload.capacidad_maxima,
-        descripcion: payload.descripcion,
-      });
+      await axiosInstance.post("/api/educacion/espacios", payload);
       return { success: true, message: "Espacio creado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear espacio");
     }
   },
 
-  actualizarEspacio: async (id: number, payload: { nombre_espacio?: string; capacidad_maxima?: number; descripcion?: string; codigo_espacio?: string }): Promise<{ success: boolean; message: string }> => {
+  actualizarEspacio: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      await axiosInstance.put(`/api/educacion/espacios/${id}`, {
-        codigo_espacio: payload.codigo_espacio,
-        nombre: payload.nombre_espacio,
-        capacidad: payload.capacidad_maxima,
-        descripcion: payload.descripcion,
-      });
+      await axiosInstance.put(`/api/educacion/espacios/${id}`, payload);
       return { success: true, message: "Espacio actualizado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar espacio");
@@ -235,6 +195,24 @@ export const talleres = {
       return extractList(res);
     } catch {
       return [];
+    }
+  },
+
+  getDocumentoPlan: async (id: number): Promise<void> => {
+    try {
+      const res = await axiosInstance.get(`/api/educacion/talleres/${id}/documento-plan`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Planificacion_Taller_${id}_${new Date().toISOString().split("T")[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      throw new Error("Error al descargar el documento de planificación");
     }
   },
 

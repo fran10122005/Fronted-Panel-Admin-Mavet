@@ -3,6 +3,7 @@ import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import { mavetApi } from "../../services/api";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
+import { exportarReporteAuditoria } from "../../services/pdf.service";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
 
@@ -26,7 +27,7 @@ export default function AuditLogs() {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit: 25 };
+      const params: any = { page, limit: 10 };
       if (filtro.tipo) params.tipo = filtro.tipo;
       if (filtro.desde) params.desde = filtro.desde;
       if (filtro.hasta) params.hasta = filtro.hasta;
@@ -50,8 +51,17 @@ export default function AuditLogs() {
       <PageBreadcrumb pageTitle="Bitácora de Auditoría" />
       <div className="space-y-5">
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-          <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+          <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h4 className="text-base font-semibold text-gray-800 dark:text-white/90">Filtros</h4>
+            <button
+              onClick={() => exportarReporteAuditoria(filtro.tipo || filtro.desde || filtro.hasta ? filtro : undefined)}
+              className="bg-brand-500 text-white font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Generar Reporte
+            </button>
           </div>
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -98,51 +108,49 @@ export default function AuditLogs() {
                 No hay registros de actividad disponibles.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      <th className="pb-3 pr-4">Fecha y Hora</th>
-                      <th className="pb-3 pr-4">Usuario</th>
-                      <th className="pb-3 pr-4">Acción</th>
-                      <th className="pb-3 pr-4">Detalle</th>
-                      <th className="pb-3 pr-4">Dirección IP</th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="pb-3 pr-3">Fecha y Hora</th>
+                    <th className="pb-3 pr-3">Usuario</th>
+                    <th className="pb-3 pr-3">Acción</th>
+                    <th className="pb-3 pr-3">Detalle</th>
+                    <th className="pb-3">Dirección IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log, i) => (
+                    <tr key={log.id ?? i} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      <td className="py-3 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {log.fecha ? new Date(log.fecha).toLocaleString("es-VE", {
+                          day: "2-digit", month: "2-digit", year: "numeric",
+                          hour: "2-digit", minute: "2-digit", second: "2-digit"
+                        }) : "—"}
+                      </td>
+                      <td className="py-3 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        {log.usuario || log.correo || "—"}
+                      </td>
+                      <td className="py-3 pr-3">
+                        <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
+                          log.tipo === "login" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
+                          log.tipo === "logout" ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" :
+                          log.tipo === "delete" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
+                          log.tipo === "create" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
+                          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                        }`}>
+                          {tipoLabel[log.tipo] || log.tipo || "—"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-3 text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                        {log.detalle || log.descripcion || "—"}
+                      </td>
+                      <td className="py-3 text-xs text-gray-500 dark:text-gray-500 font-mono">
+                        {log.ip || log.direccion_ip || "—"}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((log, i) => (
-                      <tr key={log.id ?? i} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                        <td className="py-3 pr-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                          {log.fecha ? new Date(log.fecha).toLocaleString("es-VE", {
-                            day: "2-digit", month: "2-digit", year: "numeric",
-                            hour: "2-digit", minute: "2-digit", second: "2-digit"
-                          }) : "—"}
-                        </td>
-                        <td className="py-3 pr-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                          {log.usuario || log.correo || "—"}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
-                            log.tipo === "login" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
-                            log.tipo === "logout" ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" :
-                            log.tipo === "delete" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
-                            log.tipo === "create" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" :
-                            "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                          }`}>
-                            {tipoLabel[log.tipo] || log.tipo || "—"}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">
-                          {log.detalle || log.descripcion || "—"}
-                        </td>
-                        <td className="py-3 text-xs text-gray-500 dark:text-gray-500 font-mono">
-                          {log.ip || log.direccion_ip || "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
 
             {totalPages > 1 && (

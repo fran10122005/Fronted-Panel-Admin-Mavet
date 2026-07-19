@@ -190,30 +190,30 @@ export default function AsistenciaPersonal() {
                   <div className="flex items-center gap-1"><span className="text-amber-500 text-sm">⚠</span> Incompleto</div>
                 </div>
 
-                <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <table className="w-full text-left border-collapse">
+                <div className="mt-3">
+                  <table className="w-full text-left table-auto">
                     <thead>
-                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                        <th className="px-3 py-2">Trabajador</th>
-                        <th className="px-3 py-2">Cargo</th>
-                        <th className="px-3 py-2 text-center">Req.</th>
-                        <th className="px-3 py-2 text-center">Acum.</th>
-                        <th className="px-3 py-2 text-center">Restan</th>
-                        <th className="px-3 py-2 text-center">Cumplió</th>
-                        <th className="px-3 py-2">Observaciones</th>
+                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                        <th className="px-2 py-2">Trabajador</th>
+                        <th className="px-2 py-2">Cargo</th>
+                        <th className="px-2 py-2 text-center">Req.</th>
+                        <th className="px-2 py-2 text-center">Acum.</th>
+                        <th className="px-2 py-2 text-center">Restan</th>
+                        <th className="px-2 py-2 text-center">Cumplió</th>
+                        <th className="px-2 py-2">Observaciones</th>
                       </tr>
                     </thead>
-                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                       {resumenSemanal.length === 0 ? (
                         <tr><td colSpan={7} className="px-3 py-4 text-center text-gray-500"><p className="font-medium">No hay datos esta semana</p></td></tr>
                       ) : resumenSemanal.map((r) => (
                         <tr key={r.id_trabajador} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <td className="px-3 py-2 font-semibold text-xs">{r.nombres} {r.apellidos}</td>
-                          <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{r.cargo || "—"}</td>
-                          <td className="px-3 py-2 text-center text-xs">{r.horas_semanales > 0 ? `${r.horas_semanales}h` : "—"}</td>
-                          <td className="px-3 py-2 text-center text-xs font-medium">{r.horas_acumuladas > 0 ? `${r.horas_acumuladas}h` : "0h"}</td>
-                          <td className={`px-3 py-2 text-center text-xs font-medium ${r.horas_restantes > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{r.horas_restantes > 0 ? `${r.horas_restantes}h` : "0h"}</td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-2 py-2 font-semibold text-xs">{r.nombres} {r.apellidos}</td>
+                          <td className="px-2 py-2 text-gray-600 dark:text-gray-400 text-xs">{r.cargo || "—"}</td>
+                          <td className="px-2 py-2 text-center text-xs">{r.horas_semanales > 0 ? `${r.horas_semanales}h` : "—"}</td>
+                          <td className="px-2 py-2 text-center text-xs font-medium">{r.horas_acumuladas > 0 ? `${r.horas_acumuladas}h` : "0h"}</td>
+                          <td className={`px-2 py-2 text-center text-xs font-medium ${r.horas_restantes > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{r.horas_restantes > 0 ? `${r.horas_restantes}h` : "0h"}</td>
+                          <td className="px-2 py-2 text-center">
                             {r.cumplio ? (
                               <span className="text-green-600 dark:text-green-400 text-lg" title="Completo">✓</span>
                             ) : r.justificado ? (
@@ -222,7 +222,7 @@ export default function AsistenciaPersonal() {
                               <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
                             )}
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-2 py-2">
                             <div className="flex items-center gap-2">
                               {r.observaciones ? (
                                 <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={r.observaciones}>{r.observaciones}</span>
@@ -252,37 +252,37 @@ export default function AsistenciaPersonal() {
             </div>
 
             {/* Tabla de Asistencias */}
-            <div className="overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <table className="w-full text-left border-collapse">
+            <div className="flex-1">
+              <table className="w-full text-left table-auto">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                    <th className="px-4 py-2">Fecha</th>
-                    <th className="px-4 py-2">Cédula</th>
-                    <th className="px-4 py-2">Nombre y Apellido</th>
-                    <th className="px-4 py-2">Cargo</th>
-                    <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
-                    <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
-                    <th className="px-4 py-2 text-center">Horas</th>
-                    <th className="px-4 py-2">Observaciones</th>
+                  <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-2 py-2">Fecha</th>
+                    <th className="px-2 py-2">Cédula</th>
+                    <th className="px-2 py-2">Nombre y Apellido</th>
+                    <th className="px-2 py-2">Cargo</th>
+                    <th className="px-2 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
+                    <th className="px-2 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
+                    <th className="px-2 py-2 text-center">Horas</th>
+                    <th className="px-2 py-2">Observaciones</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredAsistencias.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia para esta fecha</p></td></tr>
+                    <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia para esta fecha</p></td></tr>
                   ) : filteredAsistencias.map((a) => (
                     <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
-                      <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
-                      <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
-                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
-                      <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
+                      <td className="px-2 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
+                      <td className="px-2 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
+                      <td className="px-2 py-2 font-semibold">{a.trabajadorNombre}</td>
+                      <td className="px-2 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
+                      <td className="px-2 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
                         <span className={a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.entrada}</span>
                       </td>
-                      <td className="px-4 py-2 text-center font-mono text-xs">
+                      <td className="px-2 py-2 text-center font-mono text-xs">
                         <span className={a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"}>{a.salida}</span>
                       </td>
-                      <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                      <td className="px-4 py-2 max-w-[160px]">
+                      <td className="px-2 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
+                      <td className="px-2 py-2">
                         {isGerente ? (
                           <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
                             {a.observaciones || "—"}

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useRRHH, ITEMS_PER_PAGE } from "../../hooks/useRRHH";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
@@ -6,76 +5,28 @@ import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
 import FacialEnrollModal from "./rrhh/FacialEnrollModal";
-import JustificacionModal from "./rrhh/JustificacionModal";
-import ObservacionModal from "./rrhh/ObservacionModal";
-import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
-import { formatHoras } from "../../utils/formatters";
-import { DiaResumen } from "../../types";
 import Pagination from "../../components/ui/Pagination";
-
-const IconEdit = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-  </svg>
-);
+import Button from "../../components/ui/button/Button";
+import TextField from "../../components/ui/TextField";
+import Badge from "../../components/ui/Badge";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
 
-const HORA_APERTURA = 8 * 60;
-const HORA_CIERRE = 17 * 60;
-const DESCANSO = 60;
-const HORA_SALIDA_MINIMA = HORA_CIERRE - DESCANSO;
+const roleBadge: Record<string, "brand" | "info" | "warning" | "neutral"> = {
+  administrador: "brand",
+  admin: "brand",
+  gerente: "info",
+  curador: "warning",
+};
 
-function minutosDesdeMediaNoche(horaStr: string): number {
-  const [h, m] = horaStr.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function esRetardo(entrada: string | null): boolean {
-  if (!entrada || entrada === "-") return false;
-  return minutosDesdeMediaNoche(entrada) > HORA_APERTURA + 5;
-}
-
-function esSalidaTemprano(salida: string | null): boolean {
-  if (!salida || salida === "-") return false;
-  return minutosDesdeMediaNoche(salida) < HORA_SALIDA_MINIMA;
-}
+const filterPills = ["activos", "suspendidos", "todos"] as const;
 
 export default function RRHH() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
-
-  const getRoleBadgeStyle = (rolName: string) => {
-    switch (rolName.toLowerCase()) {
-      case "administrador":
-      case "admin":
-        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50";
-      case "gerente":
-        return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50";
-      case "curador":
-        return "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800/50";
-      case "educador":
-      case "educacion":
-      case "educación":
-      case "guía":
-      case "guia":
-        return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800/50";
-      case "bibliotecario":
-      case "bibliotecaria":
-        return "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-400 dark:border-teal-800/50";
-      case "recepcionista":
-        return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50";
-      case "usuario":
-      case "empleado":
-        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700";
-    }
-  };
 
   const {
     trabajadores, cargos, roles,
@@ -86,26 +37,20 @@ export default function RRHH() {
     editingTrabajadorId, editingUsuarioId,
     selectedTrabajadorForDetail, setSelectedTrabajadorForDetail,
     trabajPage, trabajTotalPages, trabajTotalItems,
-    asistPage, asistTotalPages, asistTotalItems, asistFecha, setAsistFecha,
-    refreshTrabajadores, refreshAsistencias, refreshData,
-    filteredAsistencias, filteredTrabajadores, filteredUsuarios,
+    refreshTrabajadores, refreshData,
+    filteredTrabajadores, filteredUsuarios,
     isOpenTrabajador, closeTrabajador,
     isOpenUsuario, closeUsuario,
     handleOpenCrearTrabajador, handleOpenEditarTrabajador,
     handleOpenCrearUsuario, handleOpenEditarUsuario,
     handleResetPassword,
     handleSubmitTrabajador, handleSubmitUsuario,
-    handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
+    handleExportTrabajadores, handleExportUsuarios,
     handleDeleteTrabajador,
     handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
     pendingFacialEnroll, setPendingFacialEnroll,
-    resumenSemanal, handleUpdateObservaciones, handleJustificarDia,
-    selectedForJustificacion, setSelectedForJustificacion,
     usuarios,
   } = useRRHH();
-
-  const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const activeAdminsCount = usuarios.filter(u => u.rol === "Administrador" && u.estado === true).length;
   const currentEditingUser = usuarios.find(u => u.id?.toString() === editingUsuarioId);
@@ -116,44 +61,35 @@ export default function RRHH() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de RRHH y Usuarios</h1>
-          <p className="text-sm text-gray-500">Personal activo, accesos al sistema y registros de asistencia.</p>
+          <p className="text-sm text-gray-500">Personal activo y accesos al sistema.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {activeTab === "asistencias" && (
-            <button data-tour="exportar-asistencia-pdf" onClick={() => setIsExportModalOpen(true)} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
-              <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              <span className="hidden sm:inline">Exportar Asistencia PDF</span>
-              <span className="sm:hidden">Asistencia PDF</span>
-            </button>
-          )}
           {activeTab === "usuarios" ? (
             <>
-              <button data-tour="exportar-usuarios-pdf" onClick={handleExportUsuarios} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <Button variant="secondary" size="sm" onClick={handleExportUsuarios} data-tour="exportar-usuarios-pdf"
+                startIcon={<svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
                 <span className="hidden sm:inline">Exportar Usuarios PDF</span>
                 <span className="sm:hidden">Usuarios PDF</span>
-              </button>
+              </Button>
               {!isGerente && (
-                <button data-tour="crear-usuario" onClick={handleOpenCrearUsuario} className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm">
-                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                  <span className="hidden sm:inline">Crear Usuario</span>
-                  <span className="sm:hidden">Usuario</span>
-                </button>
+                <Button size="sm" onClick={handleOpenCrearUsuario} data-tour="crear-usuario"
+                  startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
+                  Crear Usuario
+                </Button>
               )}
             </>
           ) : activeTab === "trabajadores" ? (
             <>
-              <button data-tour="exportar-trabajadores-pdf" onClick={handleExportTrabajadores} className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <Button variant="secondary" size="sm" onClick={handleExportTrabajadores} data-tour="exportar-trabajadores-pdf"
+                startIcon={<svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
                 <span className="hidden sm:inline">Exportar Trabajadores PDF</span>
                 <span className="sm:hidden">Trabajadores PDF</span>
-              </button>
+              </Button>
               {!isGerente && (
-                <button data-tour="registrar-trabajador" onClick={handleOpenCrearTrabajador} className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm">
-                  <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                  <span className="hidden sm:inline">Registrar Trabajador</span>
-                  <span className="sm:hidden">Trabajador</span>
-                </button>
+                <Button size="sm" onClick={handleOpenCrearTrabajador} data-tour="registrar-trabajador"
+                  startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>}>
+                  Registrar Trabajador
+                </Button>
               )}
             </>
           ) : null}
@@ -163,41 +99,25 @@ export default function RRHH() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
-            {(["trabajadores", "usuarios", "asistencias"] as const)
+            {(["trabajadores", "usuarios"] as const)
               .filter(tab => !(isGerente && tab === "usuarios"))
               .map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   data-tour={`tab-${tab}`}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
             ))}
           </div>
-          {/* Controles de tabla */}
-            <div className="flex gap-3">
-              {activeTab === "asistencias" && (
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  </div>
-                  <input
-                    type="date"
-                    value={asistFecha}
-                    onChange={(e) => {
-                      setAsistFecha(e.target.value);
-                      refreshAsistencias(1, e.target.value);
-                    }}
-                    className="pl-10 h-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-              )}
-              <div className="relative w-full max-w-xs">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-                <input data-tour="buscador-rrhh" type="text" placeholder="Buscar por cédula, nombre o correo..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
-              </div>
-            </div>
+          <div className="flex gap-3">
+            <TextField
+              data-tour="buscador-rrhh"
+              placeholder="Buscar por cédula, nombre o correo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+            />
+          </div>
         </div>
 
         {isLoading ? (
@@ -206,27 +126,27 @@ export default function RRHH() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex-1">
               {activeTab === "trabajadores" && (
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left table-auto">
                   <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                      <th className="px-3 py-2 w-10"></th>
-                      <th className="px-5 py-2">Cédula</th>
-                      <th className="px-5 py-2">Nombres</th>
-                      <th className="px-5 py-2">Apellidos</th>
-                      <th className="px-5 py-2">Cargo</th>
-                      <th className="px-5 py-2 text-center">PIN</th>
-                      <th className="px-5 py-2">Estado</th>
-                      <th className="px-5 py-2 text-center">Acciones</th>
+                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-2 py-2 w-8"></th>
+                      <th className="px-2 py-2">Cédula</th>
+                      <th className="px-2 py-2">Nombres</th>
+                      <th className="px-2 py-2">Apellidos</th>
+                      <th className="px-2 py-2">Cargo</th>
+                      <th className="px-2 py-2 text-center">PIN</th>
+                      <th className="px-2 py-2">Estado</th>
+                      <th className="px-2 py-2 text-center">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                     {filteredTrabajadores.length === 0 ? (
-                      <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron trabajadores</p></td></tr>
+                      <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-500"><p className="font-medium text-sm">No se encontraron trabajadores</p></td></tr>
                     ) : filteredTrabajadores.map((t) => (
-                      <tr key={t.cedula} onClick={() => setSelectedTrabajadorForDetail(t)} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
-                        <td className="px-3 py-2">
+                      <tr key={t.cedula} onClick={() => setSelectedTrabajadorForDetail(t)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors">
+                        <td className="px-2 py-2">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
                             {t.foto_url ? (
                               <img src={t.foto_url} alt="" className="w-full h-full object-cover" />
@@ -235,39 +155,30 @@ export default function RRHH() {
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-2 font-mono text-xs font-semibold">{t.cedula}</td>
-                        <td className="px-5 py-2 font-semibold">{t.nombre}</td>
-                        <td className="px-5 py-2 font-semibold">{t.apellido}</td>
-                        <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{t.cargo}</td>
-                        <td className="px-5 py-2 text-center">
-                          <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                            (t as any).pin_hash
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-gray-400 dark:text-gray-500"
-                          }`}>
+                        <td className="px-2 py-2 font-mono text-xs font-semibold">{t.cedula}</td>
+                        <td className="px-2 py-2 font-semibold text-sm">{t.nombre}</td>
+                        <td className="px-2 py-2 font-semibold text-sm">{t.apellido}</td>
+                        <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400">{t.cargo}</td>
+                        <td className="px-2 py-2 text-center text-xs">
+                          <span className={`font-medium ${(t as any).pin_hash ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
                             {(t as any).pin_hash ? "🔒" : "⚪"}
                           </span>
                         </td>
-                        <td className="px-5 py-2">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                            t.estado === "Activo" ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400"
-                          }`}>{t.estado}</span>
+                        <td className="px-2 py-2">
+                          <Badge scheme={t.estado === "Activo" ? "success" : "neutral"}>{t.estado}</Badge>
                         </td>
-                        <td className="px-5 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-2">
-                             <button onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial" className="inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>
-                             </button>
-                             {!isGerente && (
-                                <>
-                                   <button onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador" className="inline-flex items-center justify-center p-1.5 rounded-lg border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                                      <IconEdit />
-                                   </button>
-                                   <button onClick={() => handleDeleteTrabajador(t)} title="Eliminar trabajador" className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors">
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                   </button>
-                                </>
-                             )}
+                        <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="xs" variant="secondary" onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial"
+                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>} />
+                            {!isGerente && (
+                              <>
+                                <Button size="xs" variant="secondary" onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador"
+                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+                                <Button size="xs" variant="ghost" onClick={() => handleDeleteTrabajador(t)} title="Eliminar trabajador"
+                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>} />
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -280,38 +191,31 @@ export default function RRHH() {
                 <>
                   <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Filtrar:</span>
-                    {(["activos", "suspendidos", "todos"] as const).map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => setFiltroEstadoUsuarios(f)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          filtroEstadoUsuarios === f
-                            ? "bg-brand-500 text-white shadow-sm"
-                            : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        }`}
-                      >
+                    {filterPills.map((f) => (
+                      <Button key={f} size="xs" variant={filtroEstadoUsuarios === f ? "primary" : "secondary"}
+                        onClick={() => setFiltroEstadoUsuarios(f)}>
                         {f === "activos" ? "Activos" : f === "suspendidos" ? "Suspendidos" : "Todos"}
-                      </button>
+                      </Button>
                     ))}
                   </div>
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left table-auto">
                   <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                      <th className="px-3 py-2 w-10"></th>
-                      <th className="px-5 py-2">Usuario (Correo)</th>
-                      <th className="px-5 py-2">Trabajador Vinculado</th>
-                      <th className="px-5 py-2">Cargo</th>
-                      <th className="px-5 py-2 text-center">Rol</th>
-                      <th className="px-5 py-2 text-center">Estado</th>
-                      <th className="px-5 py-2 text-center">Acciones</th>
+                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-2 py-2 w-8"></th>
+                      <th className="px-2 py-2">Usuario (Correo)</th>
+                      <th className="px-2 py-2">Trabajador</th>
+                      <th className="px-2 py-2">Cargo</th>
+                      <th className="px-2 py-2 text-center">Rol</th>
+                      <th className="px-2 py-2 text-center">Estado</th>
+                      <th className="px-2 py-2 text-center">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                     {filteredUsuarios.length === 0 ? (
-                      <tr><td colSpan={7} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No se encontraron usuarios</p></td></tr>
+                      <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500"><p className="font-medium text-sm">No se encontraron usuarios</p></td></tr>
                     ) : filteredUsuarios.map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-3 py-2">
+                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                        <td className="px-2 py-2">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600 text-[10px] font-bold text-gray-500">
                             {(u as any).foto_url ? (
                               <img src={(u as any).foto_url} alt="" className="w-full h-full object-cover" />
@@ -322,227 +226,40 @@ export default function RRHH() {
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-2 font-semibold text-brand-700 dark:text-brand-400">{u.correo}</td>
-                        <td className="px-5 py-2 font-semibold">{u.trabajador ? `${u.trabajador.nombre}` : <span className="text-gray-400 italic">No vinculado</span>}</td>
-                        <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{u.trabajador ? u.trabajador.cargo : "—"}</td>
-                        <td className="px-5 py-2 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeStyle(u.rol)}`}>
-                            {u.rol}
-                          </span>
+                        <td className="px-2 py-2 font-semibold text-brand-700 dark:text-brand-400 text-sm">{u.correo}</td>
+                        <td className="px-2 py-2 font-semibold text-sm">{u.trabajador ? `${u.trabajador.nombre}` : <span className="text-gray-400 italic">No vinculado</span>}</td>
+                        <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400">{u.trabajador ? u.trabajador.cargo : "—"}</td>
+                        <td className="px-2 py-2 text-center">
+                          <Badge scheme={roleBadge[u.rol.toLowerCase()] || "neutral"}>{u.rol}</Badge>
                         </td>
-                        <td className="px-5 py-2 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.estado === true ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400"}`}>
+                        <td className="px-2 py-2 text-center">
+                          <Badge scheme={u.estado === true ? "success" : "neutral"} dot={u.estado === true} pulse={u.estado === true}>
                             {u.estado === true ? "Activo" : "Suspendido"}
-                          </span>
+                          </Badge>
                         </td>
-                        <td className="px-5 py-2 text-center">
-                           <div className="flex items-center justify-center gap-1.5">
-                              <button onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-brand-300 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
-                                <IconEdit />
-                              </button>
-                              <button onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña" className="inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                              </button>
-                              {(!(u.rol === "Administrador" && activeAdminsCount <= 1 && u.estado === true)) && (
-                                <button
-                                  onClick={() => handleToggleEstadoUsuario(u)}
-                                  title={u.estado === true ? "Suspender usuario" : "Activar usuario"}
-                                  className={`inline-flex items-center justify-center p-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                                    u.estado === true
-                                      ? "border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                      : "border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                                  }`}
-                                >
-                                  {u.estado === true ? (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                  ) : (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                  )}
-                                </button>
-                              )}
-                           </div>
+                        <td className="px-2 py-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="xs" variant="secondary" onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario"
+                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+                            <Button size="xs" variant="secondary" onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña"
+                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>} />
+                            {(!(u.rol === "Administrador" && activeAdminsCount <= 1 && u.estado === true)) && (
+                              <Button size="xs" variant={u.estado === true ? "danger" : "secondary"}
+                                onClick={() => handleToggleEstadoUsuario(u)}
+                                title={u.estado === true ? "Suspender usuario" : "Activar usuario"}
+                                startIcon={
+                                  u.estado === true
+                                    ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                }
+                              />
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                </>
-              )}
-
-              {activeTab === "asistencias" && (
-                <>
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
-                    <details className="group">
-                      <summary data-tour="resumen-semanal" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 select-none">
-                        <svg className={`w-4 h-4 transition-transform group-open:rotate-90`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                        Resumen Semanal
-                        <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">({resumenSemanal.length} trabajadores)</span>
-                      </summary>
-                      
-                      <div className="mt-2 pl-6 flex items-center gap-4 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap">
-                        <div className="flex items-center gap-1"><span className="text-green-600 dark:text-green-400 text-sm">✓</span> Completo</div>
-                        <div className="flex items-center gap-1"><span className="text-blue-600 dark:text-blue-400 text-sm">📝</span> Justificado</div>
-                        <div className="flex items-center gap-1"><span className="text-amber-500 text-sm">⚠</span> Incompleto</div>
-                        <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
-                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Asistió</div>
-                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Retardo</div>
-                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Justificado</div>
-                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Ausente</div>
-                      </div>
-
-                      <div className="mt-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                              <th className="px-3 py-2">Trabajador</th>
-                              <th className="px-3 py-2">Cargo</th>
-                              <th className="px-3 py-2 text-center">Req.</th>
-                              <th className="px-3 py-2 text-center">Acum.</th>
-                              <th className="px-3 py-2 text-center">Restan</th>
-                              <th className="px-3 py-2 text-center">Cumplió</th>
-                              <th className="px-3 py-2">Observaciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
-                            {resumenSemanal.length === 0 ? (
-                              <tr><td colSpan={7} className="px-3 py-4 text-center text-gray-500"><p className="font-medium">No hay datos esta semana</p></td></tr>
-                            ) : resumenSemanal.map((r) => (
-                              <tr key={r.id_trabajador} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td className="px-3 py-2 font-semibold text-xs">{r.nombres} {r.apellidos}</td>
-                                <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{r.cargo || "—"}</td>
-                                <td className="px-3 py-2 text-center text-xs">{r.horas_semanales > 0 ? `${r.horas_semanales}h` : "—"}</td>
-                                <td className="px-3 py-2 text-center text-xs font-medium">{r.horas_acumuladas > 0 ? `${r.horas_acumuladas}h` : "0h"}</td>
-                                <td className={`px-3 py-2 text-center text-xs font-medium ${r.horas_restantes > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}>{r.horas_restantes > 0 ? `${r.horas_restantes}h` : "0h"}</td>
-                                <td className="px-3 py-2 text-center">
-                                  {r.cumplio ? (
-                                    <span className="text-green-600 dark:text-green-400 text-lg" title="Completo">✓</span>
-                                  ) : r.justificado ? (
-                                    <span className="text-blue-600 dark:text-blue-400 text-lg" title="Justificado">📝</span>
-                                  ) : (
-                                    <span className="text-amber-500 text-lg" title="Incompleto">⚠</span>
-                                  )}
-                                </td>
-                        <td className="px-3 py-2">
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1" title={r.dias.map((d) => {
-                                      const fecha = new Date(d.fecha + "T12:00:00").toLocaleDateString("es-VE", { weekday: "short" });
-                                      if (d.horas_justificadas && d.tipo_justificacion) return `${fecha}: Justificado`;
-                                      if (d.retardo) return `${fecha}: Retardo`;
-                                      if (d.horas && d.horas > 0) return `${fecha}: ${d.horas}h`;
-                                      return `${fecha}: Ausente`;
-                                    }).join(", ")}>
-                                      {r.dias.map((d, i) => {
-                                        let color = "bg-red-400";
-                                        if (d.horas_justificadas && d.tipo_justificacion) color = "bg-blue-500";
-                                        else if (d.retardo) color = "bg-amber-500";
-                                        else if (d.horas && d.horas > 0) color = "bg-green-500";
-                                        return <span key={i} className={`w-2 h-2 rounded-full ${color} inline-block`} />;
-                                      })}
-                                    </div>
-                                    {!r.cumplio && !r.justificado && !isGerente && (
-                                      <button
-                                        onClick={() => setSelectedForJustificacion(r)}
-                                        className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-2 py-1 transition-colors"
-                                      >
-                                        Justificar
-                                      </button>
-                                    )}
-                                    {r.cumplio && (
-                                      <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800/50">Completo</span>
-                                    )}
-                                    {r.justificado && (
-                                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800/50">Justificado</span>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </details>
-                  </div>
-
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-800 dark:text-gray-300 uppercase text-xs font-bold border-b border-gray-300 dark:border-gray-700">
-                        <th className="px-4 py-2">Fecha</th>
-                        <th className="px-4 py-2">Cédula</th>
-                        <th className="px-4 py-2">Nombre y Apellido</th>
-                        <th className="px-4 py-2">Cargo</th>
-                        <th className="px-4 py-2 text-center border-l border-gray-200 dark:border-gray-700 text-green-700 dark:text-green-400">Entrada</th>
-                        <th className="px-4 py-2 text-center text-red-600 dark:text-red-400">Salida</th>
-                        <th className="px-4 py-2 text-center">Horas</th>
-                        <th className="px-4 py-2 text-center">Estado</th>
-                        <th className="px-4 py-2">Observaciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredAsistencias.length === 0 ? (
-                        <tr><td colSpan={9} className="px-5 py-6 text-center text-gray-500"><p className="font-medium">No hay registros de asistencia</p></td></tr>
-                      ) : filteredAsistencias.map((a) => {
-                        const retardo = esRetardo(a.entrada);
-                        const salidaTemprano = esSalidaTemprano(a.salida);
-                        const justificadoTipo = a.tipo_justificacion;
-                        return (
-                        <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <td className="px-4 py-2 font-mono text-xs text-gray-500">{a.fecha}</td>
-                          <td className="px-4 py-2 font-mono text-xs font-semibold">{a.cedula}</td>
-                          <td className="px-4 py-2 font-semibold">{a.trabajadorNombre}</td>
-                          <td className="px-4 py-2 text-gray-600 dark:text-gray-400 text-xs">{a.cargo}</td>
-                          <td className="px-4 py-2 text-center font-mono text-xs border-l border-gray-100 dark:border-gray-700">
-                            <span className={`${a.entrada !== "-" ? "text-green-700 dark:text-green-400 font-semibold" : "text-gray-300 dark:text-gray-600"} ${retardo ? "after:content-['⚠'] after:ml-1 after:text-amber-500" : ""}`}>{a.entrada}</span>
-                          </td>
-                          <td className="px-4 py-2 text-center font-mono text-xs">
-                            <span className={`${a.salida !== "-" ? "text-red-600 dark:text-red-400 font-semibold" : "text-gray-300 dark:text-gray-600"} ${salidaTemprano ? "after:content-['⚠'] after:ml-1 after:text-amber-500" : ""}`}>{a.salida}</span>
-                          </td>
-                          <td className="px-4 py-2 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
-                          <td className="px-4 py-2 text-center">
-                            {justificadoTipo ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400">
-                                Justificado
-                              </span>
-                            ) : retardo ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400" title="Llegó después de las 8:00am">
-                                Retardo
-                              </span>
-                            ) : salidaTemprano ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400" title="Salió antes de las 4:00pm">
-                                Temprano
-                              </span>
-                            ) : a.horasCumplidas !== null ? (
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400">
-                                A tiempo
-                              </span>
-                            ) : (
-                              <span className="text-gray-300 dark:text-gray-600">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 max-w-[160px]">
-                            {isGerente ? (
-                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[120px]" title={a.observaciones || ""}>
-                                {a.observaciones || "—"}
-                              </span>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[120px]" title={a.observaciones || ""}>
-                                    {a.observaciones || "—"}
-                                  </span>
-                                  <button
-                                    onClick={() => setObservacionModalData({ id: a.id, observaciones: a.observaciones || "" })}
-                                    className="p-1 text-gray-400 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
-                                    title="Añadir o editar observación"
-                                  >
-                                    <IconEdit />
-                                  </button>
-                                </div>
-                              )}
-                          </td>
-                        </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
                 </>
               )}
             </div>
@@ -557,21 +274,6 @@ export default function RRHH() {
                   label="trabajadores"
                   onPageChange={refreshTrabajadores}
                 />
-              )}
-              {activeTab === "asistencias" && (
-                <Pagination
-                  currentPage={asistPage}
-                  totalPages={asistTotalPages}
-                  totalItems={asistTotalItems}
-                  pageSize={ITEMS_PER_PAGE}
-                  label="asistencias"
-                  onPageChange={refreshAsistencias}
-                />
-              )}
-              {activeTab === "usuarios" && (
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
-                  Mostrando {filteredUsuarios.length} registros
-                </span>
               )}
             </div>
           </>
@@ -610,27 +312,6 @@ export default function RRHH() {
           setSelectedTrabajadorForDetail(null);
         }}
         onRefresh={refreshData}
-      />
-
-      <JustificacionModal
-        trabajador={selectedForJustificacion}
-        onClose={() => setSelectedForJustificacion(null)}
-        onSave={handleJustificarDia}
-      />
-
-      <ObservacionModal
-        isOpen={!!observacionModalData}
-        onClose={() => setObservacionModalData(null)}
-        observacionData={observacionModalData}
-        onSave={handleUpdateObservaciones}
-      />
-
-      <ExportarAsistenciaModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        onExport={(params) => {
-          import("../../services/pdf.service").then(m => m.exportarReporteAsistencia(params));
-        }}
       />
 
       {pendingFacialEnroll && (

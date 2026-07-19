@@ -6,11 +6,14 @@ import { AlertCircle } from "lucide-react";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { Modal } from "../../components/ui/modal";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
+import Button from "../../components/ui/button/Button";
+import Badge from "../../components/ui/Badge";
 import { useModal } from "../../hooks/useModal";
 import { generateNextCode } from "../../utils/codeGenerator";
 import { limitNumericInput, validateEmail, validatePhone } from "../../utils/validation";
 import Pagination from "../../components/ui/Pagination";
 import HistorialObraModal from "../../components/ui/HistorialObraModal";
+import ObraDetailModal from "./inventario/ObraDetailModal";
 import toast from "react-hot-toast";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 
@@ -669,30 +672,18 @@ export default function InventarioBoveda() {
           <p className="text-sm text-gray-500">Catálogo de obras de arte registradas.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            data-tour="exportar-pdf"
-            onClick={() => {
-              if (obras.length === 0) return;
-              exportarInventarioObras(filteredObras);
-            }}
-            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-          >
-            <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <Button variant="secondary" size="sm" data-tour="exportar-pdf"
+            onClick={() => { if (obras.length === 0) return; exportarInventarioObras(filteredObras); }}
+            startIcon={<svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
             <span className="hidden sm:inline">Exportar PDF</span>
             <span className="sm:hidden">PDF</span>
-          </button>
+          </Button>
           {canEditObra && (
-            <>
-              <button 
-                data-tour="agregar-nueva-obra"
-                onClick={handleOpenAdd}
-                className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
-              >
-                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                <span className="hidden sm:inline">Agregar Nueva Obra</span>
-                <span className="sm:hidden">Nueva Obra</span>
-              </button>
-            </>
+            <Button size="sm" data-tour="agregar-nueva-obra" onClick={handleOpenAdd}
+              startIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
+              <span className="hidden sm:inline">Agregar Nueva Obra</span>
+              <span className="sm:hidden">Nueva Obra</span>
+            </Button>
           )}
         </div>
       </div>
@@ -758,33 +749,28 @@ export default function InventarioBoveda() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
+            <div className="flex-1">
+              <table className="w-full text-left table-auto">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 uppercase text-xs font-semibold border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-5 py-2">
-                      Código
-                      {sortConfig?.key === "codigo_inventario" && (
-                        <span className="ml-1 font-bold">
-                          {sortConfig.direction === "asc" ? "▲" : "▼"}
-                        </span>
-                      )}
+                  <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-2 py-2.5" onClick={() => handleSort("codigo_inventario")} style={{cursor: 'pointer'}}>
+                      Código {sortConfig?.key === "codigo_inventario" && (sortConfig.direction === "asc" ? "▲" : "▼")}
                     </th>
-                    <th className="px-5 py-2">Título</th>
-                    <th className="px-5 py-2">Autor</th>
-                    <th className="px-5 py-2">Categoría/Modalidad</th>
-                    <th className="px-5 py-2">Ubicación</th>
-                    <th className="px-5 py-2 text-center">Estado</th>
-                    <th className="px-5 py-2 text-center">Acciones</th>
+                    <th className="px-2 py-2.5">Título</th>
+                    <th className="px-2 py-2.5">Autor</th>
+                    <th className="px-2 py-2.5">Categoría</th>
+                    <th className="px-2 py-2.5">Ubicación</th>
+                    <th className="px-2 py-2.5 text-center">Estado</th>
+                    <th className="px-2 py-2.5 text-center">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
                   {filteredObras.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-6 text-center text-gray-500">
-                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <p className="text-base font-medium">No se encontraron resultados</p>
-                        <p className="text-sm mt-1">Prueba ajustando tu búsqueda o filtros.</p>
+                      <td colSpan={7} className="px-4 py-10 text-center text-gray-500">
+                        <svg className="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <p className="text-sm font-medium">No se encontraron resultados</p>
+                        <p className="text-xs mt-1">Prueba ajustando tu búsqueda o filtros.</p>
                       </td>
                     </tr>
                   ) : (
@@ -792,49 +778,31 @@ export default function InventarioBoveda() {
                       <tr 
                         key={obra.id} 
                         onClick={() => setSelectedObraForDetail(obra)}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
                       >
-                        <td className="px-5 py-2 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{obra.codigo_inventario || obra.id}</td>
-                        <td className="px-5 py-2 font-semibold">{obra.titulo}</td>
-                        <td className="px-5 py-2">{obra.autor}</td>
-                        <td className="px-5 py-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400">
-                            {obra.categoria || '—'}
-                          </span>
+                        <td className="px-2 py-2.5 font-mono text-xs text-brand-600 dark:text-brand-400 font-medium">{obra.codigo_inventario || obra.id}</td>
+                        <td className="px-2 py-2.5 font-semibold text-sm">{obra.titulo}</td>
+                        <td className="px-2 py-2.5 text-xs text-gray-700 dark:text-gray-300">{obra.autor}</td>
+                        <td className="px-2 py-2.5">
+                          <Badge scheme="info">{obra.categoria || '—'}</Badge>
                         </td>
-                        <td className="px-5 py-2 text-gray-600 dark:text-gray-400">{obra.ubicacion}</td>
-                        <td className="px-5 py-2 text-center">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                            obra.estado === 'Excelente' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/10 dark:text-green-400' :
-                            obra.estado === 'Bueno' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400' :
-                            'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400'
-                          }`}>
+                        <td className="px-2 py-2.5 text-xs text-gray-500 dark:text-gray-400">{obra.ubicacion}</td>
+                        <td className="px-2 py-2.5 text-center">
+                          <Badge scheme={obra.estado === 'Excelente' ? 'success' : obra.estado === 'Bueno' ? 'info' : 'warning'} dot>
                             {obra.estado}
-                          </span>
+                          </Badge>
                         </td>
-                        <td className="px-5 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-2 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
                             {canEditObra && (
-                              <button 
-                                onClick={() => handleEdit(obra)}
-                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"
-                                title="Editar"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                </svg>
-                              </button>
+                              <Button variant="ghost" size="xs" onClick={() => handleEdit(obra)} title="Editar"
+                                className="text-gray-500 hover:text-brand-600"
+                                startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}>Editar</Button>
                             )}
                             {canDeleteObra && (
-                              <button 
-                                onClick={() => handleDelete(obra.id)}
-                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                title="Eliminar"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                              </button>
+                              <Button variant="ghost" size="xs" onClick={() => handleDelete(obra.id)} title="Eliminar"
+                                className="text-gray-500 hover:text-red-600"
+                                startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}>Eliminar</Button>
                             )}
                             {!canEditObra && !canDeleteObra && (
                               <span className="text-xs text-gray-400 italic font-semibold">Solo Lectura</span>
@@ -881,49 +849,48 @@ export default function InventarioBoveda() {
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div>
+          <table className="w-full text-left table-auto">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 uppercase text-xs font-semibold border-b border-gray-200 dark:border-gray-700">
-                <th className="px-5 py-2">Nombres</th>
-                <th className="px-5 py-2">Apellidos</th>
-                <th className="px-5 py-2">Cédula</th>
-                <th className="px-5 py-2">Teléfono</th>
-                <th className="px-5 py-2">Nacionalidad</th>
-                <th className="px-5 py-2 text-center">Acciones</th>
+              <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                <th className="px-2 py-2.5">Nombres</th>
+                <th className="px-2 py-2.5">Apellidos</th>
+                <th className="px-2 py-2.5">Cédula</th>
+                <th className="px-2 py-2.5">Teléfono</th>
+                <th className="px-2 py-2.5">Nacionalidad</th>
+                <th className="px-2 py-2.5 text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
               {filteredArtistsList.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-6 text-center text-gray-500">
-                    <svg className="mx-auto h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     <p className="text-sm font-medium">No hay artistas registrados.</p>
                   </td>
                 </tr>
               ) : (
                 filteredArtistsList.map((a) => (
-                  <tr key={a.id_artista} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td className="px-5 py-2 font-semibold">{a.nombres}</td>
-                    <td className="px-5 py-2">{a.apellidos}</td>
-                    <td className="px-5 py-2 font-mono text-xs text-gray-600 dark:text-gray-400">{a.ci || '—'}</td>
-                    <td className="px-5 py-2">{a.telefono || '—'}</td>
-                    <td className="px-5 py-2">
+                  <tr key={a.id_artista} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                    <td className="px-2 py-2.5 font-semibold text-sm">{a.nombres}</td>
+                    <td className="px-2 py-2.5 text-xs text-gray-700 dark:text-gray-300">{a.apellidos}</td>
+                    <td className="px-2 py-2.5 font-mono text-xs text-gray-500 dark:text-gray-400">{a.ci || '—'}</td>
+                    <td className="px-2 py-2.5 text-xs">{a.telefono || '—'}</td>
+                    <td className="px-2 py-2.5">
                       {a.nacionalidad ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400">{a.nacionalidad}</span>
+                        <Badge scheme="info">{a.nacionalidad}</Badge>
                       ) : '—'}
                     </td>
-                    <td className="px-5 py-2 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="px-2 py-2.5 text-center">
+                      <div className="flex items-center justify-center gap-1">
                         {canEditObra && (
-                          <button onClick={() => handleArtistFormOpen(a)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" title="Editar">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          </button>
+                          <Button variant="ghost" size="xs" onClick={() => handleArtistFormOpen(a)} title="Editar"
+                            className="text-gray-500 hover:text-brand-600"
+                            startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}>Editar</Button>
                         )}
                         {canDeleteObra && (
-                          <button onClick={() => handleArtistDelete(a.id_artista)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Eliminar">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
+                          <Button variant="ghost" size="xs" onClick={() => handleArtistDelete(a.id_artista)} title="Eliminar"
+                            className="text-gray-500 hover:text-red-600"
+                            startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}>Eliminar</Button>
                         )}
                         {!canEditObra && !canDeleteObra && (
                           <span className="text-xs text-gray-400 italic font-semibold">Solo Lectura</span>
@@ -1399,265 +1366,23 @@ export default function InventarioBoveda() {
             </div>
 
             <div className="flex justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="px-4 py-1.5 text-xs font-semibold text-gray-750 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="secondary" size="sm" type="button" onClick={closeModal}>
                 Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center justify-center min-w-[130px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition-colors disabled:opacity-70 disabled:cursor-wait"
-              >
-                {isSubmitting ? (
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  isEditing ? "Actualizar Obra" : "Registrar Obra"
-                )}
-              </button>
+              </Button>
+              <Button size="sm" type="submit" disabled={isSubmitting} loading={isSubmitting}>
+                {isEditing ? "Actualizar Obra" : "Registrar Obra"}
+              </Button>
             </div>
           </form>
         </div>
       </Modal>
 
-      {/* Modal de Detalle (Ficha de Obra) */}
-      <Modal
-        isOpen={selectedObraForDetail !== null}
+      <ObraDetailModal
+        obra={selectedObraForDetail}
         onClose={() => setSelectedObraForDetail(null)}
-        showCloseButton={false}
-        className="max-w-3xl p-0 overflow-hidden"
-      >
-        {selectedObraForDetail && (
-          <div className="p-6 bg-[#fcfafa] dark:bg-gray-900 flex flex-col justify-between min-h-[420px]">
-              <div>
-                {/* Header info */}
-                <div className="flex justify-between items-start gap-4">
-                  <div>
-                    <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-white leading-tight">
-                      {selectedObraForDetail.titulo}
-                    </h2>
-                    <p className="text-brand-500 dark:text-brand-400 font-semibold text-xs mt-1">
-                      • {selectedObraForDetail.autor}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedObraForDetail(null)}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-                    title="Cerrar"
-                  >
-                    <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Tarjeta Estado de Conservación */}
-                <div className="flex items-center justify-between p-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm my-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-xl">
-                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Estado de Conservación</span>
-                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Condición Actual</span>
-                    </div>
-                  </div>
-                  <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold border ${
-                    selectedObraForDetail.estado === 'Excelente' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800/40' :
-                    selectedObraForDetail.estado === 'Bueno' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800/40' :
-                    'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800/40'
-                  }`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
-                    {selectedObraForDetail.estado}
-                  </span>
-                </div>
-
-                {/* Grilla de Parámetros */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6">
-                  {/* Categoría */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Categoría</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.categoria || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Técnica */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Técnica</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.tecnica || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Medidas */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Medidas</span>
-                      <span className="text-xs font-semibold text-gray-855 dark:text-gray-200">{selectedObraForDetail.medidas || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Peso */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Peso</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.peso ? `${selectedObraForDetail.peso} kg` : '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Año de creación */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Año de Creación</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.ano || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Cantidad de piezas */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cantidad de Piezas</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-250">{selectedObraForDetail.piezas ?? '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Ubicación */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Ubicación</span>
-                      <span className="text-xs font-semibold text-gray-850 dark:text-gray-205">{selectedObraForDetail.ubicacion || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* Tipo de ingreso */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tipo de Ingreso</span>
-                      <span className="inline-block text-[10px] font-semibold text-gray-850 dark:text-gray-200 bg-yellow-50 dark:bg-yellow-950/20 px-2 py-0.5 rounded border border-yellow-100 dark:border-yellow-900/30">
-                        {selectedObraForDetail.tipo_ingreso || '—'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Clasificación Patrimonial */}
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 dark:bg-gray-800 text-brand-600 dark:text-brand-400 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Clasificación Patrimonial</span>
-                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                        selectedObraForDetail.clasificacion_patrimonial === 'BIC'
-                          ? 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900/30'
-                          : selectedObraForDetail.clasificacion_patrimonial === 'monumento'
-                          ? 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30'
-                          : selectedObraForDetail.clasificacion_patrimonial === 'bien_cultural'
-                          ? 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/20 dark:border-blue-900/30'
-                          : 'text-gray-500 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-700'
-                      }`}>
-                        {selectedObraForDetail.clasificacion_patrimonial === 'BIC' ? 'BIC — Bien de Interés Cultural' :
-                         selectedObraForDetail.clasificacion_patrimonial === 'monumento' ? 'Monumento' :
-                         selectedObraForDetail.clasificacion_patrimonial === 'bien_cultural' ? 'Bien Cultural' :
-                         'No clasificado'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Descripción (si existe) */}
-                {selectedObraForDetail.descripcion && (
-                  <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-700/60">
-                    <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Descripción / Detalles Adicionales</span>
-                    <p className="text-xs text-gray-650 dark:text-gray-300 leading-relaxed font-outfit">
-                      {selectedObraForDetail.descripcion}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Acciones del pie */}
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
-                <button
-                  onClick={() => {
-                    setSelectedObraForHistorial(selectedObraForDetail);
-                  }}
-                  className="px-5 py-2 text-xs font-semibold text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/50 rounded-xl hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors flex items-center gap-1.5"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Historial
-                </button>
-                <button
-                  onClick={() => setSelectedObraForDetail(null)}
-                  className="px-5 py-2 text-xs font-semibold text-gray-650 dark:text-gray-450 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cerrar
-                </button>
-                <button
-                  onClick={() => {
-                    handleEdit(selectedObraForDetail);
-                    setSelectedObraForDetail(null);
-                  }}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
-                >
-                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  Editar Obra
-                </button>
-              </div>
-            </div>
-        )}
-      </Modal>
+        onEdit={(o) => { handleEdit(o); setSelectedObraForDetail(null); }}
+        onHistorial={(o) => setSelectedObraForHistorial(o)}
+      />
       <HistorialObraModal
         obra={selectedObraForHistorial}
         onClose={() => setSelectedObraForHistorial(null)}
@@ -1699,19 +1424,10 @@ export default function InventarioBoveda() {
                     className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={handleArtistSearch}
-                  disabled={isSearchingArtist}
-                  className="px-3 py-1.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 text-xs font-semibold transition-colors disabled:opacity-60 flex items-center gap-1"
-                >
-                  {isSearchingArtist ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  )}
+                <Button type="button" size="xs" onClick={handleArtistSearch}
+                  disabled={isSearchingArtist} loading={isSearchingArtist}>
                   Buscar
-                </button>
+                </Button>
               </div>
 
               {/* Resultados de búsqueda */}
@@ -1817,14 +1533,12 @@ export default function InventarioBoveda() {
               <textarea name="direccion" value={artistFormData.direccion || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, direccion: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 resize-y" />
             </div>
             <div className="flex justify-end gap-2.5 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-              <button type="button" onClick={() => { setArtistFormOpen(false); setArtistSearchResults([]); setArtistSearchQuery(""); }} className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-              <button type="submit" disabled={isArtistSubmitting} className="flex items-center justify-center min-w-[110px] px-4 py-1.5 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-70 disabled:cursor-wait">
-                {isArtistSubmitting ? (
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  isEditingArtist ? "Actualizar" : "Guardar"
-                )}
-              </button>
+              <Button variant="secondary" size="sm" type="button" onClick={() => { setArtistFormOpen(false); setArtistSearchResults([]); setArtistSearchQuery(""); }}>
+                Cancelar
+              </Button>
+              <Button size="sm" type="submit" disabled={isArtistSubmitting} loading={isArtistSubmitting}>
+                {isEditingArtist ? "Actualizar" : "Guardar"}
+              </Button>
             </div>
           </form>
         </div>

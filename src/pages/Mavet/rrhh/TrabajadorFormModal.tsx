@@ -217,14 +217,24 @@ export default function TrabajadorFormModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-5">
-      <div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-          {editingTrabajadorId !== null ? "Editar Trabajador" : "Registrar Nuevo Trabajador"}
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Complete los datos del trabajador. Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
-        </p>
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-0">
+      <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              {editingTrabajadorId !== null ? "Editar Trabajador" : "Registrar Nuevo Trabajador"}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              Complete los datos del trabajador. Los campos marcados con <span className="text-red-400">*</span> son obligatorios.
+            </p>
+          </div>
+          <button type="button" onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div className="p-6">
 
         {!editingTrabajadorId && (
           <div className="flex items-center gap-0 mb-6">

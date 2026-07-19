@@ -21,6 +21,22 @@ function autoInactivarVencidos(talleres: any[]): any[] {
   });
 }
 
+async function persistirAutoInactivacion(talleres: any[]): Promise<void> {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const vencidos = talleres.filter(t => {
+    if (!t.fecha_fin) return false;
+    const fin = new Date(t.fecha_fin + "T23:59:59");
+    return fin < hoy && (t.estado === "Activo" || t.estado === true);
+  });
+  if (vencidos.length === 0) return;
+  await Promise.allSettled(
+    vencidos.map(t =>
+      mavetApi.actualizarTaller(t.id_taller, { estado: "Inactivo" } as any)
+    )
+  );
+}
+
 const initialInventarioForm = { nombre: "", descripcion: "" };
 
 const initialPlanificarForm = {
@@ -35,7 +51,8 @@ const initialPlanificarForm = {
   horas_totales: "" as number | string,
   cupo_minimo: "" as number | string,
   cupo_maximo: "" as number | string,
-  estado: true
+  estado: true,
+  documentoPlan: null as File | null,
 };
 
 
@@ -49,6 +66,7 @@ export function useTalleres() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterInstructor, setFilterInstructor] = useState("Todos");
+  const [verHistorial, setVerHistorial] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInventario, setSearchInventario] = useState("");
 
@@ -59,11 +77,8 @@ export function useTalleres() {
   const [selectedTaller, setSelectedTaller] = useState<any>(null);
   const [isEditingPlanificado, setIsEditingPlanificado] = useState(false);
   const [tallerAsistentes, setTallerAsistentes] = useState<any[]>([]);
-  const [tallerSesiones, setTallerSesiones] = useState<any[]>([]);
-  const [metricasTaller, setMetricasTaller] = useState<any>(null);
 
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
-  const { isOpen: isOpenSesiones, openModal: openSesionesModal, closeModal: closeSesionesModal } = useModal();
 
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; variant?: "danger" | "warning" | "info" }>({
     open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
@@ -118,6 +133,7 @@ export function useTalleres() {
         return !n.includes("boveda") && !n.includes("bóveda");
       }));
       setInscripciones(ins);
+      persistirAutoInactivacion(tal);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar datos");
@@ -234,6 +250,12 @@ export function useTalleres() {
     openPlanificar();
   };
 
+  const handleDocumentoPlanChange = (file: File | null) => {
+    setFormError("");
+    setFieldErrors(prev => ({ ...prev, documentoPlan: "" }));
+    setPlanificarForm(prev => ({ ...prev, documentoPlan: file }));
+  };
+
   const handleEliminarPlanificado = (taller: any) => {
     setConfirm({
       open: true,
@@ -247,7 +269,8 @@ export function useTalleres() {
           await mavetApi.eliminarTaller(taller.id_taller);
           toast.success("Taller eliminado correctamente.");
           const refreshed = await mavetApi.getTalleres();
-          setTalleres(refreshed);
+          setTalleres(autoInactivarVencidos(refreshed));
+          persistirAutoInactivacion(refreshed);
         } catch (error: any) {
           toast.error(error.message || "Error al eliminar taller planificado.");
         }
@@ -349,6 +372,10 @@ export function useTalleres() {
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    if (!planificarForm.documentoPlan) {
+      setFormError("Debe adjuntar el documento del plan programático.");
+      return;
+    }
     if (!planificarForm.id_taller_inventario) {
       setFormError("Debe seleccionar un taller del inventario.");
       return;
@@ -429,7 +456,7 @@ export function useTalleres() {
     setIsSubmitting(true);
     try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
-      const payload = {
+      const payload: any = {
         inventario_id: planificarForm.id_taller_inventario || null,
         id_instructor: planificarForm.selectedInstructorId || null,
         id_espacio: planificarForm.id_espacio || null,
@@ -446,10 +473,10 @@ export function useTalleres() {
       };
 
       if (isEditingPlanificado && selectedTaller?.id_taller) {
-        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload as any);
+        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload, planificarForm.documentoPlan);
         toast.success("Taller planificado actualizado correctamente.");
       } else {
-        await mavetApi.crearTaller(payload as any);
+        await mavetApi.crearTaller(payload, planificarForm.documentoPlan);
         toast.success("Taller planificado correctamente.");
       }
 
@@ -460,6 +487,7 @@ export function useTalleres() {
       ]);
       setTalleres(autoInactivarVencidos(talleresData));
       setInscripciones(inscripcionesData);
+      persistirAutoInactivacion(talleresData);
     } catch (error: any) {
       setFormError(error.message || "Error al planificar taller.");
     } finally {
@@ -480,22 +508,6 @@ export function useTalleres() {
     openAsistentesModal();
   };
 
-  const openSesiones = async (taller: any) => {
-    setSelectedTaller(taller);
-    try {
-      const [sesionesData, metricasData] = await Promise.all([
-        mavetApi.getSesionesTaller(taller.id_taller),
-        mavetApi.getMetricasTaller(taller.id_taller)
-      ]);
-      setTallerSesiones(sesionesData);
-      setMetricasTaller(metricasData);
-    } catch {
-      setTallerSesiones([]);
-      setMetricasTaller(null);
-    }
-    openSesionesModal();
-  };
-
   const filteredTalleres = talleres.filter(t => {
     const term = searchTerm.toLowerCase();
     const instructorName = t.Instructor?.Persona ? `${t.Instructor.Persona.nombres || ""} ${t.Instructor.Persona.apellidos || ""}`.trim() : "";
@@ -506,8 +518,11 @@ export function useTalleres() {
       t.Instructor?.Persona?.apellidos?.toLowerCase().includes(term);
 
     const matchesInstructor = filterInstructor === "Todos" || instructorName === filterInstructor;
+    const matchesEstado = verHistorial
+      ? (t.estado === "Inactivo" || t.estado === false)
+      : (t.estado === "Activo" || t.estado === true);
 
-    return matchesSearch && matchesInstructor;
+    return matchesSearch && matchesInstructor && matchesEstado;
   });
   const totalPages = Math.ceil(filteredTalleres.length / ITEMS_PER_PAGE);
   const paginatedTalleres = filteredTalleres.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -537,18 +552,16 @@ export function useTalleres() {
     edadNum, esMenor, inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
+    verHistorial, setVerHistorial,
     filteredInventario,
     selectedInventario, setSelectedInventario,
     selectedTaller, setSelectedTaller,
     isEditingPlanificado, setIsEditingPlanificado,
     tallerAsistentes, setTallerAsistentes,
-    tallerSesiones, setTallerSesiones,
-    metricasTaller, setMetricasTaller,
     isOpenCrear, closeCrear,
     isOpenEditar, closeEditar,
     isOpenPlanificar, closePlanificar,
     isOpenAsistentes, closeAsistentesModal,
-    isOpenSesiones, closeSesionesModal,
     confirm, setConfirm,
     formError, setFormError,
     fieldErrors,
@@ -557,9 +570,10 @@ export function useTalleres() {
     handleEliminarInventario,
     handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
+    handleDocumentoPlanChange,
     // Compossed hooks
     ...instructor,
     ...insc,
-    openAsistentes, openSesiones,
+    openAsistentes,
   };
 }
