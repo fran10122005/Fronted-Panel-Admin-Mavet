@@ -283,7 +283,7 @@ export function useRRHH() {
     });
   };
 
-  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean) => {
+  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean, pendingDocs?: any[]) => {
     setIsSubmitting(true);
     try {
       let trabajadorId = editingTrabajadorId;
@@ -302,6 +302,19 @@ export function useRRHH() {
             await mavetApi.guardarHorarios(trabajadorId.toString(), horarios);
           } catch (err: any) {
             console.warn("Error al guardar horarios:", err);
+          }
+        }
+
+        if (trabajadorId && pendingDocs && pendingDocs.length > 0) {
+          try {
+            toast.loading(`Subiendo ${pendingDocs.length} documentos...`, { id: "upload-docs" });
+            for (const doc of pendingDocs) {
+              await mavetApi.subirDocumento(trabajadorId.toString(), doc.file, doc.tipo, doc.notas || undefined);
+            }
+            toast.success("Documentos subidos correctamente.", { id: "upload-docs" });
+          } catch (err: any) {
+            console.warn("Error al subir documentos:", err);
+            toast.error("Error al subir algunos documentos.", { id: "upload-docs" });
           }
         }
       }

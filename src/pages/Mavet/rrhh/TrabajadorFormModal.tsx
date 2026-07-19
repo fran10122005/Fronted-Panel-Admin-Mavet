@@ -51,7 +51,7 @@ interface Props {
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;
-  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean) => void;
+  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean, pendingDocs?: { file: File, tipo: string, notas?: string }[]) => void;
   inputCls: string;
 }
 
@@ -106,7 +106,8 @@ export default function TrabajadorFormModal({
   cargos, isSubmitting, onSubmit, inputCls,
 }: Props) {
   const [activeTab, setActiveTab] = useState("info");
-  const { register, handleSubmit, reset, setValue, trigger, formState: { errors } } = useForm<TrabajadorFormValues>({
+  const [vistaHorario, setVistaHorario] = useState<'lista' | 'grid'>('lista');
+  const { register, handleSubmit, reset, setValue, trigger, getValues, formState: { errors } } = useForm<TrabajadorFormValues>({
     resolver: zodResolver(step1Schema) as any,
     defaultValues: initialData,
   });
@@ -122,6 +123,7 @@ export default function TrabajadorFormModal({
 
   const [horarios, setHorarios] = useState<HorarioDia[]>(getDefaultHorarios());
   const [documentos, setDocumentos] = useState<TrabajadorDocumento[]>([]);
+  const [pendingDocs, setPendingDocs] = useState<{ file: File; tipo: string; notas: string; id: string }[]>([]);
   const [justificaciones, setJustificaciones] = useState<Justificacion[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
 
@@ -254,7 +256,7 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData, horarios, photoFile, generarPin, habilitarFacial);
+    onSubmit(finalData, horarios, photoFile, generarPin, habilitarFacial, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,6 +293,171 @@ export default function TrabajadorFormModal({
     });
   };
 
+  const handleGeneratePDF = async () => {
+    try {
+      toast.loading("Generando PDF...", { id: "generate-pdf" });
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      const getLogo = async (): Promise<string> => {
+        const LOGO_PATH = "/images/logo/mavet2.png";
+        try {
+          const r = await fetch(LOGO_PATH);
+          const b = await r.blob();
+          return new Promise<string>((resolve) => {
+            const rd = new FileReader();
+            rd.onloadend = () => resolve(rd.result as string);
+            rd.readAsDataURL(b);
+          });
+        } catch {
+          return "";
+        }
+      };
+
+      const logo = await getLogo();
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const burgundy = [128, 0, 0];
+      const grayDark = [60, 60, 60];
+
+      if (logo) {
+        try {
+          doc.addImage(logo, "PNG", 15, 14, 12, 12);
+        } catch (err) {
+          console.warn("Error drawing logo in PDF:", err);
+        }
+      }
+
+      // Doc header
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(burgundy[0], burgundy[1], burgundy[2]);
+      doc.text("MUSEO DE ARTES VISUALES Y DEL ESPACIO", 105, 20, { align: "center" });
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text("MAVET · REGISTRO Y CONTROL DE HORARIOS", 105, 25, { align: "center" });
+
+      doc.setDrawColor(burgundy[0], burgundy[1], burgundy[2]);
+      doc.setLineWidth(0.4);
+      doc.line(15, 28, 195, 28);
+
+      // Info
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(grayDark[0], grayDark[1], grayDark[2]);
+      doc.text("HORARIO SEMANAL DE TRABAJO", 15, 35);
+
+      const formValues = getValues();
+      const nombres = formValues.nombres || "Trabajador";
+      const apellidos = formValues.apellidos || "";
+      const cedula = formValues.cedula || "—";
+      const cargoId = formValues.id_cargo;
+      const cargoObj = cargos.find(c => c.id_cargo?.toString() === cargoId?.toString());
+      const cargoLabel = cargoObj ? cargoObj.nombre_cargo : "—";
+
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Trabajador: ${nombres} ${apellidos}`, 15, 41);
+      doc.text(`Cédula: ${cedula}`, 15, 46);
+      doc.text(`Cargo: ${cargoLabel}`, 15, 51);
+      doc.text(`Fecha Emisión: ${new Date().toLocaleDateString('es-ES')}`, 135, 41);
+
+      // Table layout LUN to DOM
+      const tableHeaders = [["DÍA", "ESTADO", "HORA ENTRADA", "HORA SALIDA", "DETALLE / NOTAS"]];
+      const orderedDays = [
+        { value: 1, label: "LUNES" },
+        { value: 2, label: "MARTES" },
+        { value: 3, label: "MIÉRCOLES" },
+        { value: 4, label: "JUEVES" },
+        { value: 5, label: "VIERNES" },
+        { value: 6, label: "SÁBADO" },
+        { value: 0, label: "DOMINGO" },
+      ];
+
+      const tableRows = orderedDays.map((dia) => {
+        const h = horarios.find(x => x.dia_semana === dia.value) || { dia_semana: dia.value, hora_entrada: "09:00", hora_salida: "17:00", es_dia_laborable: dia.value >= 1 && dia.value <= 5 };
+
+        const format12h = (time24: string) => {
+          if (!time24) return "—";
+          const [hStr, mStr] = time24.split(':');
+          const h = parseInt(hStr, 10) || 0;
+          const m = parseInt(mStr, 10) || 0;
+          const ampm = h >= 12 ? 'p. m.' : 'a. m.';
+          const h12 = h % 12 || 12;
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          return `${pad(h12)}:${pad(m)} ${ampm}`;
+        };
+
+        const entradaFmt = h.es_dia_laborable ? format12h(h.hora_entrada) : "—";
+        const salidaFmt = h.es_dia_laborable ? format12h(h.hora_salida) : "—";
+        const estadoText = h.es_dia_laborable ? "Laborable" : "No laborable";
+        const obs = h.es_dia_laborable ? "Jornada laboral establecida" : "Día no laborable";
+
+        return [
+          dia.label,
+          estadoText,
+          entradaFmt,
+          salidaFmt,
+          obs
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 56,
+        head: tableHeaders,
+        body: tableRows,
+        theme: "grid",
+        headStyles: {
+          fillColor: [128, 0, 0], // MAVET burgundy
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 9,
+          halign: "center",
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [50, 50, 50],
+        },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 30 },
+          1: { halign: "center", cellWidth: 25 },
+          2: { halign: "center", cellWidth: 25 },
+          3: { halign: "center", cellWidth: 25 },
+          4: { cellWidth: 65 },
+        },
+        alternateRowStyles: {
+          fillColor: [250, 247, 245],
+        },
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 25;
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.line(30, finalY, 80, finalY);
+      doc.line(130, finalY, 180, finalY);
+
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text("Firma del Trabajador", 55, finalY + 4, { align: "center" });
+      doc.text("Firma de Recursos Humanos", 155, finalY + 4, { align: "center" });
+
+      const pdfName = `Horario_${nombres.trim().replace(/\s+/g, '_')}_${apellidos.trim().replace(/\s+/g, '_')}.pdf`;
+      doc.save(pdfName);
+
+      toast.success("PDF generado correctamente", { id: "generate-pdf" });
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error al generar PDF", { id: "generate-pdf" });
+    }
+  };
+
   const handleUploadDocumento = async () => {
     if (!editingTrabajadorId) {
       toast.error("Primero guarde el trabajador para poder subir documentos");
@@ -315,6 +482,33 @@ export default function TrabajadorFormModal({
       }
     };
     input.click();
+  };
+
+  const handleSelectLocalDocumento = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp';
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      
+      const newDoc = {
+        file,
+        tipo: uploadTipo,
+        notas: uploadNotas,
+        id: Math.random().toString(36).substr(2, 9)
+      };
+      
+      setPendingDocs(prev => [newDoc, ...prev]);
+      setUploadNotas("");
+      toast.success("Documento agregado a la lista");
+    };
+    input.click();
+  };
+
+  const handleRemoveLocalDocumento = (id: string) => {
+    setPendingDocs(prev => prev.filter(doc => doc.id !== id));
+    toast.success("Documento quitado de la lista");
   };
 
   const handleEliminarDocumento = async (id_documento: string) => {
@@ -584,78 +778,242 @@ export default function TrabajadorFormModal({
 
           {activeTab === "horario" && (
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  Horario Semanal
-                </h5>
-                <p className="text-[10px] text-gray-400">Horario fijo 9:00am - 5:00pm · Pausa 12:00pm - 1:00pm</p>
-              </div>
-
-              {loadingExtras ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+              {/* Selector de Vistas y Botón de PDF */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 bg-gray-50 dark:bg-gray-800/40 p-2 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm">
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setVistaHorario('lista')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      vistaHorario === 'lista'
+                        ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm border border-gray-200/50 dark:border-gray-700'
+                        : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    Vista Actual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVistaHorario('grid')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      vistaHorario === 'grid'
+                        ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-sm border border-gray-200/50 dark:border-gray-700'
+                        : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Formato de Horario
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {DIAS_SEMANA.map((dia, idx) => {
-                    const h = horarios[idx] || { dia_semana: dia.value, hora_entrada: "09:00", hora_salida: "17:00", es_dia_laborable: dia.value >= 1 && dia.value <= 5 };
-                    return (
-                      <div key={dia.value} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                        h.es_dia_laborable
-                          ? "border-brand-200 dark:border-brand-800 bg-brand-50/30 dark:bg-brand-950/10"
-                          : "border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
-                      }`}>
-                        <input
-                          type="checkbox"
-                          checked={h.es_dia_laborable}
-                          onChange={() => toggleDiaLaborable(idx)}
-                          className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
-                        />
-                        <span className={`text-sm font-semibold w-24 ${h.es_dia_laborable ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"}`}>
-                          {dia.label}
-                        </span>
-                        {h.es_dia_laborable ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="time"
-                              value={h.hora_entrada}
-                              onChange={(e) => updateHorarioTime(idx, 'hora_entrada', e.target.value)}
-                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs focus:border-brand-500 focus:outline-none w-28"
-                            />
-                            <span className="text-xs text-gray-400">a</span>
-                            <input
-                              type="time"
-                              value={h.hora_salida}
-                              onChange={(e) => updateHorarioTime(idx, 'hora_salida', e.target.value)}
-                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs focus:border-brand-500 focus:outline-none w-28"
-                            />
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleGeneratePDF}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generar PDF
+                  </button>
+                </div>
+              </div>
+ 
+              {/* VISTA 1: LISTADO (VISTA ACTUAL) */}
+              {vistaHorario === 'lista' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      Horario Semanal
+                    </h5>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 italic">
+                      Horario fijo 9:00am - 5:00pm · Pausa 12:00pm - 1:00pm
+                    </p>
+                  </div>
+ 
+                  {loadingExtras ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {DIAS_SEMANA.map((dia, idx) => {
+                        const h = horarios[idx] || { dia_semana: dia.value, hora_entrada: "09:00", hora_salida: "17:00", es_dia_laborable: dia.value >= 1 && dia.value <= 5 };
+                        return (
+                          <div key={dia.value} className={`flex items-center justify-between gap-4 p-3 rounded-lg border transition-all duration-200 ${
+                            h.es_dia_laborable
+                              ? "border-brand-200 dark:border-brand-900 bg-brand-50/20 dark:bg-brand-950/10 shadow-sm"
+                              : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/10 opacity-70"
+                          }`}>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={h.es_dia_laborable}
+                                onChange={() => toggleDiaLaborable(idx)}
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 dark:text-brand-400 focus:ring-brand-500/30 cursor-pointer"
+                              />
+                              <span className={`text-xs font-semibold ${
+                                h.es_dia_laborable ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500 font-normal"
+                              }`}>
+                                {dia.label}
+                              </span>
+                            </div>
+ 
+                            <div className="flex items-center gap-3">
+                              {h.es_dia_laborable ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="time"
+                                    value={h.hora_entrada}
+                                    onChange={(e) => updateHorarioTime(idx, 'hora_entrada', e.target.value)}
+                                    className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-center text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 w-32 shadow-sm"
+                                  />
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 italic">a</span>
+                                  <input
+                                    type="time"
+                                    value={h.hora_salida}
+                                    onChange={(e) => updateHorarioTime(idx, 'hora_salida', e.target.value)}
+                                    className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-center text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 w-32 shadow-sm"
+                                  />
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400 dark:text-gray-500 italic select-none mr-4">No laborable</span>
+                              )}
+                            </div>
                           </div>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">No laborable</span>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  )}
+ 
+                  {editingTrabajadorId && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const id = editingTrabajadorId as string;
+                          try {
+                            await mavetApi.guardarHorarios(id, horarios);
+                            toast.success("Horario guardado correctamente");
+                          } catch (err: any) {
+                            toast.error(err.message || "Error al guardar horario");
+                          }
+                        }}
+                        className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition-colors shadow-sm focus:outline-none"
+                      >
+                        Guardar Horario
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {editingTrabajadorId && (
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const id = editingTrabajadorId as string;
-                      try {
-                        await mavetApi.guardarHorarios(id, horarios);
-                        toast.success("Horario guardado correctamente");
-                      } catch (err: any) {
-                        toast.error(err.message || "Error al guardar horario");
-                      }
-                    }}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition"
-                  >
-                    Guardar Horario
-                  </button>
+              {/* VISTA 2: GRID CLÁSICO (FORMATO DE HORARIO DE TRABAJO) */}
+              {vistaHorario === 'grid' && (
+                <div className="relative p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-x-auto min-h-[500px] select-none">
+                  {/* Título en mayúsculas, negrita y estilo limpio */}
+                  <div className="flex flex-col items-center mb-6">
+                    <h3 className="text-base font-bold uppercase tracking-wider text-gray-800 dark:text-gray-100">
+                      HORARIO DE TRABAJO
+                    </h3>
+                  </div>
+
+                  {/* Tabla Matriz */}
+                  <table className="w-full border-collapse border border-gray-300 dark:border-gray-700 mx-auto max-w-5xl">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
+                        <th className="p-3 border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-28 text-center animate-none">
+                          ENT / SAL
+                        </th>
+                        {[
+                          { value: 1, label: "LUN" },
+                          { value: 2, label: "MAR" },
+                          { value: 3, label: "MIE" },
+                          { value: 4, label: "JUE" },
+                          { value: 5, label: "VIE" },
+                          { value: 6, label: "SAB" },
+                          { value: 0, label: "DOM" },
+                        ].map((col) => (
+                          <th key={col.value} className="p-3 border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-center">
+                            {col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "08:00 - 09:00", start: "08:00", end: "09:00" },
+                        { label: "09:00 - 10:00", start: "09:00", end: "10:00" },
+                        { label: "10:00 - 11:00", start: "10:00", end: "11:00" },
+                        { label: "11:00 - 12:00", start: "11:00", end: "12:00" },
+                        { label: "12:00 - 13:00", start: "12:00", end: "13:00" },
+                        { label: "13:00 - 14:00", start: "13:00", end: "14:00" },
+                        { label: "14:00 - 15:00", start: "14:00", end: "15:00" },
+                        { label: "15:00 - 16:00", start: "15:00", end: "16:00" },
+                        { label: "16:00 - 17:00", start: "16:00", end: "17:00" },
+                        { label: "17:00 - 18:00", start: "17:00", end: "18:00" },
+                      ].map((fila, fIdx) => (
+                        <tr key={fIdx} className="border-b border-gray-300 dark:border-gray-700">
+                          <td className="p-3 border border-gray-300 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 font-semibold bg-gray-50 dark:bg-gray-800 text-center select-none">
+                            {fila.label}
+                          </td>
+                          {[1, 2, 3, 4, 5, 6, 0].map((dayValue) => {
+                            // Helper logic inside render block
+                            const getIsCellActive = () => {
+                              const diaHorario = horarios.find(h => h.dia_semana === dayValue);
+                              if (!diaHorario || !diaHorario.es_dia_laborable) return false;
+
+                              const parseToMinutes = (timeStr: string) => {
+                                if (!timeStr) return 0;
+                                const parts = timeStr.split(':');
+                                const h = parseInt(parts[0], 10) || 0;
+                                const m = parseInt(parts[1], 10) || 0;
+                                return h * 60 + m;
+                              };
+
+                              const entrada = parseToMinutes(diaHorario.hora_entrada);
+                              const salida = parseToMinutes(diaHorario.hora_salida);
+                              const slotStart = parseToMinutes(fila.start);
+                              const slotEnd = parseToMinutes(fila.end);
+
+                              return Math.max(entrada, slotStart) < Math.min(salida, slotEnd);
+                            };
+
+                            const active = getIsCellActive();
+                            const isLunch = fila.start === "12:00" && fila.end === "13:00";
+
+                            return (
+                              <td key={dayValue} className="p-1.5 border border-gray-300 dark:border-gray-700 h-12 relative min-w-[80px] bg-white dark:bg-gray-900">
+                                {active ? (
+                                  isLunch ? (
+                                    <div className="absolute inset-1 bg-orange-50 dark:bg-orange-950/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-850/40 rounded flex items-center justify-center shadow-sm select-none">
+                                      <span className="text-[10px] font-bold tracking-wide uppercase">Pausa ☕</span>
+                                    </div>
+                                  ) : (
+                                    <div className="absolute inset-1 bg-brand-50 dark:bg-brand-950/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-850/40 rounded flex items-center justify-center shadow-sm select-none">
+                                      <span className="text-[10px] font-bold tracking-wide uppercase">Laboral</span>
+                                    </div>
+                                  )
+                                ) : null}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  
+                  <div className="mt-4 text-right">
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                      * Vista de horario semanal institucional - MAVET
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -665,93 +1023,121 @@ export default function TrabajadorFormModal({
             <div>
               <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documentos del Trabajador</h5>
 
-              {!editingTrabajadorId ? (
-                <div className="p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Primero guarde el trabajador para poder subir documentos</p>
+              <div className="flex items-end gap-3 mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
+                <div className="flex-1">
+                  <label className={labelCls}>Tipo de Documento</label>
+                  <select
+                    value={uploadTipo}
+                    onChange={(e) => setUploadTipo(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                  >
+                    {TIPOS_DOCUMENTO.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-end gap-3 mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
-                    <div className="flex-1">
-                      <label className={labelCls}>Tipo de Documento</label>
-                      <select
-                        value={uploadTipo}
-                        onChange={(e) => setUploadTipo(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
-                      >
-                        {TIPOS_DOCUMENTO.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex-1">
-                      <label className={labelCls}>Notas (opcional)</label>
-                      <input
-                        type="text"
-                        value={uploadNotas}
-                        onChange={(e) => setUploadNotas(e.target.value)}
-                        placeholder="Breve descripción"
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleUploadDocumento}
-                      disabled={uploading}
-                      className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-60 flex items-center gap-1"
-                    >
-                      {uploading ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                      )}
-                      Subir Archivo
-                    </button>
-                  </div>
-
-                  {documentos.length === 0 ? (
-                    <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
-                      <p className="text-sm text-gray-400">No hay documentos subidos</p>
-                    </div>
+                <div className="flex-1">
+                  <label className={labelCls}>Notas (opcional)</label>
+                  <input
+                    type="text"
+                    value={uploadNotas}
+                    onChange={(e) => setUploadNotas(e.target.value)}
+                    placeholder="Breve descripción"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={editingTrabajadorId ? handleUploadDocumento : handleSelectLocalDocumento}
+                  disabled={uploading}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-60 flex items-center gap-1"
+                >
+                  {uploading ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <div className="space-y-2">
-                      {documentos.map(doc => (
-                        <div key={doc.id_documento} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
-                          <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{doc.nombre_archivo}</p>
-                            <p className="text-[10px] text-gray-500">
-                              {TIPOS_DOCUMENTO.find(t => t.value === doc.tipo_documento)?.label || doc.tipo_documento}
-                              {doc.tamano_archivo && ` · ${formatFileSize(doc.tamano_archivo)}`}
-                              {doc.notas && ` · ${doc.notas}`}
-                            </p>
-                          </div>
-                          <div className="flex gap-1">
-                            <a
-                              href={doc.ruta_archivo}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 text-gray-500 hover:text-brand-600 transition-colors"
-                              title="Ver documento"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => handleEliminarDocumento(doc.id_documento)}
-                              className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
-                              title="Eliminar documento"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                   )}
-                </>
+                  Subir Archivo
+                </button>
+              </div>
+
+              {editingTrabajadorId ? (
+                documentos.length === 0 ? (
+                  <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-sm text-gray-400">No hay documentos subidos</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {documentos.map(doc => (
+                      <div key={doc.id_documento} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                        <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{doc.nombre_archivo}</p>
+                          <p className="text-[10px] text-gray-500">
+                            {TIPOS_DOCUMENTO.find(t => t.value === doc.tipo_documento)?.label || doc.tipo_documento}
+                            {doc.tamano_archivo && ` · ${formatFileSize(doc.tamano_archivo)}`}
+                            {doc.notas && ` · ${doc.notas}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <a
+                            href={doc.ruta_archivo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-gray-500 hover:text-brand-600 transition-colors"
+                            title="Ver documento"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarDocumento(doc.id_documento)}
+                            className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                            title="Eliminar documento"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                pendingDocs.length === 0 ? (
+                  <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-sm text-gray-400">No hay documentos seleccionados para subir</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pendingDocs.map(doc => (
+                      <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                        <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{doc.file.name}</p>
+                          <p className="text-[10px] text-gray-500">
+                            {TIPOS_DOCUMENTO.find(t => t.value === doc.tipo)?.label || doc.tipo}
+                            {` · ${formatFileSize(doc.file.size)}`}
+                            {doc.notas && ` · ${doc.notas}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLocalDocumento(doc.id)}
+                            className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                            title="Quitar documento"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           )}

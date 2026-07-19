@@ -94,8 +94,8 @@ export default function FacialEnrollModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} className="max-w-md">
       <div className="p-4 text-center space-y-4">
-        <div className="w-14 h-14 mx-auto rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-          <svg className="w-7 h-7 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-14 h-14 mx-auto rounded-full bg-theme-purple-500/10 dark:bg-theme-purple-500/5 flex items-center justify-center">
+          <svg className="w-7 h-7 text-theme-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
           </svg>
         </div>
@@ -108,7 +108,7 @@ export default function FacialEnrollModal({
               Se tomarán <strong>3 fotos</strong> en diferentes condiciones para mejorar el reconocimiento.<br />
               La imagen no se almacena, solo vectores numéricos.
             </p>
-            <button onClick={handleStartCamera} className="w-full p-3 bg-violet-500 text-white rounded-xl font-bold hover:bg-violet-600 transition">
+            <button onClick={handleStartCamera} className="w-full p-3 bg-theme-purple-500 text-white rounded-xl font-bold hover:bg-theme-purple-500/90 transition">
               Iniciar Cámara
             </button>
           </div>
@@ -121,22 +121,22 @@ export default function FacialEnrollModal({
                 <div key={step}
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
                     step === captureStep
-                      ? "bg-violet-500 text-white border-violet-500"
+                      ? "bg-theme-purple-500 text-white border-theme-purple-500"
                       : step < captureStep
-                      ? "bg-green-500 text-white border-green-500"
+                      ? "bg-success-500 text-white border-success-500"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-400 border-gray-300 dark:border-gray-600"
                   }`}>
                   {step < captureStep ? "✓" : step}
                 </div>
               ))}
             </div>
-            <p className="text-xs font-semibold text-violet-600 dark:text-violet-400">
+            <p className="text-xs font-semibold text-theme-purple-500">
               {captureStep === 1 && "Foto 1: Mire de frente, con buena iluminación"}
               {captureStep === 2 && "Foto 2: Gire ligeramente el rostro (o colóquese gafas si aplica)"}
               {captureStep === 3 && "Foto 3: Cambie el ángulo de luz o sonría ligeramente"}
             </p>
 
-            <div className="relative mx-auto w-64 h-48 rounded-xl overflow-hidden bg-gray-900 border-2 border-violet-500">
+            <div className="relative mx-auto w-64 h-48 rounded-xl overflow-hidden bg-gray-900 border-2 border-theme-purple-500">
               <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" />
               <canvas ref={canvasRef} className="hidden" />
             </div>
@@ -144,7 +144,7 @@ export default function FacialEnrollModal({
             {qualityMsg && <p className="text-xs text-amber-600">{qualityMsg}</p>}
 
             <button onClick={handleCapture} disabled={status === "capturing"}
-              className="w-full p-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition disabled:opacity-60">
+              className="w-full p-3 bg-success-500 text-white rounded-xl font-bold hover:bg-success-600 transition disabled:opacity-60">
               {status === "capturing" ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
               ) : captureStep < 3 ? (

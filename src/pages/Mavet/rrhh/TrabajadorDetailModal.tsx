@@ -141,14 +141,14 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
               </div>
 
               {(t as any).usarFacial && (
-                <div className="mt-3 p-3 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl flex items-center gap-2.5">
-                  <svg className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" /></svg>
-                  <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Reconocimiento facial habilitado</p>
+                <div className="mt-3 p-3 bg-theme-purple-500/10 dark:bg-theme-purple-500/5 border border-theme-purple-500/20 rounded-xl flex items-center gap-2.5">
+                  <svg className="w-5 h-5 text-theme-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" /></svg>
+                  <p className="text-xs font-medium text-theme-purple-500">Reconocimiento facial habilitado</p>
                 </div>
               )}
             </div>
           </div>
-
+ 
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 mt-5">
             <div className="flex gap-2">
               <button onClick={async () => {
@@ -162,11 +162,11 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
                 } finally {
                   setIsResettingPin(false);
                 }
-              }} disabled={isResettingPin} className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm disabled:opacity-60">
+              }} disabled={isResettingPin} className="flex items-center gap-1.5 px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm disabled:opacity-60">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                 {isResettingPin ? "Restableciendo..." : "Restablecer PIN"}
               </button>
-              <button onClick={() => setIsFacialEnrollOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm">
+              <button onClick={() => setIsFacialEnrollOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-theme-purple-500 hover:bg-theme-purple-500/90 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" /></svg>
                 Enrolar Facial
               </button>
@@ -210,7 +210,7 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
       <FacialEnrollModal
         isOpen={isFacialEnrollOpen}
         onClose={() => setIsFacialEnrollOpen(false)}
-        trabajadorId={t.id.toString()}
+        trabajadorId={t.id?.toString() || ""}
         trabajadorNombre={`${t.nombre} ${t.apellido}`}
         onSuccess={() => onRefresh?.()}
       />
