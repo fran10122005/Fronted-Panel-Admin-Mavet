@@ -702,7 +702,7 @@ export default function InventarioBoveda() {
               placeholder="Buscar por código, título o autor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200"
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -712,14 +712,14 @@ export default function InventarioBoveda() {
               placeholder="MVT-001"
               value={filterCodigo}
               onChange={(e) => setFilterCodigo(e.target.value)}
-              className="w-full sm:w-[130px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 placeholder:text-gray-400"
+              className="w-full sm:w-[130px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90 placeholder:text-gray-400"
             />
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
             <select
               data-tour="filtro-estado"
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
+              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
             >
               <option value="Todos">Todos</option>
               <option value="Excelente">Excelente</option>
@@ -734,7 +734,7 @@ export default function InventarioBoveda() {
                 const [key, direction] = val.split("_");
                 setSortConfig({ key, direction: direction as "asc" | "desc" });
               }}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90"
+              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
             >
               <option value="">Ord. predet.</option>
               <option value="codigo_inventario_asc">ID ↑</option>
@@ -845,7 +845,7 @@ export default function InventarioBoveda() {
               placeholder="Buscar artista..."
               value={artistSearch}
               onChange={(e) => setArtistSearch(e.target.value)}
-              className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="pl-9 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200"
             />
           </div>
         </div>
@@ -915,7 +915,7 @@ export default function InventarioBoveda() {
           <form onSubmit={handleSave} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código / Serial</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Código / Serial</label>
                 <input
                   type="text"
                   name="codigo_inventario"
@@ -926,15 +926,15 @@ export default function InventarioBoveda() {
                 />
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Título</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Título</label>
                 <input
                   type="text"
                   name="titulo"
                   value={formData.titulo}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.titulo
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -942,7 +942,7 @@ export default function InventarioBoveda() {
                 {formErrors.titulo && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.titulo}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Autor / Artista</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Autor / Artista</label>
                 <div className="relative" ref={artistDropdownRef}>
                   <input
                     type="text"
@@ -956,9 +956,9 @@ export default function InventarioBoveda() {
                       }
                     }}
                     onFocus={() => setArtistDropdownOpen(true)}
-                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                       formErrors.id_artista
-                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                         : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                     }`}
                     required
@@ -1031,7 +1031,7 @@ export default function InventarioBoveda() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medidas</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Medidas</label>
                 <div className="flex items-center gap-1.5">
                   <div className="flex-1 relative">
                     <input
@@ -1044,7 +1044,7 @@ export default function InventarioBoveda() {
                       onChange={handleChange}
                       className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.ancho
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
@@ -1063,7 +1063,7 @@ export default function InventarioBoveda() {
                       onChange={handleChange}
                       className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.largo
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
@@ -1076,7 +1076,7 @@ export default function InventarioBoveda() {
                 )}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Año</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Año</label>
                 <input
                   type="number"
                   name="ano"
@@ -1085,9 +1085,9 @@ export default function InventarioBoveda() {
                   onKeyDown={limitNumericInput}
                   min={1000}
                   max={new Date().getFullYear() + 5}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.ano
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -1095,14 +1095,14 @@ export default function InventarioBoveda() {
                 {formErrors.ano && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ano}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado de Conservación</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Estado de Conservación</label>
                 <select
                   name="id_estado_actual"
                   value={formData.id_estado_actual || ""}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.id_estado_actual
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -1118,7 +1118,7 @@ export default function InventarioBoveda() {
 
             <div className={`grid grid-cols-1 gap-3 items-start ${isPintura ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría / Modalidad</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Categoría / Modalidad</label>
                 {String(formData.id_categoria_obra) === "other" ? (
                   <div className="flex gap-2 items-start">
                     <input
@@ -1126,9 +1126,9 @@ export default function InventarioBoveda() {
                       value={customCategoria}
                       onChange={(e) => setCustomCategoria(e.target.value)}
                       placeholder="Especifique la categoría..."
-                      className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      className={`flex-1 min-w-0 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.customCategoria
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
@@ -1149,9 +1149,9 @@ export default function InventarioBoveda() {
                     name="id_categoria_obra"
                     value={formData.id_categoria_obra || ""}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                       formErrors.id_categoria_obra
-                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                         : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                     }`}
                     required
@@ -1168,7 +1168,7 @@ export default function InventarioBoveda() {
               </div>
               {isPintura && (
                 <div>
-                  <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Técnica</label>
+                  <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Técnica</label>
                   {String(formData.id_tecnica) === "other" ? (
                     <div className="flex gap-2 items-start">
                       <input
@@ -1176,9 +1176,9 @@ export default function InventarioBoveda() {
                         value={customTecnica}
                         onChange={(e) => setCustomTecnica(e.target.value)}
                         placeholder="Especifique la técnica..."
-                        className={`flex-1 min-w-0 rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                        className={`flex-1 min-w-0 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                           formErrors.customTecnica
-                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                             : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                         }`}
                         required
@@ -1199,9 +1199,9 @@ export default function InventarioBoveda() {
                       name="id_tecnica"
                       value={formData.id_tecnica || ""}
                       onChange={handleChange}
-                      className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                         formErrors.id_tecnica
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                       }`}
                       required
@@ -1218,14 +1218,14 @@ export default function InventarioBoveda() {
                 </div>
               )}
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Ubicación</label>
                 <select
                   name="ubicacion"
                   value={formData.ubicacion || ""}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.ubicacion
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -1244,7 +1244,7 @@ export default function InventarioBoveda() {
             {/* Fila: Cantidad de piezas, Tipo de ingreso, Peso */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cantidad de Piezas</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Cantidad de Piezas</label>
                 <input
                   type="number"
                   name="piezas"
@@ -1252,9 +1252,9 @@ export default function InventarioBoveda() {
                   value={formData.piezas ?? 1}
                   onChange={handleChange}
                   onKeyDown={limitNumericInput}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.piezas
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -1262,7 +1262,7 @@ export default function InventarioBoveda() {
                 {formErrors.piezas && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.piezas}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peso (kg)</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Peso (kg)</label>
                 <input
                   type="number"
                   name="peso"
@@ -1271,23 +1271,23 @@ export default function InventarioBoveda() {
                   max={300}
                   value={formData.peso ?? ""}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.peso
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                 />
                 {formErrors.peso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.peso}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Ingreso</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Tipo de Ingreso</label>
                 <select
                   name="tipo_ingreso"
                   value={formData.tipo_ingreso || ""}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
                     formErrors.tipo_ingreso
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
                       : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
                   }`}
                   required
@@ -1299,12 +1299,12 @@ export default function InventarioBoveda() {
                 {formErrors.tipo_ingreso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.tipo_ingreso}</p>}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Clasificación Patrimonial</label>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Clasificación Patrimonial</label>
                 <select
                   name="clasificacion_patrimonial"
                   value={formData.clasificacion_patrimonial || "no_clasificado"}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90"
                 >
                   <option value="no_clasificado">No clasificado</option>
                   <option value="BIC">BIC — Bien de Interés Cultural</option>
@@ -1315,7 +1315,7 @@ export default function InventarioBoveda() {
             </div>
 
             <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción / Detalles adicionales</label>
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Descripción / Detalles adicionales</label>
               <textarea
                 name="descripcion"
                 value={formData.descripcion || ""}
@@ -1327,7 +1327,7 @@ export default function InventarioBoveda() {
             </div>
 
             <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Imagen de la Obra</label>
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Imagen de la Obra</label>
               {isEditing && formData.imagen_url ? (
                 <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex items-start gap-2">
@@ -1350,7 +1350,7 @@ export default function InventarioBoveda() {
                     previewUrlRef.current = url;
                     setImagenPreviewUrl(url);
                   }}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
                 />
               )}
               {imagenPreviewUrl && (
@@ -1409,7 +1409,7 @@ export default function InventarioBoveda() {
           {/* Buscador por cédula/nombre */}
           {!isEditingArtist && (
             <div className="mb-4 p-3 bg-brand-50/50 dark:bg-gray-800/50 border border-brand-100 dark:border-gray-700 rounded-lg">
-              <label className="block mb-1.5 text-[11px] font-semibold text-brand-700 dark:text-brand-400 uppercase tracking-wider">Buscar persona existente</label>
+              <label className="block mb-2 text-sm font-bold text-brand-700 dark:text-brand-400">Buscar persona existente</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1421,7 +1421,7 @@ export default function InventarioBoveda() {
                     value={artistSearchQuery}
                     onChange={(e) => setArtistSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleArtistSearch())}
-                    className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                    className="pl-9 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200"
                   />
                 </div>
                 <Button type="button" size="xs" onClick={handleArtistSearch}
@@ -1458,8 +1458,8 @@ export default function InventarioBoveda() {
           <form onSubmit={handleArtistSave} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres <span className="text-red-500">*</span></label>
-                <input type="text" name="nombres" value={artistFormData.nombres || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, nombres: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, nombres: validateArtistField("nombres", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Nombres <span className="text-red-500">*</span></label>
+                <input type="text" name="nombres" value={artistFormData.nombres || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, nombres: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, nombres: validateArtistField("nombres", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
                 {artistFieldErrors.nombres && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1468,8 +1468,8 @@ export default function InventarioBoveda() {
                 )}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos <span className="text-red-500">*</span></label>
-                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, apellidos: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, apellidos: validateArtistField("apellidos", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Apellidos <span className="text-red-500">*</span></label>
+                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, apellidos: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, apellidos: validateArtistField("apellidos", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
                 {artistFieldErrors.apellidos && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1480,8 +1480,8 @@ export default function InventarioBoveda() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula</label>
-                <input type="text" name="ci" value={artistFormData.ci || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, ci: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, ci: validateArtistField("ci", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Cédula</label>
+                <input type="text" name="ci" value={artistFormData.ci || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, ci: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, ci: validateArtistField("ci", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
                 {artistFieldErrors.ci && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1490,14 +1490,14 @@ export default function InventarioBoveda() {
                 )}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nacionalidad</label>
-                <input type="text" name="nacionalidad" value={artistFormData.nacionalidad || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, nacionalidad: e.target.value }))} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Nacionalidad</label>
+                <input type="text" name="nacionalidad" value={artistFormData.nacionalidad || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, nacionalidad: e.target.value }))} className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:outline-none dark:text-white/90" />
               </div>
             </div>
             {!artistFormData.id_artista && (
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento</label>
-                <input type="date" name="fecha_nacimiento" value={artistFormData.fecha_nacimiento || ""} readOnly={isArtistPreloaded} min={birthMinDate} max={birthMaxDate} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, fecha_nacimiento: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, fecha_nacimiento: validateArtistField("fecha_nacimiento", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Fecha de Nacimiento</label>
+                <input type="date" name="fecha_nacimiento" value={artistFormData.fecha_nacimiento || ""} readOnly={isArtistPreloaded} min={birthMinDate} max={birthMaxDate} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, fecha_nacimiento: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, fecha_nacimiento: validateArtistField("fecha_nacimiento", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
                 {artistFieldErrors.fecha_nacimiento && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1508,8 +1508,8 @@ export default function InventarioBoveda() {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono</label>
-                <input type="tel" name="telefono" value={artistFormData.telefono || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, telefono: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, telefono: validateArtistField("telefono", v) })); }} onKeyDown={limitNumericInput} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Teléfono</label>
+                <input type="tel" name="telefono" value={artistFormData.telefono || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, telefono: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, telefono: validateArtistField("telefono", v) })); }} onKeyDown={limitNumericInput} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
                 {artistFieldErrors.telefono && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1518,8 +1518,8 @@ export default function InventarioBoveda() {
                 )}
               </div>
               <div>
-                <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo</label>
-                <input type="email" name="correo" value={artistFormData.correo || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, correo: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, correo: validateArtistField("correo", v) })); }} className={"w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Correo</label>
+                <input type="email" name="correo" value={artistFormData.correo || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, correo: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, correo: validateArtistField("correo", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
                 {artistFieldErrors.correo && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
@@ -1529,8 +1529,8 @@ export default function InventarioBoveda() {
               </div>
             </div>
             <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</label>
-              <textarea name="direccion" value={artistFormData.direccion || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, direccion: e.target.value }))} rows={2} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 resize-y" />
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Dirección</label>
+              <textarea name="direccion" value={artistFormData.direccion || ""} onChange={(e) => setArtistFormData((p: any) => ({ ...p, direccion: e.target.value }))} rows={2} className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm shadow-sm transition-all duration-200 focus:border-brand-500 focus:outline-none dark:text-white/90 resize-y" />
             </div>
             <div className="flex justify-end gap-2.5 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
               <Button variant="secondary" size="sm" type="button" onClick={() => { setArtistFormOpen(false); setArtistSearchResults([]); setArtistSearchQuery(""); }}>

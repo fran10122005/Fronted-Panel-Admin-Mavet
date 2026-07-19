@@ -10,35 +10,32 @@ export const talleres = {
     }
   },
 
-  crearTaller: async (payload: any, file?: File | null): Promise<{ success: boolean; message: string }> => {
+  crearTaller: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
-      const body = file ? new FormData() : payload;
-      if (file) {
-        body.append("data", JSON.stringify(payload));
-        body.append("documento_plan", file);
-      }
-      await axiosInstance.post("/api/educacion/talleres", body, {
-        headers: file ? { "Content-Type": "multipart/form-data" } : undefined,
-      });
-      return { success: true, message: "Taller creado correctamente." };
+      const res = await axiosInstance.post("/api/educacion/talleres", payload);
+      return { success: true, message: "Taller creado correctamente.", data: res.data?.data || res.data };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear taller");
     }
   },
 
-  actualizarTaller: async (id: number, payload: any, file?: File | null): Promise<{ success: boolean; message: string }> => {
+  actualizarTaller: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
-      const body = file ? new FormData() : payload;
-      if (file) {
-        body.append("data", JSON.stringify(payload));
-        body.append("documento_plan", file);
-      }
-      await axiosInstance.put(`/api/educacion/talleres/${id}`, body, {
-        headers: file ? { "Content-Type": "multipart/form-data" } : undefined,
-      });
+      await axiosInstance.put(`/api/educacion/talleres/${id}`, payload);
       return { success: true, message: "Taller actualizado correctamente." };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al actualizar taller");
+    }
+  },
+
+  subirDocumentoPlan: async (id: number, file: File): Promise<{ success: boolean; message: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append("documento_plan", file);
+      await axiosInstance.post(`/api/educacion/talleres/${id}/documento`, formData);
+      return { success: true, message: "Documento subido correctamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al subir documento");
     }
   },
 

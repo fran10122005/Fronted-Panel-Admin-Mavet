@@ -372,7 +372,7 @@ export function useTalleres() {
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!planificarForm.documentoPlan) {
+    if (!planificarForm.documentoPlan && !isEditingPlanificado) {
       setFormError("Debe adjuntar el documento del plan programático.");
       return;
     }
@@ -473,10 +473,20 @@ export function useTalleres() {
       };
 
       if (isEditingPlanificado && selectedTaller?.id_taller) {
-        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload, planificarForm.documentoPlan);
+        await mavetApi.actualizarTaller(selectedTaller.id_taller, payload);
+        if (planificarForm.documentoPlan) {
+          await mavetApi.subirDocumentoPlan(selectedTaller.id_taller, planificarForm.documentoPlan);
+        }
         toast.success("Taller planificado actualizado correctamente.");
       } else {
-        await mavetApi.crearTaller(payload, planificarForm.documentoPlan);
+        const response = await mavetApi.crearTaller(payload);
+        const newId = response.data?.id_taller || response.data?.id;
+        
+        if (planificarForm.documentoPlan && newId) {
+          await mavetApi.subirDocumentoPlan(newId, planificarForm.documentoPlan);
+        } else if (planificarForm.documentoPlan && !newId) {
+          toast.error("El taller se creó, pero el servidor no devolvió el ID para subir el PDF.");
+        }
         toast.success("Taller planificado correctamente.");
       }
 

@@ -13,15 +13,15 @@ interface Props {
   inputCls: string;
 }
 
-const labelCls = "block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300";
-const baseInputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
+const labelCls = "block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200";
+const baseInputCls = "w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm";
 
 export default function TallerFormModal({
   isOpen, onClose, isEditing, formData,
   isSubmitting, formError, onChange, onSubmit, inputCls,
 }: Props) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-0">
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-0 overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-xl">
       <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
