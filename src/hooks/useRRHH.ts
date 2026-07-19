@@ -283,7 +283,7 @@ export function useRRHH() {
     });
   };
 
-  const handleSubmitTrabajador = async (data: any, photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean) => {
+  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean) => {
     setIsSubmitting(true);
     try {
       let trabajadorId = editingTrabajadorId;
@@ -296,6 +296,14 @@ export function useRRHH() {
         const res = await mavetApi.registrarTrabajador(data);
         trabajadorId = res.data?.id_trabajador || res.data?.id;
         toast.success("Trabajador registrado exitosamente.");
+
+        if (trabajadorId && horarios && horarios.length > 0) {
+          try {
+            await mavetApi.guardarHorarios(trabajadorId.toString(), horarios);
+          } catch (err: any) {
+            console.warn("Error al guardar horarios:", err);
+          }
+        }
       }
       
       if (photoFile && trabajadorId) {

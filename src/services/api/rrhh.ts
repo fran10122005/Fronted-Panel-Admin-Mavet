@@ -10,6 +10,9 @@ import type {
   PinVerificarResponse,
   ConfirmarAsistenciaResponse,
   EstadoAsistencia,
+  HorarioDia,
+  TrabajadorDocumento,
+  Justificacion,
 } from "../../types";
 
 export const rrhh = {
@@ -245,5 +248,75 @@ export const rrhh = {
 
   actualizarTrabajadorFacial: async (id: string, data: { descriptor_facial?: string; descriptores_faciales?: string[]; usarFacial?: boolean; consentimientoFacial?: boolean; fechaConsentimiento?: string }): Promise<void> => {
     await axiosInstance.put(`/api/rrhh/trabajadores/${id}`, data);
+  },
+
+  // ==========================================
+  // HORARIOS
+  // ==========================================
+  getHorarios: async (id_trabajador: string): Promise<HorarioDia[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/rrhh/trabajadores/${id_trabajador}/horarios/completos`);
+      return res.data?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  guardarHorarios: async (id_trabajador: string, horarios: HorarioDia[]): Promise<void> => {
+    await axiosInstance.post(`/api/rrhh/trabajadores/${id_trabajador}/horarios/bulk`, horarios);
+  },
+
+  // ==========================================
+  // DOCUMENTOS
+  // ==========================================
+  getDocumentos: async (id_trabajador: string): Promise<TrabajadorDocumento[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/rrhh/trabajadores/${id_trabajador}/documentos`);
+      return res.data?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  subirDocumento: async (id_trabajador: string, file: File, tipo_documento: string, notas?: string): Promise<TrabajadorDocumento> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    formData.append('tipo_documento', tipo_documento);
+    if (notas) formData.append('notas', notas);
+    const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id_trabajador}/documentos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.data;
+  },
+
+  eliminarDocumento: async (id_trabajador: string, id_documento: string): Promise<void> => {
+    await axiosInstance.delete(`/api/rrhh/trabajadores/${id_trabajador}/documentos/${id_documento}`);
+  },
+
+  // ==========================================
+  // JUSTIFICACIONES
+  // ==========================================
+  getJustificaciones: async (id_trabajador: string): Promise<Justificacion[]> => {
+    try {
+      const res = await axiosInstance.get(`/api/rrhh/trabajadores/${id_trabajador}/justificaciones`);
+      return res.data?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  crearJustificacion: async (id_trabajador: string, data: { fecha: string; tipo: string; motivo: string; descripcion?: string; hora_inicio?: string; hora_fin?: string }, file?: File): Promise<Justificacion> => {
+    const formData = new FormData();
+    formData.append('fecha', data.fecha);
+    formData.append('tipo', data.tipo);
+    formData.append('motivo', data.motivo);
+    if (data.descripcion) formData.append('descripcion', data.descripcion);
+    if (data.hora_inicio) formData.append('hora_inicio', data.hora_inicio);
+    if (data.hora_fin) formData.append('hora_fin', data.hora_fin);
+    if (file) formData.append('archivo', file);
+    const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id_trabajador}/justificaciones`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.data;
   },
 };

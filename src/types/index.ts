@@ -295,6 +295,44 @@ export interface TrabajadorPayload {
   fecha_ingreso?: string;
 }
 
+export interface HorarioDia {
+  id_horario?: string | null;
+  id_trabajador?: string;
+  dia_semana: number;
+  dia_label?: string;
+  hora_entrada: string;
+  hora_salida: string;
+  es_dia_laborable: boolean;
+  observaciones?: string | null;
+}
+
+export interface TrabajadorDocumento {
+  id_documento: string;
+  id_trabajador: string;
+  tipo_documento: string;
+  nombre_archivo: string;
+  ruta_archivo: string;
+  mime_type?: string;
+  tamano_archivo?: number;
+  notas?: string;
+  fecha_subida: string;
+}
+
+export interface Justificacion {
+  id_justificacion: string;
+  id_trabajador: string;
+  fecha: string;
+  tipo: 'falta_dia_completo' | 'falta_parcial' | 'llegada_tardia' | 'salida_anticipada';
+  hora_inicio?: string;
+  hora_fin?: string;
+  motivo: string;
+  descripcion?: string;
+  archivo_ruta?: string;
+  archivo_nombre?: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  created_at: string;
+}
+
 export interface ConsultaSalaFiltrada {
   id_consulta: string;
   id_libro: string;

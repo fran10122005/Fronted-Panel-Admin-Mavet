@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Modal } from "../../../components/ui/modal";
-import { Cargo } from "../../../types";
+import { Cargo, HorarioDia, TrabajadorDocumento, Justificacion } from "../../../types";
 import { limitNumericInput } from "../../../utils/validation";
+import { mavetApi } from "../../../services/api";
 import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
+import toast from "react-hot-toast";
 
 const step1Schema = z.object({
   cedula: z.string().min(1, "La cédula es obligatoria"),
@@ -34,21 +36,13 @@ const step1Schema = z.object({
     return inputDate <= today;
   }, "La fecha no puede ser mayor a hoy"),
   estado: z.enum(["Activo", "Inactivo"], { required_error: "El estado es obligatorio" }),
-});
-
-const step2Schema = z.object({
   telefono: z.string().min(1, "El teléfono es obligatorio"),
   correo_personal: z.string().min(1, "El correo es obligatorio").email("Debe ser un correo válido"),
   direccion: z.string().min(1, "La dirección es obligatoria"),
-});
-
-const step3Schema = z.object({
   foto_url: z.string().optional(),
 });
 
-const trabajadorSchema = step1Schema.merge(step2Schema).merge(step3Schema);
-
-export type TrabajadorFormValues = z.infer<typeof trabajadorSchema>;
+export type TrabajadorFormValues = z.infer<typeof step1Schema>;
 
 interface Props {
   isOpen: boolean;
@@ -57,25 +51,63 @@ interface Props {
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;
-  onSubmit: (data: TrabajadorFormValues, photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean) => void;
+  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean) => void;
   inputCls: string;
 }
 
 const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
 
-const steps = [
-  { id: 0, label: "Información Básica" },
-  { id: 1, label: "Contacto" },
-  { id: 2, label: "Escaneo" },
+const DIAS_SEMANA = [
+  { value: 0, label: "Domingo" },
+  { value: 1, label: "Lunes" },
+  { value: 2, label: "Martes" },
+  { value: 3, label: "Miércoles" },
+  { value: 4, label: "Jueves" },
+  { value: 5, label: "Viernes" },
+  { value: 6, label: "Sábado" },
 ];
+
+const TIPOS_DOCUMENTO = [
+  { value: "contrato", label: "Contrato" },
+  { value: "cv", label: "Curriculum Vitae" },
+  { value: "cedula", label: "Cédula de Identidad" },
+  { value: "certificado", label: "Certificado" },
+  { value: "foto", label: "Foto" },
+  { value: "otro", label: "Otro" },
+];
+
+const TIPOS_JUSTIFICACION = [
+  { value: "falta_dia_completo", label: "Falta día completo" },
+  { value: "falta_parcial", label: "Falta parcial" },
+  { value: "llegada_tardia", label: "Llegada tardía" },
+  { value: "salida_anticipada", label: "Salida anticipada" },
+];
+
+const tabs = [
+  { id: "info", label: "Información" },
+  { id: "horario", label: "Horario" },
+  { id: "documentos", label: "Documentos" },
+  { id: "justificaciones", label: "Justificaciones" },
+];
+
+function getDefaultHorarios(): HorarioDia[] {
+  return DIAS_SEMANA.map((dia) => ({
+    dia_semana: dia.value,
+    dia_label: dia.label,
+    hora_entrada: "09:00",
+    hora_salida: "17:00",
+    es_dia_laborable: dia.value >= 1 && dia.value <= 5,
+    observaciones: dia.value >= 1 && dia.value <= 5 ? "Horario laboral 9am-5pm (pausa 12-1pm)" : "Día no laborable",
+  }));
+}
 
 export default function TrabajadorFormModal({
   isOpen, onClose, editingTrabajadorId, initialData,
   cargos, isSubmitting, onSubmit, inputCls,
 }: Props) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [activeTab, setActiveTab] = useState("info");
   const { register, handleSubmit, reset, setValue, trigger, formState: { errors } } = useForm<TrabajadorFormValues>({
-    resolver: zodResolver(trabajadorSchema) as any,
+    resolver: zodResolver(step1Schema) as any,
     defaultValues: initialData,
   });
 
@@ -87,6 +119,38 @@ export default function TrabajadorFormModal({
 
   const [nacionalidad, setNacionalidad] = useState("V-");
   const [numeroCedula, setNumeroCedula] = useState("");
+
+  const [horarios, setHorarios] = useState<HorarioDia[]>(getDefaultHorarios());
+  const [documentos, setDocumentos] = useState<TrabajadorDocumento[]>([]);
+  const [justificaciones, setJustificaciones] = useState<Justificacion[]>([]);
+  const [loadingExtras, setLoadingExtras] = useState(false);
+
+  const [uploadTipo, setUploadTipo] = useState("contrato");
+  const [uploadNotas, setUploadNotas] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", tipo: "falta_dia_completo", motivo: "", descripcion: "", archivo: null as File | null });
+  const [creandoJustif, setCreandoJustif] = useState(false);
+  const [justifFile, setJustifFile] = useState<File | null>(null);
+
+  const loadExtras = useCallback(async () => {
+    if (!editingTrabajadorId) return;
+    setLoadingExtras(true);
+    try {
+      const [h, d, j] = await Promise.all([
+        mavetApi.getHorarios(editingTrabajadorId),
+        mavetApi.getDocumentos(editingTrabajadorId),
+        mavetApi.getJustificaciones(editingTrabajadorId),
+      ]);
+      if (h.length > 0) setHorarios(h);
+      setDocumentos(d);
+      setJustificaciones(j);
+    } catch (e) {
+      console.error("Error loading extras:", e);
+    } finally {
+      setLoadingExtras(false);
+    }
+  }, [editingTrabajadorId]);
 
   useEffect(() => {
     let fps: flatpickr.Instance | flatpickr.Instance[] | null = null;
@@ -127,7 +191,14 @@ export default function TrabajadorFormModal({
       setPhotoError("");
       setGenerarPin(false);
       setHabilitarFacial(false);
-      setCurrentStep(0);
+      setActiveTab("info");
+      setHorarios(getDefaultHorarios());
+      setDocumentos([]);
+      setJustificaciones([]);
+
+      if (editingTrabajadorId) {
+        loadExtras();
+      }
 
       setTimeout(() => {
         fps = flatpickr(".flatpickr-wrap", {
@@ -152,7 +223,7 @@ export default function TrabajadorFormModal({
         else fps.destroy();
       }
     };
-  }, [isOpen, initialData, reset, setValue]);
+  }, [isOpen, initialData, reset, setValue, editingTrabajadorId, loadExtras]);
 
   useEffect(() => {
     if (numeroCedula) {
@@ -161,18 +232,6 @@ export default function TrabajadorFormModal({
       setValue("cedula", "", { shouldValidate: true });
     }
   }, [nacionalidad, numeroCedula, setValue]);
-
-  const handleNext = async () => {
-    const fieldsToValidate = currentStep === 0
-      ? ["cedula", "nombres", "apellidos", "fecha_nacimiento", "id_cargo", "fecha_ingreso", "estado"]
-      : ["telefono", "correo_personal", "direccion"];
-    const valid = await trigger(fieldsToValidate as any);
-    if (valid) setCurrentStep(prev => prev + 1);
-  };
-
-  const handlePrev = () => {
-    setCurrentStep(prev => Math.max(0, prev - 1));
-  };
 
   const handleFormSubmit = (data: TrabajadorFormValues) => {
     if (!editingTrabajadorId && !photoPreview) {
@@ -195,7 +254,7 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData, photoFile, generarPin, habilitarFacial);
+    onSubmit(finalData, horarios, photoFile, generarPin, habilitarFacial);
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,65 +275,125 @@ export default function TrabajadorFormModal({
     }
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-[600px] p-0">
-      <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {editingTrabajadorId !== null ? "Editar Trabajador" : "Registrar Nuevo Trabajador"}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Complete los datos del trabajador. Los campos marcados con <span className="text-red-400">*</span> son obligatorios.
-            </p>
-          </div>
-          <button type="button" onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-      </div>
-      <div className="p-6">
+  const toggleDiaLaborable = (idx: number) => {
+    setHorarios(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], es_dia_laborable: !next[idx].es_dia_laborable };
+      return next;
+    });
+  };
 
-        {!editingTrabajadorId && (
-          <div className="flex items-center gap-0 mb-6">
-            {steps.map((step, idx) => (
-              <React.Fragment key={step.id}>
-                <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    currentStep === step.id
-                      ? "bg-brand-500 text-white"
-                      : currentStep > step.id
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}>
-                    {currentStep > step.id ? (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
-                    ) : step.id + 1}
-                  </div>
-                  <span className={`text-[11px] font-semibold whitespace-nowrap ${
-                    currentStep === step.id
-                      ? "text-brand-600 dark:text-brand-400"
-                      : "text-gray-400 dark:text-gray-500"
-                  }`}>
-                    {step.label}
-                  </span>
-                </div>
-                {idx < steps.length - 1 && (
-                  <div className={`flex-1 h-px mx-3 ${
-                    currentStep > idx ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"
-                  }`} />
-                )}
-              </React.Fragment>
+  const updateHorarioTime = (idx: number, field: 'hora_entrada' | 'hora_salida', value: string) => {
+    setHorarios(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  };
+
+  const handleUploadDocumento = async () => {
+    if (!editingTrabajadorId) {
+      toast.error("Primero guarde el trabajador para poder subir documentos");
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp';
+    input.onchange = async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      setUploading(true);
+      try {
+        const doc = await mavetApi.subirDocumento(editingTrabajadorId, file, uploadTipo, uploadNotas || undefined);
+        setDocumentos(prev => [doc, ...prev]);
+        setUploadNotas("");
+        toast.success("Documento subido correctamente");
+      } catch (err: any) {
+        toast.error(err.message || "Error al subir documento");
+      } finally {
+        setUploading(false);
+      }
+    };
+    input.click();
+  };
+
+  const handleEliminarDocumento = async (id_documento: string) => {
+    if (!editingTrabajadorId) return;
+    try {
+      await mavetApi.eliminarDocumento(editingTrabajadorId, id_documento);
+      setDocumentos(prev => prev.filter(d => d.id_documento !== id_documento));
+      toast.success("Documento eliminado");
+    } catch (err: any) {
+      toast.error(err.message || "Error al eliminar documento");
+    }
+  };
+
+  const handleCrearJustificacion = async () => {
+    if (!editingTrabajadorId) {
+      toast.error("Primero guarde el trabajador para poder crear justificaciones");
+      return;
+    }
+    if (!nuevaJustif.fecha || !nuevaJustif.motivo) {
+      toast.error("Fecha y motivo son obligatorios");
+      return;
+    }
+    setCreandoJustif(true);
+    try {
+      const j = await mavetApi.crearJustificacion(editingTrabajadorId, {
+        fecha: nuevaJustif.fecha,
+        tipo: nuevaJustif.tipo,
+        motivo: nuevaJustif.motivo,
+        descripcion: nuevaJustif.descripcion || undefined,
+      }, justifFile || undefined);
+      setJustificaciones(prev => [j, ...prev]);
+      setNuevaJustif({ fecha: "", tipo: "falta_dia_completo", motivo: "", descripcion: "", archivo: null });
+      setJustifFile(null);
+      toast.success("Justificación creada");
+    } catch (err: any) {
+      toast.error(err.message || "Error al crear justificación");
+    } finally {
+      setCreandoJustif(false);
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-[800px] p-0 overflow-hidden">
+      <div className="flex flex-col max-h-[90vh]">
+        <div className="px-6 pt-5 pb-0">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            {editingTrabajadorId !== null ? "Editar Trabajador" : "Registrar Nuevo Trabajador"}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Complete los datos del trabajador. Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
+          </p>
+          <div className="flex gap-0 border-b border-gray-200 dark:border-gray-700">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "border-brand-500 text-brand-600 dark:text-brand-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
-          {currentStep === 0 && (
+        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {activeTab === "info" && (
             <div>
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Datos Personales</h5>
-
               <div className="flex flex-col sm:flex-row gap-4 mb-3">
                 <div className="flex-shrink-0 flex flex-col items-center gap-2">
                   <div className="w-24 h-24 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden relative group">
@@ -298,9 +417,7 @@ export default function TrabajadorFormModal({
                       type="text" placeholder="Ej. Ricardo Andrés"
                       className={`${inputCls} ${errors.nombres ? 'border-red-500 focus:ring-red-500/20' : ''}`}
                       {...register("nombres", {
-                        onChange: (e) => {
-                          e.target.value = e.target.value.replace(/\d/g, '');
-                        }
+                        onChange: (e) => { e.target.value = e.target.value.replace(/\d/g, ''); }
                       })}
                     />
                     {errors.nombres && <p className="text-red-500 text-xs mt-1">{errors.nombres.message}</p>}
@@ -311,9 +428,7 @@ export default function TrabajadorFormModal({
                       type="text" placeholder="Ej. López Martínez"
                       className={`${inputCls} ${errors.apellidos ? 'border-red-500' : ''}`}
                       {...register("apellidos", {
-                        onChange: (e) => {
-                          e.target.value = e.target.value.replace(/\d/g, '');
-                        }
+                        onChange: (e) => { e.target.value = e.target.value.replace(/\d/g, ''); }
                       })}
                     />
                     {errors.apellidos && <p className="text-red-500 text-xs mt-1">{errors.apellidos.message}</p>}
@@ -369,14 +484,11 @@ export default function TrabajadorFormModal({
                 </div>
               </div>
 
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Información Laboral</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Información Laboral</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className={labelCls}>Cargo <span className="text-red-500">*</span></label>
-                  <select
-                    className={`${inputCls} ${errors.id_cargo ? 'border-red-500' : ''}`}
-                    {...register("id_cargo")}
-                  >
+                  <select className={`${inputCls} ${errors.id_cargo ? 'border-red-500' : ''}`} {...register("id_cargo")}>
                     <option value={0} disabled>Seleccione un cargo...</option>
                     {cargos.map((c) => (
                       <option key={c.id_cargo} value={c.id_cargo}>{c.nombre_cargo}</option>
@@ -413,17 +525,12 @@ export default function TrabajadorFormModal({
                   </select>
                 </div>
               </div>
-            </div>
-          )}
 
-          {currentStep === 1 && (
-            <div>
               <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Contacto</h5>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Teléfono <span className="text-red-500">*</span></label>
-                  <input
-                    type="tel" placeholder="0414-1234567" onKeyDown={limitNumericInput}
+                  <input type="tel" placeholder="0414-1234567" onKeyDown={limitNumericInput}
                     className={`${inputCls} ${errors.telefono ? 'border-red-500' : ''}`}
                     {...register("telefono")}
                   />
@@ -431,101 +538,377 @@ export default function TrabajadorFormModal({
                 </div>
                 <div>
                   <label className={labelCls}>Correo Personal <span className="text-red-500">*</span></label>
-                  <input
-                    type="email" placeholder="ejemplo@correo.com"
+                  <input type="email" placeholder="ejemplo@correo.com"
                     className={`${inputCls} ${errors.correo_personal ? 'border-red-500' : ''}`}
                     {...register("correo_personal")}
                   />
                   {errors.correo_personal && <p className="text-red-500 text-xs mt-1">{errors.correo_personal.message}</p>}
-                  {!errors.correo_personal && <p className="text-[10px] text-gray-400 mt-0.5">Solo informativo. No se usa como acceso al sistema.</p>}
                 </div>
               </div>
               <div className="mt-3">
                 <label className={labelCls}>Dirección <span className="text-red-500">*</span></label>
-                <input
-                  type="text" placeholder="Ej. Av. Principal, Urb. Las Flores, Casa N° 10"
+                <input type="text" placeholder="Ej. Av. Principal, Urb. Las Flores, Casa N° 10"
                   className={`${inputCls} ${errors.direccion ? 'border-red-500' : ''}`}
                   {...register("direccion")}
                 />
                 {errors.direccion && <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>}
               </div>
+
+              {!editingTrabajadorId && (
+                <>
+                  <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Opciones de Asistencia</h5>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
+                      <input type="checkbox" checked={generarPin} onChange={(e) => setGenerarPin(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generar PIN</span>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
+                      <input type="checkbox" checked={habilitarFacial} onChange={(e) => setHabilitarFacial(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Reconocimiento Facial</span>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Habilitar verificación facial en el kiosko</p>
+                      </div>
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {currentStep === 2 && !editingTrabajadorId && (
+          {activeTab === "horario" && (
             <div>
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Foto</h5>
-              <div className="flex flex-col items-center gap-3 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
-                <div className="w-32 h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  )}
-                </div>
-                <label className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 cursor-pointer transition shadow-sm">
-                  {photoPreview ? "Cambiar Foto" : "Seleccionar Foto"}
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                </label>
-                {photoError && <p className="text-red-500 text-xs">{photoError}</p>}
-                <p className="text-[10px] text-gray-400">La foto será usada para el carnet y reconocimiento facial</p>
+              <div className="flex items-center justify-between mb-3">
+                <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  Horario Semanal
+                </h5>
+                <p className="text-[10px] text-gray-400">Horario fijo 9:00am - 5:00pm · Pausa 12:00pm - 1:00pm</p>
               </div>
 
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Opciones de Asistencia</h5>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
-                  <input
-                    type="checkbox"
-                    checked={generarPin}
-                    onChange={(e) => setGenerarPin(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
-                  />
-                  <div>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generar PIN</span>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
-                  </div>
-                </label>
-                <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
-                  <input
-                    type="checkbox"
-                    checked={habilitarFacial}
-                    onChange={(e) => setHabilitarFacial(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
-                  />
-                  <div>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Reconocimiento Facial</span>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Habilitar verificación facial en el kiosko</p>
-                  </div>
-                </label>
-              </div>
+              {loadingExtras ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {DIAS_SEMANA.map((dia, idx) => {
+                    const h = horarios[idx] || { dia_semana: dia.value, hora_entrada: "09:00", hora_salida: "17:00", es_dia_laborable: dia.value >= 1 && dia.value <= 5 };
+                    return (
+                      <div key={dia.value} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        h.es_dia_laborable
+                          ? "border-brand-200 dark:border-brand-800 bg-brand-50/30 dark:bg-brand-950/10"
+                          : "border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30"
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={h.es_dia_laborable}
+                          onChange={() => toggleDiaLaborable(idx)}
+                          className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                        />
+                        <span className={`text-sm font-semibold w-24 ${h.es_dia_laborable ? "text-gray-800 dark:text-gray-200" : "text-gray-400 dark:text-gray-500"}`}>
+                          {dia.label}
+                        </span>
+                        {h.es_dia_laborable ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="time"
+                              value={h.hora_entrada}
+                              onChange={(e) => updateHorarioTime(idx, 'hora_entrada', e.target.value)}
+                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs focus:border-brand-500 focus:outline-none w-28"
+                            />
+                            <span className="text-xs text-gray-400">a</span>
+                            <input
+                              type="time"
+                              value={h.hora_salida}
+                              onChange={(e) => updateHorarioTime(idx, 'hora_salida', e.target.value)}
+                              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs focus:border-brand-500 focus:outline-none w-28"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">No laborable</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {editingTrabajadorId && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const id = editingTrabajadorId as string;
+                      try {
+                        await mavetApi.guardarHorarios(id, horarios);
+                        toast.success("Horario guardado correctamente");
+                      } catch (err: any) {
+                        toast.error(err.message || "Error al guardar horario");
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition"
+                  >
+                    Guardar Horario
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {currentStep === 2 && editingTrabajadorId && (
+          {activeTab === "documentos" && (
             <div>
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Foto</h5>
-              <div className="flex flex-col items-center gap-3 p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50">
-                <div className="w-32 h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Foto" className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  )}
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documentos del Trabajador</h5>
+
+              {!editingTrabajadorId ? (
+                <div className="p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Primero guarde el trabajador para poder subir documentos</p>
                 </div>
-                <label className="px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 cursor-pointer transition shadow-sm">
-                  {photoPreview ? "Cambiar Foto" : "Seleccionar Foto"}
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                </label>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-end gap-3 mb-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
+                    <div className="flex-1">
+                      <label className={labelCls}>Tipo de Documento</label>
+                      <select
+                        value={uploadTipo}
+                        onChange={(e) => setUploadTipo(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                      >
+                        {TIPOS_DOCUMENTO.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className={labelCls}>Notas (opcional)</label>
+                      <input
+                        type="text"
+                        value={uploadNotas}
+                        onChange={(e) => setUploadNotas(e.target.value)}
+                        placeholder="Breve descripción"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleUploadDocumento}
+                      disabled={uploading}
+                      className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-60 flex items-center gap-1"
+                    >
+                      {uploading ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                      )}
+                      Subir Archivo
+                    </button>
+                  </div>
+
+                  {documentos.length === 0 ? (
+                    <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-sm text-gray-400">No hay documentos subidos</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {documentos.map(doc => (
+                        <div key={doc.id_documento} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                          <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{doc.nombre_archivo}</p>
+                            <p className="text-[10px] text-gray-500">
+                              {TIPOS_DOCUMENTO.find(t => t.value === doc.tipo_documento)?.label || doc.tipo_documento}
+                              {doc.tamano_archivo && ` · ${formatFileSize(doc.tamano_archivo)}`}
+                              {doc.notas && ` · ${doc.notas}`}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <a
+                              href={doc.ruta_archivo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-gray-500 hover:text-brand-600 transition-colors"
+                              title="Ver documento"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarDocumento(doc.id_documento)}
+                              className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                              title="Eliminar documento"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {activeTab === "justificaciones" && (
+            <div>
+              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Justificaciones</h5>
+
+              {!editingTrabajadorId ? (
+                <div className="p-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Primero guarde el trabajador para gestionar justificaciones</p>
+                </div>
+              ) : (
+                <>
+                  <details className="group mb-4">
+                    <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 select-none p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
+                      <svg className={`w-4 h-4 transition-transform group-open:rotate-90`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                      Nueva Justificación
+                    </summary>
+                    <div className="mt-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800/50">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelCls}>Fecha</label>
+                          <input
+                            type="date"
+                            value={nuevaJustif.fecha}
+                            onChange={(e) => setNuevaJustif(prev => ({ ...prev, fecha: e.target.value }))}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Tipo</label>
+                          <select
+                            value={nuevaJustif.tipo}
+                            onChange={(e) => setNuevaJustif(prev => ({ ...prev, tipo: e.target.value }))}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                          >
+                            {TIPOS_JUSTIFICACION.map(t => (
+                              <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Motivo</label>
+                        <input
+                          type="text"
+                          value={nuevaJustif.motivo}
+                          onChange={(e) => setNuevaJustif(prev => ({ ...prev, motivo: e.target.value }))}
+                          placeholder="Razón de la justificación"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Descripción (opcional)</label>
+                        <textarea
+                          value={nuevaJustif.descripcion}
+                          onChange={(e) => setNuevaJustif(prev => ({ ...prev, descripcion: e.target.value }))}
+                          rows={2}
+                          placeholder="Detalle adicional"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Archivo soporte (opcional)</label>
+                        <div className="flex items-center gap-2">
+                          <label className="px-3 py-1.5 text-xs font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 cursor-pointer transition">
+                            {justifFile ? justifFile.name : "Seleccionar archivo"}
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                              className="hidden"
+                              onChange={(e) => setJustifFile(e.target.files?.[0] || null)}
+                            />
+                          </label>
+                          {justifFile && (
+                            <button
+                              type="button"
+                              onClick={() => setJustifFile(null)}
+                              className="text-xs text-red-500 hover:text-red-600"
+                            >
+                              Quitar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleCrearJustificacion}
+                          disabled={creandoJustif}
+                          className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-60 flex items-center gap-1"
+                        >
+                          {creandoJustif ? (
+                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : null}
+                          Crear Justificación
+                        </button>
+                      </div>
+                    </div>
+                  </details>
+
+                  {justificaciones.length === 0 ? (
+                    <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                      <p className="text-sm text-gray-400">No hay justificaciones registradas</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {justificaciones.map(j => (
+                        <div key={j.id_justificacion} className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                          <div className={`p-2 rounded-lg ${
+                            j.estado === 'aprobada' ? 'bg-green-50 text-green-600 dark:bg-green-950' :
+                            j.estado === 'rechazada' ? 'bg-red-50 text-red-600 dark:bg-red-950' :
+                            'bg-amber-50 text-amber-600 dark:bg-amber-950'
+                          }`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                {new Date(j.fecha + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                j.estado === 'aprobada' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400' :
+                                j.estado === 'rechazada' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400' :
+                                'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400'
+                              }`}>
+                                {j.estado === 'aprobada' ? 'Aprobada' : j.estado === 'rechazada' ? 'Rechazada' : 'Pendiente'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{j.motivo}</p>
+                            {j.descripcion && <p className="text-[10px] text-gray-500 mt-0.5">{j.descripcion}</p>}
+                            {j.archivo_ruta && (
+                              <a href={j.archivo_ruta} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-brand-600 hover:text-brand-700 mt-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Ver archivo
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
           <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
             <div>
-              {currentStep > 0 && (
+              {activeTab !== "info" && (
                 <button
-                  type="button" onClick={handlePrev} disabled={isSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+                  type="button" onClick={() => {
+                    const idx = tabs.findIndex(t => t.id === activeTab);
+                    if (idx > 0) setActiveTab(tabs[idx - 1].id);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
                   Anterior
                 </button>
@@ -538,9 +921,23 @@ export default function TrabajadorFormModal({
               >
                 Cancelar
               </button>
-              {currentStep < 2 ? (
+              {activeTab !== "justificaciones" ? (
                 <button
-                  type="button" onClick={handleNext}
+                  type="button"
+                  onClick={() => {
+                    if (activeTab === "info") {
+                      const fieldsToValidate = ["cedula", "nombres", "apellidos", "fecha_nacimiento", "id_cargo", "fecha_ingreso", "estado", "telefono", "correo_personal", "direccion"];
+                      trigger(fieldsToValidate as any).then(valid => {
+                        if (valid) {
+                          const idx = tabs.findIndex(t => t.id === activeTab);
+                          setActiveTab(tabs[idx + 1].id);
+                        }
+                      });
+                    } else {
+                      const idx = tabs.findIndex(t => t.id === activeTab);
+                      setActiveTab(tabs[idx + 1].id);
+                    }
+                  }}
                   className="px-5 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition"
                 >
                   Siguiente
