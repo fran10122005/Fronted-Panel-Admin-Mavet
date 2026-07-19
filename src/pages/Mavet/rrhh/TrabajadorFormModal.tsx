@@ -9,7 +9,6 @@ import { mavetApi } from "../../../services/api";
 import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import toast from "react-hot-toast";
-import JustificacionesPanel from "./JustificacionesPanel";
 
 const step1Schema = z.object({
   cedula: z.string().min(1, "La cédula es obligatoria"),
@@ -82,7 +81,6 @@ const tabs = [
   { id: "info", label: "Información" },
   { id: "horario", label: "Horario" },
   { id: "documentos", label: "Documentos" },
-  { id: "justificaciones", label: "Justificaciones" },
 ];
 
 function getDefaultHorarios(): HorarioDia[] {
@@ -1105,12 +1103,6 @@ export default function TrabajadorFormModal({
             </div>
           )}
 
-          {activeTab === "justificaciones" && (
-            <div className="flex-1 overflow-y-auto">
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Justificaciones</h5>
-              <JustificacionesPanel idTrabajador={editingTrabajadorId} />
-            </div>
-          )}
 
           <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
             <div>

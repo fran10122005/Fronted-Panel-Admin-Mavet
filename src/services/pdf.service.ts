@@ -656,3 +656,188 @@ export async function exportarCarnetTrabajador(trabajador: Trabajador) {
     alert("Error al generar la credencial.");
   }
 }
+// ─── PDF: Comprobante de Justificación Laboral ──────────────────────────────
+export async function exportarComprobanteJustificacion(j: {
+  id_justificacion: string;
+  fecha: string;
+  tipo: string;
+  hora_inicio?: string;
+  hora_fin?: string;
+  motivo: string;
+  descripcion?: string;
+  estado: string;
+  created_at: string;
+  Trabajador?: {
+    nombres?: string;
+    apellidos?: string;
+    cedula?: string;
+  };
+  // Fallback fields when Trabajador isn't populated
+  _nombres?: string;
+  _apellidos?: string;
+  _cedula?: string;
+}) {
+  try {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+
+    const TIPOS_LABEL: Record<string, string> = {
+      falta_dia_completo: "Falta día completo",
+      falta_parcial: "Falta parcial",
+      llegada_tardia: "Llegada tardía",
+      salida_anticipada: "Salida anticipada",
+    };
+
+    const nombreTrabajador =
+      j.Trabajador
+        ? `${j.Trabajador.nombres || ""} ${j.Trabajador.apellidos || ""}`.trim()
+        : `${j._nombres || ""} ${j._apellidos || ""}`.trim() || "—";
+    const cedulaTrabajador = j.Trabajador?.cedula || j._cedula || "—";
+    const tipoLabel = TIPOS_LABEL[j.tipo] || j.tipo;
+    const fechaIncidencia = new Date(j.fecha + "T12:00:00").toLocaleDateString("es-VE", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric",
+    });
+    const now = new Date();
+    const fechaEmision = now.toLocaleDateString("es-VE", {
+      day: "2-digit", month: "long", year: "numeric",
+    });
+
+    await addHeader(doc, "CONSTANCIA DE JUSTIFICACIÓN LABORAL");
+
+    // ── Fecha de emisión ──
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...C.textMuted);
+    doc.text(`Emitido: ${fechaEmision}`, pw - MARGIN, 30, { align: "right" });
+
+    // ── Cuerpo de la carta ──
+    let y = 40;
+    const bodyWidth = pw - MARGIN * 2;
+
+    // Título del cuerpo
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...C.brand);
+    doc.text("CONSTANCIA DE REGISTRO", pw / 2, y, { align: "center" });
+    y += 10;
+
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN + 20, y - 5, pw - MARGIN - 20, y - 5);
+
+    // Párrafo legal
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...C.text);
+    const parrafo1 =
+      `La Coordinación de Recursos Humanos del Museo de Artes Visuales del Estado Táchira ` +
+      `(MAVET) hace constar mediante el presente documento que el (la) trabajador(a) `;
+
+    const parrafo1Lines = doc.splitTextToSize(parrafo1, bodyWidth);
+    doc.text(parrafo1Lines, MARGIN, y, { align: "justify", maxWidth: bodyWidth });
+    y += parrafo1Lines.length * 5.5;
+
+    // Nombre del trabajador destacado
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...C.brand);
+    doc.text(`${nombreTrabajador}  —  C.I.: ${cedulaTrabajador}`, pw / 2, y, { align: "center" });
+    y += 8;
+
+    // Párrafo 2
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...C.text);
+    const parrafo2 =
+      `ha presentado debidamente una justificación laboral registrada en el sistema de ` +
+      `control de asistencia institucional, de conformidad con las disposiciones contempladas ` +
+      `en la Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras (LOTTT), con los ` +
+      `siguientes detalles:`;
+    const parrafo2Lines = doc.splitTextToSize(parrafo2, bodyWidth);
+    doc.text(parrafo2Lines, MARGIN, y, { align: "justify", maxWidth: bodyWidth });
+    y += parrafo2Lines.length * 5.5 + 6;
+
+    // ── Ficha de datos ──
+    const bkg = [250, 246, 244] as [number, number, number];
+    const rh = 7;
+    const lx = MARGIN + 6;
+    const vx = MARGIN + 56;
+
+    const rows = [
+      { label: "Fecha de la Incidencia", value: fechaIncidencia },
+      { label: "Tipo de Incidencia", value: tipoLabel },
+      { label: "Motivo Legal (LOTTT)", value: j.motivo },
+      ...(j.hora_inicio ? [{ label: "Horas Afectadas", value: `${j.hora_inicio} – ${j.hora_fin || "—"}` }] : []),
+      ...(j.descripcion ? [{ label: "Detalles Adicionales", value: j.descripcion }] : []),
+      { label: "Estado del Registro", value: j.estado === "aprobada" ? "Aprobada" : j.estado === "rechazada" ? "Rechazada" : "Registrada / Pendiente" },
+    ];
+
+    rows.forEach((r, i) => {
+      const rowTop = y - 5;
+      if (i % 2 === 0) {
+        doc.setFillColor(...bkg);
+        doc.rect(MARGIN, rowTop, bodyWidth, rh, "F");
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C.textMuted);
+      doc.text(r.label + ":", lx, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...C.text);
+      const lines = doc.splitTextToSize(r.value, bodyWidth - (vx - MARGIN) - 6);
+      doc.text(lines, vx, y);
+      y += Math.max(rh, lines.length * 4.5);
+    });
+
+    y += 8;
+
+    // ── Párrafo de cierre ──
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...C.textMuted);
+    const cierreText =
+      `La presente constancia se expide a solicitud del interesado y/o para los efectos ` +
+      `administrativos y legales que fueren pertinentes, en San Cristóbal, Estado Táchira, ` +
+      `a los ${now.getDate()} días del mes de ${now.toLocaleString("es-VE", { month: "long" })} de ${now.getFullYear()}.`;
+    const cierreLines = doc.splitTextToSize(cierreText, bodyWidth);
+    doc.text(cierreLines, MARGIN, y, { align: "justify", maxWidth: bodyWidth });
+    y += cierreLines.length * 5 + 6;
+
+    // ── Sellos ──
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.3);
+    doc.setLineDashPattern([1, 1], 0);
+    doc.rect(MARGIN, y, 55, 22);
+    doc.rect(pw - MARGIN - 55, y, 55, 22);
+    doc.setLineDashPattern([], 0);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...C.textMuted);
+    doc.text("Sello Institucional", MARGIN + 27.5, y + 13, { align: "center" });
+    doc.text("Sello Dep. de RRHH", pw - MARGIN - 27.5, y + 13, { align: "center" });
+    y += 30;
+
+    // ── Firmas ──
+    y = Math.max(y + 5, ph - 50);
+    y = addTwoSignatureBlocks(doc, y);
+
+    // ── Pie ──
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(5.5);
+    doc.setTextColor(...C.textMuted);
+    doc.text(
+      `Documento generado digitalmente por el Sistema de Gestión MAVET · ID Justificación: ${j.id_justificacion}`,
+      pw / 2, ph - 8, { align: "center" },
+    );
+
+    doc.save(`comprobante-justificacion-${cedulaTrabajador}-${j.fecha}.pdf`);
+  } catch (e) {
+    console.error("[exportarComprobanteJustificacion]", e);
+    alert("Error al generar el comprobante.");
+  }
+}

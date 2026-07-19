@@ -331,6 +331,13 @@ export interface Justificacion {
   archivo_nombre?: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   created_at: string;
+  Trabajador?: {
+    id_trabajador: string | number;
+    nombres: string;
+    apellidos: string;
+    cedula: string;
+    correo_personal?: string;
+  };
 }
 
 export interface ConsultaSalaFiltrada {

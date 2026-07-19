@@ -2,12 +2,23 @@ import React, { useState, useEffect, useCallback } from "react";
 import { mavetApi } from "../../../services/api";
 import { Justificacion } from "../../../types";
 import toast from "react-hot-toast";
+import { exportarComprobanteJustificacion } from "../../../services/pdf.service";
 
 const TIPOS_JUSTIFICACION = [
   { value: "falta_dia_completo", label: "Falta día completo" },
   { value: "falta_parcial", label: "Falta parcial" },
   { value: "llegada_tardia", label: "Llegada tardía" },
   { value: "salida_anticipada", label: "Salida anticipada" },
+];
+
+const MOTIVOS_LEGALES_LOTTT = [
+  "Enfermedad o Accidente Común (Reposo Médico)",
+  "Enfermedad Ocupacional o Accidente de Trabajo",
+  "Licencia de Maternidad / Paternidad",
+  "Duelo (Fallecimiento de familiar)",
+  "Cumplimiento de Deber Constitucional / Legal",
+  "Permiso o Licencia Concedida por el Patrono",
+  "Fuerza Mayor o Caso Fortuito"
 ];
 
 interface Props {
@@ -18,7 +29,7 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
   const [justificaciones, setJustificaciones] = useState<Justificacion[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", tipo: "falta_dia_completo", motivo: "", descripcion: "", hora_inicio: "", hora_fin: "", archivo: null as File | null });
+  const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", tipo: "falta_dia_completo", motivo: MOTIVOS_LEGALES_LOTTT[0], descripcion: "", hora_inicio: "", hora_fin: "", archivo: null as File | null });
   const [creandoJustif, setCreandoJustif] = useState(false);
   const [justifFile, setJustifFile] = useState<File | null>(null);
 
@@ -76,14 +87,17 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
     }
   };
 
-  const handleEliminarJustificacion = async (idJustificacion: string) => {
+  const handleAnularJustificacion = async (idJustificacion: string) => {
     if (!idTrabajador) return;
+    if (!window.confirm('¿Estás seguro de anular esta justificación? El registro quedará marcado como Rechazado pero no se eliminará del sistema.')) return;
     try {
-      await mavetApi.eliminarJustificacion(idTrabajador, idJustificacion);
-      setJustificaciones(prev => prev.filter(j => j.id_justificacion !== idJustificacion));
-      toast.success("Justificación eliminada");
+      await mavetApi.anularJustificacion(idTrabajador, idJustificacion);
+      setJustificaciones(prev => prev.map(j =>
+        j.id_justificacion === idJustificacion ? { ...j, estado: 'rechazada' as const } : j
+      ));
+      toast.success('Justificación anulada — el registro se conserva en el sistema');
     } catch (err: any) {
-      toast.error("Error al eliminar justificación");
+      toast.error('Error al anular la justificación');
     }
   };
 
@@ -154,17 +168,19 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
           )}
 
           <div>
-            <label className={labelCls}>Motivo</label>
-            <input
-              type="text"
+            <label className={labelCls}>Motivo Legal (LOTTT)</label>
+            <select
               value={nuevaJustif.motivo}
               onChange={(e) => setNuevaJustif(prev => ({ ...prev, motivo: e.target.value }))}
-              placeholder="Razón de la justificación"
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
-            />
+            >
+              {MOTIVOS_LEGALES_LOTTT.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className={labelCls}>Descripción (opcional)</label>
+            <label className={labelCls}>Detalles Adicionales (opcional)</label>
             <textarea
               value={nuevaJustif.descripcion}
               onChange={(e) => setNuevaJustif(prev => ({ ...prev, descripcion: e.target.value }))}
@@ -264,16 +280,28 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
                       Ver archivo adjunto
                     </a>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => exportarComprobanteJustificacion(j)}
+                    className="inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-brand-600 transition-colors mt-2 ml-3"
+                    title="Imprimir comprobante"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    Imprimir comprobante
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleEliminarJustificacion(j.id_justificacion)}
-                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                title="Eliminar justificación"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </button>
+              {/* Anular: solo si no está ya rechazada */}
+              {j.estado !== 'rechazada' && (
+                <button
+                  type="button"
+                  onClick={() => handleAnularJustificacion(j.id_justificacion)}
+                  className="p-1.5 text-gray-400 hover:text-amber-600 transition-colors"
+                  title="Anular justificación (el registro se conserva)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                </button>
+              )}
             </div>
           ))}
         </div>
