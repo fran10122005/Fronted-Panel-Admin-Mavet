@@ -319,4 +319,8 @@ export const rrhh = {
     });
     return res.data?.data;
   },
+
+  eliminarJustificacion: async (id_trabajador: string, id_justificacion: string): Promise<void> => {
+    await axiosInstance.delete(`/api/rrhh/trabajadores/${id_trabajador}/justificaciones/${id_justificacion}`);
+  },
 };

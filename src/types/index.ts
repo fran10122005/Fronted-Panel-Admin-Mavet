@@ -226,7 +226,7 @@ export interface Prestamo {
   estado: "ACTIVO" | "DEVUELTO";
 }
 
-export type TipoJustificacion = "medica" | "personal" | "permiso" | "lottt" | "otro";
+export type TipoJustificacion = "falta_dia_completo" | "falta_parcial" | "llegada_tardia" | "salida_anticipada";
 
 export interface DiaResumen {
   id: string;

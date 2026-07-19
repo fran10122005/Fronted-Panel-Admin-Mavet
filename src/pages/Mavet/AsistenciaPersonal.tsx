@@ -7,7 +7,7 @@ import Pagination from "../../components/ui/Pagination";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import AsistenciaModal from "../../components/AsistenciaModal";
 import ObservacionModal from "./rrhh/ObservacionModal";
-import JustificacionModal from "./rrhh/JustificacionModal";
+
 import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import type { RegistroAsistencia, ResumenSemanalTrabajador } from "../../types";
 import toast from "react-hot-toast";
@@ -37,7 +37,7 @@ export default function AsistenciaPersonal() {
   const [isRegistroOpen, setIsRegistroOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [observacionModalData, setObservacionModalData] = useState<{ id: string; observaciones: string } | null>(null);
-  const [selectedForJustificacion, setSelectedForJustificacion] = useState<ResumenSemanalTrabajador | null>(null);
+
 
   const refreshAsistencias = useCallback(async (page: number, date?: string) => {
     const targetDate = date ?? asistFecha;
@@ -89,15 +89,7 @@ export default function AsistenciaPersonal() {
     }
   }, []);
 
-  const handleJustificarSemana = useCallback(async (cedula: string, texto: string, horas_justificadas: number) => {
-    try {
-      await mavetApi.justificarHoras(cedula, texto, horas_justificadas);
-      await refreshResumenSemanal();
-    } catch {
-      toast.error("Error al guardar justificación");
-      throw new Error("Error al guardar justificación");
-    }
-  }, [refreshResumenSemanal]);
+
 
   const filteredAsistencias = useMemo(() =>
     asistencias.filter((a) =>
@@ -227,14 +219,7 @@ export default function AsistenciaPersonal() {
                               {r.observaciones ? (
                                 <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title={r.observaciones}>{r.observaciones}</span>
                               ) : null}
-                              {!r.cumplio && !r.justificado && !isGerente && new Date().getDay() === 3 && (
-                                <button
-                                  onClick={() => setSelectedForJustificacion(r)}
-                                  className="text-xs font-semibold rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800 transition-colors px-2.5 py-1"
-                                >
-                                  Justificar
-                                </button>
-                              )}
+
                               {r.cumplio && (
                                 <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">Completo</span>
                               )}
@@ -343,12 +328,7 @@ export default function AsistenciaPersonal() {
         onSave={handleUpdateObservaciones}
       />
 
-      {/* Justificación Modal */}
-      <JustificacionModal
-        trabajador={selectedForJustificacion}
-        onClose={() => setSelectedForJustificacion(null)}
-        onSave={handleJustificarSemana}
-      />
+
 
       {/* Exportar Asistencia Modal */}
       <ExportarAsistenciaModal
