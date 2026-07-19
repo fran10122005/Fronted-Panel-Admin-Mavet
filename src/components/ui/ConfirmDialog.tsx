@@ -47,7 +47,7 @@ export default function ConfirmDialog({
   message,
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
-  variant = "danger",
+  variant = "info",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {

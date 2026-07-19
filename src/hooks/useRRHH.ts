@@ -269,7 +269,7 @@ export function useRRHH() {
     requestConfirm({
       title: `${accion === "activar" ? "Activar" : "Suspender"} usuario`,
       message: `¿Está seguro de que desea ${accion} al usuario "${u.correo}"?`,
-      variant: accion === "suspender" ? "danger" : "default",
+      variant: accion === "suspender" ? "danger" : "info",
       confirmLabel: accion === "activar" ? "Activar" : "Suspender",
       onConfirm: async () => {
         try {
