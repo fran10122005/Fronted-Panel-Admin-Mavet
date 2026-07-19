@@ -197,19 +197,13 @@ export const talleres = {
 
   getDocumentoPlan: async (id: number): Promise<void> => {
     try {
-      const res = await axiosInstance.get(`/api/educacion/talleres/${id}/documento-plan`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Planificacion_Taller_${id}_${new Date().toISOString().split("T")[0]}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch {
-      throw new Error("Error al descargar el documento de planificación");
+      const res = await axiosInstance.get(`/api/educacion/talleres/${id}/documento-plan`);
+      const url = res.data?.url;
+      if (!url) throw new Error("No hay documento disponible");
+      // Open Cloudinary URL in new tab — browser handles the download natively
+      window.open(url, "_blank");
+    } catch (e: any) {
+      throw new Error(e.message || "Error al descargar el documento de planificación");
     }
   },
 

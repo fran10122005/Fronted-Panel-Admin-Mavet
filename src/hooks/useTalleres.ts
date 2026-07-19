@@ -456,21 +456,25 @@ export function useTalleres() {
     setIsSubmitting(true);
     try {
       const selected = inventario.find(i => (i.id_taller || i.id) === planificarForm.id_taller_inventario);
-      const payload: any = {
-        inventario_id: planificarForm.id_taller_inventario || null,
-        id_instructor: planificarForm.selectedInstructorId || null,
-        id_espacio: planificarForm.id_espacio || null,
+      const rawPayload: any = {
+        inventario_id: planificarForm.id_taller_inventario || undefined,
+        id_instructor: planificarForm.selectedInstructorId || undefined,
+        id_espacio: planificarForm.id_espacio || undefined,
         nombre_curso: selected?.nombre || "",
-        sesiones: planificarForm.sesiones ? Number(planificarForm.sesiones) : null,
-        fecha: planificarForm.fecha || null,
-        fecha_fin: planificarForm.fecha_fin || null,
-        hora_inicio: planificarForm.hora_inicio || null,
-        hora_fin: planificarForm.hora_fin || null,
-        horas_totales: planificarForm.horas_totales ? Number(planificarForm.horas_totales) : null,
-        cupo_minimo: planificarForm.cupo_minimo ? Number(planificarForm.cupo_minimo) : null,
-        cupo_maximo: planificarForm.cupo_maximo ? Number(planificarForm.cupo_maximo) : null,
+        sesiones: planificarForm.sesiones ? String(Number(planificarForm.sesiones)) : undefined,
+        fecha: planificarForm.fecha || undefined,
+        fecha_fin: planificarForm.fecha_fin || undefined,
+        hora_inicio: planificarForm.hora_inicio || undefined,
+        hora_fin: planificarForm.hora_fin || undefined,
+        horas_totales: planificarForm.horas_totales ? String(Number(planificarForm.horas_totales)) : undefined,
+        cupo_minimo: planificarForm.cupo_minimo ? String(Number(planificarForm.cupo_minimo)) : undefined,
+        cupo_maximo: planificarForm.cupo_maximo ? String(Number(planificarForm.cupo_maximo)) : undefined,
         estado: planificarForm.estado ? 'Activo' : 'Inactivo'
       };
+      // Remove undefined keys so they don't reach Zod
+      const payload: any = Object.fromEntries(
+        Object.entries(rawPayload).filter(([, v]) => v !== undefined)
+      );
 
       if (isEditingPlanificado && selectedTaller?.id_taller) {
         await mavetApi.actualizarTaller(selectedTaller.id_taller, payload);
