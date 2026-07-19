@@ -240,7 +240,8 @@ export function useTalleres() {
         horas_totales: taller.horas_totales ?? "",
         cupo_minimo: taller.cupo_minimo ?? "",
         cupo_maximo: taller.cupo_maximo ?? "",
-        estado: taller.estado === "Activo" || taller.estado === true
+        estado: taller.estado === "Activo" || taller.estado === true,
+        documentoPlan: null,
       });
     } else {
       setIsEditingPlanificado(false);
@@ -563,7 +564,7 @@ export function useTalleres() {
     inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     isSubmitting,
-    edadNum, esMenor, inscripcionesAgrupadas,
+    inscripcionesAgrupadas,
     filteredTalleres, totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
     verHistorial, setVerHistorial,

@@ -18,7 +18,7 @@ const baseInputCls = "w-full rounded-xl border border-gray-300 dark:border-gray-
 
 export default function TallerFormModal({
   isOpen, onClose, isEditing, formData,
-  isSubmitting, formError, onChange, onSubmit, inputCls,
+  isSubmitting, formError, onChange, onSubmit, inputCls: _inputCls,
 }: Props) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-0 overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-xl">

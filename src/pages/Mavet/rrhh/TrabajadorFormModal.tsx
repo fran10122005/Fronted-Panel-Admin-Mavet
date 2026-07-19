@@ -35,7 +35,7 @@ const step1Schema = z.object({
     today.setHours(0, 0, 0, 0);
     return inputDate <= today;
   }, "La fecha no puede ser mayor a hoy"),
-  estado: z.enum(["Activo", "Inactivo"], { required_error: "El estado es obligatorio" }),
+  estado: z.enum(["Activo", "Inactivo"], { error: "El estado es obligatorio" }),
   telefono: z.string().min(1, "El teléfono es obligatorio"),
   correo_personal: z.string().min(1, "El correo es obligatorio").email("Debe ser un correo válido"),
   direccion: z.string().min(1, "La dirección es obligatoria"),
@@ -197,7 +197,7 @@ export default function TrabajadorFormModal({
           dateFormat: "d/m/Y",
           locale: Spanish,
           allowInput: true,
-          onChange: function(selectedDates, dateStr, instance) {
+          onChange: function(_selectedDates, dateStr, instance) {
             const inputElement = instance.input;
             const inputName = inputElement.getAttribute("name");
             if (inputName) {
@@ -244,7 +244,7 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData, horarios, photoFile, generarPin, habilitarFacial, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
+    onSubmit(finalData as TrabajadorFormValues, horarios, photoFile, generarPin, habilitarFacial, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

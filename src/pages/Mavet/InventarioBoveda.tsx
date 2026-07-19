@@ -17,7 +17,7 @@ import ObraDetailModal from "./inventario/ObraDetailModal";
 import toast from "react-hot-toast";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 
-const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number } = {
+const initialFormState: Partial<Obra> & { id_artista?: number, id_tecnica?: number, id_estado_actual?: number, id_categoria_obra?: number, ancho?: number, largo?: number } = {
   id: "",
   codigo_inventario: "",
   titulo: "",
@@ -173,7 +173,7 @@ export default function InventarioBoveda() {
   };
 
   const handleEdit = (obra: Obra) => {
-    setFormData((prev) => ({ ...prev, ...obra, ...parseMedidas(obra.medidas), medidas: undefined }));
+    setFormData((prev: typeof initialFormState) => ({ ...prev, ...obra, ...parseMedidas(obra.medidas), medidas: undefined }));
     setArtistInput(obra.autor || "");
     setImagenFile(null);
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -217,7 +217,7 @@ export default function InventarioBoveda() {
 
   const isPintura = selectedCategoryName?.toLowerCase() === 'pintura';
 
-  const validateObraField = (name: string, value: any, allData?: any): string => {
+  const validateObraField = (name: string, value: any, _allData?: any): string => {
     if (["titulo", "ubicacion", "id_estado_actual", "tipo_ingreso"].includes(name) && (!value || !String(value).trim())) {
       const labels: Record<string, string> = { titulo: "El título", ubicacion: "La ubicación", id_estado_actual: "El estado", tipo_ingreso: "El tipo de ingreso" };
       return `${labels[name] || "Este campo"} es obligatorio.`;
@@ -425,7 +425,7 @@ export default function InventarioBoveda() {
     return "";
   };
 
-  const validateArtistField = (field: string, value: string, allData?: any) => {
+  const validateArtistField = (field: string, value: string, _allData?: any) => {
     let error = "";
     const trimmed = (value || "").trim();
 
