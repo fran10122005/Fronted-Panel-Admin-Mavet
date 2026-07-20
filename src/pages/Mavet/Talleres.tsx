@@ -103,6 +103,9 @@ export default function Talleres() {
     verHistorial, setVerHistorial,
     verHistorialInsc, setVerHistorialInsc,
     statsInscripciones,
+    paginatedInventario, totalInvPages, currentPageInv, setCurrentPageInv,
+    paginatedInscripcionesAgrupadas, totalInscPages, currentPageInsc, setCurrentPageInsc,
+    paginatedInstructores, totalInstPages, currentPageInst, setCurrentPageInst,
   } = useTalleres();
 
   const handleInventarioFormChange = (e: any) => {
@@ -376,11 +379,11 @@ export default function Talleres() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredInventario.length === 0 ? (
+            {paginatedInventario.length === 0 ? (
               <tr><td colSpan={2} className="px-3 py-8 text-center text-gray-500">
                 <p className="text-sm">No hay talleres en el inventario.</p>
               </td></tr>
-            ) : filteredInventario.map((item: any) => (
+            ) : paginatedInventario.map((item: any) => (
               <tr key={item.id_taller || item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                 <td className={`${tdCls} font-medium`}>
                   <div className="flex items-center gap-2">
@@ -397,6 +400,38 @@ export default function Talleres() {
             ))}
           </tbody>
         </table>
+        </div>
+        <div className="flex items-center justify-between px-1 pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-4">
+          <span className="text-xs text-gray-500 font-medium">
+            Mostrando {paginatedInventario.length} de {filteredInventario.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPageInv(prev => Math.max(1, prev - 1))}
+              disabled={currentPageInv <= 1}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              &larr;
+            </button>
+            {Array.from({ length: totalInvPages }, (_, i) => i + 1).map(p => (
+              <button key={p} onClick={() => setCurrentPageInv(p)}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                  p === currentPageInv
+                    ? "bg-brand-500 text-white border-brand-500"
+                    : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPageInv(prev => Math.min(totalInvPages, prev + 1))}
+              disabled={currentPageInv >= totalInvPages}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              &rarr;
+            </button>
+          </div>
         </div>
       </ComponentCard>
       )}
@@ -422,7 +457,7 @@ export default function Talleres() {
           </div>
         }
       >
-        {inscripcionesAgrupadas.length === 0 ? (
+        {paginatedInscripcionesAgrupadas.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -435,7 +470,7 @@ export default function Talleres() {
           </div>
         ) : (
           <div className="space-y-4">
-            {inscripcionesAgrupadas.map((grupo, idx) => (
+            {paginatedInscripcionesAgrupadas.map((grupo, idx) => (
               <details key={idx} className="group rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <summary className="flex items-center justify-between px-5 py-3.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors list-none">
                   <div className="flex items-center gap-3">
@@ -513,6 +548,38 @@ export default function Talleres() {
             ))}
           </div>
         )}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-4">
+          <span className="text-xs text-gray-500 font-medium">
+            Mostrando {paginatedInscripcionesAgrupadas.length} de {inscripcionesAgrupadas.length} grupos
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPageInsc(prev => Math.max(1, prev - 1))}
+              disabled={currentPageInsc <= 1}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              &larr;
+            </button>
+            {Array.from({ length: totalInscPages }, (_, i) => i + 1).map(p => (
+              <button key={p} onClick={() => setCurrentPageInsc(p)}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                  p === currentPageInsc
+                    ? "bg-brand-500 text-white border-brand-500"
+                    : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPageInsc(prev => Math.min(totalInscPages, prev + 1))}
+              disabled={currentPageInsc >= totalInscPages}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              &rarr;
+            </button>
+          </div>
+        </div>
       </ComponentCard>
       )}
 
@@ -593,7 +660,7 @@ export default function Talleres() {
             </div>
           )}
           <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
-            <div className="max-h-64 overflow-y-auto overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
                   <tr>
@@ -604,12 +671,12 @@ export default function Talleres() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {instructores.length === 0 ? (
+                  {paginatedInstructores.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-xs">No hay instructores registrados.</td>
                     </tr>
                   ) : (
-                    instructores.map(inst => (
+                    paginatedInstructores.map(inst => (
                       <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                         <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion || "—"}</td>
@@ -637,6 +704,38 @@ export default function Talleres() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-4">
+              <span className="text-xs text-gray-500 font-medium">
+                Mostrando {paginatedInstructores.length} de {instructores.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPageInst(prev => Math.max(1, prev - 1))}
+                  disabled={currentPageInst <= 1}
+                  className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  &larr;
+                </button>
+                {Array.from({ length: totalInstPages }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setCurrentPageInst(p)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md border transition ${
+                      p === currentPageInst
+                        ? "bg-brand-500 text-white border-brand-500"
+                        : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPageInst(prev => Math.min(totalInstPages, prev + 1))}
+                  disabled={currentPageInst >= totalInstPages}
+                  className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  &rarr;
+                </button>
+              </div>
             </div>
           </div>
         </div>

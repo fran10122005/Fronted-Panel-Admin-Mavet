@@ -101,6 +101,9 @@ export function useTalleres() {
   const [verHistorial, setVerHistorial] = useState(false);
   const [verHistorialInsc, setVerHistorialInsc] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageInv, setCurrentPageInv] = useState(1);
+  const [currentPageInsc, setCurrentPageInsc] = useState(1);
+  const [currentPageInst, setCurrentPageInst] = useState(1);
   const [searchInventario, setSearchInventario] = useState("");
 
   const { isOpen: isOpenCrear, openModal: openCrear, closeModal: closeCrear } = useModal();
@@ -601,6 +604,23 @@ export function useTalleres() {
       item.descripcion?.toLowerCase().includes(term)
     );
   });
+  const totalInvPages = Math.ceil(filteredInventario.length / ITEMS_PER_PAGE);
+  const paginatedInventario = filteredInventario.slice(
+    (currentPageInv - 1) * ITEMS_PER_PAGE,
+    currentPageInv * ITEMS_PER_PAGE
+  );
+
+  const totalInscPages = Math.ceil(inscripcionesAgrupadas.length / ITEMS_PER_PAGE);
+  const paginatedInscripcionesAgrupadas = inscripcionesAgrupadas.slice(
+    (currentPageInsc - 1) * ITEMS_PER_PAGE,
+    currentPageInsc * ITEMS_PER_PAGE
+  );
+
+  const totalInstPages = Math.ceil(instructores.length / ITEMS_PER_PAGE);
+  const paginatedInstructores = instructores.slice(
+    (currentPageInst - 1) * ITEMS_PER_PAGE,
+    currentPageInst * ITEMS_PER_PAGE
+  );
 
   return {
     talleres, inventario, instructores, espacios, inscripciones,
@@ -619,6 +639,12 @@ export function useTalleres() {
     verHistorialInsc, setVerHistorialInsc,
     statsInscripciones,
     filteredInventario,
+    currentPageInv, setCurrentPageInv,
+    totalInvPages, paginatedInventario,
+    currentPageInsc, setCurrentPageInsc,
+    totalInscPages, paginatedInscripcionesAgrupadas,
+    currentPageInst, setCurrentPageInst,
+    totalInstPages, paginatedInstructores,
     selectedInventario, setSelectedInventario,
     selectedTaller, setSelectedTaller,
     isEditingPlanificado, setIsEditingPlanificado,
