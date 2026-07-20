@@ -141,6 +141,7 @@ export default function Biblioteca() {
                   </svg>
                 </div>
                 <input type="text" placeholder="Buscar por unidad, título o autor..."
+                  aria-label="Buscar libro"
                   value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </div>
@@ -171,6 +172,7 @@ export default function Biblioteca() {
                     onChange={(e) => setFilterAutor(e.target.value || "Todos")} placeholder="Buscar..."
                     className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 w-32" />
                 </div>
+                <label className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Orden:</label>
                 <select value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -325,6 +327,7 @@ export default function Biblioteca() {
               </div>
               <div className="relative w-full sm:w-64">
                 <input type="text" placeholder="Buscar por cédula..." value={searchCedula}
+                  aria-label="Buscar por cédula"
                   onChange={(e) => setSearchCedula(e.target.value)}
                   className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

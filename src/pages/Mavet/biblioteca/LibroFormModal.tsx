@@ -105,40 +105,52 @@ export default function LibroFormModal({
             Información del Libro
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Book className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Título del Libro</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Book className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" placeholder="Nombre del libro"
+                  className={`${baseInputCls} pl-10 ${errors.titulo ? 'border-red-500 focus:ring-red-500/20' : ''}`}
+                  {...register("titulo")} />
+                {errors.titulo && <p className="text-red-500 text-xs mt-1">{errors.titulo.message}</p>}
               </div>
-              <input type="text" placeholder="Nombre del libro"
-                className={`${baseInputCls} pl-10 ${errors.titulo ? 'border-red-500 focus:ring-red-500/20' : ''}`}
-                {...register("titulo")} />
-              {errors.titulo && <p className="text-red-500 text-xs mt-1">{errors.titulo.message}</p>}
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Hash className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Código / Cuota</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Hash className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" placeholder="Ej. C-001"
+                  className={baseInputCls + " pl-10"}
+                  {...register("cuota")} />
               </div>
-              <input type="text" placeholder="Ej. C-001"
-                className={baseInputCls + " pl-10"}
-                {...register("cuota")} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Layers className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Unidad</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Layers className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" readOnly tabIndex={-1}
+                  className={baseInputCls + " pl-10 bg-gray-100 dark:bg-gray-700/50 cursor-not-allowed opacity-70"}
+                  {...register("unidad")} />
               </div>
-              <input type="text" readOnly tabIndex={-1}
-                className={baseInputCls + " pl-10 bg-gray-100 dark:bg-gray-700/50 cursor-not-allowed opacity-70"}
-                {...register("unidad")} />
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <MapPin className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Ubicación (Estante)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" placeholder="Ej. Estante A - Fila 2"
+                  className={baseInputCls + " pl-10"}
+                  {...register("estante")} />
               </div>
-              <input type="text" placeholder="Ej. Estante A - Fila 2"
-                className={baseInputCls + " pl-10"}
-                {...register("estante")} />
             </div>
           </div>
         </div>
@@ -149,22 +161,28 @@ export default function LibroFormModal({
             Autor
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <User className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Nombre del Autor</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <User className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" placeholder="Ej. Gabriel"
+                  className={`${baseInputCls} pl-10 ${errors.autorNombre ? 'border-red-500' : ''}`}
+                  {...register("autorNombre")} />
+                {errors.autorNombre && <p className="text-red-500 text-xs mt-1">{errors.autorNombre.message}</p>}
               </div>
-              <input type="text" placeholder="Ej. Gabriel"
-                className={`${baseInputCls} pl-10 ${errors.autorNombre ? 'border-red-500' : ''}`}
-                {...register("autorNombre")} />
-              {errors.autorNombre && <p className="text-red-500 text-xs mt-1">{errors.autorNombre.message}</p>}
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <User className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Apellido del Autor</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <User className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="text" placeholder="Ej. García Márquez"
+                  className={baseInputCls + " pl-10"}
+                  {...register("autorApellido")} />
               </div>
-              <input type="text" placeholder="Ej. García Márquez"
-                className={baseInputCls + " pl-10"}
-                {...register("autorApellido")} />
             </div>
           </div>
         </div>
@@ -175,56 +193,69 @@ export default function LibroFormModal({
             Clasificación
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Tags className="w-4 h-4 text-gray-400" />
-              </div>
-              <select className={`${baseInputCls} pl-10 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10 ${errors.id_categoria ? 'border-red-500' : ''}`}
-                {...register("id_categoria")}>
-                <option value="" disabled>Seleccione una categoría...</option>
-                {categorias.map((c: any) => (
-                  <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
-                ))}
-                <option value="-1">➕ Otra...</option>
-              </select>
-              {errors.id_categoria && <p className="text-red-500 text-xs mt-1">{errors.id_categoria.message}</p>}
-              {selectedCategoria === "-1" && (
-                <div className="mt-2">
-                  <input type="text" placeholder="Escriba el nombre de la nueva categoría..."
-                    className={`${baseInputCls} ${errors.customCategoria ? 'border-red-500' : ''}`}
-                    {...register("customCategoria")} autoFocus />
-                  {errors.customCategoria && <p className="text-red-500 text-xs mt-1">{errors.customCategoria.message}</p>}
+            <div>
+              <label className={labelCls}>Categoría</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Tags className="w-4 h-4 text-gray-400" />
                 </div>
-              )}
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Calendar className="w-4 h-4 text-gray-400" />
+                <select className={`${baseInputCls} pl-10 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10 ${errors.id_categoria ? 'border-red-500' : ''}`}
+                  {...register("id_categoria")}>
+                  <option value="" disabled>Seleccione una categoría...</option>
+                  {categorias.map((c: any) => (
+                    <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
+                  ))}
+                  <option value="-1">➕ Otra...</option>
+                </select>
+                {errors.id_categoria && <p className="text-red-500 text-xs mt-1">{errors.id_categoria.message}</p>}
+                {selectedCategoria === "-1" && (
+                  <div className="mt-2">
+                    <label className={labelCls}>Nueva Categoría</label>
+                    <input type="text" placeholder="Escriba el nombre de la nueva categoría..."
+                      className={`${baseInputCls} ${errors.customCategoria ? 'border-red-500' : ''}`}
+                      {...register("customCategoria")} autoFocus />
+                    {errors.customCategoria && <p className="text-red-500 text-xs mt-1">{errors.customCategoria.message}</p>}
+                  </div>
+                )}
               </div>
-              <input type="number" placeholder="Ej. 2023"
-                className={`${baseInputCls} pl-10 ${errors.ano_libro ? 'border-red-500' : ''}`}
-                {...register("ano_libro")} />
-              {errors.ano_libro && <p className="text-red-500 text-xs mt-1">{errors.ano_libro.message}</p>}
+            </div>
+            <div>
+              <label className={labelCls}>Año del Libro</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="number" placeholder="Ej. 2023"
+                  className={`${baseInputCls} pl-10 ${errors.ano_libro ? 'border-red-500' : ''}`}
+                  {...register("ano_libro")} />
+                {errors.ano_libro && <p className="text-red-500 text-xs mt-1">{errors.ano_libro.message}</p>}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Calendar className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Fecha de Ingreso</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="date" max={new Date().toISOString().split('T')[0]}
+                  className={`${baseInputCls} pl-10 ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
+                  {...register("fecha_ingreso")} />
+                {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
               </div>
-              <input type="date" max={new Date().toISOString().split('T')[0]}
-                className={`${baseInputCls} pl-10 ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
-                {...register("fecha_ingreso")} />
-              {errors.fecha_ingreso && <p className="text-red-500 text-xs mt-1">{errors.fecha_ingreso.message}</p>}
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Hash className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className={labelCls}>Cantidad de Ejemplares</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Hash className="w-4 h-4 text-gray-400" />
+                </div>
+                <input type="number" min={1} placeholder="Cantidad de ejemplares"
+                  className={`${baseInputCls} pl-10 ${errors.cantidad_total ? 'border-red-500' : ''}`}
+                  {...register("cantidad_total")} />
+                {errors.cantidad_total && <p className="text-red-500 text-xs mt-1">{errors.cantidad_total.message}</p>}
               </div>
-              <input type="number" min={1} placeholder="Cantidad de ejemplares"
-                className={`${baseInputCls} pl-10 ${errors.cantidad_total ? 'border-red-500' : ''}`}
-                {...register("cantidad_total")} />
-              {errors.cantidad_total && <p className="text-red-500 text-xs mt-1">{errors.cantidad_total.message}</p>}
             </div>
           </div>
           <div>

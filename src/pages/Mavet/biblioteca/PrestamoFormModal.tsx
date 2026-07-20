@@ -138,16 +138,19 @@ export default function PrestamoFormModal({
               <Book className="w-3.5 h-3.5" />
               Ejemplares a Consultar
             </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                <Book className="w-4 h-4 text-gray-400" />
+            <div>
+              <label className="block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Cantidad de Ejemplares</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <Book className="w-4 h-4 text-gray-400" />
+                </div>
+                <select value={cantidad} onChange={(e) => setCantidad(Number(e.target.value))}
+                  className={baseSelectCls + " pl-10"}>
+                  {Array.from({ length: maxCantidad }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>{n} ejemplar{n > 1 ? "es" : ""}</option>
+                  ))}
+                </select>
               </div>
-              <select value={cantidad} onChange={(e) => setCantidad(Number(e.target.value))}
-                className={baseSelectCls + " pl-10"}>
-                {Array.from({ length: maxCantidad }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>{n} ejemplar{n > 1 ? "es" : ""}</option>
-                ))}
-              </select>
             </div>
           </div>
           <div className="flex items-center justify-end gap-3 pt-2">

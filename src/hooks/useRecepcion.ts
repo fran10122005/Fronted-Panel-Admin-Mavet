@@ -13,7 +13,7 @@ const INITIAL_FORM = {
   telefono: "",
   institucion_profesion: "",
   id_motivo: "",
-  cantidad_acompanantes: 0,
+  cantidad_acompanantes: "",
 };
 const INITIAL_MENOR = { nombres: "", apellidos: "", fecha_nacimiento: "", cedula: "" };
 
@@ -42,7 +42,16 @@ export function useRecepcion() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
   const [menorData, setMenorData] = useState(INITIAL_MENOR);
+  const [otroMotivoTexto, setOtroMotivoTexto] = useState("");
   const [isAsistenciaModalOpen, setIsAsistenciaModalOpen] = useState(false);
+
+  const motivoSeleccionado = motivos.find(
+    (m: any) => `motivo_${m.id_motivo}` === formData.id_motivo
+  );
+  const isOtroMotivo = !!motivoSeleccionado && (
+    motivoSeleccionado.nombre?.toLowerCase().includes("otro") ||
+    motivoSeleccionado.descripcion?.toLowerCase().includes("otro")
+  );
 
   const publicRegistrationUrl = `${window.location.origin}/registro-visitante`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(publicRegistrationUrl)}`;
@@ -125,7 +134,7 @@ export function useRecepcion() {
       if (result.data && result.data.length > 0) {
         const seen = new Set<string>();
         const deduped = result.data.filter((p: any) => {
-          const normalizedCedula = p.cedula ? p.cedula.replace(/^[VE]-/, "").trim() : "";
+          const normalizedCedula = p.cedula ? p.cedula.replace(/\D/g, "") : "";
           const key = normalizedCedula || p.id_persona;
           if (seen.has(key)) return false;
           seen.add(key);
@@ -176,6 +185,7 @@ export function useRecepcion() {
   const resetForm = () => {
     setFormData(INITIAL_FORM);
     setIsVisitaInstitucional(false);
+    setOtroMotivoTexto("");
     setSelectedPersona(null);
     setSearchQuery("");
   };
@@ -229,6 +239,8 @@ export function useRecepcion() {
           );
           finalMotivo = eventMotivo?.id_motivo || "";
         }
+      } else if (isOtroMotivo) {
+        finalMotivo = formData.id_motivo.replace("motivo_", "");
       } else {
         finalMotivo = formData.id_motivo.split("_")[1];
       }
@@ -244,6 +256,9 @@ export function useRecepcion() {
       };
       if (finalTaller?.startsWith("TAL-")) ingresoPayload.id_taller = finalTaller;
       if (finalSolicitud) ingresoPayload.id_solicitud = finalSolicitud;
+      if (isOtroMotivo && otroMotivoTexto?.trim()) {
+        ingresoPayload.motivo_especificado = otroMotivoTexto.trim();
+      }
       await mavetApi.registrarIngreso(ingresoPayload);
       toast.success("Acceso registrado exitosamente.");
       resetForm();
@@ -326,6 +341,8 @@ export function useRecepcion() {
     isMenorModalOpen, setIsMenorModalOpen,
     menorData, setMenorData,
     isAsistenciaModalOpen, setIsAsistenciaModalOpen,
+    otroMotivoTexto, setOtroMotivoTexto,
+    isOtroMotivo,
     age, ageMenor,
     publicRegistrationUrl,
     qrImageUrl,

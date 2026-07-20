@@ -19,7 +19,7 @@ export default function RegistroPublico() {
     telefono: '',
     fecha_nacimiento: '',
     id_motivo: '',
-    cantidad_acompanantes: 0,
+    cantidad_acompanantes: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +28,16 @@ export default function RegistroPublico() {
   const [talleresInscritos, setTalleresInscritos] = useState<any[]>([]);
 
   const [isVisitaInstitucional, setIsVisitaInstitucional] = useState(false);
+
+  const [otroMotivoTexto, setOtroMotivoTexto] = useState('');
+
+  const motivoSeleccionado = motivos.find(
+    (m: any) => `motivo_${m.id_motivo}` === formData.id_motivo
+  );
+  const isOtroMotivo = !!motivoSeleccionado && (
+    motivoSeleccionado.nombre?.toLowerCase().includes("otro") ||
+    motivoSeleccionado.descripcion?.toLowerCase().includes("otro")
+  );
 
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
   const [menorData, setMenorData] = useState({ nombres: '', apellidos: '', fecha_nacimiento: '', cedula: '' });
@@ -141,6 +151,8 @@ export default function RegistroPublico() {
         }
         const motivoEvento = motivos.find(m => m.descripcion.toLowerCase().includes('evento') || m.descripcion.toLowerCase().includes('conferencia') || m.descripcion.toLowerCase().includes('auditorio'));
         finalMotivo = motivoEvento ? motivoEvento.id_motivo : (motivos[0]?.id_motivo || '');
+      } else if (isOtroMotivo) {
+        finalMotivo = formData.id_motivo.replace('motivo_', '');
       } else {
         finalMotivo = formData.id_motivo.split('_')[1];
       }
@@ -160,6 +172,9 @@ export default function RegistroPublico() {
       }
       if (finalSolicitud) {
         payload.id_solicitud = finalSolicitud;
+      }
+      if (isOtroMotivo && otroMotivoTexto?.trim()) {
+        payload.motivo_especificado = otroMotivoTexto.trim();
       }
 
       payload.cedula = normalizeCedula(payload.cedula);
@@ -211,8 +226,8 @@ export default function RegistroPublico() {
           {/* Header con logo */}
           <div className="text-center pb-6 border-b border-gray-100 dark:border-gray-800">
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-2xl bg-brand-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
-                <span className="text-2xl font-black text-white tracking-tight">M</span>
+              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg shadow-brand-500/20 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <img src="/images/logo/mavet2.png" alt="MAVET" className="w-full h-full object-contain p-1" />
               </div>
             </div>
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
@@ -435,6 +450,15 @@ export default function RegistroPublico() {
                     ))}
                   </optgroup>
                 </select>
+                {isOtroMotivo && (
+                  <div className="mt-3 animate-fade-in">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Especifique el motivo</label>
+                    <input type="text" value={otroMotivoTexto}
+                      onChange={(e) => setOtroMotivoTexto(e.target.value)}
+                      className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
+                      placeholder="Describa el motivo de su visita" />
+                  </div>
+                )}
               </div>
 
               {/* Visita Institucional / Grupal */}
@@ -459,7 +483,7 @@ export default function RegistroPublico() {
                       min={0}
                       name="cantidad_acompanantes"
                       value={formData.cantidad_acompanantes}
-                      onChange={(e) => setFormData({ ...formData, cantidad_acompanantes: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, cantidad_acompanantes: e.target.value })}
                       onKeyDown={limitNumericInput}
                       className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2.5 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-500/15 text-sm shadow-sm"
                       placeholder="Ej. 30"
@@ -552,7 +576,7 @@ export default function RegistroPublico() {
                   onClick={() => {
                     setStep(1);
                     setCedula('');
-                    setFormData({ nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', id_motivo: '', cantidad_acompanantes: 0 });
+                    setFormData({ nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', id_motivo: '', cantidad_acompanantes: "" });
                     setIsVisitaInstitucional(false);
                     setIsMenorModalOpen(false);
                   }}

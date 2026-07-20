@@ -36,6 +36,7 @@ export default function Recepcion() {
     INGRESOS_PAGE_SIZE,
     handleSearch, selectPersona, handleChange, handleSubmit,
     handleRegistrarMenor, handleIngresarMenorAsociado,
+    otroMotivoTexto, setOtroMotivoTexto, isOtroMotivo,
     fetchDashboardData, resetForm,
   } = useRecepcion();
 
@@ -193,6 +194,14 @@ export default function Recepcion() {
                       </optgroup>
                     )}
                   </select>
+                  {isOtroMotivo && (
+                    <div className="mt-2 animate-fade-in">
+                      <TextField label="Especifique el motivo" name="otroMotivo"
+                        value={otroMotivoTexto}
+                        onChange={(e) => setOtroMotivoTexto(e.target.value)}
+                        placeholder="Describa el motivo de su visita" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="sm:col-span-2 flex flex-col gap-2">
