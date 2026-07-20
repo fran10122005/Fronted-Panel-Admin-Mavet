@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Modal } from "../../../components/ui/modal";
+import { mavetApi } from "../../../services/api";
 import { limitNumericInput } from "../../../utils/validation";
-import { AlertCircle, Check, Upload, ArrowRight, ArrowLeft, Save, X, Calendar, Clock, Users, FileText } from "lucide-react";
+import { AlertCircle, Check, Upload, ArrowRight, ArrowLeft, Save, X, Calendar, Clock, Users, FileText, Plus } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -31,6 +33,8 @@ interface Props {
   onEstadoChange: (value: boolean) => void;
   onDocumentoPlanChange: (file: File | null) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onInstructorCreated: () => void;
+  onInventarioCreated: () => void;
   inputCls: string;
   selectCls: string;
 }
@@ -43,15 +47,80 @@ export default function TallerDetailModal({
   isOpen, onClose, isEditing, formData,
   inventario, instructores, espacios,
   isSubmitting, formError, onChange, onEstadoChange, onDocumentoPlanChange, onSubmit,
+  onInstructorCreated, onInventarioCreated,
   inputCls, selectCls,
 }: Props) {
   const [step, setStep] = useState(0);
   const [dragOver, setDragOver] = useState(false);
 
+  const [instructorInput, setInstructorInput] = useState("");
+  const [instructorDropdownOpen, setInstructorDropdownOpen] = useState(false);
+  const [instructorModalOpen, setInstructorModalOpen] = useState(false);
+  const [instructorSubmitting, setInstructorSubmitting] = useState(false);
+  const [instructorFormData, setInstructorFormData] = useState({
+    nombres: "", apellidos: "", cedula: "", telefono: "", fecha_nacimiento: "",
+    profesion: "", especialidad: "",
+  });
+  const [motivos, setMotivos] = useState<any[]>([]);
+  const instructorDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [inventarioInput, setInventarioInput] = useState("");
+  const [inventarioDropdownOpen, setInventarioDropdownOpen] = useState(false);
+  const [inventarioModalOpen, setInventarioModalOpen] = useState(false);
+  const [inventarioSubmitting, setInventarioSubmitting] = useState(false);
+  const [inventarioFormData, setInventarioFormData] = useState({ nombre: "", descripcion: "" });
+  const inventarioDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (instructorModalOpen) {
+      mavetApi.obtenerMotivos().then(setMotivos).catch(() => {});
+    }
+  }, [instructorModalOpen]);
+
   const handleClose = () => {
     setStep(0);
     onClose();
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (instructorDropdownRef.current && !instructorDropdownRef.current.contains(e.target as Node)) {
+        setInstructorDropdownOpen(false);
+      }
+      if (inventarioDropdownRef.current && !inventarioDropdownRef.current.contains(e.target as Node)) {
+        setInventarioDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && formData.selectedInstructorId && instructores.length > 0) {
+      const selected = instructores.find((i: any) => i.id_instructor === formData.selectedInstructorId);
+      if (selected) {
+        const p = selected.Persona || {};
+        setInstructorInput(`${p.nombres || ""} ${p.apellidos || ""}`.trim());
+      }
+    }
+    if (!isOpen) {
+      setInstructorInput("");
+      setInstructorDropdownOpen(false);
+    }
+  }, [isOpen, formData.selectedInstructorId, instructores]);
+
+  useEffect(() => {
+    if (isOpen && formData.id_taller_inventario && inventario.length > 0) {
+      const selected = inventario.find((i: any) => (i.id_taller || i.id) === formData.id_taller_inventario);
+      if (selected) {
+        setInventarioInput(selected.nombre || "");
+      }
+    }
+    if (!isOpen) {
+      setInventarioInput("");
+      setInventarioDropdownOpen(false);
+    }
+  }, [isOpen, formData.id_taller_inventario, inventario]);
 
   const handleNext = () => {
     if (step === 0) {
@@ -78,6 +147,7 @@ export default function TallerDetailModal({
   };
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={handleClose} className="max-w-[600px] p-0">
       <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
@@ -130,41 +200,176 @@ export default function TallerDetailModal({
               </div>
               <div>
                 <label className={labelCls}>Taller del Inventario</label>
-                <div className="relative">
+                <div className="relative" ref={inventarioDropdownRef}>
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                   </div>
-                  <select name="id_taller_inventario" value={formData.id_taller_inventario}
-                    onChange={onChange} className={baseSelectCls + " pl-10"} required>
-                    <option value="">Seleccione un taller del inventario...</option>
-                    {inventario.map((i: any) => (
-                      <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
-                    ))}
-                  </select>
+                  <input type="text" placeholder="Buscar o escribir nombre del taller..."
+                    value={inventarioInput}
+                    onChange={(e) => {
+                      setInventarioInput(e.target.value);
+                      setInventarioDropdownOpen(true);
+                      if (!e.target.value.trim()) {
+                        onChange({ target: { name: 'id_taller_inventario', value: '' } } as any);
+                      }
+                    }}
+                    onFocus={() => setInventarioDropdownOpen(true)}
+                    className={baseInputCls + " pl-10"} required />
+                  {inventarioDropdownOpen && (() => {
+                    const query = inventarioInput.toLowerCase().trim();
+                    const filtered = query
+                      ? inventario.filter((i: any) =>
+                          (i.nombre || "").toLowerCase().includes(query) ||
+                          (i.descripcion || "").toLowerCase().includes(query)
+                        )
+                      : inventario;
+                    return (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                        {filtered.length === 0 && query.length >= 2 ? (
+                          <div className="p-3 text-sm text-gray-500 dark:text-gray-400">Sin coincidencias</div>
+                        ) : (
+                          filtered.map((i: any) => {
+                            const id = i.id_taller || i.id;
+                            const selected = formData.id_taller_inventario === id;
+                            return (
+                              <button key={id} type="button"
+                                onClick={() => {
+                                  setInventarioInput(i.nombre || "");
+                                  setInventarioDropdownOpen(false);
+                                  onChange({ target: { name: 'id_taller_inventario', value: id } } as any);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-3 ${selected ? "bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300" : "hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300"}`}>
+                                <svg className={`w-4 h-4 shrink-0 ${selected ? "text-brand-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{i.nombre}</div>
+                                  {i.descripcion && <div className="text-[11px] text-gray-400 truncate">{i.descripcion}</div>}
+                                </div>
+                                {selected && <Check className="w-4 h-4 text-brand-500 shrink-0" />}
+                              </button>
+                            );
+                          })
+                        )}
+                        <div className="border-t border-gray-100 dark:border-gray-700">
+                          <button type="button"
+                            onClick={() => {
+                              setInventarioModalOpen(true);
+                              setInventarioDropdownOpen(false);
+                              if (inventarioInput.trim() && !inventario.some((i: any) => (i.nombre || "").toLowerCase() === inventarioInput.toLowerCase().trim())) {
+                                setInventarioFormData({ nombre: inventarioInput.trim(), descripcion: "" });
+                              } else {
+                                setInventarioFormData({ nombre: "", descripcion: "" });
+                              }
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors flex items-center gap-3">
+                            <Plus className="w-4 h-4" />
+                            {inventarioInput.trim() && !inventario.some((i: any) => (i.nombre || "").toLowerCase() === inventarioInput.toLowerCase().trim())
+                              ? `Agregar "${inventarioInput.trim()}"`
+                              : "Nuevo taller en inventario"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
               <div>
                 <label className={labelCls}>Instructor</label>
-                <div className="relative">
+                <div className="relative" ref={instructorDropdownRef}>
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </div>
-                  <select name="selectedInstructorId" value={formData.selectedInstructorId}
-                    onChange={onChange} className={baseSelectCls + " pl-10"} required>
-                    <option value="">Seleccione un instructor...</option>
-                    {instructores.map((inst: any) => (
-                      <option key={inst.id_instructor} value={inst.id_instructor}>
-                        {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""} {inst.Persona?.cedula ? `(${inst.Persona.cedula})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {instructores.length === 0 && (
-                    <p className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1.5">
-                      <AlertCircle className="w-3 h-3" />
-                      No hay instructores registrados. Use "Gestionar Instructores" para agregar uno.
-                    </p>
-                  )}
+                  <input
+                    type="text"
+                    placeholder="Buscar o escribir nombre del instructor..."
+                    value={instructorInput}
+                    onChange={(e) => {
+                      setInstructorInput(e.target.value);
+                      setInstructorDropdownOpen(true);
+                      if (!e.target.value.trim()) {
+                        onChange({ target: { name: 'selectedInstructorId', value: '' } } as any);
+                      }
+                    }}
+                    onFocus={() => setInstructorDropdownOpen(true)}
+                    className={baseInputCls + " pl-10"}
+                    required
+                  />
+                  {instructorDropdownOpen && (() => {
+                    const query = instructorInput.trim().toLowerCase();
+                    const filtered = query
+                      ? instructores.filter((inst: any) => {
+                          const p = inst.Persona || {};
+                          const fullName = `${p.nombres || ""} ${p.apellidos || ""}`.trim().toLowerCase();
+                          return fullName.includes(query) || (p.cedula && p.cedula.includes(query));
+                        })
+                      : instructores;
+                    if (filtered.length === 0 && query.length >= 2) {
+                      return (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Sin coincidencias</div>
+                          <div
+                            onClick={() => {
+                              const [nombres, ...apellidosArr] = query.split(" ");
+                              setInstructorFormData({
+                                nombres: nombres || "",
+                                apellidos: apellidosArr.join(" ") || "",
+                                cedula: "", telefono: "", fecha_nacimiento: "",
+                                profesion: "", especialidad: "",
+                              });
+                              setInstructorModalOpen(true);
+                              setInstructorDropdownOpen(false);
+                            }}
+                            className="px-3 py-2 text-sm text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer flex items-center gap-2 font-medium"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Agregar &quot;{query}&quot;
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (filtered.length === 0) return null;
+                    return (
+                      <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filtered.map((inst: any) => {
+                          const p = inst.Persona || {};
+                          const name = `${p.nombres || ""} ${p.apellidos || ""}`.trim();
+                          return (
+                            <div
+                              key={inst.id_instructor}
+                              onClick={() => {
+                                setInstructorInput(name);
+                                setInstructorDropdownOpen(false);
+                                onChange({ target: { name: 'selectedInstructorId', value: inst.id_instructor } } as any);
+                              }}
+                              className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between"
+                            >
+                              <span className="text-gray-800 dark:text-white">{name}</span>
+                              {p.cedula && <span className="text-[11px] text-gray-400">{p.cedula}</span>}
+                            </div>
+                          );
+                        })}
+                        <div
+                          onClick={() => {
+                            const [nombres, ...apellidosArr] = query ? query.split(" ") : ["", ""];
+                            setInstructorFormData({
+                              nombres: nombres || "",
+                              apellidos: apellidosArr.join(" ") || "",
+                              cedula: "", telefono: "", fecha_nacimiento: "",
+                              profesion: "", especialidad: "",
+                            });
+                            setInstructorModalOpen(true);
+                            setInstructorDropdownOpen(false);
+                          }}
+                          className="px-3 py-2 text-sm text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer flex items-center gap-2 font-medium border-t border-gray-100 dark:border-gray-700"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {query ? `Agregar "${query}"` : "Nuevo instructor"}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -409,5 +614,169 @@ export default function TallerDetailModal({
         )}
       </form>
     </Modal>
+
+      <Modal isOpen={instructorModalOpen} onClose={() => setInstructorModalOpen(false)} className="max-w-[540px] p-5">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nuevo Instructor</h3>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!instructorFormData.nombres.trim()) { toast.error("El nombre es obligatorio"); return; }
+            if (!instructorFormData.cedula.trim()) { toast.error("La cédula es obligatoria"); return; }
+            setInstructorSubmitting(true);
+            try {
+              const personaRes = await mavetApi.registrarIngreso({
+                cedula: instructorFormData.cedula,
+                nombres: instructorFormData.nombres.trim(),
+                apellidos: instructorFormData.apellidos.trim() || ".",
+                telefono: instructorFormData.telefono || undefined,
+                fecha_nacimiento: instructorFormData.fecha_nacimiento || undefined,
+                id_motivo: "MVI-00001",
+                cantidad_acompanantes: 0,
+                consentimiento_datos: true,
+              });
+              const personaId = personaRes.data?.persona?.id_persona || personaRes.data?.id_persona || personaRes.data?.id;
+              if (!personaId) throw new Error("No se pudo crear la persona");
+              const instructorRes = await mavetApi.crearInstructor({
+                id_persona: personaId,
+                profesion: instructorFormData.profesion || undefined,
+                especialidad: instructorFormData.especialidad || undefined,
+              });
+              const newId = instructorRes.data?.id_instructor || instructorRes.data?.id;
+              if (!newId) throw new Error("No se pudo crear el instructor");
+              const personName = `${instructorFormData.nombres.trim()} ${instructorFormData.apellidos.trim() || ""}`.trim();
+              setInstructorInput(personName);
+              onChange({ target: { name: 'selectedInstructorId', value: newId.toString() } } as any);
+              setInstructorModalOpen(false);
+              toast.success("Instructor creado exitosamente");
+              onInstructorCreated();
+            } catch (err: any) {
+              toast.error(err.message || "Error al crear instructor");
+            } finally {
+              setInstructorSubmitting(false);
+            }
+          }} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Nombres <span className="text-red-500">*</span></label>
+                <input type="text" value={instructorFormData.nombres}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, nombres: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" required />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Apellidos</label>
+                <input type="text" value={instructorFormData.apellidos}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, apellidos: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Cédula <span className="text-red-500">*</span></label>
+                <input type="text" value={instructorFormData.cedula}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, cedula: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" required />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Teléfono</label>
+                <input type="tel" value={instructorFormData.telefono} onKeyDown={limitNumericInput}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, telefono: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Fecha de Nacimiento</label>
+              <input type="date" value={instructorFormData.fecha_nacimiento}
+                onChange={(e) => setInstructorFormData((p) => ({ ...p, fecha_nacimiento: e.target.value }))}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Profesión</label>
+                <input type="text" value={instructorFormData.profesion}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, profesion: e.target.value }))}
+                  placeholder="Ej. Artista plástico"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Especialidad</label>
+                <input type="text" value={instructorFormData.especialidad}
+                  onChange={(e) => setInstructorFormData((p) => ({ ...p, especialidad: e.target.value }))}
+                  placeholder="Ej. Pintura al óleo"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={() => setInstructorModalOpen(false)} disabled={instructorSubmitting}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={instructorSubmitting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {instructorSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Guardar"}
+                {instructorSubmitting ? " Guardando..." : ""}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      <Modal isOpen={inventarioModalOpen} onClose={() => setInventarioModalOpen(false)} className="max-w-[480px] p-5">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Nuevo Taller en Inventario</h3>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!inventarioFormData.nombre.trim()) { toast.error("El nombre es obligatorio"); return; }
+            setInventarioSubmitting(true);
+            try {
+              await mavetApi.crearInventarioTaller({
+                nombre: inventarioFormData.nombre.trim(),
+                descripcion: inventarioFormData.descripcion.trim(),
+              });
+              const refreshed = await mavetApi.getInventarioTalleres();
+              const nuevo = refreshed.find((t: any) => (t.nombre || "").toLowerCase() === inventarioFormData.nombre.trim().toLowerCase());
+              if (nuevo) {
+                const id = nuevo.id_taller || nuevo.id;
+                setInventarioInput(nuevo.nombre);
+                onChange({ target: { name: 'id_taller_inventario', value: id } } as any);
+              }
+              setInventarioModalOpen(false);
+              toast.success("Taller agregado al inventario");
+              onInventarioCreated();
+            } catch (err: any) {
+              toast.error(err.message || "Error al crear taller");
+            } finally {
+              setInventarioSubmitting(false);
+            }
+          }} className="space-y-3">
+            <div>
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Nombre del Taller <span className="text-red-500">*</span></label>
+              <input type="text" value={inventarioFormData.nombre}
+                onChange={(e) => setInventarioFormData((p) => ({ ...p, nombre: e.target.value }))}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90" required />
+            </div>
+            <div>
+              <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Descripción</label>
+              <textarea rows={3} value={inventarioFormData.descripcion}
+                onChange={(e) => setInventarioFormData((p) => ({ ...p, descripcion: e.target.value }))}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 resize-none" />
+            </div>
+            <div className="flex justify-end gap-2.5 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={() => setInventarioModalOpen(false)} disabled={inventarioSubmitting}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={inventarioSubmitting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {inventarioSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Guardar Taller"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+    </>
   );
 }

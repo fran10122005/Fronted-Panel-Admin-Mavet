@@ -190,6 +190,20 @@ export function useTalleres() {
     }
   };
 
+  const refreshInstructores = async () => {
+    try {
+      const inst = await mavetApi.getInstructores();
+      setInstructores(inst);
+    } catch {}
+  };
+
+  const refreshInventario = async () => {
+    try {
+      const inv = await mavetApi.getInventarioTalleres();
+      setInventario(inv.data);
+    } catch {}
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -666,5 +680,7 @@ export function useTalleres() {
     ...instructor,
     ...insc,
     openAsistentes,
+    refreshInstructores,
+    refreshInventario,
   };
 }

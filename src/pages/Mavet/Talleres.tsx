@@ -83,6 +83,7 @@ export default function Talleres() {
     formError, setFormError, handleOpenPlanificar, handleEliminarPlanificado,
     handlePlanificarChange, handleSubmitPlanificar,
     handleDocumentoPlanChange,
+    showCrearInstructor, openCrearInstructor, closeCrearInstructor,
     nuevaCedula, setNuevaCedula,
     personaEncontrada,
     buscandoPersona,
@@ -112,6 +113,7 @@ export default function Talleres() {
     paginatedInventario, totalInvPages, currentPageInv, setCurrentPageInv,
     paginatedInscripcionesAgrupadas, totalInscPages, currentPageInsc, setCurrentPageInsc,
     paginatedInstructores, totalInstPages, currentPageInst, setCurrentPageInst,
+    refreshInstructores, refreshInventario,
   } = useTalleres();
 
   const handleInventarioFormChange = (e: any) => {
@@ -364,15 +366,21 @@ export default function Talleres() {
       {activeTab === "planificados" && (
       <ComponentCard title="Inventario de Talleres" desc="Catálogo maestro de talleres disponibles"
         action={
-          <div className="relative w-full sm:w-64">
-            <input type="text" placeholder="Buscar en inventario..."
-              data-tour="buscador-inventario"
-              value={searchInventario}
-              onChange={e => setSearchInventario(e.target.value)}
-              className={inputCls + " pl-10 text-sm"} />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <input type="text" placeholder="Buscar en inventario..."
+                data-tour="buscador-inventario"
+                value={searchInventario}
+                onChange={e => setSearchInventario(e.target.value)}
+                className={inputCls + " pl-10 text-sm"} />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
             </div>
+            <button type="button" onClick={handleOpenCrear}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition shrink-0">
+              + Crear Taller
+            </button>
           </div>
         }
       >
@@ -594,12 +602,82 @@ export default function Talleres() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Gestionar Instructores</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Busque una persona por cédula para registrarla como instructor.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Listado de instructores registrados.</p>
             </div>
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
-              {instructores.length} registrado{instructores.length !== 1 ? "s" : ""}
-            </span>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={openCrearInstructor}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition">
+                + Crear Instructor
+              </button>
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
+                {instructores.length} registrado{instructores.length !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
+
+          {showCrearInstructor && (
+            <div className="mb-5 bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Nuevo Instructor</p>
+                <button type="button" onClick={closeCrearInstructor}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula *</label>
+                  <input type="text" value={nuevaCedula} onChange={e => { setFormError(""); setNuevaCedula(e.target.value); }}
+                    className={inputCls} placeholder="Ej. V-12345678" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres *</label>
+                  <input type="text" value={instructorNombres} onChange={e => { setFormError(""); setInstructorNombres(e.target.value); }}
+                    className={inputCls} placeholder="Ej. Juan" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos *</label>
+                  <input type="text" value={instructorApellidos} onChange={e => { setFormError(""); setInstructorApellidos(e.target.value); }}
+                    className={inputCls} placeholder="Ej. Pérez" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono (Opcional)</label>
+                  <input type="text" value={instructorTelefono} onChange={e => { setFormError(""); setInstructorTelefono(e.target.value); }}
+                    onKeyDown={limitNumericInput} className={inputCls} placeholder="Ej. 04121234567" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento (Opcional)</label>
+                  <input type="date" value={instructorFechaNac} onChange={e => { setFormError(""); setInstructorFechaNac(e.target.value); }}
+                    className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
+                  <input type="text" value={nuevaProfesion} onChange={e => { setFormError(""); setNuevaProfesion(e.target.value); }}
+                    className={inputCls} placeholder="Ej. Arquitecto" />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
+                  <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
+                    className={inputCls} placeholder="Ej. Historia del Arte" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={closeCrearInstructor}
+                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  Cancelar
+                </button>
+                <button type="button" onClick={handleSaveInstructor}
+                  disabled={isSubmitting}
+                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-50 min-w-[120px]">
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : "Guardar"}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="flex gap-2">
@@ -652,11 +730,30 @@ export default function Talleres() {
                   <div>
                     <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento (Opcional)</label>
                     <input type="date" value={instructorFechaNac} onChange={e => { setFormError(""); setInstructorFechaNac(e.target.value); }}
-                      className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
-                  </div>
-                </div>
+                  className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
               </div>
+            </div>
+          </div>
             )}
+
+            {!showCrearInstructor && (
+            <><div className="flex justify-end gap-2">
+              {isEditingInstructor && (
+                <button type="button" onClick={handleCancelEditInstructor}
+                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  Cancelar
+                </button>
+              )}
+              {(personaEncontrada || showNuevaPersonaFields || isEditingInstructor) && (
+              <button type="button" onClick={handleSaveInstructor}
+                disabled={isSubmitting || buscandoPersona}
+                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-50 min-w-[160px]">
+                {isSubmitting ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : isEditingInstructor ? "Actualizar Instructor" : "Crear Instructor"}
+              </button>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -669,30 +766,10 @@ export default function Talleres() {
                 <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
                   className={inputCls} placeholder="Ej. Historia del Arte" />
               </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              {isEditingInstructor && (
-                <button type="button" onClick={handleCancelEditInstructor}
-                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  Cancelar
-                </button>
-              )}
-              <button type="button" onClick={handleSaveInstructor} disabled={isSubmitting || (!personaEncontrada && !showNuevaPersonaFields)}
-                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
-                {isSubmitting ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : isEditingInstructor ? "Actualizar Instructor" : "Crear Instructor"}
-              </button>
-            </div>
+            </div></>
+            )}
           </div>
 
-          {formError && (
-            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <p className="text-sm font-medium">{formError}</p>
-            </div>
-          )}
           <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-left text-sm">
@@ -774,6 +851,43 @@ export default function Talleres() {
           </div>
         </div>
       )}
+
+      {/* Edit Instructor Modal */}
+      {isEditingInstructor && personaEncontrada && (
+        <Modal isOpen={true} onClose={handleCancelEditInstructor} className="max-w-[480px] p-5">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Editar Instructor</h3>
+            <div className="space-y-3">
+              <div className="bg-brand-50/50 dark:bg-brand-500/5 border border-brand-100 dark:border-brand-500/20 rounded-xl p-3">
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{personaEncontrada.nombres} {personaEncontrada.apellidos}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Cédula: {personaEncontrada.cedula}</p>
+              </div>
+              <div>
+                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
+                <input type="text" value={nuevaProfesion} onChange={e => { setFormError(""); setNuevaProfesion(e.target.value); }}
+                  className={inputCls} placeholder="Ej. Arquitecto" />
+              </div>
+              <div>
+                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
+                <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
+                  className={inputCls} placeholder="Ej. Historia del Arte" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onClick={handleCancelEditInstructor}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleSaveInstructor} disabled={isSubmitting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Actualizar Instructor"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       </>
       )}
 
@@ -815,6 +929,8 @@ export default function Talleres() {
         onEstadoChange={handlePlanificarEstadoChange}
         onDocumentoPlanChange={handleDocumentoPlanChange}
         onSubmit={handleSubmitPlanificar}
+        onInstructorCreated={refreshInstructores}
+        onInventarioCreated={refreshInventario}
         inputCls={inputCls}
         selectCls={selectCls}
       />

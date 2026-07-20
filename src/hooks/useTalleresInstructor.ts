@@ -32,7 +32,10 @@ export function useTalleresInstructor(
     mavetApi.obtenerMotivos().then(setMotivos).catch(() => {});
   }, []);
 
-  const setError = setFormError || ((msg: string) => toast.error(msg));
+  const setError = (msg: string) => {
+    if (setFormError) setFormError(msg);
+    toast.error(msg);
+  };
 
   const resetForm = () => {
     setNuevaCedula("");
@@ -114,14 +117,14 @@ export function useTalleresInstructor(
   };
 
   const handleSaveInstructor = async () => {
-    if (!personaEncontrada && !showNuevaPersonaFields) {
+    if (!personaEncontrada && !showNuevaPersonaFields && !showCrearInstructor) {
       setError("Debe buscar una persona primero");
       return;
     }
     setIsSubmitting(true);
     try {
       let finalIdPersona = personaEncontrada?.id_persona;
-      if (!isEditingInstructor && showNuevaPersonaFields) {
+      if (!isEditingInstructor && (showNuevaPersonaFields || showCrearInstructor)) {
         if (!instructorNombres.trim() || !instructorApellidos.trim()) {
           setError("El nombre y apellido son obligatorios.");
           setIsSubmitting(false);
