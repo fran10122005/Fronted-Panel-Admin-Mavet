@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { mavetApi } from "../services/api";
 import { normalizeCedula } from "../utils/formatters";
 import toast from "react-hot-toast";
@@ -21,6 +21,17 @@ export function useTalleresInstructor(
 
   const isEditingInstructor = editingInstructorId !== null;
 
+  const [instructorNombres, setInstructorNombres] = useState("");
+  const [instructorApellidos, setInstructorApellidos] = useState("");
+  const [instructorTelefono, setInstructorTelefono] = useState("");
+  const [instructorFechaNac, setInstructorFechaNac] = useState("");
+  const [showNuevaPersonaFields, setShowNuevaPersonaFields] = useState(false);
+  const [motivos, setMotivos] = useState<any[]>([]);
+
+  useEffect(() => {
+    mavetApi.obtenerMotivos().then(setMotivos).catch(() => {});
+  }, []);
+
   const setError = setFormError || ((msg: string) => toast.error(msg));
 
   const resetForm = () => {
@@ -29,6 +40,11 @@ export function useTalleresInstructor(
     setNuevaProfesion("");
     setNuevaEspecialidad("");
     setEditingInstructorId(null);
+    setInstructorNombres("");
+    setInstructorApellidos("");
+    setInstructorTelefono("");
+    setInstructorFechaNac("");
+    setShowNuevaPersonaFields(false);
   };
 
   const openCrearInstructor = () => {
@@ -68,10 +84,11 @@ export function useTalleresInstructor(
       return;
     }
     setBuscandoPersona(true);
+    setError("");
     try {
       const results = await mavetApi.buscarPersona(normalizeCedula(nuevaCedula));
       if (results.length === 0) {
-        setError("No se encontró ninguna persona con esa cédula");
+        setShowNuevaPersonaFields(true);
         setPersonaEncontrada(null);
       } else {
         const p = results[0];
@@ -81,35 +98,66 @@ export function useTalleresInstructor(
         if (yaEsInstructor) {
           setError("Esa persona ya está registrada como instructor");
           setPersonaEncontrada(null);
+          setShowNuevaPersonaFields(false);
           return;
         }
         setPersonaEncontrada(p);
+        setShowNuevaPersonaFields(false);
       }
     } catch {
       setError("Error al buscar la persona");
       setPersonaEncontrada(null);
+      setShowNuevaPersonaFields(false);
     } finally {
       setBuscandoPersona(false);
     }
   };
 
   const handleSaveInstructor = async () => {
-    if (!personaEncontrada) {
+    if (!personaEncontrada && !showNuevaPersonaFields) {
       setError("Debe buscar una persona primero");
       return;
     }
     setIsSubmitting(true);
     try {
+      let finalIdPersona = personaEncontrada?.id_persona;
+      if (!isEditingInstructor && showNuevaPersonaFields) {
+        if (!instructorNombres.trim() || !instructorApellidos.trim()) {
+          setError("El nombre y apellido son obligatorios.");
+          setIsSubmitting(false);
+          return;
+        }
+        const motivoTaller = motivos.find(
+          (m: any) => m.nombre?.toLowerCase().includes("taller") || m.descripcion?.toLowerCase().includes("taller")
+        ) || motivos[0];
+        const motivoId = motivoTaller ? motivoTaller.id_motivo : "MVI-00001";
+        const regPayload = {
+          cedula: normalizeCedula(nuevaCedula),
+          nombres: instructorNombres.trim(),
+          apellidos: instructorApellidos.trim(),
+          telefono: instructorTelefono.trim() || undefined,
+          fecha_de_nac: instructorFechaNac || undefined,
+          id_motivo: motivoId,
+          cantidad_acompanantes: 0,
+          consentimiento_datos: true,
+        };
+        const regRes = await mavetApi.registrarIngreso(regPayload);
+        finalIdPersona = regRes.data?.persona?.id_persona;
+        if (!finalIdPersona) {
+          throw new Error("No se pudo registrar a la persona en la base de datos");
+        }
+      }
+
       if (isEditingInstructor) {
         await mavetApi.actualizarInstructor(editingInstructorId, {
-          id_persona: personaEncontrada.id_persona,
+          id_persona: finalIdPersona,
           profesion: nuevaProfesion,
           especialidad: nuevaEspecialidad,
         });
         toast.success("Instructor actualizado");
       } else {
         await mavetApi.crearInstructor({
-          id_persona: personaEncontrada.id_persona,
+          id_persona: finalIdPersona,
           profesion: nuevaProfesion,
           especialidad: nuevaEspecialidad,
         });
@@ -119,7 +167,7 @@ export function useTalleresInstructor(
       setInstructores(refreshed);
 
       if (!isEditingInstructor && onInstructorCreated) {
-        const nuevoInst = refreshed.find((i) => i.id_persona === personaEncontrada.id_persona);
+        const nuevoInst = refreshed.find((i) => i.id_persona === finalIdPersona);
         if (nuevoInst) {
           onInstructorCreated(nuevoInst.id_instructor);
         }
@@ -162,6 +210,11 @@ export function useTalleresInstructor(
     buscandoPersona,
     nuevaProfesion, setNuevaProfesion,
     nuevaEspecialidad, setNuevaEspecialidad,
+    instructorNombres, setInstructorNombres,
+    instructorApellidos, setInstructorApellidos,
+    instructorTelefono, setInstructorTelefono,
+    instructorFechaNac, setInstructorFechaNac,
+    showNuevaPersonaFields,
     editingInstructorId,
     isEditingInstructor,
     openCrearInstructor,

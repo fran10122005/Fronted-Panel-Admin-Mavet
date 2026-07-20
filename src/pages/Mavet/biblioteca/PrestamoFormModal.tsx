@@ -6,10 +6,24 @@ import { Modal } from "../../../components/ui/modal";
 import { mavetApi } from "../../../services/api";
 import { normalizeCedula } from "../../../utils/formatters";
 import { Search, AlertCircle, ArrowRight, ArrowLeft, Book, User, Save, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 const consultanteSchema = z.object({
   cedula: z.string().min(1, "La cédula del solicitante es obligatoria"),
-  nombre: z.string().min(1, "El nombre del solicitante es obligatorio"),
+  nombre: z.string().optional(),
+  nombres: z.string().optional(),
+  apellidos: z.string().optional(),
+  telefono: z.string().optional(),
+  fechaNac: z.string().optional(),
+  isNew: z.boolean().optional().default(false),
+}).refine((data) => {
+  if (data.isNew) {
+    return !!data.nombres?.trim() && !!data.apellidos?.trim();
+  }
+  return !!data.nombre?.trim();
+}, {
+  message: "Nombre y apellido son obligatorios",
+  path: ["nombre"],
 });
 
 const consultaSchema = z.object({
@@ -29,16 +43,22 @@ interface Props {
 }
 
 const baseInputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
-const baseSelectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10";
+const baseSelectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%200%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10";
 
 export default function PrestamoFormModal({
-  isOpen, onClose, selectedLibroTitle, maxCantidad, isSubmitting, onSubmit, inputCls,
+  isOpen, onClose, selectedLibroTitle, maxCantidad, isSubmitting: parentSubmitting, onSubmit, inputCls,
 }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [cantidad, setCantidad] = useState(1);
   const [searchStates, setSearchStates] = useState<Record<number, { loading: boolean; found: boolean; error: string }>>({});
+  const [localSubmitting, setLocalSubmitting] = useState(false);
+  const [motivos, setMotivos] = useState<any[]>([]);
 
-  const { register, handleSubmit, reset, control, setValue, formState: { errors } } =
+  useEffect(() => {
+    mavetApi.obtenerMotivos().then(setMotivos).catch(() => {});
+  }, []);
+
+  const { register, handleSubmit, reset, control, setValue, watch, formState: { errors } } =
     useForm<PrestamoFormValues>({
       resolver: zodResolver(consultaSchema) as any,
       defaultValues: { consultantes: [] },
@@ -46,17 +66,22 @@ export default function PrestamoFormModal({
 
   const { fields } = useFieldArray({ control, name: "consultantes" });
 
+  const watchConsultantes = watch("consultantes");
+
   const handleSearchPersona = async (index: number, cedula: string) => {
     if (!cedula.trim()) return;
     setSearchStates((prev) => ({ ...prev, [index]: { loading: true, found: false, error: "" } }));
     try {
       const results = await mavetApi.buscarPersona(normalizeCedula(cedula));
       if (results.length === 0) {
-        setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: false, error: "No se encontró ninguna persona" } }));
+        setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: false, error: "" } }));
+        setValue(`consultantes.${index}.isNew`, true);
+        setValue(`consultantes.${index}.nombre`, "");
       } else {
         const p = results[0];
         const nombreCompleto = [p.nombres, p.apellidos].filter(Boolean).join(" ");
         setValue(`consultantes.${index}.nombre`, nombreCompleto);
+        setValue(`consultantes.${index}.isNew`, false);
         setSearchStates((prev) => ({ ...prev, [index]: { loading: true, found: true, error: "" } }));
         setTimeout(() => setSearchStates((prev) => ({ ...prev, [index]: { loading: false, found: true, error: "" } })), 300);
       }
@@ -77,14 +102,54 @@ export default function PrestamoFormModal({
   const handleContinuar = () => {
     const n = Math.max(cantidad, 1);
     if (n > maxCantidad) return;
-    const arr = Array.from({ length: n }, () => ({ cedula: "", nombre: "" }));
+    const arr = Array.from({ length: n }, () => ({ cedula: "", nombre: "", nombres: "", apellidos: "", telefono: "", fechaNac: "", isNew: false }));
     reset({ consultantes: arr });
     setStep(2);
   };
 
-  const handleFinalSubmit = (data: PrestamoFormValues) => {
-    onSubmit(data.consultantes);
+  const handleFinalSubmit = async (data: PrestamoFormValues) => {
+    setLocalSubmitting(true);
+    try {
+      // Find motive for Biblioteca
+      const motivoBib = motivos.find(
+        (m: any) => m.nombre?.toLowerCase().includes("biblioteca") || m.descripcion?.toLowerCase().includes("biblioteca") || m.nombre?.toLowerCase().includes("lectura")
+      ) || motivos[0];
+      const motivoId = motivoBib ? motivoBib.id_motivo : "MVI-00001";
+
+      const finalConsultantes = [];
+      for (const c of data.consultantes) {
+        if (c.isNew) {
+          const regPayload = {
+            cedula: normalizeCedula(c.cedula),
+            nombres: c.nombres?.trim(),
+            apellidos: c.apellidos?.trim(),
+            telefono: c.telefono?.trim() || undefined,
+            fecha_de_nac: c.fechaNac || undefined,
+            id_motivo: motivoId,
+            cantidad_acompanantes: 0,
+            consentimiento_datos: true,
+          };
+          await mavetApi.registrarIngreso(regPayload);
+          finalConsultantes.push({
+            cedula: normalizeCedula(c.cedula),
+            nombre: `${c.nombres?.trim()} ${c.apellidos?.trim()}`,
+          });
+        } else {
+          finalConsultantes.push({
+            cedula: normalizeCedula(c.cedula),
+            nombre: c.nombre || "",
+          });
+        }
+      }
+      onSubmit(finalConsultantes);
+    } catch (err: any) {
+      toast.error(err.message || "Error al registrar personas en Biblioteca");
+    } finally {
+      setLocalSubmitting(false);
+    }
   };
+
+  const isSubmitting = parentSubmitting || localSubmitting;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-0">
@@ -169,67 +234,99 @@ export default function PrestamoFormModal({
       ) : (
         <form onSubmit={handleSubmit(handleFinalSubmit)} className="p-6 space-y-5">
           <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={field.id} className="bg-gray-50 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-3">
-                  <User className="w-3.5 h-3.5" />
-                  Solicitante #{index + 1}
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Cédula</label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M11 17.25c0-1.04.894-1.875 2-1.875" /></svg>
+            {fields.map((field, index) => {
+              const isNew = watchConsultantes[index]?.isNew;
+              return (
+                <div key={field.id} className="bg-gray-50 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-3">
+                    <User className="w-3.5 h-3.5" />
+                    Solicitante #{index + 1}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Cédula</label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M11 17.25c0-1.04.894-1.875 2-1.875" /></svg>
+                          </div>
+                          <input type="text" disabled={isSubmitting}
+                            className={`${baseInputCls} pl-10 ${errors.consultantes?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
+                            placeholder="V-12345678"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") { e.preventDefault(); const val = (e.target as HTMLInputElement).value; handleSearchPersona(index, val); }
+                            }}
+                            {...register(`consultantes.${index}.cedula`)} />
                         </div>
-                        <input type="text" disabled={isSubmitting}
-                          className={`${baseInputCls} pl-10 ${errors.consultantes?.[index]?.cedula ? "border-red-500" : ""} disabled:opacity-50`}
-                          placeholder="V-12345678"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") { e.preventDefault(); const val = (e.target as HTMLInputElement).value; handleSearchPersona(index, val); }
-                          }}
-                          {...register(`consultantes.${index}.cedula`)} />
+                        <button type="button" disabled={isSubmitting || searchStates[index]?.loading}
+                          onClick={() => { const el = document.querySelector<HTMLInputElement>(`input[name="consultantes.${index}.cedula"]`); handleSearchPersona(index, el?.value || ""); }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-50 shrink-0">
+                          {searchStates[index]?.loading ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <Search className="w-4 h-4" />
+                          )}
+                          <span className="hidden sm:inline">Buscar</span>
+                        </button>
                       </div>
-                      <button type="button" disabled={isSubmitting || searchStates[index]?.loading}
-                        onClick={() => { const el = document.querySelector<HTMLInputElement>(`input[name="consultantes.${index}.cedula"]`); handleSearchPersona(index, el?.value || ""); }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-50 shrink-0">
-                        {searchStates[index]?.loading ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <Search className="w-4 h-4" />
+                      {searchStates[index]?.error && (
+                        <div className="flex items-center gap-1.5 mt-1.5 text-red-600 dark:text-red-400">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <p className="text-xs font-medium">{searchStates[index].error}</p>
+                        </div>
+                      )}
+                      {errors.consultantes?.[index]?.cedula && (
+                        <p className="text-red-500 text-xs mt-1">{errors.consultantes[index]!.cedula!.message}</p>
+                      )}
+                    </div>
+
+                    {isNew ? (
+                      <div className="bg-amber-50/30 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30 rounded-xl p-3.5 space-y-3">
+                        <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Persona No Registrada — Ingresar Datos</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block mb-1 text-[11px] font-semibold text-gray-500">Nombres *</label>
+                            <input type="text" disabled={isSubmitting} className={baseInputCls} placeholder="Ej. Ana"
+                              {...register(`consultantes.${index}.nombres`)} />
+                          </div>
+                          <div>
+                            <label className="block mb-1 text-[11px] font-semibold text-gray-500">Apellidos *</label>
+                            <input type="text" disabled={isSubmitting} className={baseInputCls} placeholder="Ej. Silva"
+                              {...register(`consultantes.${index}.apellidos`)} />
+                          </div>
+                          <div>
+                            <label className="block mb-1 text-[11px] font-semibold text-gray-500">Teléfono (Opcional)</label>
+                            <input type="text" disabled={isSubmitting} className={baseInputCls} placeholder="Ej. 04241234567"
+                              {...register(`consultantes.${index}.telefono`)} />
+                          </div>
+                          <div>
+                            <label className="block mb-1 text-[11px] font-semibold text-gray-500">Nacimiento (Opcional)</label>
+                            <input type="date" disabled={isSubmitting} className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white"
+                              {...register(`consultantes.${index}.fechaNac`)} />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre del Solicitante</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                            <User className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <input type="text" disabled={isSubmitting || searchStates[index]?.found}
+                            className={`${baseInputCls} pl-10 ${errors.consultantes?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50 ${searchStates[index]?.found ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700" : ""}`}
+                            placeholder="Ej. María López"
+                            {...register(`consultantes.${index}.nombre`)} />
+                        </div>
+                        {errors.consultantes?.[index]?.nombre && (
+                          <p className="text-red-500 text-xs mt-1">{errors.consultantes[index]!.nombre!.message}</p>
                         )}
-                        <span className="hidden sm:inline">Buscar</span>
-                      </button>
-                    </div>
-                    {searchStates[index]?.error && (
-                      <div className="flex items-center gap-1.5 mt-1.5 text-red-600 dark:text-red-400">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <p className="text-xs font-medium">{searchStates[index].error}</p>
                       </div>
-                    )}
-                    {errors.consultantes?.[index]?.cedula && (
-                      <p className="text-red-500 text-xs mt-1">{errors.consultantes[index]!.cedula!.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block mb-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Nombre del Solicitante</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                        <User className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <input type="text" disabled={isSubmitting || searchStates[index]?.found}
-                        className={`${baseInputCls} pl-10 ${errors.consultantes?.[index]?.nombre ? "border-red-500" : ""} disabled:opacity-50 ${searchStates[index]?.found ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700" : ""}`}
-                        placeholder="Ej. María López"
-                        {...register(`consultantes.${index}.nombre`)} />
-                    </div>
-                    {errors.consultantes?.[index]?.nombre && (
-                      <p className="text-red-500 text-xs mt-1">{errors.consultantes[index]!.nombre!.message}</p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">

@@ -35,10 +35,10 @@ export const recepcion = {
     }
   },
 
-  registrarIngreso: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  registrarIngreso: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
-      await axiosInstance.post("/api/visitantes/ingresos", payload);
-      return { success: true, message: "Acceso registrado exitosamente." };
+      const res = await axiosInstance.post("/api/visitantes/ingresos", payload);
+      return { success: true, message: "Acceso registrado exitosamente.", data: res.data.data };
     } catch (error: any) {
       console.error("=== registrarIngreso ERROR ===");
       console.error("Status:", error.response?.status);

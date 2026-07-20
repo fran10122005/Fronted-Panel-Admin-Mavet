@@ -25,7 +25,7 @@ import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos, exportarComprobanteReserva } from "../../services/pdf.service";
 import Pagination from "../../components/ui/Pagination";
 import { EventoAuditorio } from "../../types";
-import { validateRequired } from "../../utils/validation";
+import { validateRequired, limitNumericInput } from "../../utils/validation";
 import { formatCedula, normalizeCedula } from "../../utils/formatters";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import Salas from "./Salas";
@@ -51,6 +51,12 @@ const Auditorio: React.FC = () => {
   const [organizadorLoading, setOrganizadorLoading] = useState(false);
   const [organizadorError, setOrganizadorError] = useState("");
   const [organizadorAuto, setOrganizadorAuto] = useState(false);
+  const [organizadorNombres, setOrganizadorNombres] = useState("");
+  const [organizadorApellidos, setOrganizadorApellidos] = useState("");
+  const [organizadorTelefono, setOrganizadorTelefono] = useState("");
+  const [organizadorFechaNac, setOrganizadorFechaNac] = useState("");
+  const [showNuevaPersonaFields, setShowNuevaPersonaFields] = useState(false);
+  const [motivosList, setMotivosList] = useState<any[]>([]);
   const [tipoEvento, setTipoEvento] = useState("Conferencia");
   const [customTipoEvento, setCustomTipoEvento] = useState("");
   const [correoElectronico, setCorreoElectronico] = useState("");
@@ -84,12 +90,15 @@ const Auditorio: React.FC = () => {
 
   const isFormValid = useMemo(() => {
     const tipoOk = tipoEvento === "other" ? customTipoEvento.trim() !== "" : tipoEvento !== "";
+    const organizadorOk = showNuevaPersonaFields 
+      ? (organizadorNombres.trim() !== "" && organizadorApellidos.trim() !== "")
+      : (organizador.trim() !== "");
     return (
       eventTitle.trim() !== "" &&
       tipoOk &&
       eventDate !== "" &&
       cedulaOrganizador.trim() !== "" &&
-      organizador.trim() !== "" &&
+      organizadorOk &&
       correoElectronico.trim() !== "" &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoElectronico) &&
       horaInicio !== "" &&
@@ -97,7 +106,7 @@ const Auditorio: React.FC = () => {
       horaInicio < horaFin &&
       Object.values(fieldErrors).every(e => !e)
     );
-  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, correoElectronico, horaInicio, horaFin, fieldErrors]);
+  }, [eventTitle, tipoEvento, customTipoEvento, eventDate, cedulaOrganizador, organizador, organizadorNombres, organizadorApellidos, showNuevaPersonaFields, correoElectronico, horaInicio, horaFin, fieldErrors]);
   
   const [eventoAsistentes, setEventoAsistentes] = useState<any[]>([]);
   const { isOpen: isOpenAsistentes, openModal: openAsistentesModal, closeModal: closeAsistentesModal } = useModal();
@@ -120,6 +129,12 @@ const Auditorio: React.FC = () => {
   const loadEspacios = async () => {
     const data = await mavetApi.getEspaciosMuseo();
     setEspacios(data);
+    try {
+      const mots = await mavetApi.obtenerMotivos();
+      setMotivosList(mots);
+    } catch (error) {
+      console.error("Error al cargar motivos:", error);
+    }
   };
 
   useEffect(() => {
@@ -313,17 +328,24 @@ const Auditorio: React.FC = () => {
         setOrganizador(nombreCompleto);
         setOrganizadorAuto(true);
         setOrganizadorError("");
+        setShowNuevaPersonaFields(false);
         if (p.cedula) {
           setCedulaOrganizador(p.cedula);
         }
       } else {
         setOrganizador("");
         setOrganizadorAuto(false);
-        setOrganizadorError("Persona no encontrada. Debe registrar su ingreso como visitante primero.");
+        setShowNuevaPersonaFields(true);
+        setOrganizadorNombres("");
+        setOrganizadorApellidos("");
+        setOrganizadorTelefono("");
+        setOrganizadorFechaNac("");
+        setOrganizadorError("");
       }
     } catch {
       setOrganizadorError("Error al buscar la cédula. Intente de nuevo.");
       setOrganizadorAuto(false);
+      setShowNuevaPersonaFields(false);
     } finally {
       setOrganizadorLoading(false);
     }
@@ -478,9 +500,16 @@ const Auditorio: React.FC = () => {
       return;
     }
 
-    if (!cedulaOrganizador || !organizador) {
-      setFormError("Debe buscar y seleccionar un organizador válido.");
-      return;
+    if (showNuevaPersonaFields) {
+      if (!organizadorNombres.trim() || !organizadorApellidos.trim()) {
+        setFormError("El nombre y apellido del organizador son obligatorios.");
+        return;
+      }
+    } else {
+      if (!cedulaOrganizador || !organizador) {
+        setFormError("Debe buscar y seleccionar un organizador válido.");
+        return;
+      }
     }
 
     if (horaInicio >= horaFin) {
@@ -509,13 +538,34 @@ const Auditorio: React.FC = () => {
 
     try {
       setSaving(true);
+      let nombreResponsableFinal = organizador;
+      if (showNuevaPersonaFields) {
+        const motivoEv = motivosList.find(
+          (m: any) => m.nombre?.toLowerCase().includes("evento") || m.descripcion?.toLowerCase().includes("evento")
+        ) || motivosList[0];
+        const motivoId = motivoEv ? motivoEv.id_motivo : "MVI-00001";
+
+        const regPayload = {
+          cedula: normalizeCedula(cedulaOrganizador),
+          nombres: organizadorNombres.trim(),
+          apellidos: organizadorApellidos.trim(),
+          telefono: organizadorTelefono.trim() || undefined,
+          fecha_de_nac: organizadorFechaNac || undefined,
+          id_motivo: motivoId,
+          cantidad_acompanantes: 0,
+          consentimiento_datos: true,
+        };
+        await mavetApi.registrarIngreso(regPayload);
+        nombreResponsableFinal = `${organizadorNombres.trim()} ${organizadorApellidos.trim()}`;
+      }
+
       const tipoFinal = tipoEvento === "other" ? customTipoEvento.trim() : tipoEvento;
       const espacioId = espacios.length > 0 ? espacios[0].id_espacio : 1;
       const payload = {
         codigo_reserva: codigoReserva,
         id_espacio: espacioId,
         cedula: normalizeCedula(cedulaOrganizador),
-        nombre_responsable: organizador,
+        nombre_responsable: nombreResponsableFinal,
         institucion: tipoFinal,
         fecha_uso: eventDate,
         hora_inicio: horaInicio + ":00",
@@ -598,6 +648,11 @@ const Auditorio: React.FC = () => {
     setOrganizadorLoading(false);
     setOrganizadorError("");
     setOrganizadorAuto(false);
+    setOrganizadorNombres("");
+    setOrganizadorApellidos("");
+    setOrganizadorTelefono("");
+    setOrganizadorFechaNac("");
+    setShowNuevaPersonaFields(false);
     setTipoEvento("Conferencia");
     setCustomTipoEvento("");
     
@@ -1244,22 +1299,73 @@ const Auditorio: React.FC = () => {
                     )}
                   </div>
                   
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Nombre Completo</label>
-                    <input
-                      required
-                      type="text"
-                      value={organizador}
-                      onChange={(e) => {
-                        setOrganizador(e.target.value);
-                        setOrganizadorAuto(false);
-                      }}
-                      readOnly={organizadorAuto}
-                      disabled={isGerente || isPastEvent}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-60"
-                      placeholder="Se autocompleta con cédula"
-                    />
-                  </div>
+                  {showNuevaPersonaFields ? (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Nombres *</label>
+                        <input
+                          required
+                          type="text"
+                          value={organizadorNombres}
+                          onChange={(e) => setOrganizadorNombres(e.target.value)}
+                          disabled={isGerente || isPastEvent}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                          placeholder="Nombres"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Apellidos *</label>
+                        <input
+                          required
+                          type="text"
+                          value={organizadorApellidos}
+                          onChange={(e) => setOrganizadorApellidos(e.target.value)}
+                          disabled={isGerente || isPastEvent}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                          placeholder="Apellidos"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Teléfono (Opcional)</label>
+                        <input
+                          type="text"
+                          value={organizadorTelefono}
+                          onChange={(e) => setOrganizadorTelefono(e.target.value)}
+                          onKeyDown={limitNumericInput}
+                          disabled={isGerente || isPastEvent}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                          placeholder="Ej. 04141234567"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Fecha de Nacimiento (Opcional)</label>
+                        <input
+                          type="date"
+                          value={organizadorFechaNac}
+                          onChange={(e) => setOrganizadorFechaNac(e.target.value)}
+                          disabled={isGerente || isPastEvent}
+                          className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Nombre Completo</label>
+                      <input
+                        required
+                        type="text"
+                        value={organizador}
+                        onChange={(e) => {
+                          setOrganizador(e.target.value);
+                          setOrganizadorAuto(false);
+                        }}
+                        readOnly={organizadorAuto}
+                        disabled={isGerente || isPastEvent}
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-60"
+                        placeholder="Se autocompleta con cédula"
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2 col-span-1 md:col-span-2">
                     <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Correo Electrónico *</label>
