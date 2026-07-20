@@ -23,6 +23,7 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useModal } from "../../hooks/useModal";
 import { mavetApi } from "../../services/api";
 import { exportarHistorialEventos, exportarComprobanteReserva } from "../../services/pdf.service";
+import Pagination from "../../components/ui/Pagination";
 import { EventoAuditorio } from "../../types";
 import { validateRequired } from "../../utils/validation";
 import { formatCedula, normalizeCedula } from "../../utils/formatters";
@@ -75,6 +76,8 @@ const Auditorio: React.FC = () => {
   const [filterAprobacion, setFilterAprobacion] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
   const { isOpen, openModal, closeModal } = useModal();
@@ -258,6 +261,17 @@ const Auditorio: React.FC = () => {
       return matchTipo && matchAprobacion && matchSearch;
     }).sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
   }, [events, filterTipo, filterAprobacion, searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterTipo, filterAprobacion, searchTerm]);
+
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEvents, currentPage]);
+
+  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
 
   const handleCedulaBlur = async () => {
     const cedula = cedulaOrganizador.trim();
@@ -764,7 +778,7 @@ const Auditorio: React.FC = () => {
           <div>
             {isLoading ? (
               <LoadingSkeleton variant="table" rows={8} cols={6} />
-            ) : events.length === 0 ? (
+            ) : filteredEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-theme-sm">
                 <CalendarIcon className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Sin Reservas</h3>
@@ -784,7 +798,7 @@ const Auditorio: React.FC = () => {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredEvents.map(ev => {
+                {paginatedEvents.map(ev => {
                   const d = new Date((ev.start?.split("T")[0] || "") + "T00:00:00");
                   const t = new Date(); t.setHours(0, 0, 0, 0);
                   const evIsPast = d < t || ev.extendedProps?.estado === 'Realizada';
@@ -862,8 +876,21 @@ const Auditorio: React.FC = () => {
                 })}
               </div>
             )}
+            {filteredEvents.length > 0 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredEvents.length}
+                  pageSize={ITEMS_PER_PAGE}
+                  label="eventos"
+                  onPageChange={(page) => setCurrentPage(page)}
+                />
+              </div>
+            )}
           </div>
         )}
+
       </div>
 
       <div className="mt-8">
