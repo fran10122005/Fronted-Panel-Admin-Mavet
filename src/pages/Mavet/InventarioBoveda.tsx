@@ -434,7 +434,6 @@ export default function InventarioBoveda() {
         if (!trimmed) error = "El nombre del artista es obligatorio.";
         break;
       case "apellidos":
-        if (!trimmed) error = "Los apellidos del artista son obligatorios.";
         break;
       case "ci":
         if (trimmed) error = validateCedula(trimmed);
@@ -579,7 +578,7 @@ export default function InventarioBoveda() {
   const handleArtistSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const fieldsToCheck = ["nombres", "apellidos", "ci", "correo", "telefono", "fecha_nacimiento"];
+    const fieldsToCheck = ["nombres", "ci", "correo", "fecha_nacimiento"];
     const newErrors: Record<string, string> = {};
     for (const f of fieldsToCheck) {
       const err = validateArtistField(f, artistFormData[f] || "", artistFormData);
@@ -749,7 +748,7 @@ export default function InventarioBoveda() {
           </div>
         ) : (
           <>
-            <div className="flex-1">
+            <div className="flex-1 overflow-x-auto">
               <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -849,7 +848,7 @@ export default function InventarioBoveda() {
             />
           </div>
         </div>
-        <div>
+        <div className="overflow-x-auto">
           <table className="w-full text-left table-auto">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -1468,8 +1467,8 @@ export default function InventarioBoveda() {
                 )}
               </div>
               <div>
-                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Apellidos <span className="text-red-500">*</span></label>
-                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, apellidos: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, apellidos: validateArtistField("apellidos", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} required />
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Apellidos</label>
+                <input type="text" name="apellidos" value={artistFormData.apellidos || ""} readOnly={isArtistPreloaded} onChange={(e) => { const v = e.target.value; setArtistFormData((p: any) => ({ ...p, apellidos: v })); if (!isArtistPreloaded) setArtistFieldErrors((prev) => ({ ...prev, apellidos: validateArtistField("apellidos", v) })); }} className={"w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 " + (isArtistPreloaded ? "border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed select-none" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900")} />
                 {artistFieldErrors.apellidos && !isArtistPreloaded && (
                   <div className="flex items-start gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-2 rounded-lg border border-red-200 dark:border-red-900/30 mt-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />

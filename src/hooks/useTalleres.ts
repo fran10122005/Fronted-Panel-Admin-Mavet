@@ -126,7 +126,7 @@ export function useTalleres() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const instructor = useTalleresInstructor(
-    instructores, setInstructores, setIsSubmitting,
+    instructores, setInstructores, setIsSubmitting, setConfirm,
     (id) => setPlanificarForm((prev: any) => ({ ...prev, selectedInstructorId: id })),
     setFormError,
   );

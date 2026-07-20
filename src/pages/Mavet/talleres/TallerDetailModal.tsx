@@ -128,60 +128,72 @@ export default function TallerDetailModal({
                 <FileText className="w-3.5 h-3.5" />
                 Información Básica
               </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                </div>
-                <select name="id_taller_inventario" value={formData.id_taller_inventario}
-                  onChange={onChange} className={baseSelectCls + " pl-10"} required>
-                  <option value="">Seleccione un taller del inventario...</option>
-                  {inventario.map((i: any) => (
-                    <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                </div>
-                <select name="selectedInstructorId" value={formData.selectedInstructorId}
-                  onChange={onChange} className={baseSelectCls + " pl-10"} required>
-                  <option value="">Seleccione un instructor...</option>
-                  {instructores.map((inst: any) => (
-                    <option key={inst.id_instructor} value={inst.id_instructor}>
-                      {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""} {inst.Persona?.cedula ? `(${inst.Persona.cedula})` : ""}
-                    </option>
-                  ))}
-                </select>
-                {instructores.length === 0 && (
-                  <p className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1.5">
-                    <AlertCircle className="w-3 h-3" />
-                    No hay instructores registrados. Use "Gestionar Instructores" para agregar uno.
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Taller del Inventario</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                   </div>
-                  <select name="id_espacio" value={formData.id_espacio}
-                    onChange={onChange} className={baseSelectCls + " pl-10"}>
-                    <option value="">Seleccione...</option>
-                    {espacios.map(e => (
-                      <option key={e.id_espacio} value={e.id_espacio}>{e.nombre_espacio || e.nombre}</option>
+                  <select name="id_taller_inventario" value={formData.id_taller_inventario}
+                    onChange={onChange} className={baseSelectCls + " pl-10"} required>
+                    <option value="">Seleccione un taller del inventario...</option>
+                    {inventario.map((i: any) => (
+                      <option key={i.id_taller || i.id} value={i.id_taller || i.id}>{i.nombre}</option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Instructor</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                   </div>
-                  <input type="number" name="sesiones" value={formData.sesiones}
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
-                    className={baseInputCls + " pl-10"} min={1} max={20} placeholder="N° de sesiones" />
+                  <select name="selectedInstructorId" value={formData.selectedInstructorId}
+                    onChange={onChange} className={baseSelectCls + " pl-10"} required>
+                    <option value="">Seleccione un instructor...</option>
+                    {instructores.map((inst: any) => (
+                      <option key={inst.id_instructor} value={inst.id_instructor}>
+                        {inst.Persona?.nombres || ""} {inst.Persona?.apellidos || ""} {inst.Persona?.cedula ? `(${inst.Persona.cedula})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {instructores.length === 0 && (
+                    <p className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                      <AlertCircle className="w-3 h-3" />
+                      No hay instructores registrados. Use "Gestionar Instructores" para agregar uno.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Espacio</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </div>
+                    <select name="id_espacio" value={formData.id_espacio}
+                      onChange={onChange} className={baseSelectCls + " pl-10"}>
+                      <option value="">Seleccione...</option>
+                      {espacios.map(e => (
+                        <option key={e.id_espacio} value={e.id_espacio}>{e.nombre_espacio || e.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>N° de Sesiones</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                    </div>
+                    <input type="number" name="sesiones" value={formData.sesiones}
+                      onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
+                      className={baseInputCls + " pl-10"} min={1} max={20} placeholder="N° de sesiones" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -209,57 +221,75 @@ export default function TallerDetailModal({
                 Fechas y Cupos
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <Users className="w-4 h-4 text-gray-400" />
+                <div>
+                  <label className={labelCls}>Cupo Mínimo</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <Users className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input type="number" name="cupo_minimo" value={formData.cupo_minimo}
+                      onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
+                      className={baseInputCls + " pl-10"} min={2} max={30} placeholder="Cupo mín" />
                   </div>
-                  <input type="number" name="cupo_minimo" value={formData.cupo_minimo}
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
-                    className={baseInputCls + " pl-10"} min={2} max={30} placeholder="Cupo mín" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <Users className="w-4 h-4 text-gray-400" />
+                <div>
+                  <label className={labelCls}>Cupo Máximo</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <Users className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input type="number" name="cupo_maximo" value={formData.cupo_maximo}
+                      onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
+                      className={baseInputCls + " pl-10"} min={2} max={30} placeholder="Cupo máx" />
                   </div>
-                  <input type="number" name="cupo_maximo" value={formData.cupo_maximo}
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} onKeyDown={limitNumericInput}
-                    className={baseInputCls + " pl-10"} min={2} max={30} placeholder="Cupo máx" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <input type="date" name="fecha" value={formData.fecha}
-                    min={new Date().toISOString().split("T")[0]}
-                    max="9999-12-31"
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10 show-date-picker"} />
-                </div>
-                {Number(formData.sesiones) > 1 && (
+                <div>
+                  <label className={labelCls}>Fecha de Inicio</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
                       <Calendar className="w-4 h-4 text-gray-400" />
                     </div>
-                    <input type="date" name="fecha_fin" value={formData.fecha_fin}
-                      min={formData.fecha || new Date().toISOString().split("T")[0]}
+                    <input type="date" name="fecha" value={formData.fecha}
+                      min={new Date().toISOString().split("T")[0]}
                       max="9999-12-31"
                       onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10 show-date-picker"} />
+                  </div>
+                </div>
+                {Number(formData.sesiones) > 1 && (
+                  <div>
+                    <label className={labelCls}>Fecha de Fin</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <input type="date" name="fecha_fin" value={formData.fecha_fin}
+                        min={formData.fecha || new Date().toISOString().split("T")[0]}
+                        max="9999-12-31"
+                        onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10 show-date-picker"} />
+                    </div>
                   </div>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <Clock className="w-4 h-4 text-gray-400" />
+                <div>
+                  <label className={labelCls}>Hora de Inicio</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input type="time" name="hora_inicio" value={formData.hora_inicio}
+                      onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10"} min="09:00" max="17:00" />
                   </div>
-                  <input type="time" name="hora_inicio" value={formData.hora_inicio}
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10"} min="09:00" max="17:00" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <Clock className="w-4 h-4 text-gray-400" />
+                <div>
+                  <label className={labelCls}>Hora de Fin</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input type="time" name="hora_fin" value={formData.hora_fin}
+                      onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10"} min="09:00" max="17:00" />
                   </div>
-                  <input type="time" name="hora_fin" value={formData.hora_fin}
-                    onChange={onChange} onBlur={(e) => e.target.reportValidity()} className={baseInputCls + " pl-10"} min="09:00" max="17:00" />
                 </div>
               </div>
             </div>
@@ -270,24 +300,30 @@ export default function TallerDetailModal({
                 Configuración
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div>
+                  <label className={labelCls}>Horas Totales</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <input type="number" name="horas_totales" value={formData.horas_totales}
+                      readOnly
+                      className={baseInputCls + " pl-10 bg-gray-100 dark:bg-gray-700/50 text-brand-600 dark:text-brand-400 font-semibold cursor-not-allowed"} min={0} placeholder="Horas totales" />
                   </div>
-                  <input type="number" name="horas_totales" value={formData.horas_totales}
-                    readOnly
-                    className={baseInputCls + " pl-10 bg-gray-100 dark:bg-gray-700/50 text-brand-600 dark:text-brand-400 font-semibold cursor-not-allowed"} min={0} placeholder="Horas totales" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div>
+                  <label className={labelCls}>Estado</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <select name="estado" value={formData.estado ? "true" : "false"}
+                      onChange={e => onEstadoChange(e.target.value === "true")}
+                      className={baseSelectCls + " pl-10"}>
+                      <option value="true">Activo</option>
+                      <option value="false">Inactivo</option>
+                    </select>
                   </div>
-                  <select name="estado" value={formData.estado ? "true" : "false"}
-                    onChange={e => onEstadoChange(e.target.value === "true")}
-                    className={baseSelectCls + " pl-10"}>
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
                 </div>
               </div>
             </div>

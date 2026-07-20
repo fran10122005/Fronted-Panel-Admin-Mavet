@@ -398,15 +398,26 @@ layer(base);
   }
 
   &::-webkit-scrollbar-track {
-    @apply rounded-full;
+    @apply rounded-full bg-gray-100 dark:bg-gray-900;
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-full dark:bg-gray-700;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #a33d3d, #800000);
+    @apply border-[3px] border-transparent border-solid bg-clip-content;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #bf6b6b, #a33d3d);
   }
 }
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #344054;
+  background: linear-gradient(180deg, #ff4d6d, #800000);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff6b8a, #a33d3d);
 }
 
 @layer utilities {
