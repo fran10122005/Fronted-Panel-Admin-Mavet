@@ -37,6 +37,38 @@ async function persistirAutoInactivacion(talleres: any[]): Promise<void> {
   );
 }
 
+function autoInactivarInscripcionesVencidas(inscripciones: any[], talleres: any[]): any[] {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return inscripciones.map(ins => {
+    const taller = talleres.find(t => String(t.id_taller) === String(ins.id_taller));
+    if (taller?.fecha_fin) {
+      const fin = new Date(taller.fecha_fin + "T23:59:59");
+      if (fin < hoy && ins.estado_inscripcion === "Inscrito") {
+        return { ...ins, estado_inscripcion: "Inactivo" };
+      }
+    }
+    return ins;
+  });
+}
+
+async function persistirAutoInactivacionInscripciones(inscripciones: any[], talleres: any[]): Promise<void> {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const vencidas = inscripciones.filter(ins => {
+    const taller = talleres.find(t => String(t.id_taller) === String(ins.id_taller));
+    if (!taller?.fecha_fin) return false;
+    const fin = new Date(taller.fecha_fin + "T23:59:59");
+    return fin < hoy && ins.estado_inscripcion === "Inscrito";
+  });
+  if (vencidas.length === 0) return;
+  await Promise.allSettled(
+    vencidas.map(ins =>
+      mavetApi.actualizarInscripcion(ins.id_inscripcion, { estado_inscripcion: "Inactivo" })
+    )
+  );
+}
+
 const initialInventarioForm = { nombre: "", descripcion: "" };
 
 const initialPlanificarForm = {
@@ -67,6 +99,7 @@ export function useTalleres() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterInstructor, setFilterInstructor] = useState("Todos");
   const [verHistorial, setVerHistorial] = useState(false);
+  const [verHistorialInsc, setVerHistorialInsc] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInventario, setSearchInventario] = useState("");
 
@@ -105,7 +138,10 @@ export function useTalleres() {
 
   const inscripcionesAgrupadas = useMemo(() => {
     const map = new Map<number, { taller: any; alumnos: any[] }>();
-    inscripciones.forEach((ins: any) => {
+    const inscFiltradas = verHistorialInsc
+      ? inscripciones.filter(ins => ins.estado_inscripcion !== "Inscrito" && ins.estado_inscripcion !== "Activo")
+      : inscripciones.filter(ins => ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo");
+    inscFiltradas.forEach((ins: any) => {
       const id = ins.Taller?.id_taller || ins.id_taller;
       if (!map.has(id)) {
         map.set(id, { taller: ins.Taller, alumnos: [] });
@@ -113,6 +149,12 @@ export function useTalleres() {
       map.get(id)!.alumnos.push(ins);
     });
     return Array.from(map.values()).sort((a, b) => b.alumnos.length - a.alumnos.length);
+  }, [inscripciones, verHistorialInsc]);
+
+  const statsInscripciones = useMemo(() => {
+    const activas = inscripciones.filter(ins => ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo").length;
+    const historial = inscripciones.filter(ins => ins.estado_inscripcion !== "Inscrito" && ins.estado_inscripcion !== "Activo").length;
+    return { activas, historial };
   }, [inscripciones]);
 
   const loadData = async () => {
@@ -126,14 +168,17 @@ export function useTalleres() {
         mavetApi.getInscripcionesTaller()
       ]);
       setInventario(invRes.data);
-      setTalleres(autoInactivarVencidos(tal));
+      const talleresAuto = autoInactivarVencidos(tal);
+      setTalleres(talleresAuto);
+      const inscripcionesAuto = autoInactivarInscripcionesVencidas(ins, talleresAuto);
       setInstructores(inst);
       setEspacios(esp.filter((e: any) => {
         const n = (e.nombre_espacio || e.nombre || "").toLowerCase();
         return !n.includes("boveda") && !n.includes("bóveda");
       }));
-      setInscripciones(ins);
+      setInscripciones(inscripcionesAuto);
       persistirAutoInactivacion(tal);
+      persistirAutoInactivacionInscripciones(inscripcionesAuto, talleresAuto);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar datos");
@@ -500,9 +545,12 @@ export function useTalleres() {
         mavetApi.getTalleres(),
         mavetApi.getInscripcionesTaller()
       ]);
-      setTalleres(autoInactivarVencidos(talleresData));
-      setInscripciones(inscripcionesData);
+      const talleresAuto = autoInactivarVencidos(talleresData);
+      const inscripcionesAuto = autoInactivarInscripcionesVencidas(inscripcionesData, talleresAuto);
+      setTalleres(talleresAuto);
+      setInscripciones(inscripcionesAuto);
       persistirAutoInactivacion(talleresData);
+      persistirAutoInactivacionInscripciones(inscripcionesAuto, talleresAuto);
     } catch (error: any) {
       setFormError(error.message || "Error al planificar taller.");
     } finally {
@@ -568,6 +616,8 @@ export function useTalleres() {
     filteredTalleres, totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
     verHistorial, setVerHistorial,
+    verHistorialInsc, setVerHistorialInsc,
+    statsInscripciones,
     filteredInventario,
     selectedInventario, setSelectedInventario,
     selectedTaller, setSelectedTaller,

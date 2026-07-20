@@ -232,4 +232,12 @@ export const talleres = {
       throw new Error(e.response?.data?.message || "Error al eliminar inscripción");
     }
   },
+
+  actualizarInscripcion: async (idInscripcion: string, payload: { estado_inscripcion: string }): Promise<void> => {
+    try {
+      await axiosInstance.put(`/api/educacion/inscripciones-talleres/${idInscripcion}`, payload);
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar inscripción");
+    }
+  },
 };
