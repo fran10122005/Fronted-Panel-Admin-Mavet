@@ -108,6 +108,7 @@ export default function AuditLogs() {
                 No hay registros de actividad disponibles.
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -151,6 +152,7 @@ export default function AuditLogs() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
 
             {totalPages > 1 && (

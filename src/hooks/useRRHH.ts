@@ -70,7 +70,6 @@ export function useRRHH() {
   const [editingUsuarioId, setEditingUsuarioId] = useState<string | null>(null);
   const [selectedTrabajadorForDetail, setSelectedTrabajadorForDetail] = useState<Trabajador | null>(null);
   const [selectedForJustificacion, setSelectedForJustificacion] = useState<ResumenSemanalTrabajador | null>(null);
-  const [pendingFacialEnroll, setPendingFacialEnroll] = useState<{ id: string; nombre: string } | null>(null);
 
   const refreshData = async () => {
     const [dataCargos, dataUsers, dataRoles] = await Promise.all([
@@ -283,7 +282,7 @@ export function useRRHH() {
     });
   };
 
-  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, habilitarFacial?: boolean, pendingDocs?: any[]) => {
+  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: any[]) => {
     setIsSubmitting(true);
     try {
       let trabajadorId = editingTrabajadorId;
@@ -335,8 +334,18 @@ export function useRRHH() {
           }
         }
 
-        if (habilitarFacial) {
-          setPendingFacialEnroll({ id: trabajadorId.toString(), nombre: `${data.nombres} ${data.apellidos}` });
+        if (facialDescs && facialDescs.length > 0) {
+          try {
+            await mavetApi.actualizarTrabajadorFacial(trabajadorId.toString(), {
+              descriptores_faciales: facialDescs,
+              usarFacial: true,
+              consentimientoFacial: true,
+              fechaConsentimiento: new Date().toISOString().split("T")[0],
+            });
+            toast.success("Enrolamiento facial completado.");
+          } catch (err: any) {
+            toast.error(err.message || "Error al guardar enrolamiento facial");
+          }
         }
       }
 
@@ -472,7 +481,6 @@ export function useRRHH() {
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleCartaAval, handleDeleteTrabajador, handleDeleteUsuario,
     handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
-    pendingFacialEnroll, setPendingFacialEnroll,
 
   };
 }

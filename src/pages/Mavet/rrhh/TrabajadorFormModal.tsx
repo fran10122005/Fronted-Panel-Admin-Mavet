@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { mavetApi } from "../../../services/api";
 import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import toast from "react-hot-toast";
+import { AlertCircle } from "lucide-react";
 
 const step1Schema = z.object({
   cedula: z.string().min(1, "La cédula es obligatoria"),
@@ -51,7 +52,7 @@ interface Props {
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;
-  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, habilitarFacial?: boolean, pendingDocs?: { file: File, tipo: string, notas?: string }[]) => void;
+  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: { file: File, tipo: string, notas?: string }[]) => void;
   inputCls: string;
 }
 
@@ -77,10 +78,11 @@ const TIPOS_DOCUMENTO = [
 ];
 
 
-const tabs = [
+const allTabs = [
   { id: "info", label: "Información" },
   { id: "horario", label: "Horario" },
   { id: "documentos", label: "Documentos" },
+  { id: "facial", label: "Enrolamiento Facial" },
 ];
 
 function getDefaultHorarios(): HorarioDia[] {
@@ -109,7 +111,18 @@ export default function TrabajadorFormModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [generarPin, setGenerarPin] = useState(false);
-  const [habilitarFacial, setHabilitarFacial] = useState(false);
+
+  const [facialDescs, setFacialDescs] = useState<string[]>([]);
+  const [facialStatus, setFacialStatus] = useState<"idle" | "camera" | "capturing" | "done" | "error">("idle");
+  const [facialStep, setFacialStep] = useState(1);
+  const [facialQualityMsg, setFacialQualityMsg] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const tabs = editingTrabajadorId !== null
+    ? allTabs.filter(t => t.id !== "facial")
+    : allTabs;
 
   const [nacionalidad, setNacionalidad] = useState("V-");
   const [numeroCedula, setNumeroCedula] = useState("");
@@ -180,7 +193,11 @@ export default function TrabajadorFormModal({
       setPhotoPreview(initialData.foto_url || null);
       setPhotoError("");
       setGenerarPin(false);
-      setHabilitarFacial(false);
+      stopCamera();
+      setFacialStatus("idle");
+      setFacialStep(1);
+      setFacialDescs([]);
+      setFacialQualityMsg("");
       setActiveTab("info");
       setHorarios(getDefaultHorarios());
       setDocumentos([]);
@@ -244,7 +261,74 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData as TrabajadorFormValues, horarios, photoFile, generarPin, habilitarFacial, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
+    onSubmit(finalData as TrabajadorFormValues, horarios, photoFile, generarPin, facialDescs, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+  };
+
+  const resetFacial = () => {
+    stopCamera();
+    setFacialStatus("idle");
+    setFacialStep(1);
+    setFacialDescs([]);
+    setFacialQualityMsg("");
+  };
+
+  const handleStartCamera = async () => {
+    setFacialStatus("camera");
+    setFacialStep(1);
+    setFacialDescs([]);
+    try {
+      const { loadModels } = await import("../../../services/face.service");
+      await loadModels();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch {
+      toast.error("No se pudo acceder a la cámara");
+      setFacialStatus("idle");
+    }
+  };
+
+  const handleCapture = async () => {
+    if (!videoRef.current) return;
+    setFacialStatus("capturing");
+    setFacialQualityMsg("");
+    try {
+      const { getDetectionWithQuality, serializeDescriptor } = await import("../../../services/face.service");
+      const { detection, quality } = await getDetectionWithQuality(videoRef.current);
+      if (!detection) {
+        setFacialQualityMsg("No se detecta rostro. Asegúrese de estar frente a la cámara.");
+        setFacialStatus("camera");
+        return;
+      }
+      if (!quality.ok) {
+        setFacialQualityMsg(quality.reason || "Ajuste su posición e iluminación.");
+        setFacialStatus("camera");
+        return;
+      }
+      const serialized = serializeDescriptor(detection.descriptor);
+      const newDescs = [...facialDescs, serialized];
+      setFacialDescs(newDescs);
+
+      if (facialStep < 3) {
+        setFacialStep(facialStep + 1);
+        setFacialStatus("camera");
+      } else {
+        setFacialStatus("done");
+        stopCamera();
+        toast.success("Rostro enrolado exitosamente (3 capturas)");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error al enrolar rostro");
+      setFacialStatus("error");
+    }
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -710,29 +794,18 @@ export default function TrabajadorFormModal({
               </div>
 
               {!editingTrabajadorId && (
-                <>
-                  <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-4">Opciones de Asistencia</h5>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
-                      <input type="checkbox" checked={generarPin} onChange={(e) => setGenerarPin(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
-                      />
-                      <div>
-                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generar PIN</span>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
-                      </div>
-                    </label>
-                    <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1">
-                      <input type="checkbox" checked={habilitarFacial} onChange={(e) => setHabilitarFacial(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
-                      />
-                      <div>
-                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Reconocimiento Facial</span>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Habilitar verificación facial en el kiosko</p>
-                      </div>
-                    </label>
-                  </div>
-                </>
+                <div className="mt-4">
+                  <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Opción de Asistencia</h5>
+                  <label className="flex items-center gap-2.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <input type="checkbox" checked={generarPin} onChange={(e) => setGenerarPin(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generar PIN</span>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">El trabajador podrá marcar asistencia con PIN</p>
+                    </div>
+                  </label>
+                </div>
               )}
             </div>
           )}
@@ -980,6 +1053,92 @@ export default function TrabajadorFormModal({
             </div>
           )}
 
+          {activeTab === "facial" && (
+            <div className="text-center space-y-4 py-2">
+              <div className="w-14 h-14 mx-auto rounded-full bg-brand-100 dark:bg-brand-500/10 flex items-center justify-center">
+                <svg className="w-7 h-7 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">Enrolamiento Facial Obligatorio</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Se tomarán <strong>3 capturas</strong> en diferentes condiciones para el reconocimiento.
+                Solo se almacenan vectores numéricos, no imágenes.
+              </p>
+
+              {facialStatus === "idle" && (
+                <button type="button" onClick={handleStartCamera}
+                  className="px-6 py-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition text-sm">
+                  Iniciar Cámara
+                </button>
+              )}
+
+              {(facialStatus === "camera" || facialStatus === "capturing") && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-2">
+                    {[1, 2, 3].map((step) => (
+                      <div key={step}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                          step === facialStep
+                            ? "bg-brand-500 text-white border-brand-500"
+                            : step < facialStep
+                            ? "bg-success-500 text-white border-success-500"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-400 border-gray-300 dark:border-gray-600"
+                        }`}>
+                        {step < facialStep ? "✓" : step}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs font-semibold text-brand-600 dark:text-brand-400">
+                    {facialStep === 1 && "Foto 1: Mire de frente, con buena iluminación"}
+                    {facialStep === 2 && "Foto 2: Gire ligeramente el rostro"}
+                    {facialStep === 3 && "Foto 3: Cambie el ángulo o sonría ligeramente"}
+                  </p>
+
+                  <div className="relative mx-auto w-64 h-48 rounded-xl overflow-hidden bg-gray-900 border-2 border-brand-500">
+                    <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+
+                  {facialQualityMsg && (
+                    <p className="text-xs text-amber-600 flex items-center justify-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {facialQualityMsg}
+                    </p>
+                  )}
+
+                  <button type="button" onClick={handleCapture} disabled={facialStatus === "capturing"}
+                    className="px-6 py-3 bg-success-500 text-white rounded-xl font-bold hover:bg-success-600 transition disabled:opacity-60 text-sm">
+                    {facialStatus === "capturing" ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                    ) : facialStep < 3 ? (
+                      `Capturar Foto ${facialStep}/3`
+                    ) : (
+                      "Capturar y Finalizar (3/3)"
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {facialStatus === "done" && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ Enrolamiento completado (3 capturas)</p>
+                  <p className="text-xs text-green-600 dark:text-green-300 mt-1">El trabajador podrá usar verificación facial en el kiosko.</p>
+                </div>
+              )}
+
+              {facialStatus === "error" && (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-600">Error al enrolar. Intente nuevamente.</p>
+                  <button type="button" onClick={resetFacial}
+                    className="px-6 py-2 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition text-sm">
+                    Reintentar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "documentos" && (
             <div>
               <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Documentos del Trabajador</h5>
@@ -1125,7 +1284,7 @@ export default function TrabajadorFormModal({
               >
                 Cancelar
               </button>
-              {activeTab !== "justificaciones" ? (
+              {activeTab !== tabs[tabs.length - 1].id ? (
                 <button
                   type="button"
                   onClick={() => {

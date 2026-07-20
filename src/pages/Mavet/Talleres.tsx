@@ -548,7 +548,7 @@ export default function Talleres() {
             </div>
           )}
           <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
-            <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="max-h-64 overflow-y-auto overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
                   <tr>

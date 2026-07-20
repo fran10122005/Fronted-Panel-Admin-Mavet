@@ -749,7 +749,7 @@ export default function InventarioBoveda() {
           </div>
         ) : (
           <>
-            <div className="flex-1">
+            <div className="flex-1 overflow-x-auto">
               <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -849,7 +849,7 @@ export default function InventarioBoveda() {
             />
           </div>
         </div>
-        <div>
+        <div className="overflow-x-auto">
           <table className="w-full text-left table-auto">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">

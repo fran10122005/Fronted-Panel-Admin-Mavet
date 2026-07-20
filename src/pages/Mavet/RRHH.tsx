@@ -4,7 +4,6 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import TrabajadorFormModal from "./rrhh/TrabajadorFormModal";
 import UsuarioFormModal from "./rrhh/UsuarioFormModal";
 import TrabajadorDetailModal from "./rrhh/TrabajadorDetailModal";
-import FacialEnrollModal from "./rrhh/FacialEnrollModal";
 import { exportarCarnetTrabajador } from "../../services/pdf.service";
 import { useAuth, getUserRole } from "../../context/AuthContext";
 import Pagination from "../../components/ui/Pagination";
@@ -48,7 +47,6 @@ export default function RRHH() {
     handleExportTrabajadores, handleExportUsuarios,
     handleDeleteTrabajador,
     handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
-    pendingFacialEnroll, setPendingFacialEnroll,
     usuarios,
   } = useRRHH();
 
@@ -126,7 +124,7 @@ export default function RRHH() {
           </div>
         ) : (
           <>
-            <div className="flex-1">
+            <div className="flex-1 overflow-x-auto">
               {activeTab === "trabajadores" && (
                 <table className="w-full text-left table-auto">
                   <thead>
@@ -198,6 +196,7 @@ export default function RRHH() {
                       </Button>
                     ))}
                   </div>
+                  <div className="overflow-x-auto">
                   <table className="w-full text-left table-auto">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -260,6 +259,7 @@ export default function RRHH() {
                     ))}
                   </tbody>
                 </table>
+                </div>
                 </>
               )}
             </div>
@@ -313,16 +313,6 @@ export default function RRHH() {
         }}
         onRefresh={refreshData}
       />
-
-      {pendingFacialEnroll && (
-        <FacialEnrollModal
-          isOpen={!!pendingFacialEnroll}
-          onClose={() => setPendingFacialEnroll(null)}
-          trabajadorId={pendingFacialEnroll.id}
-          trabajadorNombre={pendingFacialEnroll.nombre}
-          onSuccess={() => setPendingFacialEnroll(null)}
-        />
-      )}
 
       <ConfirmDialog {...confirm} />
     </div>

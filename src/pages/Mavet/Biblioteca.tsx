@@ -145,46 +145,48 @@ export default function Biblioteca() {
                   value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
                   <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}
-                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todos">Todos</option>
                     <option value="Aprobado">Aprobado</option>
                     <option value="Pendiente">Pendiente</option>
                     <option value="Descartado/Venta">Descartado/Venta</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
                   <select value={filterCategoria} onChange={(e) => setFilterCategoria(e.target.value)}
-                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todas">Todas</option>
                     {categorias.map((c: any) => (
                       <option key={c.id_categoria} value={c.nombre_categoria}>{c.nombre_categoria}</option>
                     ))}
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Autor:</span>
                   <input type="text" value={filterAutor === "Todos" ? "" : filterAutor}
                     onChange={(e) => setFilterAutor(e.target.value || "Todos")} placeholder="Buscar..."
-                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 w-32" />
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90 w-24 sm:w-32" />
                 </div>
-                <label className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Orden:</label>
-                <select value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val) { setSortConfig(null); return; }
-                    const [key, direction] = val.split("_");
-                    setSortConfig({ key, direction: direction as "asc" | "desc" });
-                  }}
-                  className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-2 text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
-                  <option value="">Ord. predet.</option>
-                  <option value="unidad_asc">ID ↑</option>
-                  <option value="unidad_desc">ID ↓</option>
-                </select>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Orden:</span>
+                  <select value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) { setSortConfig(null); return; }
+                      const [key, direction] = val.split("_");
+                      setSortConfig({ key, direction: direction as "asc" | "desc" });
+                    }}
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    <option value="">Ord. predet.</option>
+                    <option value="unidad_asc">ID ↑</option>
+                    <option value="unidad_desc">ID ↓</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -194,7 +196,7 @@ export default function Biblioteca() {
               </div>
             ) : (
               <>
-                <div className="flex-1">
+                <div className="flex-1 overflow-x-auto">
                   <table className="w-full text-left table-auto">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -335,7 +337,7 @@ export default function Biblioteca() {
                 </svg>
               </div>
             </div>
-            <div>
+            <div className="overflow-x-auto">
               <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -602,7 +604,7 @@ function ConsultasTab() {
           </div>
         ) : (
           <>
-            <div>
+            <div className="overflow-x-auto">
               <table className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
