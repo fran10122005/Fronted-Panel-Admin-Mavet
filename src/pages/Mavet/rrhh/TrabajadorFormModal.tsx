@@ -240,9 +240,18 @@ export default function TrabajadorFormModal({
     }
   }, [nacionalidad, numeroCedula, setValue]);
 
+  const handleFormError = (errors: any) => {
+    const count = Object.keys(errors).length;
+    const msgs = Object.values(errors).map((e: any) => e.message).filter(Boolean);
+    setActiveTab("info");
+    toast.error(`Corrige los siguientes errores: ${msgs.slice(0, 3).join(', ')}${msgs.length > 3 ? ` y ${msgs.length - 3} más` : ''}`);
+  };
+
   const handleFormSubmit = (data: TrabajadorFormValues) => {
     if (!editingTrabajadorId && !photoPreview) {
       setPhotoError("La foto es obligatoria");
+      setActiveTab("info");
+      toast.error("La foto del trabajador es obligatoria");
       return;
     }
 
@@ -630,7 +639,7 @@ export default function TrabajadorFormModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit, handleFormError)} noValidate className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {activeTab === "info" && (
             <div>
               <div className="flex flex-col sm:flex-row gap-4 mb-3">
