@@ -1027,7 +1027,7 @@ export default function TrabajadorFormModal({
                                 {active ? (
                                   isLunch ? (
                                     <div className="absolute inset-1 bg-orange-50 dark:bg-orange-950/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-850/40 rounded flex items-center justify-center shadow-sm select-none">
-                                      <span className="text-[10px] font-bold tracking-wide uppercase">Pausa ☕</span>
+                                      <span className="text-[10px] font-bold tracking-wide uppercase">Pausa</span>
                                     </div>
                                   ) : (
                                     <div className="absolute inset-1 bg-brand-50 dark:bg-brand-950/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-850/40 rounded flex items-center justify-center shadow-sm select-none">
@@ -1122,7 +1122,7 @@ export default function TrabajadorFormModal({
 
               {facialStatus === "done" && (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ Enrolamiento completado (3 capturas)</p>
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">Enrolamiento completado (3 capturas)</p>
                   <p className="text-xs text-green-600 dark:text-green-300 mt-1">El trabajador podrá usar verificación facial en el kiosko.</p>
                 </div>
               )}

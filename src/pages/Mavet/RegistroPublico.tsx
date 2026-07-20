@@ -420,7 +420,7 @@ export default function RegistroPublico() {
                   <option value="">Selecciona una opción...</option>
                   
                   {talleresInscritos.length > 0 && (
-                    <optgroup label="✨ Mis Clases (Alumno Matriculado)">
+                    <optgroup label="Mis Clases (Alumno Matriculado)">
                       {talleresInscritos.map((t, idx) => (
                         <option key={`t_${idx}`} value={`taller_${t.id_taller}`}>
                           Clase de Taller: {t.nombre}

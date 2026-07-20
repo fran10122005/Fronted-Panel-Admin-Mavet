@@ -165,7 +165,7 @@ export function useRecepcion() {
     }));
     setSearchResults([]);
     if (p.require_cedula_update) {
-      toast.error("⚠️ Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.");
+      toast.error("Esta persona ya cumplió 9 años. Por favor, actualice su cédula real.");
     } else {
       toast.success("Persona seleccionada correctamente.");
     }

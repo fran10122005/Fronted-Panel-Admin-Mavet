@@ -536,7 +536,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
 
                 {estado.horasTranscurridas !== null && estado.entradaActual && (
                   <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
-                    <span className="text-amber-500 text-xl">⏱️</span>
+                    <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                     <div>
                       <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
                         Tiempo en jornada:{" "}
@@ -562,7 +562,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
                   </button>
                 ) : (
                   <div className="w-full text-center bg-gray-100 dark:bg-gray-800 rounded-xl p-5 border-2 border-dashed border-gray-300 dark:border-gray-600">
-                    <p className="text-gray-500 dark:text-gray-400 font-semibold">✅ Jornada completa registrada</p>
+                    <p className="text-gray-500 dark:text-gray-400 font-semibold">Jornada completa registrada</p>
                     <p className="text-sm text-gray-400 mt-1">No hay más movimientos pendientes por hoy.</p>
                   </div>
                 )}
@@ -573,7 +573,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
                       const valor = (estado.asistencia as any)?.[campo];
                       return (
                         <div key={campo} className={`rounded-lg px-3 py-2 flex items-center gap-2 ${valor ? "bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"}`}>
-                          <span>{valor ? "✅" : "⬜"}</span>
+                          <span className={valor ? "text-green-500" : "text-gray-300 dark:text-gray-600"}>{valor ? "●" : "○"}</span>
                           <div>
                             <p className={`font-semibold ${valor ? CAMPO_COLORS[campo] : "text-gray-400"}`}>{CAMPO_LABELS[campo]}</p>
                             {valor && <p className="text-gray-500 dark:text-gray-400">{new Date(valor).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })}</p>}

@@ -289,11 +289,11 @@ export default function AsistenciaPersonal() {
                         </span>
                       ) : r.justificado ? (
                         <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-blue-200 dark:border-blue-800/30">
-                          📝 Justificado
+                          Justificado
                         </span>
                       ) : (
                         <span className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-amber-200 dark:border-amber-800/30">
-                          ⚠ Incompleto
+                          Incompleto
                         </span>
                       )}
                     </div>

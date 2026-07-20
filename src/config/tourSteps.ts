@@ -445,7 +445,7 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
       popover: {
         title: "Lista de talleres planificados",
         description:
-          "Cada taller muestra nombre, instructor, fecha, cupos y estado. Use los botones en cada fila: 📋 (Asistencia), 📄 (PDF inscritos), ➕ (Inscribir), ✅ (Sesiones), ✏️ (Editar) y 🗑️ (Eliminar).",
+           "Cada taller muestra nombre, instructor, fecha, cupos y estado. Use los botones en cada fila: [Asistencia], [PDF], [+], [Sesiones], [Editar] y [Eliminar].",
         side: "top",
         align: "center",
       },
@@ -467,7 +467,7 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
       popover: {
         title: "Detalle de inscripciones",
         description:
-          "Al expandir un taller, verá el nombre del alumno, cédula, fecha de inscripción y estado. Use el icono 🗑️ para desinscribir.",
+           "Al expandir un taller, verá el nombre del alumno, cédula, fecha de inscripción y estado. Use el icono [Eliminar] para desinscribir.",
         side: "top",
         align: "start",
       },
@@ -489,7 +489,7 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
       popover: {
         title: "Tabla de inventario",
         description:
-          "Lista todos los talleres base con nombre y descripción. Use ✏️ para editar o 🗑️ para eliminar. Solo los administradores pueden eliminar.",
+           "Lista todos los talleres base con nombre y descripción. Use [Editar] para editar o [Eliminar] para eliminar. Solo los administradores pueden eliminar.",
         side: "top",
         align: "center",
       },

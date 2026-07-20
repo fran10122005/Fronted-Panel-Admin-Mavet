@@ -205,7 +205,7 @@ export default function LibroFormModal({
                   {categorias.map((c: any) => (
                     <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
                   ))}
-                  <option value="-1">➕ Otra...</option>
+                  <option value="-1">+ Otra...</option>
                 </select>
                 {errors.id_categoria && <p className="text-red-500 text-xs mt-1">{errors.id_categoria.message}</p>}
                 {selectedCategoria === "-1" && (

@@ -159,7 +159,7 @@ export default function RRHH() {
                         <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400">{t.cargo}</td>
                         <td className="px-2 py-2 text-center text-xs">
                           <span className={`font-medium ${(t as any).pin_hash ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
-                            {(t as any).pin_hash ? "🔒" : "⚪"}
+                            {(t as any).pin_hash ? "PIN" : "--"}
                           </span>
                         </td>
                         <td className="px-2 py-2">

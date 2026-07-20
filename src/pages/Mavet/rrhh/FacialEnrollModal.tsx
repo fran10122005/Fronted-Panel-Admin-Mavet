@@ -159,7 +159,7 @@ export default function FacialEnrollModal({
         {status === "done" && (
           <div className="space-y-4">
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-              <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ Rostro enrolado correctamente (3 capturas)</p>
+              <p className="text-sm font-semibold text-green-700 dark:text-green-400">Rostro enrolado correctamente (3 capturas)</p>
               <p className="text-xs text-green-600 dark:text-green-300 mt-1">El trabajador podrá usar verificación facial en el kiosko.</p>
             </div>
             <button onClick={handleClose} className="w-full p-3 bg-brand-500 text-white rounded-xl font-bold hover:bg-brand-600 transition">
