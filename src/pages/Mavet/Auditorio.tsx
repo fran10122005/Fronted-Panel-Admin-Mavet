@@ -417,7 +417,14 @@ const Auditorio: React.FC = () => {
     setHoraFin((event.end?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(event.extendedProps?.organizador || "");
     setCedulaOrganizador(event.extendedProps?.cedula || "");
-    setTipoEvento(event.extendedProps?.tipoEvento || "Conferencia");
+    const tipoGuardado = event.extendedProps?.tipoEvento || "Conferencia";
+    if (tipoGuardado !== "Conferencia" && tipoGuardado !== "Reunión") {
+      setTipoEvento("other");
+      setCustomTipoEvento(tipoGuardado);
+    } else {
+      setTipoEvento(tipoGuardado);
+      setCustomTipoEvento("");
+    }
     setCorreoElectronico((event.extendedProps as any)?.correo_electronico || "");
     setRecursosSolicitados((event.extendedProps as any)?.recursos_solicitados || []);
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -436,7 +443,14 @@ const Auditorio: React.FC = () => {
     setHoraFin((ev.end?.split("T")[1]?.substring(0, 5)) || "18:00");
     setOrganizador(ev.extendedProps.organizador || "");
     setCedulaOrganizador(ev.extendedProps?.cedula || ""); 
-    setTipoEvento(ev.extendedProps.tipoEvento || "Conferencia");
+    const tipoGuardado = ev.extendedProps.tipoEvento || "Conferencia";
+    if (tipoGuardado !== "Conferencia" && tipoGuardado !== "Reunión") {
+      setTipoEvento("other");
+      setCustomTipoEvento(tipoGuardado);
+    } else {
+      setTipoEvento(tipoGuardado);
+      setCustomTipoEvento("");
+    }
     setCorreoElectronico(ev.extendedProps?.correo_electronico || "");
     setRecursosSolicitados(ev.extendedProps?.recursos_solicitados || []);
     
@@ -465,8 +479,14 @@ const Auditorio: React.FC = () => {
     const titleError = validateRequired(eventTitle, "El título de la reserva");
     if (titleError) { setFormError(titleError); return; }
 
-    const tipoError = validateRequired(tipoEvento, "El tipo de evento");
-    if (tipoError) { setFormError(tipoError); return; }
+    if (tipoEvento === "other" && !customTipoEvento.trim()) {
+      setFormError("Especifica el tipo de evento personalizado");
+      return;
+    }
+    if (tipoEvento !== "other") {
+      const tipoError = validateRequired(tipoEvento, "El tipo de evento");
+      if (tipoError) { setFormError(tipoError); return; }
+    }
 
     if (!eventDate) {
       setFormError("La fecha del evento es obligatoria.");
