@@ -21,7 +21,10 @@ export default function InventarioBoveda() {
     isLoading,
     searchTerm, setSearchTerm,
     filterEstado, setFilterEstado,
-    filterCodigo, setFilterCodigo,
+    filterCategoria, setFilterCategoria,
+    filterAutor, setFilterAutor,
+    filterUbicacion, setFilterUbicacion,
+    filterClasificacion, setFilterClasificacion,
     sortConfig, handleSort,
     isOpen, closeModal,
     formData, setFormData,
@@ -88,54 +91,103 @@ export default function InventarioBoveda() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         
         {/* Barra de Búsqueda y Filtros */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full sm:max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
+              <input
+                data-tour="buscador-obras"
+                type="text"
+                placeholder="Buscar por código, título o autor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200"
+              />
             </div>
-            <input
-              data-tour="buscador-obras"
-              type="text"
-              placeholder="Buscar por código, título o autor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200"
-            />
+            
+            <div className="flex items-center w-full sm:w-auto">
+              <select
+                value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) { setSortConfig(null); return; }
+                  const [key, direction] = val.split("_");
+                  setSortConfig({ key, direction: direction as "asc" | "desc" });
+                }}
+                className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+              >
+                <option value="">Orden predeterminado</option>
+                <option value="codigo_inventario_asc">ID (Menor a Mayor)</option>
+                <option value="codigo_inventario_desc">ID (Mayor a Menor)</option>
+                <option value="titulo_asc">Título (A-Z)</option>
+                <option value="titulo_desc">Título (Z-A)</option>
+                <option value="autor_asc">Autor (A-Z)</option>
+                <option value="autor_desc">Autor (Z-A)</option>
+                <option value="anio_desc">Año (Más recientes)</option>
+                <option value="anio_asc">Año (Más antiguos)</option>
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">ID:</span>
-            <input
-              type="text"
-              placeholder="MVT-001"
-              value={filterCodigo}
-              onChange={(e) => setFilterCodigo(e.target.value)}
-              className="w-full sm:w-[130px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90 placeholder:text-gray-400"
-            />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+          
+          <div className="flex flex-wrap items-center gap-2 w-full">
             <select
-              data-tour="filtro-estado"
+              value={filterCategoria}
+              onChange={(e) => setFilterCategoria(e.target.value)}
+              className="flex-1 min-w-[140px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+            >
+              <option value="Todos">Categoría: Todas</option>
+              {categorias.map((c: any) => (
+                <option key={c.id_categoria_obra} value={c.nombre_categoria}>{c.nombre_categoria}</option>
+              ))}
+            </select>
+            
+            <select
+              value={filterAutor}
+              onChange={(e) => setFilterAutor(e.target.value)}
+              className="flex-1 min-w-[140px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+            >
+              <option value="Todos">Autor: Todos</option>
+              {artistas.map((a: any) => (
+                <option key={a.id_artista} value={`${a.nombres || ""} ${a.apellidos || ""}`.trim()}>
+                  {a.nombres} {a.apellidos}
+                </option>
+              ))}
+            </select>
+            
+            <select
+              value={filterUbicacion}
+              onChange={(e) => setFilterUbicacion(e.target.value)}
+              className="flex-1 min-w-[140px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+            >
+              <option value="Todos">Ubicación: Todas</option>
+              {espacios.map((e: any) => (
+                <option key={e.id_espacio} value={e.nombre_espacio}>{e.nombre_espacio}</option>
+              ))}
+            </select>
+            
+            <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+              className="flex-1 min-w-[140px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
             >
-              <option value="Todos">Todos</option>
+              <option value="Todos">Estado: Todos</option>
               <option value="Excelente">Excelente</option>
               <option value="Bueno">Bueno</option>
               <option value="Restauración">En Restauración</option>
             </select>
+            
             <select
-              value={sortConfig ? `${sortConfig.key}_${sortConfig.direction}` : ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (!val) { setSortConfig(null); return; }
-                const [key, direction] = val.split("_");
-                setSortConfig({ key, direction: direction as "asc" | "desc" });
-              }}
-              className="w-full sm:w-auto rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
+              value={filterClasificacion}
+              onChange={(e) => setFilterClasificacion(e.target.value)}
+              className="flex-1 min-w-[140px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90"
             >
-              <option value="">Ord. predet.</option>
-              <option value="codigo_inventario_asc">ID ↑</option>
-              <option value="codigo_inventario_desc">ID ↓</option>
+              <option value="Todos">Clasificación: Todas</option>
+              <option value="BIC">BIC</option>
+              <option value="monumento">Monumento</option>
+              <option value="bien_cultural">Bien Cultural</option>
+              <option value="no_clasificado">No clasificado</option>
             </select>
           </div>
         </div>
@@ -153,8 +205,12 @@ export default function InventarioBoveda() {
                     <th className="px-2 py-2.5" onClick={() => handleSort("codigo_inventario")} style={{cursor: 'pointer'}}>
                       Código {sortConfig?.key === "codigo_inventario" && (sortConfig.direction === "asc" ? "▲" : "▼")}
                     </th>
-                    <th className="px-2 py-2.5">Título</th>
-                    <th className="px-2 py-2.5">Autor</th>
+                    <th className="px-2 py-2.5" onClick={() => handleSort("titulo")} style={{cursor: 'pointer'}}>
+                      Título {sortConfig?.key === "titulo" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+                    </th>
+                    <th className="px-2 py-2.5" onClick={() => handleSort("autor")} style={{cursor: 'pointer'}}>
+                      Autor {sortConfig?.key === "autor" && (sortConfig.direction === "asc" ? "▲" : "▼")}
+                    </th>
                     <th className="px-2 py-2.5">Categoría</th>
                     <th className="px-2 py-2.5">Ubicación</th>
                     <th className="px-2 py-2.5 text-center">Estado</th>

@@ -16,8 +16,7 @@ import { limitNumericInput } from "../../utils/validation";
 import PageHeader from "../../components/common/PageHeader";
 import Tabs from "../../components/ui/Tabs";
 
-const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
-const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
+import { inputCls, selectCls } from "../../utils/formClasses";
 
 function tallerFinalizado(t: any): boolean {
   if (!t.fecha_fin) return false;

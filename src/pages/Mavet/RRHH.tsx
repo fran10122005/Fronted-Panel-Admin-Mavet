@@ -13,7 +13,7 @@ import Badge from "../../components/ui/Badge";
 import PageHeader from "../../components/common/PageHeader";
 import Tabs from "../../components/ui/Tabs";
 
-const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
+import { inputCls, selectCls } from "../../utils/formClasses";
 
 const roleBadge: Record<string, "brand" | "info" | "warning" | "neutral"> = {
   administrador: "brand",

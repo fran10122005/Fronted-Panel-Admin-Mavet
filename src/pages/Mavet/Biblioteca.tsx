@@ -23,6 +23,8 @@ import Tabs from "../../components/ui/Tabs";
 type Periodo = "todas" | "hoy" | "semana" | "mes" | "personalizado";
 type Tab = "inventario" | "consultas";
 
+import { inputCls, selectCls } from "../../utils/formClasses";
+
 const estadoScheme: Record<string, "success" | "warning" | "danger" | "neutral"> = {
   Aprobado: "success",
   Pendiente: "warning",
@@ -64,9 +66,6 @@ export default function Biblioteca() {
   } = useLibros();
 
   const [activeTab, setActiveTab] = useState<Tab>("inventario");
-
-  const inputCls =
-    "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90";
 
   const toastMessage = (type: "success" | "error", msg: string) => {
     import("react-hot-toast").then(m => m.default[type](msg));
@@ -134,7 +133,7 @@ export default function Biblioteca() {
                 <input type="text" placeholder="Buscar por unidad, título o autor..."
                   aria-label="Buscar libro"
                   value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                  className={inputCls} />
               </div>
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-1.5">
@@ -322,7 +321,7 @@ export default function Biblioteca() {
                 <input type="text" placeholder="Buscar por cédula..." value={searchCedula}
                   aria-label="Buscar por cédula"
                   onChange={(e) => setSearchCedula(e.target.value)}
-                  className="pl-9 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                  className={inputCls} />
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>

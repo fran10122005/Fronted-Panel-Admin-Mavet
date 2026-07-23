@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Modal } from "../../../components/ui/modal";
 import { FileText, X, Download, Calendar, Info } from "lucide-react";
 
@@ -8,7 +8,7 @@ interface ExportarAsistenciaModalProps {
   onExport: (params: { rango: "mes" | "custom", fechaInicio?: string, fechaFin?: string }) => void;
 }
 
-const baseInputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all";
+import { inputCls as baseInputCls } from "../../../utils/formClasses";
 
 export default function ExportarAsistenciaModal({
   isOpen, onClose, onExport,

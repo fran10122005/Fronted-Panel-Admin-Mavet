@@ -569,39 +569,52 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
 
     const bkg = [248, 245, 242] as [number, number, number];
     let y = 38;
-    const lx = MARGIN + 6;
-    const vx = 62;
-    const rh = 6.5;
+    const lx = MARGIN + 4;
+    const vx = 58;
+    const rh = 7.5;
 
-    doc.setTextColor(...C.text);
+    // Section Header 1
+    doc.setFillColor(...C.brand);
+    doc.rect(MARGIN, y - 5, pw - MARGIN * 2, 7, "F");
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("DATOS DE LA RESERVA", MARGIN, y);
-    y += 5;
+    doc.setFontSize(8.5);
+    doc.text("DATOS DE LA RESERVA", MARGIN + 4, y);
+    y += 6;
 
     info.forEach((r, i) => {
-      const rowTop = y - 4.5;
+      const rowTop = y - 5.5;
       if (i % 2 === 0) {
-        doc.setFillColor(...bkg);
+        doc.setFillColor(...C.rowOdd);
         doc.rect(MARGIN, rowTop, pw - MARGIN * 2, rh, "F");
       }
-      doc.setTextColor(...C.textMuted);
+      
+      // Bottom border for each row
+      doc.setDrawColor(...C.line);
+      doc.setLineWidth(0.2);
+      doc.line(MARGIN, rowTop + rh, pw - MARGIN, rowTop + rh);
+
+      doc.setTextColor(...C.brand); // Brand color for labels
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
-      doc.text(r.label + ":", lx, y);
+      doc.text(r.label + ":", lx, y - 0.5);
+      
       doc.setTextColor(...C.text);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      doc.text(r.value, vx, y);
+      doc.setFontSize(8);
+      doc.text(r.value, vx, y - 0.5);
       y += rh;
     });
 
     // ── Términos y Responsabilidades ──
-    y += 10;
-    doc.setTextColor(...C.text);
+    y += 12;
+    // Section Header 2
+    doc.setFillColor(...C.brand);
+    doc.rect(MARGIN, y - 5, pw - MARGIN * 2, 7, "F");
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN, y);
+    doc.setFontSize(8.5);
+    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN + 4, y);
     y += 6;
 
     const terminos = [
@@ -611,20 +624,16 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       "Cuarta: Al finalizar, el solicitante se compromete a entregar el espacio en las mismas condiciones en las que fue recibido, respetando el horario."
     ];
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(...C.textMuted);
-    doc.setFillColor(250, 248, 246); // Light warm background
-    doc.rect(MARGIN, y - 4, pw - MARGIN * 2, 45, "F"); // Background box
+    doc.setFillColor(...C.rowOdd);
+    doc.rect(MARGIN, y - 4, pw - MARGIN * 2, 46, "F"); // Background box
     
     // Left accent line
     doc.setDrawColor(...C.brand);
-    doc.setLineWidth(1);
-    doc.line(MARGIN, y - 4, MARGIN, y - 4 + 45);
+    doc.setLineWidth(1.5);
+    doc.line(MARGIN, y - 4, MARGIN, y - 4 + 46);
 
-    y += 1;
+    y += 2;
     terminos.forEach((term) => {
-      // Bold the clause title (e.g. "Primera:")
       const colonIndex = term.indexOf(":");
       const title = term.substring(0, colonIndex + 1);
       const text = term.substring(colonIndex + 1);
@@ -632,13 +641,13 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
       doc.setTextColor(...C.text);
-      doc.text(title, MARGIN + 4, y);
+      doc.text(title, MARGIN + 5, y);
       
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...C.textMuted);
       const titleWidth = doc.getTextWidth(title);
-      const lines = doc.splitTextToSize(text, pw - MARGIN * 2 - 6 - titleWidth);
-      doc.text(lines, MARGIN + 4 + titleWidth + 1, y, { align: "justify", maxWidth: pw - MARGIN * 2 - 6 - titleWidth });
+      const lines = doc.splitTextToSize(text, pw - MARGIN * 2 - 8 - titleWidth);
+      doc.text(lines, MARGIN + 5 + titleWidth + 1, y, { align: "justify", maxWidth: pw - MARGIN * 2 - 8 - titleWidth });
       y += lines.length * 4;
     });
 

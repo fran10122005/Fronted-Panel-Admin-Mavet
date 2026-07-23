@@ -57,7 +57,10 @@ export default function useInventario() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("Todos");
-  const [filterCodigo, setFilterCodigo] = useState("");
+  const [filterCategoria, setFilterCategoria] = useState("Todos");
+  const [filterAutor, setFilterAutor] = useState("Todos");
+  const [filterUbicacion, setFilterUbicacion] = useState("Todos");
+  const [filterClasificacion, setFilterClasificacion] = useState("Todos");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
   const handleSort = (key: string) => {
@@ -618,7 +621,6 @@ export default function useInventario() {
 
   const filteredObras = useMemo(() => {
     const q = (searchTerm || "").toLowerCase();
-    const cod = (filterCodigo || "").toLowerCase();
 
     const result = obras.filter((obra) => {
       const titulo = (obra.titulo || "").toLowerCase();
@@ -628,9 +630,12 @@ export default function useInventario() {
 
       const matchesSearch = !q || titulo.includes(q) || obraId.includes(q) || codigo.includes(q) || autor.includes(q);
       const matchesEstado = filterEstado === "Todos" || obra.estado === filterEstado;
-      const matchesCodigo = !cod || codigo.includes(cod) || obraId.includes(cod);
+      const matchesCategoria = filterCategoria === "Todos" || obra.categoria === filterCategoria || String(obra.id_categoria_obra) === filterCategoria;
+      const matchesAutor = filterAutor === "Todos" || obra.autor === filterAutor || String(obra.id_artista) === filterAutor;
+      const matchesUbicacion = filterUbicacion === "Todos" || obra.ubicacion === filterUbicacion;
+      const matchesClasificacion = filterClasificacion === "Todos" || obra.clasificacion_patrimonial === filterClasificacion;
 
-      return matchesSearch && matchesEstado && matchesCodigo;
+      return matchesSearch && matchesEstado && matchesCategoria && matchesAutor && matchesUbicacion && matchesClasificacion;
     });
     if (!sortConfig) return result;
     return [...result].sort((a: any, b: any) => {
@@ -644,11 +649,16 @@ export default function useInventario() {
           ? getNum(a) - getNum(b)
           : getNum(b) - getNum(a);
       }
+      if (sortConfig.key === "anio") {
+        const aAnio = parseInt(a.ano || a.anio || "0", 10);
+        const bAnio = parseInt(b.ano || b.anio || "0", 10);
+        return sortConfig.direction === "asc" ? aAnio - bAnio : bAnio - aAnio;
+      }
       const aVal = (a[sortConfig.key] ?? "").toString().toLowerCase();
       const bVal = (b[sortConfig.key] ?? "").toString().toLowerCase();
       return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     });
-  }, [obras, searchTerm, filterEstado, filterCodigo, sortKey]);
+  }, [obras, searchTerm, filterEstado, filterCategoria, filterAutor, filterUbicacion, filterClasificacion, sortKey]);
 
   return {
     userRole, canEditObra, canDeleteObra,
@@ -657,7 +667,10 @@ export default function useInventario() {
     isLoading,
     searchTerm, setSearchTerm,
     filterEstado, setFilterEstado,
-    filterCodigo, setFilterCodigo,
+    filterCategoria, setFilterCategoria,
+    filterAutor, setFilterAutor,
+    filterUbicacion, setFilterUbicacion,
+    filterClasificacion, setFilterClasificacion,
     sortConfig, handleSort,
     isOpen, openModal, closeModal,
     formData, setFormData,
