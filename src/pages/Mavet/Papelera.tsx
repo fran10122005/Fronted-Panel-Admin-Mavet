@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import { mavetApi } from "../../services/api";
@@ -6,9 +6,26 @@ import toast from "react-hot-toast";
 import Skeleton from "../../components/ui/Skeleton";
 import { Modal } from "../../components/ui/modal";
 import Button from "../../components/ui/button/Button";
+import Pagination from "../../components/ui/Pagination";
+import Select from "../../components/ui/Select";
 
 const LIMPIEZA_KEY = "papelera_ultima_limpieza";
 const DIAS_LIMPIEZA = 30;
+const ITEMS_PER_PAGE = 20;
+
+const TIPO_OPTIONS = [
+  { value: "", label: "Todos los tipos" },
+  { value: "Obra", label: "Obra" },
+  { value: "Libro", label: "Libro" },
+  { value: "Trabajador", label: "Trabajador" },
+  { value: "Taller", label: "Taller" },
+  { value: "Artista", label: "Artista" },
+  { value: "InscripcionTaller", label: "Inscripción Taller" },
+  { value: "InventarioTaller", label: "Inventario Taller" },
+  { value: "EspacioMuseo", label: "Espacio Museo" },
+  { value: "SolicitudEspacio", label: "Solicitud Espacio" },
+  { value: "Usuario", label: "Usuario" },
+];
 
 export default function Papelera() {
   const [items, setItems] = useState<any[]>([]);
@@ -16,28 +33,45 @@ export default function Papelera() {
   const [modalType, setModalType] = useState<"restore" | "delete" | "vaciar" | null>(null);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
-  const fetchPapelera = async () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [tipoFilter, setTipoFilter] = useState("");
+  const [search, setSearch] = useState("");
+
+  const fetchPapelera = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await mavetApi.getPapeleraGlobal();
-      setItems(data);
+      const result = await mavetApi.getPapeleraGlobal({
+        page,
+        limit: ITEMS_PER_PAGE,
+        tipo: tipoFilter || undefined,
+        search: search || undefined,
+      });
+      setItems(result.items);
+      setTotalPages(result.totalPages);
+      setTotalItems(result.total);
     } catch {
       toast.error("Error al cargar la papelera");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, tipoFilter, search]);
 
   useEffect(() => {
     fetchPapelera();
-  }, []);
+  }, [fetchPapelera]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [tipoFilter, search]);
 
   const handleRestore = async () => {
     if (!selectedItem) return;
     try {
       await mavetApi.restaurarDePapelera(selectedItem.tipo, selectedItem.id);
       toast.success("Registro restaurado correctamente.");
-      setItems((prev) => prev.filter((i) => i.id !== selectedItem.id || i.tipo !== selectedItem.tipo));
+      fetchPapelera();
     } catch (error: any) {
       toast.error(error.message || "Error al restaurar el registro");
     } finally {
@@ -51,7 +85,7 @@ export default function Papelera() {
     try {
       await mavetApi.eliminarDefinitivo(selectedItem.tipo, selectedItem.id);
       toast.success("Registro eliminado permanentemente.");
-      setItems((prev) => prev.filter((i) => i.id !== selectedItem.id || i.tipo !== selectedItem.tipo));
+      fetchPapelera();
     } catch (error: any) {
       toast.error(error.message || "Error al eliminar el registro");
     } finally {
@@ -65,13 +99,12 @@ export default function Papelera() {
     try {
       await mavetApi.vaciarPapelera();
       toast.success("Papelera vaciada correctamente.");
-      setItems([]);
+      fetchPapelera();
     } catch (error: any) {
       toast.error(error.message || "Error al vaciar la papelera");
     }
   };
 
-  // Auto-cleanup: vaciar items con más de 30 días al cargar la página
   useEffect(() => {
     const ultimaLimpieza = localStorage.getItem(LIMPIEZA_KEY);
     const ahora = Date.now();
@@ -81,8 +114,7 @@ export default function Papelera() {
       try {
         await mavetApi.vaciarPapelera();
         localStorage.setItem(LIMPIEZA_KEY, String(ahora));
-        const data = await mavetApi.getPapeleraGlobal();
-        setItems(data);
+        fetchPapelera();
         toast.success("Papelera limpiada automáticamente (30 días).");
       } catch {
         // backend might not support vaciarPapelera; skip silently
@@ -103,7 +135,7 @@ export default function Papelera() {
             <p className="text-sm text-gray-500">Aquí puedes restaurar elementos eliminados o borrarlos de forma permanente.</p>
           </div>
           <div className="flex items-center gap-3">
-            {items.length > 0 && (
+            {totalItems > 0 && (
               <button
                 onClick={() => setModalType("vaciar")}
                 className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-xl border border-red-200 dark:border-red-800/50 transition-colors"
@@ -119,6 +151,26 @@ export default function Papelera() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
               Volver al Dashboard
             </Link>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Buscar por título..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              options={TIPO_OPTIONS}
+              value={tipoFilter}
+              onChange={(e) => setTipoFilter(e.target.value)}
+              placeholder="Filtrar por tipo"
+            />
           </div>
         </div>
 
@@ -164,7 +216,11 @@ export default function Papelera() {
                           item.tipo === 'Trabajador' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20' :
                           'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20'
                         }`}>
-                          {item.tipo}
+                          {item.tipo === 'InscripcionTaller' ? 'Inscripción' :
+                           item.tipo === 'InventarioTaller' ? 'Inv. Taller' :
+                           item.tipo === 'EspacioMuseo' ? 'Espacio' :
+                           item.tipo === 'SolicitudEspacio' ? 'Solicitud' :
+                           item.tipo}
                         </span>
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{item.titulo}</td>
@@ -203,9 +259,19 @@ export default function Papelera() {
             </table>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={ITEMS_PER_PAGE}
+            label="registros"
+            onPageChange={(p) => setPage(p)}
+          />
+        )}
       </div>
 
-      {/* MODAL RESTAURAR */}
       <Modal
         isOpen={modalType === "restore"}
         onClose={() => setModalType(null)}
@@ -225,7 +291,6 @@ export default function Papelera() {
         </div>
       </Modal>
 
-      {/* MODAL ELIMINAR */}
       <Modal
         isOpen={modalType === "delete"}
         onClose={() => setModalType(null)}
@@ -249,7 +314,6 @@ export default function Papelera() {
         </div>
       </Modal>
 
-      {/* MODAL VACIAR PAPELERA */}
       <Modal
         isOpen={modalType === "vaciar"}
         onClose={() => setModalType(null)}
@@ -262,7 +326,7 @@ export default function Papelera() {
             <p className="text-sm font-medium">Esta acción no se puede deshacer.</p>
           </div>
           <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
-            ¿Estás seguro que deseas vaciar la papelera? Se eliminarán <strong>todos</strong> los registros ({items.length}) permanentemente.
+            ¿Estás seguro que deseas vaciar la papelera? Se eliminarán <strong>todos</strong> los registros ({totalItems}) permanentemente.
           </p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setModalType(null)}>Cancelar</Button>

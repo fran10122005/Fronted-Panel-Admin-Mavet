@@ -1,12 +1,33 @@
 import { axiosInstance } from "./client";
 
+interface PapeleraParams {
+  page?: number;
+  limit?: number;
+  tipo?: string;
+  search?: string;
+}
+
+interface PapeleraResponse {
+  items: any[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const papelera = {
-  getPapeleraGlobal: async (): Promise<any[]> => {
+  getPapeleraGlobal: async (params: PapeleraParams = {}): Promise<PapeleraResponse> => {
     try {
-      const res = await axiosInstance.get("/api/papelera");
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      const res = await axiosInstance.get("/api/papelera", { params });
+      return {
+        items: Array.isArray(res.data?.items) ? res.data.items : [],
+        total: res.data?.total ?? 0,
+        page: res.data?.page ?? 1,
+        limit: res.data?.limit ?? 20,
+        totalPages: res.data?.totalPages ?? 1,
+      };
     } catch {
-      return [];
+      return { items: [], total: 0, page: 1, limit: 20, totalPages: 1 };
     }
   },
 
