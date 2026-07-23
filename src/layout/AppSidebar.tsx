@@ -101,7 +101,7 @@ const routePermissions: Record<string, string[]> = {
   "/inventario-obras": ["Administrador", "admin", "Gerente", "Curador", "Restaurador"],
   "/biblioteca": ["Administrador", "admin", "Gerente", "Bibliotecario", "Bibliotecaria"],
   "/rrhh": ["Administrador", "admin", "Gerente"],
-  "/asistencia": ["*"],
+  "/asistencia": ["Administrador", "admin", "Gerente", "Recepcionista"],
   "/auditoria": ["Administrador", "admin", "Gerente"],
   "/papelera": ["Administrador", "admin"],
   "/manual": ["*"],

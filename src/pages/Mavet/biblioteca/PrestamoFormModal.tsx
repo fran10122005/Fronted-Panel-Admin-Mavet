@@ -41,7 +41,7 @@ interface Props {
   onSubmit: (consultantes: { cedula: string; nombre: string }[]) => void;
   inputCls: string;
 }
-import { inputCls as baseInputCls, selectCls as baseSelectCls, modalCls } from "../../../../utils/formClasses";;
+import { inputCls as baseInputCls, selectCls as baseSelectCls, modalCls } from "../../../utils/formClasses";
 
 export default function PrestamoFormModal({
   isOpen, onClose, selectedLibroTitle, maxCantidad, isSubmitting: parentSubmitting, onSubmit, inputCls,

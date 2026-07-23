@@ -123,9 +123,12 @@ export default function App() {
                 <Route element={<RoleProtectedRoute allowedRoles={[]} />}>
                   <Route path="/papelera" element={<Papelera />} />
                 </Route>
-                {/* Manual de Usuario y Asistencia (todos los roles autenticados) */}
+                {/* Manual de Usuario (todos los roles autenticados) */}
                 <Route path="/manual" element={<ManualUsuario />} />
-                <Route path="/asistencia" element={<ErrorBoundary><AsistenciaPersonal /></ErrorBoundary>} />
+                {/* Asistencia (solo Admin, Gerente y Recepcionista) */}
+                <Route element={<RoleProtectedRoute allowedRoles={["Gerente", "Recepcionista"]} />}>
+                  <Route path="/asistencia" element={<ErrorBoundary><AsistenciaPersonal /></ErrorBoundary>} />
+                </Route>
                 {/* Auditoría (solo administradores y gerentes) */}
                 <Route element={<RoleProtectedRoute allowedRoles={["Administrador", "Gerente"]} />}>
                   <Route path="/auditoria" element={<AuditLogs />} />

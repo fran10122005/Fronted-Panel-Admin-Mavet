@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
 
 interface ModalProps {
@@ -6,8 +7,8 @@ interface ModalProps {
   onClose: () => void;
   className?: string;
   children: React.ReactNode;
-  showCloseButton?: boolean; // New prop to control close button visibility
-  isFullscreen?: boolean; // Default to false for backwards compatibility
+  showCloseButton?: boolean;
+  isFullscreen?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,7 +16,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   children,
   className,
-  showCloseButton = true, // Default to true for backwards compatibility
+  showCloseButton = true,
   isFullscreen = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -54,7 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
     ? "w-full h-full"
     : "relative w-full max-w-lg mx-auto my-4 sm:my-6 rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-xl dark:bg-[#141822]/80 dark:backdrop-blur-xl max-h-[90vh] overflow-y-auto";
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
       {!isFullscreen && (
         <div
@@ -90,6 +91,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
         <div>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
