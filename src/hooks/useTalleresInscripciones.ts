@@ -44,48 +44,34 @@ export function useTalleresInscripciones(
 
   const setError = setFormError || ((msg: string) => toast.error(msg));
 
-  const handleSubmitInscripcion = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitInscripcion = async (data: {
+    tallerId: string;
+    alumnoCedula: string;
+    alumnoNombre: string;
+    alumnoEdad: string;
+    repNombre?: string;
+    repCedula?: string;
+    repTelefono?: string;
+    correo?: string;
+  }) => {
     setError("");
-    if (!enrollForm.tallerId) {
-      setError("Debe seleccionar un taller.");
-      return;
-    }
-    if (!enrollForm.alumnoCedula.trim()) {
-      setError("La cédula del alumno es obligatoria.");
-      return;
-    }
-    if (!enrollForm.alumnoNombre.trim()) {
-      setError("El nombre del alumno es obligatorio.");
-      return;
-    }
-    if (!enrollForm.alumnoEdad.trim()) {
-      setError("La edad del alumno es obligatoria.");
-      return;
-    }
-    if (esMenor && (!enrollForm.repNombre || !enrollForm.repCedula)) {
-      setError("Los menores de edad requieren nombre y cédula del representante.");
-      return;
-    }
     setIsEnrolling(true);
+    const edadNum = parseInt(data.alumnoEdad, 10);
+    const esMenor = !isNaN(edadNum) && edadNum < 18;
     try {
       const payload: any = {
-        tallerId: enrollForm.tallerId,
-        alumno: { cedula: enrollForm.alumnoCedula, nombre: enrollForm.alumnoNombre, edad: enrollForm.alumnoEdad },
+        tallerId: data.tallerId,
+        alumno: { cedula: data.alumnoCedula, nombre: data.alumnoNombre, edad: data.alumnoEdad },
       };
       if (esMenor) {
         payload.representante = {
-          nombre: enrollForm.repNombre,
-          cedula: enrollForm.repCedula,
-          telefono: enrollForm.repTelefono,
+          nombre: data.repNombre,
+          cedula: data.repCedula,
+          telefono: data.repTelefono,
         };
       }
       await mavetApi.inscribirTaller(payload);
       toast.success("Alumno inscrito correctamente.");
-      setEnrollForm((prev: any) => ({
-        ...prev, alumnoCedula: "", alumnoNombre: "", alumnoEdad: "",
-        repNombre: "", repCedula: "", repTelefono: "",
-      }));
       const refreshed = await mavetApi.getInscripcionesTaller();
       setInscripciones(refreshed);
     } catch (error: any) {

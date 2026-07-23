@@ -123,7 +123,7 @@ export function useRecepcion() {
     } finally {
       setIsLoadingIngresos(false);
     }
-  }, [ingresosFiltro, ingresosPage, ingresosSearch, ingresosMotivo]);
+  }, [ingresosFiltro, ingresosPage, ingresosSearch, ingresosMotivo, ingresosFechaDesde, ingresosFechaHasta]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -131,7 +131,7 @@ export function useRecepcion() {
 
   useEffect(() => {
     setIngresosPage(1);
-  }, [ingresosFiltro, ingresosSearch, ingresosMotivo]);
+  }, [ingresosFiltro, ingresosSearch, ingresosMotivo, ingresosFechaDesde, ingresosFechaHasta]);
 
   useEffect(() => {
     fetchIngresos();
@@ -359,6 +359,8 @@ export function useRecepcion() {
     ingresosFiltro, setIngresosFiltro,
     ingresosSearch, setIngresosSearch,
     ingresosMotivo, setIngresosMotivo,
+    ingresosFechaDesde, setIngresosFechaDesde,
+    ingresosFechaHasta, setIngresosFechaHasta,
     ingresosPage, setIngresosPage,
     ingresosTotalPages,
     ingresosTotalItems,

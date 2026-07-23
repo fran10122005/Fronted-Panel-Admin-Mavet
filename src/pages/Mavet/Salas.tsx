@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
-import { Modal } from "../../components/ui/modal";
 import Button from "../../components/ui/button/Button";
-import TextField from "../../components/ui/TextField";
 import Badge from "../../components/ui/Badge";
 import toast from "react-hot-toast";
-import { limitNumericInput } from "../../utils/validation";
 import { generateNextCode } from "../../utils/codeGenerator";
-
 import ComponentCard from "../../components/common/ComponentCard";
+import { Modal } from "../../components/ui/modal";
+import SalasFormModal from "./salas/SalasFormModal";
 
 interface Espacio {
   id_espacio?: number;
@@ -27,30 +25,12 @@ export default function Salas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedEspacio, setSelectedEspacio] = useState<Espacio | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  const [formData, setFormData] = useState({
-    codigo_espacio: "",
-    nombre_espacio: "",
-    capacidad_maxima: "",
-    descripcion: "",
-    imagen_url: ""
-  });
-
-  const [imagenFile, setImagenFile] = useState<File | null>(null);
-  const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
-  const previewUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    };
-  }, []);
+  const [formError, setFormError] = useState("");
 
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null }>({
-    open: false,
-    id: null
+    open: false, id: null
   });
 
   const loadEspacios = async () => {
@@ -65,103 +45,44 @@ export default function Salas() {
     }
   };
 
-  useEffect(() => {
-    loadEspacios();
-  }, []);
-
-  const cleanImagePreview = () => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    previewUrlRef.current = null;
-    setImagenFile(null);
-    setImagenPreviewUrl(null);
-  };
+  useEffect(() => { loadEspacios(); }, []);
 
   const openCrear = async () => {
     setIsEditing(false);
     setSelectedId(null);
-    setFieldErrors({});
-    cleanImagePreview();
-
-    const all = espacios;
+    setSelectedEspacio(null);
+    setFormError("");
     const nextCode = generateNextCode(
-      all.map(e => e.id_espacio || e.id || 0),
-      "EMU",
-      5
+      espacios.map(e => e.id_espacio || e.id || 0),
+      "EMU", 5
     );
-
-    setFormData({ codigo_espacio: nextCode, nombre_espacio: "", capacidad_maxima: "", descripcion: "", imagen_url: "" });
+    setSelectedEspacio({ nombre_espacio: "", codigo_espacio: nextCode, capacidad_maxima: undefined, descripcion: "" } as any);
     setIsModalOpen(true);
   };
 
   const openEditar = (espacio: Espacio) => {
     setIsEditing(true);
     setSelectedId(espacio.id_espacio || espacio.id || null);
-    setFieldErrors({});
-    cleanImagePreview();
-    setFormData({
-      codigo_espacio: espacio.codigo_espacio || "",
-      nombre_espacio: espacio.nombre_espacio || "",
-      capacidad_maxima: espacio.capacidad_maxima?.toString() || "",
-      descripcion: espacio.descripcion || "",
-      imagen_url: espacio.imagen_url || ""
-    });
+    setSelectedEspacio(espacio);
+    setFormError("");
     setIsModalOpen(true);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
-    if (name === "capacidad_maxima") {
-      let error = "";
-      if (value) {
-        const cap = Number(value);
-        if (cap < 1) error = "La capacidad debe ser al menos 1 persona.";
-        else if (cap > 80) error = "La capacidad máxima permitida es de 80 personas.";
-      }
-      setFieldErrors(prev => ({ ...prev, capacidad_maxima: error }));
-    } else {
-      setFieldErrors(prev => ({ ...prev, capacidad_maxima: "" }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.nombre_espacio.trim()) {
-      toast.error("El nombre del espacio es obligatorio");
-      return;
-    }
-
-    if (formData.capacidad_maxima) {
-      const cap = Number(formData.capacidad_maxima);
-      if (cap < 1) { toast.error("La capacidad debe ser al menos 1 persona"); return; }
-      if (cap > 80) { toast.error("La capacidad máxima permitida es de 80 personas"); return; }
-    }
-
-    const trimmedName = formData.nombre_espacio.trim();
-    const isDuplicate = espacios.some(e =>
-      e.nombre_espacio.toLowerCase() === trimmedName.toLowerCase() &&
-      (isEditing ? (e.id_espacio || e.id) !== selectedId : true)
-    );
-
-    if (isDuplicate) {
-      toast.error("Ya existe un espacio con ese nombre");
-      return;
-    }
-
+  const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
+    setFormError("");
     try {
       let payload: any = {
-        codigo_espacio: formData.codigo_espacio || undefined,
-        nombre_espacio: formData.nombre_espacio,
-        descripcion: formData.descripcion || undefined,
+        codigo_espacio: data.codigo_espacio || undefined,
+        nombre_espacio: data.nombre_espacio,
+        descripcion: data.descripcion || undefined,
       };
-      if (formData.capacidad_maxima) payload.capacidad_maxima = Number(formData.capacidad_maxima);
+      if (data.capacidad_maxima) payload.capacidad_maxima = Number(data.capacidad_maxima);
 
-      if (imagenFile) {
+      if (data.imagenFile) {
         const fd = new FormData();
         Object.keys(payload).forEach(key => fd.append(key, payload[key]));
-        fd.append("imagen", imagenFile);
+        fd.append("imagen", data.imagenFile);
         payload = fd;
       }
 
@@ -173,10 +94,9 @@ export default function Salas() {
         toast.success("Espacio creado correctamente");
       }
       setIsModalOpen(false);
-      cleanImagePreview();
       loadEspacios();
     } catch (error: any) {
-      toast.error(error.message || "Error al guardar el espacio");
+      setFormError(error.message || "Error al guardar el espacio");
     } finally {
       setIsSubmitting(false);
     }
@@ -275,79 +195,24 @@ export default function Salas() {
         </div>
       </ComponentCard>
 
-      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); cleanImagePreview(); }} className="max-w-lg p-0 overflow-hidden">
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5">
-            {isEditing ? "Editar Espacio" : "Nuevo Espacio"}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <TextField label="Código de Espacio" value={formData.codigo_espacio} readOnly
-              className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono" />
-
-            <TextField label="Nombre del Espacio *" name="nombre_espacio" value={formData.nombre_espacio}
-              onChange={handleChange} required placeholder="Ej. Sala 1, Auditorio..." />
-
-            <TextField label="Capacidad Máxima" name="capacidad_maxima" type="number"
-              value={formData.capacidad_maxima} onChange={handleChange}
-              onKeyDown={limitNumericInput} placeholder="Ej. 50 (máx. 80)"
-              error={fieldErrors.capacidad_maxima}
-              hint="Máximo 80 personas" />
-
-            <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Descripción
-              </label>
-              <textarea
-                name="descripcion"
-                value={formData.descripcion}
-                onChange={handleChange}
-                rows={3}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                placeholder="Detalles sobre el espacio..."
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Imagen del Espacio
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setImagenFile(file);
-                  if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-                  const url = file ? URL.createObjectURL(file) : null;
-                  previewUrlRef.current = url;
-                  setImagenPreviewUrl(url);
-                }}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-              />
-              {imagenPreviewUrl && (
-                <div className="mt-3 w-full max-w-xs h-44 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
-                  <img src={imagenPreviewUrl} alt="Preview" className="w-full h-full object-contain p-2" />
-                </div>
-              )}
-              {!imagenPreviewUrl && formData.imagen_url && (
-                <div className="mt-3 w-full max-w-xs h-44 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
-                  <img src={formData.imagen_url} alt="Imagen actual" className="w-full h-full object-contain p-2"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" type="button" onClick={() => { setIsModalOpen(false); cleanImagePreview(); }}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
-                {isSubmitting ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
+      <SalasFormModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setFormError(""); }}
+        isEditing={isEditing}
+        initialData={selectedEspacio ? {
+          codigo_espacio: selectedEspacio.codigo_espacio,
+          nombre_espacio: selectedEspacio.nombre_espacio,
+          capacidad_maxima: selectedEspacio.capacidad_maxima?.toString() as any,
+          descripcion: selectedEspacio.descripcion,
+          imagen_url: selectedEspacio.imagen_url,
+        } : undefined}
+        existingNames={espacios.map(e => e.nombre_espacio)}
+        editingId={selectedId}
+        isSubmitting={isSubmitting}
+        formError={formError}
+        onSubmit={handleSubmit}
+        onDismissError={() => setFormError("")}
+      />
 
       <Modal isOpen={confirmDelete.open} onClose={() => setConfirmDelete({ open: false, id: null })} className="max-w-sm p-0 overflow-hidden">
         <div className="p-6 text-center">

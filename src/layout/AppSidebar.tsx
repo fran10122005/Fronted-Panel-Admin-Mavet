@@ -36,9 +36,9 @@ const navItems: NavItem[] = [
     path: "/recepcion",
   },
   {
-    icon: <PageIcon />,
-    name: "Biblioteca",
-    path: "/biblioteca",
+    icon: <CalenderIcon />,
+    name: "Auditorio",
+    path: "/auditorio",
   },
   {
     icon: <PageIcon />,
@@ -46,9 +46,18 @@ const navItems: NavItem[] = [
     path: "/talleres",
   },
   {
-    icon: <CalenderIcon />,
-    name: "Auditorio",
-    path: "/auditorio",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    name: "Asistencia",
+    path: "/asistencia",
+  },
+  {
+    icon: <PageIcon />,
+    name: "Biblioteca",
+    path: "/biblioteca",
   },
   {
     icon: <TableIcon />,
@@ -59,15 +68,6 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "Recursos Humanos",
     path: "/rrhh",
-  },
-  {
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    name: "Asistencia",
-    path: "/asistencia",
   },
   {
     icon: (

@@ -25,6 +25,7 @@ const Auditorio: React.FC = () => {
     userRole, isGerente,
     selectedEvent, setSelectedEvent,
     isPastEvent,
+    isDateLocked,
     codigoReserva,
     eventTitle, setEventTitle,
     eventDate, setEventDate,

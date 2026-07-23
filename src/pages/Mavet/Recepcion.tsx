@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { Modal } from "../../components/ui/modal";
 import Button from "../../components/ui/button/Button";
 import TextField from "../../components/ui/TextField";
-import Select from "../../components/ui/Select";
 import Badge from "../../components/ui/Badge";
 import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.service";
 import { limitNumericInput } from "../../utils/validation";
@@ -29,6 +28,8 @@ export default function Recepcion() {
     ingresosFiltro, setIngresosFiltro,
     ingresosSearch, setIngresosSearch,
     ingresosMotivo, setIngresosMotivo,
+    ingresosFechaDesde, setIngresosFechaDesde,
+    ingresosFechaHasta, setIngresosFechaHasta,
     ingresosPage, setIngresosPage,
     ingresosTotalPages,
     ingresosTotalItems,
@@ -326,41 +327,51 @@ export default function Recepcion() {
               <Badge scheme="info">{ingresosTotalItems}</Badge>
             )}
           </h2>
-          <div className="flex items-center gap-1.5 flex-nowrap ml-auto">
-            <div className="relative shrink-0">
-              <input
-                type="text"
-                value={ingresosSearch}
-                onChange={(e) => setIngresosSearch(e.target.value)}
-                placeholder="Nombre/cédula..."
-                className="w-36 rounded-lg border bg-white dark:bg-gray-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
-              />
-            </div>
+          <div className="flex items-center gap-1 flex-nowrap ml-auto text-xs">
+            <input
+              type="text"
+              value={ingresosSearch}
+              onChange={(e) => setIngresosSearch(e.target.value)}
+              placeholder="Nombre/cédula..."
+              className="w-24 rounded-lg border bg-white dark:bg-gray-900 px-2 py-1.5 text-xs text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+            />
+            <input
+              type="date"
+              value={ingresosFechaDesde}
+              onChange={(e) => setIngresosFechaDesde(e.target.value)}
+              className="w-28 rounded-lg border bg-white dark:bg-gray-900 px-2 py-1.5 text-xs text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+            />
+            <span className="text-gray-400 text-xs shrink-0">-</span>
+            <input
+              type="date"
+              value={ingresosFechaHasta}
+              onChange={(e) => setIngresosFechaHasta(e.target.value)}
+              className="w-28 rounded-lg border bg-white dark:bg-gray-900 px-2 py-1.5 text-xs text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+            />
             <select
               value={ingresosMotivo}
               onChange={(e) => setIngresosMotivo(e.target.value)}
-              className="shrink-0 min-w-[100px] rounded-lg border bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+              className="w-20 rounded-lg border bg-white dark:bg-gray-900 px-1.5 py-1.5 text-xs text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
             >
-              <option value="">Todos</option>
+              <option value="">Motivo</option>
               {motivos.map((m: any) => (
                 <option key={m.id_motivo} value={m.id_motivo}>{m.nombre}</option>
               ))}
             </select>
-            <Select
+            <select
               value={ingresosFiltro}
               onChange={(e) => setIngresosFiltro(e.target.value as any)}
-              options={[
-                { value: "hoy", label: "Hoy" },
-                { value: "mes", label: "Este Mes" },
-                { value: "ano", label: "Este Año" },
-              ]}
-              className="w-auto min-w-[90px] shrink-0"
-            />
-            <Button variant="danger" size="xs" onClick={() => {
+              className="w-[70px] rounded-lg border bg-white dark:bg-gray-900 px-1.5 py-1.5 text-xs text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+            >
+              <option value="hoy">Hoy</option>
+              <option value="mes">Mes</option>
+              <option value="ano">Año</option>
+            </select>
+            <Button variant="danger" size="xs" className="text-xs px-2 py-1.5 h-auto" onClick={() => {
               const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
               exportarReporteIngresos(ingresos, etiquetas[ingresosFiltro]);
             }} disabled={ingresos.length === 0}
-              startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>}>
+              startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>}>
               PDF
             </Button>
           </div>

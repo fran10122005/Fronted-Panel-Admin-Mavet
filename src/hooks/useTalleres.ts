@@ -210,20 +210,15 @@ export function useTalleres() {
 
   const handleOpenCrear = () => {
     setFormError("");
-    setInventarioForm({ nombre: "", descripcion: "" });
+    setSelectedInventario(null);
     openCrear();
   };
 
-  const handleCrearInventario = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCrearInventario = async (data: { nombre: string; descripcion?: string }) => {
     setFormError("");
-    if (!inventarioForm.nombre.trim()) {
-      setFormError("El nombre del taller es obligatorio.");
-      return;
-    }
     setIsSubmitting(true);
     try {
-      await mavetApi.crearInventarioTaller(inventarioForm as any);
+      await mavetApi.crearInventarioTaller(data as any);
       toast.success("Taller agregado al inventario.");
       closeCrear();
       const refreshed = await mavetApi.getInventarioTalleres();
@@ -238,20 +233,14 @@ export function useTalleres() {
   const handleOpenEditar = (item: any) => {
     setFormError("");
     setSelectedInventario(item);
-    setInventarioForm({ nombre: item.nombre || "", descripcion: item.descripcion || "" });
     openEditar();
   };
 
-  const handleEditarInventario = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditarInventario = async (data: { nombre: string; descripcion?: string }) => {
     setFormError("");
-    if (!inventarioForm.nombre.trim()) {
-      setFormError("El nombre del taller es obligatorio.");
-      return;
-    }
     setIsSubmitting(true);
     try {
-      await mavetApi.actualizarInventarioTaller(selectedInventario.id_taller || selectedInventario.id, inventarioForm as any);
+      await mavetApi.actualizarInventarioTaller(selectedInventario.id_taller || selectedInventario.id, data as any);
       toast.success("Taller actualizado en el inventario.");
       closeEditar();
       const refreshed = await mavetApi.getInventarioTalleres();
@@ -643,7 +632,6 @@ export function useTalleres() {
     searchInventario, setSearchInventario,
     filterInstructor, setFilterInstructor,
     currentPage, setCurrentPage,
-    inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     isSubmitting,
     inscripcionesAgrupadas,

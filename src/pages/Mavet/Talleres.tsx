@@ -59,7 +59,6 @@ export default function Talleres() {
     searchTerm, setSearchTerm,
     filterInstructor, setFilterInstructor,
     currentPage, setCurrentPage,
-    inventarioForm, setInventarioForm,
     planificarForm, setPlanificarForm,
     enrollForm,
     isSubmitting,
@@ -68,6 +67,7 @@ export default function Talleres() {
     totalPages, paginatedTalleres,
     totalPlanificados, totalInscritos, totalInventario,
     selectedTaller,
+    selectedInventario,
     isEditingPlanificado,
     selectedTallerEnroll,
     tallerInscripciones,
@@ -117,12 +117,6 @@ export default function Talleres() {
     paginatedInstructores, totalInstPages, currentPageInst, setCurrentPageInst,
     refreshInstructores, refreshInventario,
   } = useTalleres();
-
-  const handleInventarioFormChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormError("");
-    setInventarioForm(prev => ({ ...prev, [name]: value }));
-  };
 
   const handlePlanificarEstadoChange = (value: boolean) => {
     setPlanificarForm(prev => ({ ...prev, estado: value }));
@@ -897,24 +891,21 @@ export default function Talleres() {
         isOpen={isOpenCrear}
         onClose={closeCrear}
         isEditing={false}
-        formData={inventarioForm}
         isSubmitting={isSubmitting}
         formError={formError}
-        onChange={handleInventarioFormChange}
         onSubmit={handleCrearInventario}
-        inputCls={inputCls}
+        onDismissError={() => setFormError("")}
       />
 
       <TallerFormModal
         isOpen={isOpenEditar}
         onClose={closeEditar}
         isEditing={true}
-        formData={inventarioForm}
+        initialData={selectedInventario ? { nombre: selectedInventario.nombre, descripcion: selectedInventario.descripcion } : undefined}
         isSubmitting={isSubmitting}
         formError={formError}
-        onChange={handleInventarioFormChange}
         onSubmit={handleEditarInventario}
-        inputCls={inputCls}
+        onDismissError={() => setFormError("")}
       />
 
       <TallerDetailModal
@@ -937,20 +928,15 @@ export default function Talleres() {
         selectCls={selectCls}
       />
 
-      {/* --- Instructor Management Modal --- */}
       <InscripcionModal
         isOpen={isOpenEnroll}
         onClose={closeEnrollModal}
         talleres={talleres}
         selectedTallerEnroll={selectedTallerEnroll}
-        enrollForm={enrollForm}
-        esMenor={esMenor}
         isSubmitting={isEnrolling}
         formError={formError}
-        onChange={handleEnrollChange}
         onSubmit={handleSubmitInscripcion}
-        inputCls={inputCls}
-        selectCls={selectCls}
+        onDismissError={() => setFormError("")}
       />
 
       <Modal isOpen={isOpenInscr} onClose={closeInscrModal} className="max-w-4xl p-6">

@@ -1,91 +1,87 @@
-import { Modal } from "../../../components/ui/modal";
-import { AlertCircle, Save, X } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FormModal, FormSection } from "../../../components/ui/form";
+import { inputClsWithIcon, iconWrapperCls, inputWithError } from "../../../utils/formClasses";
+import { Book, MessageSquare } from "lucide-react";
+
+const tallerInventarioSchema = z.object({
+  nombre: z.string().min(1, "El nombre del taller es obligatorio"),
+  descripcion: z.string().optional(),
+});
+
+export type TallerInventarioFormValues = z.infer<typeof tallerInventarioSchema>;
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   isEditing: boolean;
-  formData: { nombre: string; descripcion: string };
+  initialData?: { nombre: string; descripcion: string };
   isSubmitting: boolean;
   formError: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  inputCls: string;
+  onSubmit: (data: TallerInventarioFormValues) => void;
+  onDismissError?: () => void;
 }
 
-const labelCls = "block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200";
-const baseInputCls = "w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm";
-
 export default function TallerFormModal({
-  isOpen, onClose, isEditing, formData,
-  isSubmitting, formError, onChange, onSubmit, inputCls: _inputCls,
+  isOpen, onClose, isEditing, initialData,
+  isSubmitting, formError, onSubmit, onDismissError,
 }: Props) {
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<TallerInventarioFormValues>({
+    resolver: zodResolver(tallerInventarioSchema),
+    defaultValues: initialData || { nombre: "", descripcion: "" },
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      reset(initialData || { nombre: "", descripcion: "" });
+    }
+  }, [isOpen, initialData, reset]);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-0 overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-xl">
-      <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {isEditing ? "Editar Taller" : "Crear Taller"}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              {isEditing
-                ? "Modifique los datos del taller en el inventario."
-                : "Agregue un taller al inventario maestro."}
-            </p>
-          </div>
-          <button type="button" onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      <form onSubmit={onSubmit} className="p-6 space-y-5">
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? "Editar Taller" : "Crear Taller"}
+      subtitle={isEditing ? "Modifique los datos del taller en el inventario." : "Agregue un taller al inventario maestro."}
+      formError={formError}
+      onDismissError={onDismissError}
+      isSubmitting={isSubmitting}
+      isEditing={isEditing}
+      onSubmit={handleSubmit(onSubmit)}
+      submitLabelNew="Guardar Taller"
+      submitLabelEdit="Actualizar"
+    >
+      <FormSection icon={<Book className="w-3.5 h-3.5" />} title="Información del Taller">
         <div>
-          <label className={labelCls}>Nombre del Taller <span className="text-red-400">*</span></label>
+          <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Nombre del Taller <span className="text-red-400">*</span>
+          </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            <div className={iconWrapperCls}>
+              <Book className="w-4 h-4 text-gray-400" />
             </div>
-            <input type="text" name="nombre" value={formData.nombre}
-              onChange={onChange} className={baseInputCls + " pl-10"} placeholder="Ej. Pintura al Óleo" required />
+            <input type="text" placeholder="Ej. Pintura al Óleo"
+              className={inputWithError(inputClsWithIcon, !!errors.nombre)}
+              {...register("nombre")} />
+            {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
           </div>
         </div>
         <div>
-          <label className={labelCls}>Descripción</label>
+          <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Descripción
+          </label>
           <div className="relative">
-            <div className="absolute top-3 left-3.5 pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+            <div className={iconWrapperCls}>
+              <MessageSquare className="w-4 h-4 text-gray-400" />
             </div>
-            <textarea rows={3} name="descripcion" value={formData.descripcion}
-              onChange={onChange} className={baseInputCls + " pl-10 resize-none"} placeholder="Breve descripción del taller..." />
+            <textarea rows={3} placeholder="Breve descripción del taller..."
+              className={inputWithError(inputClsWithIcon + " resize-none", !!errors.descripcion)}
+              {...register("descripcion")} />
           </div>
         </div>
-
-        {formError && (
-          <div className="flex items-start gap-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-900/30">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium">{formError}</p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
-            <X className="w-4 h-4" />
-            Cancelar
-          </button>
-          <button type="submit" disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 shadow-sm transition disabled:opacity-70 disabled:cursor-wait">
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {isSubmitting ? "Guardando..." : isEditing ? "Actualizar" : "Guardar Taller"}
-          </button>
-        </div>
-      </form>
-    </Modal>
+      </FormSection>
+    </FormModal>
   );
 }
