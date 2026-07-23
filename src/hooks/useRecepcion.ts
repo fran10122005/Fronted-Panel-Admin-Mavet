@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { mavetApi, axiosInstance } from "../services/api";
 import { normalizeCedula } from "../utils/formatters";
 import toast from "react-hot-toast";
@@ -37,8 +37,14 @@ export function useRecepcion() {
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [isLoadingIngresos, setIsLoadingIngresos] = useState(false);
-  const [showAllIngresos, setShowAllIngresos] = useState(false);
   const [ingresosFiltro, setIngresosFiltro] = useState<"hoy" | "mes" | "ano">("hoy");
+  const [ingresosSearch, setIngresosSearch] = useState("");
+  const [ingresosMotivo, setIngresosMotivo] = useState("");
+  const [ingresosFechaDesde, setIngresosFechaDesde] = useState("");
+  const [ingresosFechaHasta, setIngresosFechaHasta] = useState("");
+  const [ingresosPage, setIngresosPage] = useState(1);
+  const [ingresosTotalPages, setIngresosTotalPages] = useState(1);
+  const [ingresosTotalItems, setIngresosTotalItems] = useState(0);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isMenorModalOpen, setIsMenorModalOpen] = useState(false);
   const [menorData, setMenorData] = useState(INITIAL_MENOR);
@@ -87,7 +93,7 @@ export function useRecepcion() {
     }
   };
 
-  const fetchIngresos = async () => {
+  const fetchIngresos = useCallback(async () => {
     setIsLoadingIngresos(true);
     try {
       const now = new Date();
@@ -99,22 +105,37 @@ export function useRecepcion() {
       } else if (ingresosFiltro === "ano") {
         fechaStr = `${now.getFullYear()}`;
       }
-      const result = await mavetApi.getTodosIngresos(1, 1000, fechaStr);
+      const params: any = {
+        page: ingresosPage,
+        limit: INGRESOS_PAGE_SIZE,
+        fecha: fechaStr,
+      };
+      if (ingresosSearch.trim()) params.q = ingresosSearch.trim();
+      if (ingresosMotivo) params.id_motivo = ingresosMotivo;
+      if (ingresosFechaDesde) params.fecha_desde = ingresosFechaDesde;
+      if (ingresosFechaHasta) params.fecha_hasta = ingresosFechaHasta;
+      const result = await mavetApi.getTodosIngresos(params);
       setIngresos(result.data || []);
+      setIngresosTotalPages(result.totalPages || 1);
+      setIngresosTotalItems(result.totalItems || 0);
     } catch {
       setIngresos([]);
     } finally {
       setIsLoadingIngresos(false);
     }
-  };
+  }, [ingresosFiltro, ingresosPage, ingresosSearch, ingresosMotivo]);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   useEffect(() => {
+    setIngresosPage(1);
+  }, [ingresosFiltro, ingresosSearch, ingresosMotivo]);
+
+  useEffect(() => {
     fetchIngresos();
-  }, [ingresosFiltro]);
+  }, [fetchIngresos]);
 
   useEffect(() => {
     if (searchQuery.length < 3) {
@@ -335,8 +356,12 @@ export function useRecepcion() {
     isLoadingDashboard,
     ingresos,
     isLoadingIngresos,
-    showAllIngresos, setShowAllIngresos,
     ingresosFiltro, setIngresosFiltro,
+    ingresosSearch, setIngresosSearch,
+    ingresosMotivo, setIngresosMotivo,
+    ingresosPage, setIngresosPage,
+    ingresosTotalPages,
+    ingresosTotalItems,
     isQrModalOpen, setIsQrModalOpen,
     isMenorModalOpen, setIsMenorModalOpen,
     menorData, setMenorData,

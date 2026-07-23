@@ -17,6 +17,8 @@ import type {
   EstadisticasBiblioteca,
 } from "../../types";
 import { mavetApi } from "../../services/api";
+import PageHeader from "../../components/common/PageHeader";
+import Tabs from "../../components/ui/Tabs";
 
 type Periodo = "todas" | "hoy" | "semana" | "mes" | "personalizado";
 type Tab = "inventario" | "consultas";
@@ -85,47 +87,36 @@ export default function Biblioteca() {
 
   return (
     <div className="space-y-6 relative">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Biblioteca</h1>
-          <p className="text-sm text-gray-500">Gestión de libros, consultas en sala y registro de consultas.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={exportarCatalogoBiblioteca}
-            startIcon={<svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
-            <span className="hidden sm:inline">Exportar PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
-          {canEditLibro && (
-            <Button size="sm" onClick={handleOpenAddLibro}
-              startIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
-              <span className="hidden sm:inline">Registrar Nuevo Libro</span>
-              <span className="sm:hidden">Nuevo Libro</span>
+      <PageHeader
+        title="Biblioteca"
+        subtitle="Gestión de libros, consultas en sala y registro de consultas."
+        actions={
+          <>
+            <Button variant="secondary" size="sm" onClick={exportarCatalogoBiblioteca}
+              startIcon={<svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 gap-1">
-        {(["inventario", "consultas"] as Tab[]).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            data-tour={tab === "inventario" ? "tab-inventario" : "tab-consultas"}
-            className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 ${
-              activeTab === tab
-                ? "border-brand-500 text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-            }`}>
-            {tab === "inventario" ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            {canEditLibro && (
+              <Button size="sm" onClick={handleOpenAddLibro}
+                startIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
+                <span className="hidden sm:inline">Registrar Nuevo Libro</span>
+                <span className="sm:hidden">Nuevo Libro</span>
+              </Button>
             )}
-            {tab === "inventario" ? "Inventario y Consultas" : "Registro de Consultas"}
-          </button>
-        ))}
-      </div>
+          </>
+        }
+      />
+
+      <Tabs
+        variant="underline"
+        tabs={[
+          { id: "inventario", label: "Inventario y Consultas", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
+          { id: "consultas", label: "Registro de Consultas", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+        ]}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as Tab)}
+      />
 
       {activeTab === "inventario" ? (
         <>

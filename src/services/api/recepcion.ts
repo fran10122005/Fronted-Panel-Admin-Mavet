@@ -20,13 +20,8 @@ export const recepcion = {
     }
   },
 
-  getTodosIngresos: async (page?: number, limit?: number, fecha?: string, id_solicitud?: string): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
+  getTodosIngresos: async (params?: { page?: number; limit?: number; fecha?: string; id_solicitud?: string; q?: string; id_motivo?: string; fecha_desde?: string; fecha_hasta?: string }): Promise<{ data: any[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
-      const params: any = {};
-      if (page !== undefined) params.page = page;
-      if (limit !== undefined) params.limit = limit;
-      if (fecha !== undefined) params.fecha = fecha;
-      if (id_solicitud !== undefined) params.id_solicitud = id_solicitud;
       const res = await axiosInstance.get("/api/visitantes/ingresos", { params });
       const list = extractList(res);
       return extractPagination(res, list);

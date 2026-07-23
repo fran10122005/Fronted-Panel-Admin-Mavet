@@ -9,6 +9,7 @@ import { exportarQRPublico, exportarReporteIngresos } from "../../services/pdf.s
 import { limitNumericInput } from "../../utils/validation";
 import PrivacyConsent from "../../components/ui/PrivacyConsent";
 import { useRecepcion } from "../../hooks/useRecepcion";
+import PageHeader from "../../components/common/PageHeader";
 
 export default function Recepcion() {
   const [consentimiento, setConsentimiento] = useState(false);
@@ -25,15 +26,18 @@ export default function Recepcion() {
     isLoadingDashboard,
     ingresos,
     isLoadingIngresos,
-    showAllIngresos, setShowAllIngresos,
     ingresosFiltro, setIngresosFiltro,
+    ingresosSearch, setIngresosSearch,
+    ingresosMotivo, setIngresosMotivo,
+    ingresosPage, setIngresosPage,
+    ingresosTotalPages,
+    ingresosTotalItems,
     isQrModalOpen, setIsQrModalOpen,
     isMenorModalOpen, setIsMenorModalOpen,
     menorData, setMenorData,
     age, ageMenor,
     publicRegistrationUrl,
     qrImageUrl,
-    INGRESOS_PAGE_SIZE,
     handleSearch, selectPersona, handleChange, handleSubmit,
     handleRegistrarMenor, handleIngresarMenorAsociado,
     otroMotivoTexto, setOtroMotivoTexto, isOtroMotivo,
@@ -42,13 +46,15 @@ export default function Recepcion() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recepción MAVET</h1>
-        <Button size="sm" variant="secondary" onClick={() => setIsQrModalOpen(true)}
-          startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" /></svg>}>
-          Generar QR Público
-        </Button>
-      </div>
+      <PageHeader
+        title="Recepción MAVET"
+        actions={
+          <Button size="sm" variant="secondary" onClick={() => setIsQrModalOpen(true)}
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" /></svg>}>
+            Generar QR Público
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
@@ -316,11 +322,30 @@ export default function Recepcion() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
             Ingresos Registrados
-            {ingresos.length > 0 && (
-              <Badge scheme="info">{ingresos.length}</Badge>
+            {ingresosTotalItems > 0 && (
+              <Badge scheme="info">{ingresosTotalItems}</Badge>
             )}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-nowrap ml-auto">
+            <div className="relative shrink-0">
+              <input
+                type="text"
+                value={ingresosSearch}
+                onChange={(e) => setIngresosSearch(e.target.value)}
+                placeholder="Nombre/cédula..."
+                className="w-36 rounded-lg border bg-white dark:bg-gray-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+              />
+            </div>
+            <select
+              value={ingresosMotivo}
+              onChange={(e) => setIngresosMotivo(e.target.value)}
+              className="shrink-0 min-w-[100px] rounded-lg border bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 border-gray-300 dark:border-gray-600"
+            >
+              <option value="">Todos</option>
+              {motivos.map((m: any) => (
+                <option key={m.id_motivo} value={m.id_motivo}>{m.nombre}</option>
+              ))}
+            </select>
             <Select
               value={ingresosFiltro}
               onChange={(e) => setIngresosFiltro(e.target.value as any)}
@@ -329,7 +354,7 @@ export default function Recepcion() {
                 { value: "mes", label: "Este Mes" },
                 { value: "ano", label: "Este Año" },
               ]}
-              className="w-auto min-w-[120px]"
+              className="w-auto min-w-[90px] shrink-0"
             />
             <Button variant="danger" size="xs" onClick={() => {
               const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
@@ -338,11 +363,6 @@ export default function Recepcion() {
               startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>}>
               PDF
             </Button>
-            {!isLoadingIngresos && ingresos.length > INGRESOS_PAGE_SIZE && (
-              <Button variant="ghost" size="xs" onClick={() => setShowAllIngresos(!showAllIngresos)}>
-                {showAllIngresos ? 'Ver menos' : `Ver más (${ingresos.length - INGRESOS_PAGE_SIZE} restantes)`}
-              </Button>
-            )}
           </div>
         </div>
 
@@ -353,40 +373,67 @@ export default function Recepcion() {
             <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
           </div>
         ) : ingresos.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
-                  <th className="pb-2.5 pr-3 font-medium">Nombre</th>
-                  <th className="pb-2.5 pr-3 font-medium">Cédula</th>
-                  <th className="pb-2.5 pr-3 font-medium">Fecha</th>
-                  <th className="pb-2.5 pr-3 font-medium">Hora</th>
-                  <th className="pb-2.5 font-medium">Motivo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(showAllIngresos ? ingresos : ingresos.slice(0, INGRESOS_PAGE_SIZE)).map((i: any, idx: number) => (
-                  <tr key={i.id_ingreso || idx} className="border-b border-gray-50 dark:border-gray-700/40 last:border-0">
-                    <td className="py-2.5 pr-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                      {i.Persona?.nombres || ''} {i.Persona?.apellidos || ''}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{i.Persona?.cedula || '-'}</td>
-                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
-                      {i.fecha_hora_entrada
-                        ? new Date(i.fecha_hora_entrada).toLocaleDateString('es-ES')
-                        : '-'}
-                    </td>
-                    <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
-                      {i.fecha_hora_entrada
-                        ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                        : '-'}
-                    </td>
-                    <td className="py-2.5 text-gray-500 dark:text-gray-400">{motivos.find(m => m.id_motivo === i.id_motivo)?.nombre || i.Motivo?.descripcion || i.motivo || '-'}</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
+                    <th className="pb-2.5 pr-3 font-medium">Nombre</th>
+                    <th className="pb-2.5 pr-3 font-medium">Cédula</th>
+                    <th className="pb-2.5 pr-3 font-medium">Fecha</th>
+                    <th className="pb-2.5 pr-3 font-medium">Hora</th>
+                    <th className="pb-2.5 font-medium">Motivo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {ingresos.map((i: any, idx: number) => (
+                    <tr key={i.id_ingreso || idx} className="border-b border-gray-50 dark:border-gray-700/40 last:border-0">
+                      <td className="py-2.5 pr-3 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                        {i.Persona?.nombres || ''} {i.Persona?.apellidos || ''}
+                      </td>
+                      <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{i.Persona?.cedula || '-'}</td>
+                      <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
+                        {i.fecha_hora_entrada
+                          ? new Date(i.fecha_hora_entrada).toLocaleDateString('es-ES')
+                          : '-'}
+                      </td>
+                      <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">
+                        {i.fecha_hora_entrada
+                          ? new Date(i.fecha_hora_entrada).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                          : '-'}
+                      </td>
+                      <td className="py-2.5 text-gray-500 dark:text-gray-400">{motivos.find((m: any) => m.id_motivo === i.id_motivo)?.nombre || i.Motivo?.descripcion || i.motivo || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {ingresosTotalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Página {ingresosPage} de {ingresosTotalPages} ({ingresosTotalItems} registros)
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    disabled={ingresosPage <= 1}
+                    onClick={() => setIngresosPage(p => Math.max(1, p - 1))}
+                  >
+                    &larr; Anterior
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    disabled={ingresosPage >= ingresosTotalPages}
+                    onClick={() => setIngresosPage(p => p + 1)}
+                  >
+                    Siguiente &rarr;
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-6">No se han encontrado ingresos en este periodo.</p>
         )}

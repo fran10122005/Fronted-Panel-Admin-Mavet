@@ -10,63 +10,104 @@ const C = {
   rowOdd: [253, 248, 246] as [number, number, number],
 };
 const LOGO_PATH = "/images/logo/mavet2.png";
+const GOBER_PATH = "/images/logo/gober.png";
+const DIRCUL_PATH = "/images/logo/DirCul.png";
 const MARGIN = 18;
 
 let logoPromise: Promise<string> | null = null;
+let goberPromise: Promise<string> | null = null;
+let dirculPromise: Promise<string> | null = null;
+
+function fetchImageAsDataUrl(url: string): Promise<string> {
+  return fetch(url)
+    .then((r) => r.blob())
+    .then(
+      (b) =>
+        new Promise<string>((resolve) => {
+          const rd = new FileReader();
+          rd.onloadend = () => resolve(rd.result as string);
+          rd.readAsDataURL(b);
+        }),
+    )
+    .catch(() => "");
+}
 
 function getLogo(): Promise<string> {
-  if (!logoPromise) {
-    logoPromise = fetch(LOGO_PATH)
-      .then((r) => r.blob())
-      .then(
-        (b) =>
-          new Promise<string>((resolve) => {
-            const rd = new FileReader();
-            rd.onloadend = () => resolve(rd.result as string);
-            rd.readAsDataURL(b);
-          }),
-      )
-      .catch(() => "");
-  }
+  if (!logoPromise) logoPromise = fetchImageAsDataUrl(LOGO_PATH);
   return logoPromise;
 }
 
-async function addHeader(doc: any, title: string) {
-  const logo = await getLogo();
-  const pw = doc.internal.pageSize.getWidth();
-  let logoW = 0;
+function getGober(): Promise<string> {
+  if (!goberPromise) goberPromise = fetchImageAsDataUrl(GOBER_PATH);
+  return goberPromise;
+}
 
+function getDirCul(): Promise<string> {
+  if (!dirculPromise) dirculPromise = fetchImageAsDataUrl(DIRCUL_PATH);
+  return dirculPromise;
+}
+
+async function addHeader(doc: any, title: string) {
+  const pw = doc.internal.pageSize.getWidth();
+  const [logo, gober, dircul] = await Promise.all([getLogo(), getGober(), getDirCul()]);
+  const headerY = 4;
+  const imgH = 14;
+
+  if (gober) {
+    try { doc.addImage(gober, "PNG", MARGIN, headerY, imgH * 2.5, imgH); } catch { /* */ }
+  }
   if (logo) {
     try {
-      doc.addImage(logo, "PNG", MARGIN, 4, 12, 12);
-      logoW = 14;
-    } catch {
-      /* */
-    }
+      doc.addImage(logo, "PNG", (pw - imgH * 3) / 2, headerY, imgH * 3, imgH);
+    } catch { /* */ }
+  }
+  if (dircul) {
+    try {
+      const dw = imgH * 2.5;
+      doc.addImage(dircul, "PNG", pw - MARGIN - dw, headerY, dw, imgH);
+    } catch { /* */ }
   }
 
-  const tx = MARGIN + logoW;
-  const textW = pw - tx - MARGIN;
+  if (title) {
+    doc.setTextColor(...C.brand);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(title, pw / 2, 28, { align: "center" });
+  }
+}
 
-  doc.setTextColor(...C.text);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", tx, 7, {
-    maxWidth: textW,
-  });
+async function addFooter(doc: any) {
+  const pw = doc.internal.pageSize.getWidth();
+  const totalPages = (doc as any).internal.getNumberOfPages();
 
-  doc.setTextColor(...C.brand);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text(title, tx, 16, { maxWidth: textW });
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const ph = doc.internal.pageSize.getHeight();
 
-  const barY = 24;
-  doc.setDrawColor(...C.brand);
-  doc.setLineWidth(0.8);
-  doc.line(MARGIN, barY, pw - MARGIN, barY);
-  doc.setDrawColor(...C.line);
-  doc.setLineWidth(0.2);
-  doc.line(MARGIN, barY + 1, pw - MARGIN, barY + 1);
+    doc.setTextColor(128, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text(
+      "¡MAVET donde el Arte y el Tiempo Inspiran Transformar los Espacios!",
+      pw / 2, ph - 28, { align: "center" },
+    );
+
+    doc.setTextColor(45, 45, 45);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    const lines = [
+      '"La historia es cuestión de supervivencia. Si no tuviéramos pasado, estaríamos desprovistos de la impresión que define a nuestro ser"',
+      '18 de mayo Día Internacional de los Museos',
+      '"Museos Hiperconectados: Enfoques Nuevos, Públicos Nuevos" - ICOM',
+      'Ubicado en Carrera 6 con Esquina de la Calle 4 Casona 25 Centro - San Cristóbal - Edo. Táchira',
+      'Teléfonos: 0276—3433102 Rf: 3022506-2',
+    ];
+    let fy = ph - 20;
+    for (const line of lines) {
+      doc.text(line, pw / 2, fy, { align: "center", maxWidth: pw - MARGIN * 2 });
+      fy += 3.5;
+    }
+  }
 }
 
 // ─── Reusable: Signature block for the coordinator ──────────────────────────
@@ -122,50 +163,31 @@ function addTwoSignatureBlocks(doc: any, y: number): number {
 
 // ─── Reusable: Page numbers + footer ──────────────────────────────────────
 function addPageNumbers(doc: any, pw: number) {
-  const totalPages = (doc as any).internal.getNumberOfPages();
-  const today = new Date().toLocaleDateString("es-VE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    const ph = doc.internal.pageSize.getHeight();
-
-    doc.setDrawColor(...C.line);
-    doc.setLineWidth(0.2);
-    doc.line(MARGIN, ph - 14, pw - MARGIN, ph - 14);
-
-    doc.setFontSize(7);
-    doc.setTextColor(...C.textMuted);
-    doc.setFont("helvetica", "normal");
-    doc.text(today, MARGIN, ph - 9);
-    doc.text(`Pág. ${i} de ${totalPages}`, pw - MARGIN, ph - 9, {
-      align: "right",
-    });
-  }
+  addFooter(doc);
 }
 
 // ─── Reusable: didDrawPage for multipage header re-draw ─────────────────────
 function makeDidDrawPage(title: string, pw: number) {
-  return (data: any) => {
+  return async (data: any) => {
     if (data.pageNumber > 1) {
       const doc2 = data.doc;
-      doc2.setTextColor(...C.text);
-      doc2.setFont("helvetica", "bold");
-      doc2.setFontSize(11);
-      doc2.text("MUSEO DE ARTES VISUALES DEL ESTADO TÁCHIRA", MARGIN, 7);
-      doc2.setTextColor(...C.brand);
-      doc2.setFont("helvetica", "bold");
-      doc2.setFontSize(10);
-      doc2.text(title, MARGIN, 16);
-      doc2.setDrawColor(...C.brand);
-      doc2.setLineWidth(0.8);
-      doc2.line(MARGIN, 24, pw - MARGIN, 24);
-      doc2.setDrawColor(...C.line);
-      doc2.setLineWidth(0.2);
-      doc2.line(MARGIN, 25, pw - MARGIN, 25);
+      const [logo, gober, dircul] = await Promise.all([getLogo(), getGober(), getDirCul()]);
+
+      if (gober) {
+        try { doc2.addImage(gober, "PNG", MARGIN, 2, 22, 10); } catch { /* */ }
+      }
+      if (logo) {
+        try { doc2.addImage(logo, "PNG", (pw - 26) / 2, 2, 26, 10); } catch { /* */ }
+      }
+      if (dircul) {
+        try { doc2.addImage(dircul, "PNG", pw - MARGIN - 22, 2, 22, 10); } catch { /* */ }
+      }
+      if (title) {
+        doc2.setTextColor(...C.brand);
+        doc2.setFont("helvetica", "bold");
+        doc2.setFontSize(9);
+        doc2.text(title, pw / 2, 20, { align: "center" });
+      }
     }
   };
 }
@@ -204,7 +226,7 @@ export async function exportarInventarioObras(obras: Obra[]) {
         ["Código", "Título", "Autor", "Año", "Técnica", "Estado", "Ubicación"],
       ],
       body: tableData,
-      startY: 32,
+      startY: 38,
       theme: "grid",
       styles: {
         fontSize: 7,
@@ -310,7 +332,7 @@ export async function exportarReporteIngresos(
     (doc as any).autoTable({
       head: [["Nombre", "Cédula", "Fecha", "Hora", "Motivo", "Acompañantes"]],
       body: tableData,
-      startY: 32,
+      startY: 38,
       theme: "grid",
       styles: {
         fontSize: 8,
@@ -710,10 +732,10 @@ export async function exportarComprobanteJustificacion(j: {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...C.textMuted);
-    doc.text(`Emitido: ${fechaEmision}`, pw - MARGIN, 30, { align: "right" });
+    doc.text(`Emitido: ${fechaEmision}`, pw - MARGIN, 35, { align: "right" });
 
     // ── Cuerpo de la carta ──
-    let y = 40;
+    let y = 44;
     const bodyWidth = pw - MARGIN * 2;
 
     // Título del cuerpo

@@ -10,6 +10,8 @@ import Pagination from "../../components/ui/Pagination";
 import Button from "../../components/ui/button/Button";
 import TextField from "../../components/ui/TextField";
 import Badge from "../../components/ui/Badge";
+import PageHeader from "../../components/common/PageHeader";
+import Tabs from "../../components/ui/Tabs";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 px-3 py-1.5 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:text-white/90";
 
@@ -21,6 +23,11 @@ const roleBadge: Record<string, "brand" | "info" | "warning" | "neutral"> = {
 };
 
 const filterPills = ["activos", "suspendidos", "todos"] as const;
+
+const tabs = [
+  { id: "trabajadores", label: "Trabajadores" },
+  { id: "usuarios", label: "Usuarios" },
+];
 
 export default function RRHH() {
   const { user } = useAuth();
@@ -56,13 +63,11 @@ export default function RRHH() {
 
   return (
     <div className="space-y-6 relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de RRHH y Usuarios</h1>
-          <p className="text-sm text-gray-500">Personal activo y accesos al sistema.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {activeTab === "usuarios" ? (
+      <PageHeader
+        title="Gestión de RRHH y Usuarios"
+        subtitle="Personal activo y accesos al sistema."
+        actions={
+          activeTab === "usuarios" ? (
             <>
               <Button variant="secondary" size="sm" onClick={handleExportUsuarios} data-tour="exportar-usuarios-pdf"
                 startIcon={<svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
@@ -76,7 +81,7 @@ export default function RRHH() {
                 </Button>
               )}
             </>
-          ) : activeTab === "trabajadores" ? (
+          ) : (
             <>
               <Button variant="secondary" size="sm" onClick={handleExportTrabajadores} data-tour="exportar-trabajadores-pdf"
                 startIcon={<svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
@@ -90,23 +95,18 @@ export default function RRHH() {
                 </Button>
               )}
             </>
-          ) : null}
-        </div>
-      </div>
+          )
+        }
+      />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
-            {(["trabajadores", "usuarios"] as const)
-              .filter(tab => !(isGerente && tab === "usuarios"))
-              .map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  data-tour={`tab-${tab}`}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-            ))}
-          </div>
+          <Tabs
+            tabs={tabs.filter(t => !(isGerente && t.id === "usuarios"))}
+            activeTab={activeTab}
+            onChange={(id) => setActiveTab(id as "trabajadores" | "usuarios")}
+            data-tour="rrhh-tabs"
+          />
           <div className="flex gap-3">
             <TextField
               data-tour="buscador-rrhh"

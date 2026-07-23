@@ -13,6 +13,8 @@ import { Modal } from "../../components/ui/modal";
 import ExportarAsistenciaModal from "./rrhh/ExportarAsistenciaModal";
 import type { RegistroAsistencia, ResumenSemanalTrabajador } from "../../types";
 import toast from "react-hot-toast";
+import PageHeader from "../../components/common/PageHeader";
+import Tabs from "../../components/ui/Tabs";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -101,47 +103,42 @@ export default function AsistenciaPersonal() {
 
   return (
     <div className="space-y-6 relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Registro de Asistencia Personal</h1>
-          <p className="text-sm text-gray-500">Control de asistencia del personal del Museo MAVET</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setIsRegistroOpen(true)}
-            className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Registrar Entrada/Salida
-          </button>
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
-          >
-            <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Exportar PDF
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Registro de Asistencia Personal"
+        subtitle="Control de asistencia del personal del Museo MAVET"
+        actions={
+          <>
+            <button
+              onClick={() => setIsRegistroOpen(true)}
+              className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Registrar Entrada/Salida
+            </button>
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
+            >
+              <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar PDF
+            </button>
+          </>
+        }
+      />
 
-      <div className="flex gap-6 border-b border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setActiveTab('diario')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'diario' ? 'border-brand-500 text-brand-600 dark:text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-400'}`}
-        >
-          Registro Diario
-        </button>
-        <button
-          onClick={() => setActiveTab('semanal')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'semanal' ? 'border-brand-500 text-brand-600 dark:text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-400'}`}
-        >
-          Resumen Semanal
-        </button>
-      </div>
+      <Tabs
+        variant="underline"
+        tabs={[
+          { id: "diario", label: "Registro Diario" },
+          { id: "semanal", label: "Resumen Semanal" },
+        ]}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as "diario" | "semanal")}
+      />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm min-h-[400px] flex flex-col">
         {activeTab === 'diario' && (

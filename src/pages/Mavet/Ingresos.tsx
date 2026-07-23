@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { mavetApi } from "../../services/api";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { limitNumericInput } from "../../utils/validation";
+import PageHeader from "../../components/common/PageHeader";
+import Tabs from "../../components/ui/Tabs";
 
 const Ingresos: React.FC = () => {
   const [pestanaActiva, setPestanaActiva] = useState<"visitantes" | "trabajadores">("visitantes");
@@ -28,41 +30,29 @@ const Ingresos: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Registro de Ingresos</h1>
-          <p className="text-sm text-gray-500">Control de visitas y registro de entrada/salida del personal.</p>
-        </div>
-        {pestanaActiva === "visitantes" && (
-          <button onClick={cargarEstadisticas} className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium hover:underline">
-            Actualizar Datos
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Registro de Ingresos"
+        subtitle="Control de visitas y registro de entrada/salida del personal."
+        actions={
+          pestanaActiva === "visitantes" && (
+            <button onClick={cargarEstadisticas} className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium hover:underline">
+              Actualizar Datos
+            </button>
+          )
+        }
+      />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <button
-            className={`flex-1 py-3 font-medium text-sm transition-colors ${
-              pestanaActiva === "visitantes"
-                ? "text-brand-600 dark:text-brand-400 border-b-2 border-brand-500"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
-            onClick={() => setPestanaActiva("visitantes")}
-          >
-            Dashboard Visitantes
-          </button>
-          <button
-            className={`flex-1 py-3 font-medium text-sm transition-colors ${
-              pestanaActiva === "trabajadores"
-                ? "text-brand-600 dark:text-brand-400 border-b-2 border-brand-500"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
-            onClick={() => setPestanaActiva("trabajadores")}
-          >
-            Reloj de Trabajadores
-          </button>
-        </div>
+        <Tabs
+          variant="underline"
+          fullWidth
+          tabs={[
+            { id: "visitantes", label: "Dashboard Visitantes" },
+            { id: "trabajadores", label: "Reloj de Trabajadores" },
+          ]}
+          activeTab={pestanaActiva}
+          onChange={(id) => setPestanaActiva(id as "visitantes" | "trabajadores")}
+        />
 
         <div className="p-5">
           {pestanaActiva === "visitantes" ? (

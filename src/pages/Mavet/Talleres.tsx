@@ -13,6 +13,8 @@ import { mavetApi, axiosInstance } from "../../services/api";
 import toast from "react-hot-toast";
 import { AlertCircle } from "lucide-react";
 import { limitNumericInput } from "../../utils/validation";
+import PageHeader from "../../components/common/PageHeader";
+import Tabs from "../../components/ui/Tabs";
 
 const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50 dark:text-white/90 dark:bg-gray-900";
 const selectCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90 dark:bg-gray-900";
@@ -45,10 +47,10 @@ export default function Talleres() {
   const isGerente = userRole === "Gerente";
   const [activeTab, setActiveTab] = useState<"planificados" | "inscripciones" | "instructores">("planificados");
 
-  const tabs = [
-    { id: "planificados" as const, label: "Planificados", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
-    { id: "inscripciones" as const, label: "Inscripciones", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
-    { id: "instructores" as const, label: "Instructores", icon: "M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" },
+  const tabItems = [
+    { id: "planificados" as const, label: "Planificados", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg> },
+    { id: "inscripciones" as const, label: "Inscripciones", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    { id: "instructores" as const, label: "Instructores", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg> },
   ];
 
   const {
@@ -132,32 +134,17 @@ export default function Talleres() {
   return (
     <div className="space-y-6">
 
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gesti&oacute;n de Talleres</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Administraci&oacute;n de talleres, planificaci&oacute;n y control de inscripciones.</p>
-      </div>
+      <PageHeader
+        title="Gestión de Talleres"
+        subtitle="Administración de talleres, planificación y control de inscripciones."
+      />
 
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex gap-1 -mb-px overflow-x-auto">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              data-tour={`tab-${tab.id}`}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-brand-500 text-brand-600 dark:text-brand-400"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-              }`}
-            >
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={tab.icon} />
-              </svg>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <Tabs
+        variant="underline"
+        tabs={tabItems}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as "planificados" | "inscripciones" | "instructores")}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
@@ -390,11 +377,12 @@ export default function Talleres() {
             <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
               <th className={thCls}>Nombre</th>
               <th className={thCls}>Descripci&oacute;n</th>
+              <th className={`${thCls} text-center w-28`}>Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {paginatedInventario.length === 0 ? (
-              <tr><td colSpan={2} className="px-3 py-8 text-center text-gray-500">
+              <tr><td colSpan={3} className="px-3 py-8 text-center text-gray-500">
                 <p className="text-sm">No hay talleres en el inventario.</p>
               </td></tr>
             ) : paginatedInventario.map((item: any) => (
@@ -410,6 +398,20 @@ export default function Talleres() {
                   </div>
                 </td>
                 <td className={`${tdCls} text-gray-500 dark:text-gray-400 truncate max-w-[200px] sm:max-w-xs`}>{item.descripcion || "&mdash;"}</td>
+                <td className="px-3 py-2 text-center whitespace-nowrap">
+                  <div className="flex items-center justify-end gap-0.5">
+                    <button onClick={() => handleOpenEditar(item)}
+                      className="flex flex-col items-center p-1 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition-colors group" title="Editar taller">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Editar</span>
+                    </button>
+                    <button onClick={() => handleEliminarInventario(item)}
+                      className="flex flex-col items-center p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors group" title="Eliminar taller">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <span className="text-[9px] leading-tight opacity-70 group-hover:opacity-100">Elim.</span>
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
