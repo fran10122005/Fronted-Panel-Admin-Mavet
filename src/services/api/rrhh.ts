@@ -267,6 +267,31 @@ export const rrhh = {
   },
 
   // ==========================================
+  // MINUTA DE HORARIO
+  // ==========================================
+  subirMinutaHorario: async (id_trabajador: string, file: File): Promise<{ url: string; nombre: string }> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    const res = await axiosInstance.post(`/api/rrhh/trabajadores/${id_trabajador}/minuta`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.data;
+  },
+
+  obtenerMinutaHorario: async (id_trabajador: string): Promise<{ url: string; nombre: string } | null> => {
+    try {
+      const res = await axiosInstance.get(`/api/rrhh/trabajadores/${id_trabajador}/minuta`);
+      return res.data?.data || null;
+    } catch {
+      return null;
+    }
+  },
+
+  eliminarMinutaHorario: async (id_trabajador: string): Promise<void> => {
+    await axiosInstance.delete(`/api/rrhh/trabajadores/${id_trabajador}/minuta`);
+  },
+
+  // ==========================================
   // DOCUMENTOS
   // ==========================================
   getDocumentos: async (id_trabajador: string): Promise<TrabajadorDocumento[]> => {

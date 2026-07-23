@@ -282,7 +282,7 @@ export function useRRHH() {
     });
   };
 
-  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: any[]) => {
+  const handleSubmitTrabajador = async (data: any, horarios?: any[], photoFile?: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: any[], minutaFile?: File | null) => {
     setIsSubmitting(true);
     try {
       let trabajadorId = editingTrabajadorId;
@@ -322,6 +322,14 @@ export function useRRHH() {
         toast.loading("Subiendo foto...", { id: "upload-photo" });
         await mavetApi.subirFotoTrabajador(trabajadorId, photoFile);
         toast.success("Foto subida correctamente.", { id: "upload-photo" });
+      }
+
+      if (minutaFile && trabajadorId && editingTrabajadorId === null) {
+        try {
+          await mavetApi.subirMinutaHorario(trabajadorId.toString(), minutaFile);
+        } catch (err: any) {
+          console.error("Error subiendo minuta:", err?.response?.data || err);
+        }
       }
 
       if (trabajadorId && editingTrabajadorId === null) {

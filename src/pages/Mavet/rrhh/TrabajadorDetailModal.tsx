@@ -140,6 +140,27 @@ export default function TrabajadorDetailModal({ trabajador: t, onClose, onEdit, 
                 />
               </div>
 
+              {(t as any).documento_minuta_url && (
+                <div className="mt-3 p-3 bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 rounded-xl flex items-center gap-2.5">
+                  <svg className="w-5 h-5 text-brand-600 dark:text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider">Minuta de Horario</p>
+                    <a href={(t as any).documento_minuta_url} target="_blank" rel="noopener noreferrer"
+                      className="text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline truncate block">
+                      {(t as any).documento_minuta_nombre || "Ver documento"}
+                    </a>
+                  </div>
+                  <a href={(t as any).documento_minuta_url} target="_blank" rel="noopener noreferrer"
+                    className="p-1.5 text-brand-500 hover:text-brand-600 transition-colors shrink-0" title="Abrir documento">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              )}
+
               {(t as any).usarFacial && (
                 <div className="mt-3 p-3 bg-theme-purple-500/10 dark:bg-theme-purple-500/5 border border-theme-purple-500/20 rounded-xl flex items-center gap-2.5">
                   <svg className="w-5 h-5 text-theme-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" /></svg>

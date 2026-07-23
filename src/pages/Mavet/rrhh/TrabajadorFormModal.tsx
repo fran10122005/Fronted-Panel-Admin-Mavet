@@ -52,7 +52,7 @@ interface Props {
   initialData: TrabajadorFormValues;
   cargos: Cargo[];
   isSubmitting: boolean;
-  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: { file: File, tipo: string, notas?: string }[]) => void;
+  onSubmit: (data: TrabajadorFormValues, horarios: HorarioDia[], photoFile: File | null, generarPin?: boolean, facialDescs?: string[], pendingDocs?: { file: File, tipo: string, notas?: string }[], minutaFile?: File | null) => void;
   inputCls: string;
 }
 
@@ -131,6 +131,10 @@ export default function TrabajadorFormModal({
   const [documentos, setDocumentos] = useState<TrabajadorDocumento[]>([]);
   const [pendingDocs, setPendingDocs] = useState<{ file: File; tipo: string; notas: string; id: string }[]>([]);
 
+  const [minutaUrl, setMinutaUrl] = useState<string | null>(null);
+  const [minutaNombre, setMinutaNombre] = useState<string | null>(null);
+  const [minutaFile, setMinutaFile] = useState<File | null>(null);
+
   const [loadingExtras, setLoadingExtras] = useState(false);
 
   const [uploadTipo, setUploadTipo] = useState("contrato");
@@ -142,12 +146,17 @@ export default function TrabajadorFormModal({
     if (!editingTrabajadorId) return;
     setLoadingExtras(true);
     try {
-      const [h, d] = await Promise.all([
+      const [h, d, minuta] = await Promise.all([
         mavetApi.getHorarios(editingTrabajadorId),
         mavetApi.getDocumentos(editingTrabajadorId),
+        mavetApi.obtenerMinutaHorario(editingTrabajadorId),
       ]);
       if (h.length > 0) setHorarios(h);
       setDocumentos(d);
+      if (minuta) {
+        setMinutaUrl(minuta.url);
+        setMinutaNombre(minuta.nombre);
+      }
     } catch (e) {
       console.error("Error loading extras:", e);
     } finally {
@@ -201,7 +210,9 @@ export default function TrabajadorFormModal({
       setActiveTab("info");
       setHorarios(getDefaultHorarios());
       setDocumentos([]);
-
+      setMinutaUrl(null);
+      setMinutaNombre(null);
+      setMinutaFile(null);
 
       if (editingTrabajadorId) {
         loadExtras();
@@ -247,7 +258,7 @@ export default function TrabajadorFormModal({
     toast.error(`Corrige los siguientes errores: ${msgs.slice(0, 3).join(', ')}${msgs.length > 3 ? ` y ${msgs.length - 3} más` : ''}`);
   };
 
-  const handleFormSubmit = (data: TrabajadorFormValues) => {
+  const handleFormSubmit = async (data: TrabajadorFormValues) => {
     if (!editingTrabajadorId && !photoPreview) {
       setPhotoError("La foto es obligatoria");
       setActiveTab("info");
@@ -270,7 +281,7 @@ export default function TrabajadorFormModal({
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
 
-    onSubmit(finalData as TrabajadorFormValues, horarios, photoFile, generarPin, facialDescs, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })));
+    await onSubmit(finalData as TrabajadorFormValues, horarios, photoFile, generarPin, facialDescs, pendingDocs.map(d => ({ file: d.file, tipo: d.tipo, notas: d.notas })), minutaFile);
   };
 
   const stopCamera = () => {
@@ -1059,6 +1070,96 @@ export default function TrabajadorFormModal({
                   </div>
                 </div>
               )}
+
+              {/* MINUTA DE HORARIO */}
+              <div className="mt-6 bg-gray-50 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-100 dark:border-gray-700/50">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Minuta de Horario
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                  Documento oficial que respalda el horario asignado al trabajador (PDF, DOC, DOCX, JPG, PNG).
+                </p>
+
+                {minutaUrl ? (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
+                    <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{minutaNombre || "Documento"}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <a href={minutaUrl} target="_blank" rel="noopener noreferrer"
+                        className="p-1.5 text-gray-500 hover:text-brand-600 transition-colors" title="Ver documento">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </a>
+                      <button type="button" onClick={async () => {
+                        if (!editingTrabajadorId) return;
+                        try {
+                          await mavetApi.eliminarMinutaHorario(editingTrabajadorId);
+                          setMinutaUrl(null);
+                          setMinutaNombre(null);
+                          toast.success("Minuta de horario eliminada");
+                        } catch (err: any) {
+                          toast.error(err.message || "Error al eliminar minuta");
+                        }
+                      }} className="p-1.5 text-gray-500 hover:text-red-600 transition-colors" title="Eliminar documento">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setMinutaFile(file);
+                      }}
+                      className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-400 cursor-pointer"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!minutaFile) return;
+                      if (editingTrabajadorId) {
+                        toast.loading("Subiendo minuta de horario...", { id: "upload-minuta" });
+                        try {
+                          const result = await mavetApi.subirMinutaHorario(editingTrabajadorId, minutaFile);
+                          setMinutaUrl(result.url);
+                          setMinutaNombre(result.nombre);
+                          setMinutaFile(null);
+                          toast.success("Minuta de horario subida correctamente.", { id: "upload-minuta" });
+                        } catch (err: any) {
+                          const detail = err?.response?.data?.message || err.message;
+                          console.error("Error subiendo minuta:", err?.response?.data || err);
+                          toast.error(detail || "Error al subir la minuta", { id: "upload-minuta" });
+                        }
+                      } else {
+                        setMinutaFile(minutaFile);
+                        toast.success("Minuta agregada, se guardará al registrar el trabajador");
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-60 flex items-center gap-1"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                    Subir Archivo
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

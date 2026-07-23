@@ -735,7 +735,7 @@ export default function TallerDetailModal({
                 descripcion: inventarioFormData.descripcion.trim(),
               });
               const refreshed = await mavetApi.getInventarioTalleres();
-              const nuevo = refreshed.find((t: any) => (t.nombre || "").toLowerCase() === inventarioFormData.nombre.trim().toLowerCase());
+              const nuevo = refreshed.data.find((t: any) => (t.nombre || "").toLowerCase() === inventarioFormData.nombre.trim().toLowerCase());
               if (nuevo) {
                 const id = nuevo.id_taller || nuevo.id;
                 setInventarioInput(nuevo.nombre);

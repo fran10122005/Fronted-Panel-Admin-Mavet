@@ -154,6 +154,8 @@ export interface Trabajador {
   estado: "Activo" | "Inactivo";
   qr_uuid?: string;
   foto_url?: string;
+  documento_minuta_url?: string;
+  documento_minuta_nombre?: string;
   pin_hash?: string;
   descriptor_facial?: string;
   descriptores_faciales?: string[];
