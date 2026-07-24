@@ -18,6 +18,8 @@ import Tabs from "../../components/ui/Tabs";
 
 const ITEMS_PER_PAGE = 20;
 
+const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm transition-all duration-200 dark:text-white/90";
+
 export default function AsistenciaPersonal() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
@@ -37,6 +39,9 @@ export default function AsistenciaPersonal() {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   });
+
+  const [filterCargo, setFilterCargo] = useState("Todos");
+  const [filterStatus, setFilterStatus] = useState("Todos");
 
   const [isRegistroOpen, setIsRegistroOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -93,13 +98,37 @@ export default function AsistenciaPersonal() {
     }
   }, []);
 
+  const uniqueCargos = useMemo(() => {
+    const cargos = new Set<string>();
+    asistencias.forEach((a) => { if (a.cargo) cargos.add(a.cargo); });
+    return Array.from(cargos).sort();
+  }, [asistencias]);
 
-
-  const filteredAsistencias = useMemo(() =>
-    asistencias.filter((a) =>
-      a.trabajadorNombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      a.cedula.toLowerCase().includes(debouncedSearch.toLowerCase())
-    ), [asistencias, debouncedSearch]);
+  const filteredAsistencias = useMemo(() => {
+    let filtered = asistencias;
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      filtered = filtered.filter((a) =>
+        a.trabajadorNombre.toLowerCase().includes(q) ||
+        a.cedula.toLowerCase().includes(q)
+      );
+    }
+    if (filterCargo !== "Todos") {
+      filtered = filtered.filter((a) => a.cargo === filterCargo);
+    }
+    if (filterStatus !== "Todos") {
+      filtered = filtered.filter((a) => {
+        switch (filterStatus) {
+          case "con_entrada": return a.entrada !== "-";
+          case "con_salida": return a.salida !== "-";
+          case "completo": return a.entrada !== "-" && a.salida !== "-";
+          case "incompleto": return a.entrada === "-" || a.salida === "-";
+          default: return true;
+        }
+      });
+    }
+    return filtered;
+  }, [asistencias, debouncedSearch, filterCargo, filterStatus]);
 
   return (
     <div className="space-y-6 relative">
@@ -143,34 +172,44 @@ export default function AsistenciaPersonal() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm min-h-[400px] flex flex-col">
         {activeTab === 'diario' && (
           <>
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="flex gap-3 w-full sm:w-auto">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="date"
-                    value={asistFecha}
-                    onChange={handleFechaChange}
-                    className="pl-10 h-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-                <div className="relative w-full max-w-xs">
+            {/* ── Barra búsqueda / filtros ── */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
+                <div className="relative w-full sm:max-w-xs sm:flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar por cédula o nombre..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  />
+                  <input type="text" placeholder="Buscar por nombre o cédula..."
+                    aria-label="Buscar registro"
+                    value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    className={inputCls} />
+                </div>
+                <div className="relative w-full sm:w-auto sm:min-w-[160px]">
+                  <input type="date" value={asistFecha} onChange={handleFechaChange}
+                    className={inputCls} />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Cargo:</span>
+                  <select value={filterCargo} onChange={(e) => setFilterCargo(e.target.value)}
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    <option value="Todos">Todos</option>
+                    {uniqueCargos.map((cargo) => (
+                      <option key={cargo} value={cargo}>{cargo}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
+                    <option value="Todos">Todos</option>
+                    <option value="con_entrada">Con entrada</option>
+                    <option value="con_salida">Con salida</option>
+                    <option value="completo">Completo</option>
+                    <option value="incompleto">Incompleto</option>
+                  </select>
                 </div>
               </div>
             </div>

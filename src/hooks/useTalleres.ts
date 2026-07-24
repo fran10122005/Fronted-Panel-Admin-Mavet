@@ -69,8 +69,6 @@ async function persistirAutoInactivacionInscripciones(inscripciones: any[], tall
   );
 }
 
-const initialInventarioForm = { nombre: "", descripcion: "" };
-
 const initialPlanificarForm = {
   id_taller_inventario: "",
   selectedInstructorId: "",
@@ -120,7 +118,6 @@ export function useTalleres() {
     open: false, title: "", message: "", onConfirm: () => {}, variant: "danger",
   });
 
-  const [inventarioForm, setInventarioForm] = useState(initialInventarioForm);
   const [planificarForm, setPlanificarForm] = useState(initialPlanificarForm);
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

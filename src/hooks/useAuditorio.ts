@@ -703,7 +703,7 @@ export default function useAuditorio() {
     organizador, setOrganizador,
     cedulaOrganizador, setCedulaOrganizador,
     organizadorLoading,
-    organizadorError,
+    organizadorError, setOrganizadorError,
     organizadorAuto,
     organizadorNombres, setOrganizadorNombres,
     organizadorApellidos, setOrganizadorApellidos,

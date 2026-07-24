@@ -925,8 +925,6 @@ export default function Talleres() {
         onSubmit={handleSubmitPlanificar}
         onInstructorCreated={refreshInstructores}
         onInventarioCreated={refreshInventario}
-        inputCls={inputCls}
-        selectCls={selectCls}
       />
 
       <InscripcionModal

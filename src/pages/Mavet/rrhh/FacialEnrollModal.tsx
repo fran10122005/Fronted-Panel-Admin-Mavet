@@ -2,7 +2,12 @@ import { useRef, useState } from "react";
 import { Modal } from "../../../components/ui/modal";
 import { mavetApi } from "../../../services/api";
 import toast from "react-hot-toast";
-import { loadModels, getDetectionWithQuality, serializeDescriptor } from "../../../services/face.service";
+
+let faceService: Promise<typeof import("../../../services/face.service")> | null = null;
+function getFaceService() {
+  if (!faceService) faceService = import("../../../services/face.service");
+  return faceService;
+}
 
 interface FacialEnrollModalProps {
   isOpen: boolean;
@@ -38,7 +43,8 @@ export default function FacialEnrollModal({
     setCaptureStep(1);
     setDescs([]);
     try {
-      await loadModels();
+      const face = await getFaceService();
+      await face.loadModels();
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -56,7 +62,8 @@ export default function FacialEnrollModal({
     setStatus("capturing");
     setQualityMsg("");
     try {
-      const { detection, quality } = await getDetectionWithQuality(videoRef.current);
+      const face = await getFaceService();
+      const { detection, quality } = await face.getDetectionWithQuality(videoRef.current);
       if (!detection) {
         setQualityMsg("No se detecta rostro. Asegúrese de estar frente a la cámara.");
         setStatus("camera");
@@ -67,7 +74,7 @@ export default function FacialEnrollModal({
         setStatus("camera");
         return;
       }
-      const serialized = serializeDescriptor(detection.descriptor);
+      const serialized = face.serializeDescriptor(detection.descriptor);
       const newDescs = [...descs, serialized];
       setDescs(newDescs);
 

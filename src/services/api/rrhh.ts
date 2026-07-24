@@ -146,6 +146,15 @@ export const rrhh = {
     }
   },
 
+  toggleEstadoTrabajador: async (id: string): Promise<{ success: boolean; message: string; estado: boolean }> => {
+    try {
+      const res = await axiosInstance.patch(`/api/rrhh/trabajadores/${id}/estado`);
+      return { success: true, message: res.data?.message || "Estado actualizado", estado: res.data?.data?.estado };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al cambiar estado del trabajador");
+    }
+  },
+
   getEstadoAsistencia: async (params: { qr_uuid?: string; cedulaTrabajador?: string }): Promise<EstadoAsistencia> => {
     const query = new URLSearchParams();
     if (params.qr_uuid) query.set("qr_uuid", params.qr_uuid);

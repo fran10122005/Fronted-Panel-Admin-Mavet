@@ -47,6 +47,7 @@ export function useRRHH() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const [filtroEstadoTrabajadores, setFiltroEstadoTrabajadores] = useState<"todos" | "activos" | "inactivos">("activos");
   const [filtroEstadoUsuarios, setFiltroEstadoUsuarios] = useState<"todos" | "activos" | "suspendidos">("activos");
   const [formData, setFormData] = useState(initialTrabajadorState);
   const [formUsuario, setFormUsuario] = useState(initialUsuarioState);
@@ -221,6 +222,26 @@ export function useRRHH() {
           toast.error(err.message || "Error al enviar correo de restablecimiento.");
         } finally {
           setIsSubmitting(false);
+        }
+      },
+    });
+  };
+
+  const handleToggleEstadoTrabajador = (t: Trabajador) => {
+    const esActivo = t.estado === "Activo";
+    const accion = esActivo ? "desactivar" : "activar";
+    requestConfirm({
+      title: `${esActivo ? "Dar de baja" : "Reactivar"} trabajador`,
+      message: `¿Está seguro de que desea ${accion} a "${t.nombre} ${t.apellido}"?`,
+      variant: esActivo ? "danger" : "info",
+      confirmLabel: esActivo ? "Dar de baja" : "Reactivar",
+      onConfirm: async () => {
+        try {
+          await mavetApi.toggleEstadoTrabajador(t.id?.toString() ?? "");
+          toast.success(`Trabajador ${esActivo ? "dado de baja" : "reactivado"} exitosamente.`);
+          await refreshData();
+        } catch (err: any) {
+          toast.error(err.message || `Error al ${accion} trabajador.`);
         }
       },
     });
@@ -448,10 +469,15 @@ export function useRRHH() {
     ), [asistencias, debouncedSearch]);
 
   const filteredTrabajadores = useMemo(() =>
-    trabajadores.filter((t) =>
-      `${t.nombre} ${t.apellido}`.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      t.cedula.toLowerCase().includes(debouncedSearch.toLowerCase())
-    ), [trabajadores, debouncedSearch]);
+    trabajadores.filter((t) => {
+      const matchesSearch =
+        `${t.nombre} ${t.apellido}`.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        t.cedula.toLowerCase().includes(debouncedSearch.toLowerCase());
+      if (!matchesSearch) return false;
+      if (filtroEstadoTrabajadores === "activos") return t.estado === "Activo";
+      if (filtroEstadoTrabajadores === "inactivos") return t.estado === "Inactivo";
+      return true;
+    }), [trabajadores, debouncedSearch, filtroEstadoTrabajadores]);
 
   const filteredUsuarios = useMemo(() =>
     usuarios.filter((u) => {
@@ -489,6 +515,7 @@ export function useRRHH() {
     handleExportAsistencia, handleExportTrabajadores, handleExportUsuarios,
     handleCartaAval, handleDeleteTrabajador, handleDeleteUsuario,
     handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
+    handleToggleEstadoTrabajador, filtroEstadoTrabajadores, setFiltroEstadoTrabajadores,
 
   };
 }

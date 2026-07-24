@@ -35,8 +35,6 @@ interface Props {
   onSubmit: (e: React.FormEvent) => void;
   onInstructorCreated: () => void;
   onInventarioCreated: () => void;
-  inputCls: string;
-  selectCls: string;
 }
 
 import { inputCls as baseInputCls, selectCls as baseSelectCls, labelCls, modalCls } from "../../../utils/formClasses";
@@ -46,7 +44,6 @@ export default function TallerDetailModal({
   inventario, instructores, espacios,
   isSubmitting, formError, onChange, onEstadoChange, onDocumentoPlanChange, onSubmit,
   onInstructorCreated, onInventarioCreated,
-  inputCls, selectCls,
 }: Props) {
   const [step, setStep] = useState(0);
   const [dragOver, setDragOver] = useState(false);

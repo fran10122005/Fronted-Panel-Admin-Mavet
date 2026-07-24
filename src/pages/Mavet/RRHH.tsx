@@ -54,6 +54,7 @@ export default function RRHH() {
     handleExportTrabajadores, handleExportUsuarios,
     handleDeleteTrabajador,
     handleToggleEstadoUsuario, filtroEstadoUsuarios, setFiltroEstadoUsuarios,
+    handleToggleEstadoTrabajador, filtroEstadoTrabajadores, setFiltroEstadoTrabajadores,
     usuarios,
   } = useRRHH();
 
@@ -126,63 +127,80 @@ export default function RRHH() {
           <>
             <div className="flex-1 overflow-x-auto">
               {activeTab === "trabajadores" && (
-                <table className="w-full text-left table-auto">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-2 py-2 w-8"></th>
-                      <th className="px-2 py-2">Cédula</th>
-                      <th className="px-2 py-2">Nombres</th>
-                      <th className="px-2 py-2">Apellidos</th>
-                      <th className="px-2 py-2">Cargo</th>
-                      <th className="px-2 py-2 text-center">PIN</th>
-                      <th className="px-2 py-2">Estado</th>
-                      <th className="px-2 py-2 text-center">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
-                    {filteredTrabajadores.length === 0 ? (
-                      <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-500"><p className="font-medium text-sm">No se encontraron trabajadores</p></td></tr>
-                    ) : filteredTrabajadores.map((t) => (
-                      <tr key={t.cedula} onClick={() => setSelectedTrabajadorForDetail(t)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors">
-                        <td className="px-2 py-2">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
-                            {t.foto_url ? (
-                              <img src={t.foto_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 py-2 font-mono text-xs font-semibold">{t.cedula}</td>
-                        <td className="px-2 py-2 font-semibold text-sm">{t.nombre}</td>
-                        <td className="px-2 py-2 font-semibold text-sm">{t.apellido}</td>
-                        <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400">{t.cargo}</td>
-                        <td className="px-2 py-2 text-center text-xs">
-                          <span className={`font-medium ${(t as any).pin_hash ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
-                            {(t as any).pin_hash ? "PIN" : "--"}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <Badge scheme={t.estado === "Activo" ? "success" : "neutral"}>{t.estado}</Badge>
-                        </td>
-                        <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-1">
-                            <Button size="xs" variant="secondary" onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial"
-                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>} />
-                            {!isGerente && (
-                              <>
-                                <Button size="xs" variant="secondary" onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador"
-                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
-                                <Button size="xs" variant="ghost" onClick={() => handleDeleteTrabajador(t)} title="Eliminar trabajador"
-                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>} />
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                <>
+                  <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Filtrar:</span>
+                    {(["todos", "activos", "inactivos"] as const).map((f) => (
+                      <Button key={f} size="xs" variant={filtroEstadoTrabajadores === f ? "primary" : "secondary"}
+                        onClick={() => setFiltroEstadoTrabajadores(f)}>
+                        {f === "activos" ? "Activos" : f === "inactivos" ? "Inactivos" : "Todos"}
+                      </Button>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                  <table className="w-full text-left table-auto">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                        <th className="px-2 py-2 w-8"></th>
+                        <th className="px-2 py-2">Cédula</th>
+                        <th className="px-2 py-2">Nombres</th>
+                        <th className="px-2 py-2">Apellidos</th>
+                        <th className="px-2 py-2">Cargo</th>
+                        <th className="px-2 py-2 text-center">PIN</th>
+                        <th className="px-2 py-2">Estado</th>
+                        <th className="px-2 py-2 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-gray-700">
+                      {filteredTrabajadores.length === 0 ? (
+                        <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-500"><p className="font-medium text-sm">No se encontraron trabajadores</p></td></tr>
+                      ) : filteredTrabajadores.map((t) => (
+                        <tr key={t.cedula} onClick={() => setSelectedTrabajadorForDetail(t)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors">
+                          <td className="px-2 py-2">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                              {t.foto_url ? (
+                                <img src={t.foto_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-2 font-mono text-xs font-semibold">{t.cedula}</td>
+                          <td className="px-2 py-2 font-semibold text-sm">{t.nombre}</td>
+                          <td className="px-2 py-2 font-semibold text-sm">{t.apellido}</td>
+                          <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400">{t.cargo}</td>
+                          <td className="px-2 py-2 text-center text-xs">
+                            <span className={`font-medium ${(t as any).pin_hash ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
+                              {(t as any).pin_hash ? "PIN" : "--"}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2">
+                            <Badge scheme={t.estado === "Activo" ? "success" : "neutral"}>{t.estado}</Badge>
+                          </td>
+                          <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button size="xs" variant="secondary" onClick={() => exportarCarnetTrabajador(t)} title="Generar Credencial"
+                                startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.5.835 2.5 1.875M8 15c-1.306 0-2.5.835-2.5 1.875M15 11c1.306 0 2.5.835 2.5 1.875M17 15c-1.306 0-2.5.835-2.5 1.875" /></svg>} />
+                              {!isGerente && (
+                                <>
+                                  <Button size="xs" variant="secondary" onClick={() => handleOpenEditarTrabajador(t)} title="Editar trabajador"
+                                    startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+                                  <Button size="xs" variant={t.estado === "Activo" ? "danger" : "secondary"}
+                                    onClick={() => handleToggleEstadoTrabajador(t)}
+                                    title={t.estado === "Activo" ? "Dar de baja" : "Reactivar trabajador"}
+                                    startIcon={
+                                      t.estado === "Activo"
+                                        ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    } />
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )}
 
               {activeTab === "usuarios" && (

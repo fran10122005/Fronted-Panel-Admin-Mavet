@@ -1,14 +1,13 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Modal } from "../ui/modal";
-import {
-  loadModels,
-  getDetectionWithQuality,
-  captureMultipleDescriptors,
-  findBestMatch,
-  parseDescriptorArray,
-} from "../../services/face.service";
 import { mavetApi } from "../../services/api";
 import type { DetectionQuality } from "../../services/face.service";
+
+let faceService: Promise<typeof import("../../services/face.service")> | null = null;
+function getFaceService() {
+  if (!faceService) faceService = import("../../services/face.service");
+  return faceService;
+}
 
 interface Props {
   isOpen: boolean;
@@ -44,6 +43,7 @@ export default function FaceVerificationModal({
   const [quality, setQuality] = useState<DetectionQuality | null>(null);
   const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const mounted = useRef(true);
+  const faceRef = useRef<typeof import("../../services/face.service") | null>(null);
 
   const fallbackRef = useRef(onFallbackToPin);
   const successRef = useRef(onSuccess);
@@ -97,10 +97,12 @@ export default function FaceVerificationModal({
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
+    const face = faceRef.current || await getFaceService();
+
     const loop = async () => {
       if (!mounted.current || status !== "ready") return;
 
-      const { detection, quality: q } = await getDetectionWithQuality(video);
+      const { detection, quality: q } = await face.getDetectionWithQuality(video);
 
       if (detection) {
         const b = detection.detection.box;
@@ -140,7 +142,8 @@ export default function FaceVerificationModal({
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
     try {
-      const capturedDescs = await captureMultipleDescriptors(video);
+      const face = await getFaceService();
+      const capturedDescs = await face.captureMultipleDescriptors(video);
 
       if (capturedDescs.length === 0) {
         const newAttempts = attempts + 1;
@@ -162,10 +165,9 @@ export default function FaceVerificationModal({
 
       const storedDescs: Float32Array[] = [];
       if (descriptoresFaciales && descriptoresFaciales.length > 0) {
-        storedDescs.push(...parseDescriptorArray(descriptoresFaciales));
+        storedDescs.push(...face.parseDescriptorArray(descriptoresFaciales));
       } else if (descriptorFacial) {
-        const { parseDescriptor } = await import("../../services/face.service");
-        storedDescs.push(parseDescriptor(descriptorFacial));
+        storedDescs.push(face.parseDescriptor(descriptorFacial));
       }
 
       if (storedDescs.length === 0) {
@@ -175,7 +177,7 @@ export default function FaceVerificationModal({
         return;
       }
 
-      const result = findBestMatch(capturedDescs, storedDescs);
+      const result = face.findBestMatch(capturedDescs, storedDescs);
 
       if (result.match) {
         setStatus("success");
@@ -235,7 +237,9 @@ export default function FaceVerificationModal({
 
     const init = async () => {
       try {
-        await loadModels();
+        const face = await getFaceService();
+        faceRef.current = face;
+        await face.loadModels();
         if (!mounted.current) return;
 
         const stream = await navigator.mediaDevices.getUserMedia({
