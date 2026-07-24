@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import toast from "react-hot-toast";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
@@ -22,6 +22,7 @@ export default function SignInForm() {
   const [isSending, setIsSending] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +31,9 @@ export default function SignInForm() {
 
     try {
       await login(email, password);
-      navigate("/");
+      const from = location.state?.from?.pathname || "/";
+      const search = location.state?.from?.search || "";
+      navigate(from + search, { replace: true });
     } catch (err: any) {
       setErrorMsg(err.message || "Credenciales incorrectas. Verifique su correo o contraseña.");
     } finally {

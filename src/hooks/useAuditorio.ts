@@ -35,7 +35,8 @@ export default function useAuditorio() {
   const [organizadorFechaNac, setOrganizadorFechaNac] = useState("");
   const [showNuevaPersonaFields, setShowNuevaPersonaFields] = useState(false);
   const [motivosList, setMotivosList] = useState<any[]>([]);
-  const [tipoEvento, setTipoEvento] = useState("Conferencia");
+  const [tiposEventoList, setTiposEventoList] = useState<any[]>([]);
+  const [tipoEvento, setTipoEvento] = useState("");
   const [customTipoEvento, setCustomTipoEvento] = useState("");
   const [correoElectronico, setCorreoElectronico] = useState("");
   const [recursosSolicitados, setRecursosSolicitados] = useState<string[]>([]);
@@ -131,7 +132,7 @@ export default function useAuditorio() {
     setOrganizadorTelefono("");
     setOrganizadorFechaNac("");
     setShowNuevaPersonaFields(false);
-    setTipoEvento("Conferencia");
+    setTipoEvento(tiposEventoList.length > 0 ? tiposEventoList[0].id_tipo_evento : "");
     setCustomTipoEvento("");
     const nextCode = generateNextCode(events.map(e => e.codigo_reserva), "RES", 5);
     setCodigoReserva(nextCode);
@@ -144,9 +145,22 @@ export default function useAuditorio() {
     setRecursosSolicitados([]);
   };
 
+  const loadTiposEvento = async () => {
+    try {
+      const data = await mavetApi.getTiposEvento();
+      setTiposEventoList(data);
+      if (data.length > 0 && !tipoEvento) {
+        setTipoEvento(data[0].id_tipo_evento);
+      }
+    } catch (error) {
+      console.error("Error al cargar tipos de evento:", error);
+    }
+  };
+
   useEffect(() => {
     loadEventos();
     loadEspacios();
+    loadTiposEvento();
   }, []);
 
   useEffect(() => {
@@ -573,14 +587,20 @@ export default function useAuditorio() {
         nombreResponsableFinal = `${organizadorNombres.trim()} ${organizadorApellidos.trim()}`;
       }
 
-      const tipoFinal = tipoEvento === "other" ? customTipoEvento.trim() : tipoEvento;
+      const isCustomTipo = tipoEvento === "other";
+      const tipoFinalId = isCustomTipo ? undefined : tipoEvento;
+      const customTipoStr = isCustomTipo ? customTipoEvento.trim() : undefined;
+      const tipoNombre = isCustomTipo ? customTipoStr : (tiposEventoList.find(t => t.id_tipo_evento === tipoEvento)?.nombre || "Evento");
+      
       const espacioId = espacios.length > 0 ? espacios[0].id_espacio : 1;
       const payload = {
         codigo_reserva: codigoReserva,
         id_espacio: espacioId,
         cedula: normalizeCedula(cedulaOrganizador),
         nombre_responsable: nombreResponsableFinal,
-        institucion: tipoFinal,
+        institucion: tipoNombre,
+        id_tipo_evento: tipoFinalId,
+        nuevo_tipo_evento: customTipoStr,
         fecha_uso: eventDate,
         hora_inicio: horaInicio + ":00",
         hora_fin: horaFin + ":00",
@@ -678,6 +698,15 @@ export default function useAuditorio() {
 
   const getCalendarColor = (tipo: string) => colorMap[tipo] || "bg-purple-500";
 
+  const tipoEventosDisponibles = useMemo(() => {
+    const customSet = new Set<string>();
+    events.forEach((ev) => {
+      const t = ev.extendedProps?.tipoEvento;
+      if (t && t !== "Conferencia" && t !== "Reunión") customSet.add(t);
+    });
+    return Array.from(customSet).sort();
+  }, [events]);
+
   const formatDateForList = (dateString: string) => {
     if (!dateString) return "";
     const dateObj = new Date(dateString);
@@ -711,6 +740,7 @@ export default function useAuditorio() {
     organizadorFechaNac, setOrganizadorFechaNac,
     showNuevaPersonaFields,
     motivosList,
+    tiposEventoList,
     tipoEvento, setTipoEvento,
     customTipoEvento, setCustomTipoEvento,
     correoElectronico, setCorreoElectronico,

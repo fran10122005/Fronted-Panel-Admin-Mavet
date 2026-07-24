@@ -42,6 +42,7 @@ const Auditorio: React.FC = () => {
     organizadorFechaNac, setOrganizadorFechaNac,
     showNuevaPersonaFields,
     motivosList,
+    tiposEventoList,
     tipoEvento, setTipoEvento,
     customTipoEvento, setCustomTipoEvento,
     correoElectronico, setCorreoElectronico,
@@ -101,9 +102,9 @@ const Auditorio: React.FC = () => {
               className="py-2 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             >
               <option value="Todos">Todos los tipos</option>
-              <option value="Conferencia">Conferencia</option>
-              <option value="Taller">Taller</option>
-              <option value="Reunión">Reunión Interna</option>
+              {tiposEventoList.map((t) => (
+                <option key={t.id_tipo_evento} value={t.nombre}>{t.nombre}</option>
+              ))}
             </select>
             <select
               value={filterAprobacion}
@@ -539,7 +540,7 @@ const Auditorio: React.FC = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => { setTipoEvento("Conferencia"); setCustomTipoEvento(""); }}
+                      onClick={() => { setTipoEvento(tiposEventoList.length > 0 ? tiposEventoList[0].id_tipo_evento : ""); setCustomTipoEvento(""); }}
                       className="text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
                     >
                       &larr; Volver a seleccionar tipo
@@ -553,8 +554,9 @@ const Auditorio: React.FC = () => {
                     disabled={isGerente || isPastEvent}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                   >
-                    <option value="Conferencia">Conferencia</option>
-                    <option value="Reunión">Reunión Interna</option>
+                    {tiposEventoList.map((t) => (
+                      <option key={t.id_tipo_evento} value={t.id_tipo_evento}>{t.nombre}</option>
+                    ))}
                     <option value="other">Otros (especificar)...</option>
                   </select>
                 )}

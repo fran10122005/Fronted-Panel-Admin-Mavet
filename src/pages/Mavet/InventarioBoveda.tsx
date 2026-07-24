@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { Obra } from "../../types";
 import { AlertCircle } from "lucide-react";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -63,6 +65,25 @@ export default function InventarioBoveda() {
     filteredObras,
     isPintura,
   } = useInventario();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Manejar apertura automática desde código QR o enlace directo
+  useEffect(() => {
+    if (!isLoading && obras.length > 0) {
+      const id = searchParams.get("id");
+      if (id) {
+        const obra = obras.find((o: any) => String(o.id) === id || String(o.codigo_inventario) === id);
+        if (obra) {
+          setSelectedObraForDetail(obra);
+          // Opcional: limpiar la URL después de abrir
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("id");
+          setSearchParams(newParams, { replace: true });
+        }
+      }
+    }
+  }, [isLoading, obras, searchParams, setSearchParams, setSelectedObraForDetail]);
 
   return (
     <div className="space-y-6 relative">

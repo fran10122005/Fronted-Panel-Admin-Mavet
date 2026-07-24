@@ -15,7 +15,7 @@ const mapEvento = (item: any): EventoAuditorio => {
     allDay: !item.hora_inicio,
     extendedProps: {
       organizador: orgName,
-      tipoEvento: item.institucion || "Conferencia",
+      tipoEvento: item.TipoEvento?.nombre || item.institucion || "Conferencia",
       cedula: p.cedula || item.cedula || "",
       estado: item.estado || "Pendiente",
       estatus_aprobacion: item.estatus_aprobacion || "pendiente",
@@ -38,6 +38,17 @@ export const auditorio = {
       return data.map(mapEvento);
     } catch (e: any) {
       throw new Error(`Error fetching eventos: ${e.message}`);
+    }
+  },
+
+  getTiposEvento: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get("/api/tipos-evento", {
+        params: { _t: Date.now() },
+      });
+      return extractList(res);
+    } catch (e: any) {
+      throw new Error(`Error fetching tipos de evento: ${e.message}`);
     }
   },
 

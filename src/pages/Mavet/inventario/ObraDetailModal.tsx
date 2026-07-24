@@ -1,6 +1,7 @@
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
 import Badge from "../../../components/ui/Badge";
+import QRCodeGenerator from "../../../components/ui/QRCodeGenerator";
 import { Obra } from "../../../types";
 
 interface Props {
@@ -119,10 +120,17 @@ export default function ObraDetailModal({ obra, onClose, onEdit, onHistorial }: 
           </div>
 
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 mt-5">
-            <Button variant="secondary" size="sm" onClick={() => onHistorial(o)}
-              startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
-              Historial
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => onHistorial(o)}
+                startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}>
+                Historial
+              </Button>
+              <QRCodeGenerator 
+                url={`${window.location.origin}/inventario-obras?id=${o.id}`}
+                filename={`qr-obra-${o.codigo_inventario || o.id}`}
+                variant="button"
+              />
+            </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={onClose}>Cerrar</Button>
               <Button size="sm" onClick={() => { onEdit(o); onClose(); }}

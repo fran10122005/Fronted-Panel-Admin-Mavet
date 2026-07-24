@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton";
 import { useLibros, ITEMS_PER_PAGE } from "../../hooks/useLibros";
@@ -66,6 +67,24 @@ export default function Biblioteca() {
   } = useLibros();
 
   const [activeTab, setActiveTab] = useState<Tab>("inventario");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Manejar apertura automática desde código QR o enlace directo
+  useEffect(() => {
+    if (!isLoading && filteredLibros && filteredLibros.length > 0) {
+      const id = searchParams.get("id");
+      if (id) {
+        const libro = filteredLibros.find((l: any) => String(l.id) === id || String(l.unidad) === id);
+        if (libro) {
+          setSelectedLibroForDetail(libro);
+          // Opcional: limpiar la URL después de abrir
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("id");
+          setSearchParams(newParams, { replace: true });
+        }
+      }
+    }
+  }, [isLoading, filteredLibros, searchParams, setSearchParams, setSelectedLibroForDetail]);
 
   const toastMessage = (type: "success" | "error", msg: string) => {
     import("react-hot-toast").then(m => m.default[type](msg));

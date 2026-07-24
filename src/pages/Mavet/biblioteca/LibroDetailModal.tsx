@@ -1,6 +1,7 @@
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
 import Badge from "../../../components/ui/Badge";
+import QRCodeGenerator from "../../../components/ui/QRCodeGenerator";
 import { Libro } from "../../../types";
 
 interface Props {
@@ -100,12 +101,19 @@ export default function LibroDetailModal({ libro, onClose, onEdit }: Props) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200 dark:border-gray-700 mt-5">
-            <Button variant="secondary" size="sm" onClick={onClose}>Cerrar</Button>
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 mt-5">
+            <QRCodeGenerator 
+              url={`${window.location.origin}/biblioteca?id=${l.id}`}
+              filename={`qr-libro-${l.unidad || l.id}`}
+              variant="button"
+            />
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={onClose}>Cerrar</Button>
             <Button size="sm" onClick={() => { onEdit(l); onClose(); }}
               startIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}>
               Editar Libro
             </Button>
+          </div>
           </div>
         </div>
       )}
