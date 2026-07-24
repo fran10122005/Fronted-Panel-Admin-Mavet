@@ -502,7 +502,7 @@ export default function TrabajadorFormModal({
       });
 
       autoTable(doc, {
-        startY: 56,
+        startY: 65,
         head: tableHeaders,
         body: tableRows,
         theme: "grid",

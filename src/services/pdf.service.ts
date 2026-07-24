@@ -71,8 +71,8 @@ async function addHeader(doc: any, title: string) {
   if (title) {
     doc.setTextColor(...C.brand);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(title, pw / 2, 28, { align: "center" });
+    doc.setFontSize(13);
+    doc.text(title, pw / 2, 36, { align: "center" });
   }
 }
 
@@ -226,19 +226,19 @@ export async function exportarInventarioObras(obras: Obra[]) {
         ["Código", "Título", "Autor", "Año", "Técnica", "Estado", "Ubicación"],
       ],
       body: tableData,
-      startY: 38,
+      startY: 50,
       theme: "grid",
       styles: {
-        fontSize: 7,
-        cellPadding: 2,
-        lineColor: [220, 220, 220],
-        lineWidth: 0.1,
+        fontSize: 7.5,
+        cellPadding: 2.5,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.15,
       },
       headStyles: {
         fillColor: [128, 0, 0],
         textColor: [255, 255, 255],
         fontStyle: "bold",
-        fontSize: 7.5,
+        fontSize: 8,
       },
       alternateRowStyles: {
         fillColor: [253, 248, 246],
@@ -252,7 +252,7 @@ export async function exportarInventarioObras(obras: Obra[]) {
         5: { cellWidth: 24, halign: "center" },
         6: { cellWidth: 34 },
       },
-      margin: { left: MARGIN, right: MARGIN, top: 32 },
+      margin: { left: MARGIN, right: MARGIN, top: 42 },
       didDrawPage: makeDidDrawPage(title, pw),
     });
 
@@ -332,19 +332,19 @@ export async function exportarReporteIngresos(
     (doc as any).autoTable({
       head: [["Nombre", "Cédula", "Fecha", "Hora", "Motivo", "Acompañantes"]],
       body: tableData,
-      startY: 38,
+      startY: 50,
       theme: "grid",
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
-        lineColor: [220, 220, 220],
-        lineWidth: 0.1,
+        fontSize: 8.5,
+        cellPadding: 2.5,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.15,
       },
       headStyles: {
         fillColor: [128, 0, 0],
         textColor: [255, 255, 255],
         fontStyle: "bold",
-        fontSize: 8.5,
+        fontSize: 9,
       },
       alternateRowStyles: {
         fillColor: [253, 248, 246],
@@ -357,7 +357,7 @@ export async function exportarReporteIngresos(
         4: { cellWidth: 40 },
         5: { cellWidth: 20, halign: "center" },
       },
-      margin: { left: MARGIN, right: MARGIN, top: 32 },
+      margin: { left: MARGIN, right: MARGIN, top: 42 },
       didDrawPage: makeDidDrawPage(title, pw),
     });
 
@@ -542,7 +542,7 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
         day: "2-digit", month: "long", year: "numeric",
         hour: "2-digit", minute: "2-digit",
       })}`,
-      MARGIN, 30,
+      MARGIN, 44,
     );
 
     // ── Info box ──
@@ -568,7 +568,7 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
     ];
 
     const bkg = [248, 245, 242] as [number, number, number];
-    let y = 38;
+    let y = 50;
     const lx = MARGIN + 4;
     const vx = 58;
     const rh = 7.5;
@@ -741,10 +741,10 @@ export async function exportarComprobanteJustificacion(j: {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...C.textMuted);
-    doc.text(`Emitido: ${fechaEmision}`, pw - MARGIN, 35, { align: "right" });
+    doc.text(`Emitido: ${fechaEmision}`, pw - MARGIN, 44, { align: "right" });
 
     // ── Cuerpo de la carta ──
-    let y = 44;
+    let y = 52;
     const bodyWidth = pw - MARGIN * 2;
 
     // Título del cuerpo
