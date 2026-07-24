@@ -31,7 +31,9 @@ const mapEvento = (item: any): EventoAuditorio => {
 export const auditorio = {
   getEventos: async (): Promise<EventoAuditorio[]> => {
     try {
-      const res = await axiosInstance.get("/api/educacion/solicitudes-espacio");
+      const res = await axiosInstance.get("/api/educacion/solicitudes-espacio", {
+        params: { _t: Date.now() },
+      });
       const data = extractList(res);
       return data.map(mapEvento);
     } catch (e: any) {
