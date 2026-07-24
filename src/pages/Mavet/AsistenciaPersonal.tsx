@@ -42,6 +42,7 @@ export default function AsistenciaPersonal() {
 
   const [filterCargo, setFilterCargo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
+  const [searchSemanal, setSearchSemanal] = useState("");
 
   const [isRegistroOpen, setIsRegistroOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -294,12 +295,23 @@ export default function AsistenciaPersonal() {
 
         {activeTab === 'semanal' && (
           <div className="p-6 custom-scrollbar">
-            <div className="mb-6 flex justify-between items-center">
+            <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Estado de Horas de la Semana Actual</h2>
-              <div className="flex gap-4 text-xs font-medium text-gray-500 dark:text-gray-400">
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 block"></span> Completo</span>
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 block"></span> Justificado</span>
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 block"></span> Incompleto</span>
+              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-56">
+                  <input type="text" placeholder="Buscar por nombre o cargo..."
+                    value={searchSemanal}
+                    onChange={e => setSearchSemanal(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                </div>
+                <div className="flex gap-3 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 block"></span> Completo</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 block"></span> Justificado</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 block"></span> Incompleto</span>
+                </div>
               </div>
             </div>
 
@@ -309,13 +321,20 @@ export default function AsistenciaPersonal() {
                   <div key={n} className="h-64 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
                 ))}
               </div>
-            ) : resumenSemanal.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">No hay datos de trabajadores registrados.</p>
-              </div>
-            ) : (
+            ) : (() => {
+              const filteredSemanal = searchSemanal
+                ? resumenSemanal.filter(r =>
+                    `${r.nombres || ""} ${r.apellidos || ""}`.toLowerCase().includes(searchSemanal.toLowerCase()) ||
+                    (r.cargo || "").toLowerCase().includes(searchSemanal.toLowerCase())
+                  )
+                : resumenSemanal;
+              return filteredSemanal.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">{searchSemanal ? "No se encontraron trabajadores." : "No hay datos de trabajadores registrados."}</p>
+                </div>
+              ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {resumenSemanal.map(r => (
+                {filteredSemanal.map(r => (
                   <div key={r.id_trabajador} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center relative overflow-hidden group">
                     {/* Status Badge */}
                     <div className="absolute top-4 left-4">
@@ -376,7 +395,8 @@ export default function AsistenciaPersonal() {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </div>

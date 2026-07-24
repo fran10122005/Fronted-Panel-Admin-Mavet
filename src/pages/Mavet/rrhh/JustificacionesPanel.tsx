@@ -28,6 +28,7 @@ interface Props {
 export default function JustificacionesPanel({ idTrabajador }: Props) {
   const [justificaciones, setJustificaciones] = useState<Justificacion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchJustif, setSearchJustif] = useState("");
 
   const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", tipo: "falta_dia_completo", motivo: MOTIVOS_LEGALES_LOTTT[0], descripcion: "", hora_inicio: "", hora_fin: "", archivo: null as File | null });
   const [creandoJustif, setCreandoJustif] = useState(false);
@@ -228,17 +229,37 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
         </div>
       </details>
 
+      <div className="mb-3">
+        <div className="relative w-full sm:w-64">
+          <input type="text" placeholder="Buscar justificación..."
+            value={searchJustif}
+            onChange={e => setSearchJustif(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-1.5 pl-8 text-xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center p-4">
           <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : justificaciones.length === 0 ? (
+      ) : (() => {
+        const filteredJustif = searchJustif
+          ? justificaciones.filter(j =>
+              (j.motivo || "").toLowerCase().includes(searchJustif.toLowerCase()) ||
+              (TIPOS_JUSTIFICACION.find(t => t.value === j.tipo)?.label || j.tipo || "").toLowerCase().includes(searchJustif.toLowerCase()) ||
+              (j.descripcion || "").toLowerCase().includes(searchJustif.toLowerCase())
+            )
+          : justificaciones;
+        return filteredJustif.length === 0 ? (
         <div className="p-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
-          <p className="text-sm text-gray-400">No hay justificaciones registradas</p>
+          <p className="text-sm text-gray-400">{searchJustif ? "No se encontraron justificaciones." : "No hay justificaciones registradas"}</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {justificaciones.map(j => (
+          {filteredJustif.map(j => (
             <div key={j.id_justificacion} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
               <div className="flex gap-3">
                 <div className={`p-2 rounded-lg ${
@@ -305,7 +326,8 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
             </div>
           ))}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

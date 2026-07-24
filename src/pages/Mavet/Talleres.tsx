@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTalleres } from "../../hooks/useTalleres";
 import ComponentCard from "../../components/common/ComponentCard";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -45,6 +45,8 @@ export default function Talleres() {
   const userRole = getUserRole(user);
   const isGerente = userRole === "Gerente";
   const [activeTab, setActiveTab] = useState<"planificados" | "inscripciones" | "instructores">("planificados");
+  const [searchInsc, setSearchInsc] = useState("");
+  const [searchInst, setSearchInst] = useState("");
 
   const tabItems = [
     { id: "planificados" as const, label: "Planificados", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg> },
@@ -116,6 +118,34 @@ export default function Talleres() {
     paginatedInstructores, totalInstPages, currentPageInst, setCurrentPageInst,
     refreshInstructores, refreshInventario,
   } = useTalleres();
+
+  const filteredInscGrupos = useMemo(() => {
+    if (!searchInsc.trim()) return paginatedInscripcionesAgrupadas;
+    const q = searchInsc.toLowerCase();
+    return paginatedInscripcionesAgrupadas
+      .map(grupo => ({
+        ...grupo,
+        alumnos: grupo.alumnos.filter((ins: any) =>
+          `${ins.Alumno?.nombres || ""} ${ins.Alumno?.apellidos || ""}`.toLowerCase().includes(q) ||
+          (ins.Alumno?.cedula || "").toLowerCase().includes(q)
+        )
+      }))
+      .filter(grupo => {
+        if (!grupo.taller) return grupo.alumnos.length > 0;
+        const tallerName = grupo.taller.nombre_curso || "";
+        return tallerName.toLowerCase().includes(q) || grupo.alumnos.length > 0;
+      });
+  }, [paginatedInscripcionesAgrupadas, searchInsc]);
+
+  const filteredInstructores = useMemo(() => {
+    if (!searchInst.trim()) return paginatedInstructores;
+    const q = searchInst.toLowerCase();
+    return paginatedInstructores.filter((inst: any) =>
+      `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.toLowerCase().includes(q) ||
+      (inst.profesion || "").toLowerCase().includes(q) ||
+      (inst.especialidad || "").toLowerCase().includes(q)
+    );
+  }, [paginatedInstructores, searchInst]);
 
   const handlePlanificarEstadoChange = (value: boolean) => {
     setPlanificarForm(prev => ({ ...prev, estado: value }));
@@ -452,7 +482,16 @@ export default function Talleres() {
         title={verHistorialInsc ? "Historial de Inscripciones" : "Alumnos Inscritos"}
         desc={verHistorialInsc ? "Registro de inscripciones finalizadas o inactivas" : "Inscripciones activas agrupadas por taller"}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-56">
+              <input type="text" placeholder="Buscar taller o alumno..."
+                value={searchInsc}
+                onChange={e => { setSearchInsc(e.target.value); setCurrentPageInsc(1); }}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 pl-10 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+            </div>
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
               {verHistorialInsc ? statsInscripciones.historial : statsInscripciones.activas} inscripciones
             </span>
@@ -468,7 +507,7 @@ export default function Talleres() {
           </div>
         }
       >
-        {paginatedInscripcionesAgrupadas.length === 0 ? (
+        {filteredInscGrupos.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <svg className="w-10 h-10 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -481,7 +520,7 @@ export default function Talleres() {
           </div>
         ) : (
           <div className="space-y-4">
-            {paginatedInscripcionesAgrupadas.map((grupo, idx) => (
+            {filteredInscGrupos.map((grupo, idx) => (
               <details key={idx} className="group rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <summary className="flex items-center justify-between px-5 py-3.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors list-none">
                   <div className="flex items-center gap-3">
@@ -561,7 +600,7 @@ export default function Talleres() {
         )}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-4">
           <span className="text-xs text-gray-500 font-medium">
-            Mostrando {paginatedInscripcionesAgrupadas.length} de {inscripcionesAgrupadas.length} grupos
+            Mostrando {filteredInscGrupos.length} de {inscripcionesAgrupadas.length} grupos
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -768,6 +807,17 @@ export default function Talleres() {
           </div>
 
           <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
+            <div className="mb-4">
+              <div className="relative w-full sm:w-72">
+                <input type="text" placeholder="Buscar instructor por nombre, profesión o especialidad..."
+                  value={searchInst}
+                  onChange={e => { setSearchInst(e.target.value); setCurrentPageInst(1); }}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 pl-10 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+              </div>
+            </div>
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
@@ -779,12 +829,12 @@ export default function Talleres() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {paginatedInstructores.length === 0 ? (
+                  {filteredInstructores.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-xs">No hay instructores registrados.</td>
+                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-xs">{searchInst ? "No se encontraron instructores." : "No hay instructores registrados."}</td>
                     </tr>
                   ) : (
-                    paginatedInstructores.map(inst => (
+                    filteredInstructores.map(inst => (
                       <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                         <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion || "—"}</td>
@@ -815,7 +865,7 @@ export default function Talleres() {
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700/50 mt-4">
               <span className="text-xs text-gray-500 font-medium">
-                Mostrando {paginatedInstructores.length} de {instructores.length}
+                Mostrando {filteredInstructores.length} de {instructores.length}
               </span>
               <div className="flex items-center gap-1">
                 <button

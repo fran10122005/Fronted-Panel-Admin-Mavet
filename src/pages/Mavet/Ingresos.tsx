@@ -9,6 +9,7 @@ const Ingresos: React.FC = () => {
   const [pestanaActiva, setPestanaActiva] = useState<"visitantes" | "trabajadores">("visitantes");
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchMotivo, setSearchMotivo] = useState("");
 
   useEffect(() => {
     if (pestanaActiva === "visitantes") {
@@ -78,9 +79,24 @@ const Ingresos: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Ingresos por Motivo</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Ingresos por Motivo</h4>
+                      <div className="relative w-56">
+                        <input type="text" placeholder="Buscar motivo..."
+                          value={searchMotivo}
+                          onChange={e => setSearchMotivo(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-1.5 pl-8 text-xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </div>
+                      </div>
+                    </div>
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-x-auto">
-                      {stats.porMotivo.length > 0 ? (
+                      {(() => {
+                        const filteredMotivos = searchMotivo
+                          ? stats.porMotivo.filter((item: any) => (item.motivo || "").toLowerCase().includes(searchMotivo.toLowerCase()))
+                          : stats.porMotivo;
+                        return filteredMotivos.length > 0 ? (
                         <table className="w-full text-left">
                           <thead>
                             <tr className="bg-gray-50 dark:bg-gray-900/50">
@@ -89,7 +105,7 @@ const Ingresos: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {stats.porMotivo.map((item: any, idx: number) => (
+                            {filteredMotivos.map((item: any, idx: number) => (
                               <tr key={idx} className="text-sm text-gray-800 dark:text-gray-200">
                                 <td className="py-2.5 px-4">{item.motivo}</td>
                                 <td className="py-2.5 px-4 font-semibold text-brand-600 dark:text-brand-400">{item.cantidad}</td>
@@ -98,8 +114,9 @@ const Ingresos: React.FC = () => {
                           </tbody>
                         </table>
                       ) : (
-                        <div className="p-6 text-center text-gray-500 text-sm">No hay registros suficientes.</div>
-                      )}
+                        <div className="p-6 text-center text-gray-500 text-sm">{searchMotivo ? "No se encontraron motivos." : "No hay registros suficientes."}</div>
+                      );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -21,6 +21,7 @@ interface Espacio {
 export default function Salas() {
   const [espacios, setEspacios] = useState<Espacio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchSalas, setSearchSalas] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -128,16 +129,31 @@ export default function Salas() {
         }
       >
         <div className="overflow-hidden border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-        {isLoading ? (
+          <div className="px-4 pb-4">
+            <div className="relative w-full sm:w-72">
+              <input type="text" placeholder="Buscar por nombre del espacio..."
+                value={searchSalas}
+                onChange={e => setSearchSalas(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 pl-10 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+            </div>
+          </div>
+        {(() => {
+          const filtered = searchSalas
+            ? espacios.filter(e => e.nombre_espacio.toLowerCase().includes(searchSalas.toLowerCase()))
+            : espacios;
+          return isLoading ? (
           <div className="p-8 flex justify-center text-gray-500">
             <svg className="animate-spin h-8 w-8 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
-        ) : espacios.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-            No hay espacios registrados.
+            {searchSalas ? "No se encontraron espacios con ese nombre." : "No hay espacios registrados."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -151,7 +167,7 @@ export default function Salas() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {espacios.map((esp) => (
+                {filtered.map((esp) => (
                   <tr key={esp.id_espacio || esp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -191,7 +207,8 @@ export default function Salas() {
               </tbody>
             </table>
           </div>
-        )}
+        );
+        })()}
         </div>
       </ComponentCard>
 
