@@ -15,6 +15,7 @@ import { AlertCircle } from "lucide-react";
 import { limitNumericInput } from "../../utils/validation";
 import PageHeader from "../../components/common/PageHeader";
 import Tabs from "../../components/ui/Tabs";
+import { exportarInventarioTalleres } from "../../services/pdf.service";
 
 import { inputCls, selectCls } from "../../utils/formClasses";
 
@@ -456,10 +457,18 @@ export default function Talleres() {
               </div>
             </div>
             {!isGerente && (
-            <button type="button" onClick={handleOpenCrear}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition shrink-0">
-              + Crear Taller
-            </button>
+            <div className="flex items-center gap-2">
+              <button type="button"
+                onClick={() => exportarInventarioTalleres(filteredInventario)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition shrink-0 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20 dark:hover:bg-red-500/20">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Exportar PDF
+              </button>
+              <button type="button" onClick={handleOpenCrear}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition shrink-0">
+                + Crear Taller
+              </button>
+            </div>
             )}
           </div>
         }

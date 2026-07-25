@@ -975,3 +975,85 @@ export async function exportarComprobanteJustificacion(j: {
     alert("Error al generar el comprobante.");
   }
 }
+
+// ─── PDF: Inventario de Talleres ───────────────────────────────────────────
+interface TallerInventario {
+  id_taller?: number | string;
+  id?: number | string;
+  nombre: string;
+  descripcion?: string;
+}
+
+export async function exportarInventarioTalleres(talleres: TallerInventario[]) {
+  try {
+    if (!talleres.length) return;
+
+    const { jsPDF } = await import("jspdf");
+    const { applyPlugin } = await import("jspdf-autotable");
+    applyPlugin(jsPDF);
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+    const pw = doc.internal.pageSize.getWidth();
+
+    const title = "INVENTARIO DE TALLERES";
+    await addHeader(doc, title);
+
+    const tableData = talleres.map((t, i) => [
+      (i + 1).toString(),
+      t.nombre || "—",
+      t.descripcion || "—",
+    ]);
+
+    (doc as any).autoTable({
+      head: [["#", "Nombre", "Descripción"]],
+      body: tableData,
+      startY: 50,
+      theme: "grid",
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.15,
+      },
+      headStyles: {
+        fillColor: [128, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8.5,
+      },
+      alternateRowStyles: {
+        fillColor: [253, 248, 246],
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: "center" },
+        1: { cellWidth: 55 },
+        2: { cellWidth: "auto" },
+      },
+      margin: { left: MARGIN, right: MARGIN, top: 42 },
+      didDrawPage: makeDidDrawPage(title, pw),
+    });
+
+    addPageNumbers(doc, pw);
+
+    const ph = doc.internal.pageSize.getHeight();
+    const finalY = (doc as any).lastAutoTable.finalY || 32;
+    const signatureY = Math.min(finalY + 15, ph - 35);
+    if (signatureY + 20 < ph - 14) {
+      doc.setPage((doc as any).internal.getNumberOfPages());
+      addSignatureBlock(doc, signatureY);
+    }
+
+    doc.save(
+      `MAVET_Inventario_Talleres_${new Date().toISOString().split("T")[0]}.pdf`,
+    );
+  } catch (e) {
+    console.error("[exportarInventarioTalleres]", e);
+    alert(
+      "Error al generar el reporte. Verifica tu conexión e inicia sesión nuevamente.",
+    );
+  }
+}
