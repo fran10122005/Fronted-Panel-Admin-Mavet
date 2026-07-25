@@ -137,15 +137,83 @@ export default function Talleres() {
       });
   }, [paginatedInscripcionesAgrupadas, searchInsc]);
 
+  const [filterInstProfesion, setFilterInstProfesion] = useState("Todas");
+  const [filterInstEspecialidad, setFilterInstEspecialidad] = useState("Todas");
+
+  const uniqueProfesiones = useMemo(() => {
+    const s = new Set<string>();
+    instructores.forEach((i: any) => { if (i.profesion) s.add(i.profesion); });
+    return Array.from(s).sort();
+  }, [instructores]);
+
+  const uniqueEspecialidades = useMemo(() => {
+    const s = new Set<string>();
+    instructores.forEach((i: any) => { if (i.especialidad) s.add(i.especialidad); });
+    return Array.from(s).sort();
+  }, [instructores]);
+
   const filteredInstructores = useMemo(() => {
-    if (!searchInst.trim()) return paginatedInstructores;
-    const q = searchInst.toLowerCase();
-    return paginatedInstructores.filter((inst: any) =>
-      `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.toLowerCase().includes(q) ||
-      (inst.profesion || "").toLowerCase().includes(q) ||
-      (inst.especialidad || "").toLowerCase().includes(q)
-    );
-  }, [paginatedInstructores, searchInst]);
+    let result = paginatedInstructores;
+    if (searchInst.trim()) {
+      const q = searchInst.toLowerCase();
+      result = result.filter((inst: any) =>
+        `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.toLowerCase().includes(q) ||
+        (inst.profesion || "").toLowerCase().includes(q) ||
+        (inst.especialidad || "").toLowerCase().includes(q)
+      );
+    }
+    if (filterInstProfesion !== "Todas") {
+      result = result.filter((inst: any) => inst.profesion === filterInstProfesion);
+    }
+    if (filterInstEspecialidad !== "Todas") {
+      result = result.filter((inst: any) => inst.especialidad === filterInstEspecialidad);
+    }
+    return result;
+  }, [paginatedInstructores, searchInst, filterInstProfesion, filterInstEspecialidad]);
+
+  const handleExportInstructoresPDF = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      import("jspdf-autotable");
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 15;
+
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("Museo MAVET", pageWidth / 2, y, { align: "center" });
+      y += 8;
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Reporte de Instructores", pageWidth / 2, y, { align: "center" });
+      y += 6;
+      doc.setFontSize(8);
+      doc.text(`Generado: ${new Date().toLocaleDateString("es-VE", { day: "2-digit", month: "long", year: "numeric" })}`, pageWidth / 2, y, { align: "center" });
+      y += 10;
+
+      const rows = instructores.map((inst: any, i: number) => [
+        i + 1,
+        `${inst.Persona?.nombres || ""} ${inst.Persona?.apellidos || ""}`.trim(),
+        inst.Persona?.cedula || "-",
+        inst.profesion || "-",
+        inst.especialidad || "-",
+      ]);
+
+      (doc as any).autoTable({
+        startY: y,
+        head: [["#", "Nombre", "Cédula", "Profesión", "Especialidad"]],
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [249, 250, 251] },
+        margin: { top: 10 },
+      });
+      doc.save("Reporte_Instructores_MAVET.pdf");
+      toast.success("Reporte de instructores descargado");
+    } catch {
+      toast.error("Error al generar el reporte");
+    }
+  };
 
   const handlePlanificarEstadoChange = (value: boolean) => {
     setPlanificarForm(prev => ({ ...prev, estado: value }));
@@ -641,6 +709,11 @@ export default function Talleres() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Listado de instructores registrados.</p>
             </div>
             <div className="flex items-center gap-3">
+              <button type="button" onClick={handleExportInstructoresPDF}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Exportar PDF
+              </button>
               <button type="button" onClick={openCrearInstructor}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition">
                 + Crear Instructor
@@ -657,157 +730,96 @@ export default function Talleres() {
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Nuevo Instructor</p>
                 <button type="button" onClick={closeCrearInstructor}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula *</label>
-                  <input type="text" value={nuevaCedula} onChange={e => { setFormError(""); setNuevaCedula(e.target.value); }}
-                    className={inputCls} placeholder="Ej. V-12345678" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres *</label>
-                  <input type="text" value={instructorNombres} onChange={e => { setFormError(""); setInstructorNombres(e.target.value); }}
-                    className={inputCls} placeholder="Ej. Juan" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos *</label>
-                  <input type="text" value={instructorApellidos} onChange={e => { setFormError(""); setInstructorApellidos(e.target.value); }}
-                    className={inputCls} placeholder="Ej. Pérez" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono (Opcional)</label>
-                  <input type="text" value={instructorTelefono} onChange={e => { setFormError(""); setInstructorTelefono(e.target.value); }}
-                    onKeyDown={limitNumericInput} className={inputCls} placeholder="Ej. 04121234567" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento (Opcional)</label>
-                  <input type="date" value={instructorFechaNac} onChange={e => { setFormError(""); setInstructorFechaNac(e.target.value); }}
-                    className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
-                  <input type="text" value={nuevaProfesion} onChange={e => { setFormError(""); setNuevaProfesion(e.target.value); }}
-                    className={inputCls} placeholder="Ej. Arquitecto" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
-                  <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
-                    className={inputCls} placeholder="Ej. Historia del Arte" />
+                  <div className="flex gap-2">
+                    <input type="text" value={nuevaCedula} onChange={e => { setFormError(""); setNuevaCedula(e.target.value); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleBuscarPersona(); }}
+                      className={inputCls} placeholder="Ej. V-12345678" />
+                    <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
+                      className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0 text-sm whitespace-nowrap">
+                      {buscandoPersona ? (
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : "Buscar"}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {personaEncontrada && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-sm">
+                  <p className="font-medium text-green-800 dark:text-green-300">
+                    {personaEncontrada.nombres} {personaEncontrada.apellidos}
+                  </p>
+                  <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Cédula: {personaEncontrada.cedula}</p>
+                </div>
+              )}
+
+              {showNuevaPersonaFields && (
+                <div className="bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Registrar Persona</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres *</label>
+                      <input type="text" value={instructorNombres} onChange={e => { setFormError(""); setInstructorNombres(e.target.value); }}
+                        className={inputCls} placeholder="Ej. Juan" />
+                    </div>
+                    <div>
+                      <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos *</label>
+                      <input type="text" value={instructorApellidos} onChange={e => { setFormError(""); setInstructorApellidos(e.target.value); }}
+                        className={inputCls} placeholder="Ej. Pérez" />
+                    </div>
+                    <div>
+                      <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono (Opcional)</label>
+                      <input type="text" value={instructorTelefono} onChange={e => { setFormError(""); setInstructorTelefono(e.target.value); }}
+                        onKeyDown={limitNumericInput} className={inputCls} placeholder="Ej. 04121234567" />
+                    </div>
+                    <div>
+                      <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento (Opcional)</label>
+                      <input type="date" value={instructorFechaNac} onChange={e => { setFormError(""); setInstructorFechaNac(e.target.value); }}
+                        className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(personaEncontrada || showNuevaPersonaFields) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
+                    <input type="text" value={nuevaProfesion} onChange={e => { setFormError(""); setNuevaProfesion(e.target.value); }}
+                      className={inputCls} placeholder="Ej. Arquitecto" />
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
+                    <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
+                      className={inputCls} placeholder="Ej. Historia del Arte" />
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={closeCrearInstructor}
                   className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                   Cancelar
                 </button>
                 <button type="button" onClick={handleSaveInstructor}
-                  disabled={isSubmitting}
-                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-50 min-w-[120px]">
+                  disabled={isSubmitting || buscandoPersona || (!personaEncontrada && !showNuevaPersonaFields)}
+                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-50 min-w-[160px]">
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : "Guardar"}
+                  ) : isEditingInstructor ? "Actualizar Instructor" : "Crear Instructor"}
                 </button>
               </div>
             </div>
           )}
 
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <input type="text" value={nuevaCedula} onChange={e => { setFormError(""); setNuevaCedula(e.target.value); }}
-                className={inputCls} placeholder="Ej. V-12345678" />
-              <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
-                className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0 text-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Buscar
-              </button>
-            </div>
-
-            {buscandoPersona && (
-              <p className="text-xs text-brand-600 font-medium flex items-center gap-2">
-                <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></span>
-                Buscando persona...
-              </p>
-            )}
-
-            {personaEncontrada && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-sm">
-                <p className="font-medium text-green-800 dark:text-green-300">
-                  {personaEncontrada.nombres} {personaEncontrada.apellidos}
-                </p>
-                <p className="text-green-600 dark:text-green-400 text-xs mt-0.5">Cédula: {personaEncontrada.cedula}</p>
-              </div>
-            )}
-
-            {showNuevaPersonaFields && (
-              <div className="bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4 space-y-4">
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Registrar Persona</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombres *</label>
-                    <input type="text" value={instructorNombres} onChange={e => { setFormError(""); setInstructorNombres(e.target.value); }}
-                      className={inputCls} placeholder="Ej. Juan" />
-                  </div>
-                  <div>
-                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Apellidos *</label>
-                    <input type="text" value={instructorApellidos} onChange={e => { setFormError(""); setInstructorApellidos(e.target.value); }}
-                      className={inputCls} placeholder="Ej. Pérez" />
-                  </div>
-                  <div>
-                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teléfono (Opcional)</label>
-                    <input type="text" value={instructorTelefono} onChange={e => { setFormError(""); setInstructorTelefono(e.target.value); }}
-                      onKeyDown={limitNumericInput} className={inputCls} placeholder="Ej. 04121234567" />
-                  </div>
-                  <div>
-                    <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Nacimiento (Opcional)</label>
-                    <input type="date" value={instructorFechaNac} onChange={e => { setFormError(""); setInstructorFechaNac(e.target.value); }}
-                  className="show-date-picker w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
-              </div>
-            </div>
-          </div>
-            )}
-
-            {!showCrearInstructor && (
-            <><div className="flex justify-end gap-2">
-              {isEditingInstructor && (
-                <button type="button" onClick={handleCancelEditInstructor}
-                  className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  Cancelar
-                </button>
-              )}
-              {(personaEncontrada || showNuevaPersonaFields || isEditingInstructor) && (
-              <button type="button" onClick={handleSaveInstructor}
-                disabled={isSubmitting || buscandoPersona}
-                className="flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition disabled:opacity-50 min-w-[160px]">
-                {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : isEditingInstructor ? "Actualizar Instructor" : "Crear Instructor"}
-              </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Profesión</label>
-                <input type="text" value={nuevaProfesion} onChange={e => { setFormError(""); setNuevaProfesion(e.target.value); }}
-                  className={inputCls} placeholder="Ej. Arquitecto" />
-              </div>
-              <div>
-                <label className="block mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Especialidad</label>
-                <input type="text" value={nuevaEspecialidad} onChange={e => { setFormError(""); setNuevaEspecialidad(e.target.value); }}
-                  className={inputCls} placeholder="Ej. Historia del Arte" />
-              </div>
-            </div></>
-            )}
-          </div>
-
           <div className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-700">
-            <div className="mb-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
               <div className="relative w-full sm:w-72">
                 <input type="text" placeholder="Buscar instructor por nombre, profesión o especialidad..."
                   value={searchInst}
@@ -817,12 +829,23 @@ export default function Talleres() {
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
               </div>
+              <select value={filterInstProfesion} onChange={e => { setFilterInstProfesion(e.target.value); setCurrentPageInst(1); }}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-xs focus:border-brand-500 focus:outline-none dark:text-white/90">
+                <option value="Todas">Todas las profesiones</option>
+                {uniqueProfesiones.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <select value={filterInstEspecialidad} onChange={e => { setFilterInstEspecialidad(e.target.value); setCurrentPageInst(1); }}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-xs focus:border-brand-500 focus:outline-none dark:text-white/90">
+                <option value="Todas">Todas las especialidades</option>
+                {uniqueEspecialidades.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
             </div>
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 sticky top-0">
                   <tr>
                     <th className="px-3 py-2 font-medium">Nombre</th>
+                    <th className="px-3 py-2 font-medium">Cédula</th>
                     <th className="px-3 py-2 font-medium">Profesión</th>
                     <th className="px-3 py-2 font-medium">Especialidad</th>
                     <th className="px-3 py-2 font-medium text-center">Acciones</th>
@@ -831,12 +854,19 @@ export default function Talleres() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {filteredInstructores.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-xs">{searchInst ? "No se encontraron instructores." : "No hay instructores registrados."}</td>
+                      <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-xs">{searchInst || filterInstProfesion !== "Todas" || filterInstEspecialidad !== "Todas" ? "No se encontraron instructores." : "No hay instructores registrados."}</td>
                     </tr>
                   ) : (
                     filteredInstructores.map(inst => (
                       <tr key={inst.id_instructor} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                        <td className="px-3 py-2 font-medium">{inst.Persona?.nombres} {inst.Persona?.apellidos}</td>
+                        <td className="px-3 py-2 font-medium">
+                          <span className="text-brand-600 dark:text-brand-400 cursor-pointer hover:underline"
+                            onClick={() => handleStartEditInstructor(inst)}
+                            title="Editar instructor">
+                            {inst.Persona?.nombres} {inst.Persona?.apellidos}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-gray-500 font-mono text-xs">{inst.Persona?.cedula || "-"}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.profesion || "—"}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-400 text-xs">{inst.especialidad || "—"}</td>
                         <td className="px-3 py-2 text-center">
