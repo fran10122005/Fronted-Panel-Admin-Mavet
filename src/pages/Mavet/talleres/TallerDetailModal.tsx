@@ -23,6 +23,7 @@ interface Props {
     cupo_maximo: number | string;
     estado: boolean;
     documentoPlan: File | null;
+    documentoPlanUrl: string;
   };
   inventario: any[];
   instructores: any[];
@@ -541,9 +542,11 @@ export default function TallerDetailModal({
                 className={`relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
                   formData.documentoPlan
                     ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 dark:border-emerald-600"
-                    : dragOver
-                      ? "border-brand-400 bg-brand-50 dark:bg-brand-500/10 dark:border-brand-500 scale-[1.01]"
-                      : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/30 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                    : formData.documentoPlanUrl
+                      ? "border-sky-400 bg-sky-50 dark:bg-sky-500/10 dark:border-sky-600"
+                      : dragOver
+                        ? "border-brand-400 bg-brand-50 dark:bg-brand-500/10 dark:border-brand-500 scale-[1.01]"
+                        : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/30 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                 }`}>
                 <input id="documentoPlanInput" type="file" accept=".pdf,application/pdf"
                   className="hidden" onChange={handleFileSelect} />
@@ -560,6 +563,16 @@ export default function TallerDetailModal({
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0" title="Eliminar">
                       <X className="w-4 h-4" />
                     </button>
+                  </div>
+                ) : formData.documentoPlanUrl ? (
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-500/20 shrink-0">
+                      <svg className="w-6 h-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-sky-700 dark:text-sky-400 truncate">Documento actual</p>
+                      <p className="text-xs text-gray-500">Toca para reemplazar</p>
+                    </div>
                   </div>
                 ) : (
                   <>

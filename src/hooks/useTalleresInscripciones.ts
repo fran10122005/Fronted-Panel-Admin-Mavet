@@ -74,6 +74,7 @@ export function useTalleresInscripciones(
       toast.success("Alumno inscrito correctamente.");
       const refreshed = await mavetApi.getInscripcionesTaller();
       setInscripciones(refreshed);
+      setIsOpenEnroll(false);
     } catch (error: any) {
       toast.error(error.message || "Error al inscribir al alumno.");
     } finally {

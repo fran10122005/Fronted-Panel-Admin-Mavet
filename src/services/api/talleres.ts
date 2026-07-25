@@ -200,8 +200,19 @@ export const talleres = {
       const res = await axiosInstance.get(`/api/educacion/talleres/${id}/documento-plan`);
       const url = res.data?.url;
       if (!url) throw new Error("No hay documento disponible");
-      // Open Cloudinary URL in new tab — browser handles the download natively
-      window.open(url, "_blank");
+
+      const pdfRes = await fetch(url);
+      if (!pdfRes.ok) throw new Error("Error al descargar el archivo");
+
+      const blob = await pdfRes.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `Plan_Programatico_Taller_${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
     } catch (e: any) {
       throw new Error(e.message || "Error al descargar el documento de planificación");
     }

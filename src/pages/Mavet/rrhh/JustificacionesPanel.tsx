@@ -9,6 +9,7 @@ const TIPOS_JUSTIFICACION = [
   { value: "falta_parcial", label: "Falta parcial" },
   { value: "llegada_tardia", label: "Llegada tardía" },
   { value: "salida_anticipada", label: "Salida anticipada" },
+  { value: "reposo_multiple", label: "Reposo Médico (varios días)" },
 ];
 
 const MOTIVOS_LEGALES_LOTTT = [
@@ -30,7 +31,7 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
   const [loading, setLoading] = useState(false);
   const [searchJustif, setSearchJustif] = useState("");
 
-  const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", tipo: "falta_dia_completo", motivo: MOTIVOS_LEGALES_LOTTT[0], descripcion: "", hora_inicio: "", hora_fin: "", archivo: null as File | null });
+  const [nuevaJustif, setNuevaJustif] = useState({ fecha: "", fecha_fin: "", tipo: "falta_dia_completo", motivo: MOTIVOS_LEGALES_LOTTT[0], descripcion: "", hora_inicio: "", hora_fin: "", archivo: null as File | null });
   const [creandoJustif, setCreandoJustif] = useState(false);
   const [justifFile, setJustifFile] = useState<File | null>(null);
 
@@ -60,27 +61,75 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
       toast.error("Fecha y motivo son obligatorios");
       return;
     }
-    
-    const requiereHora = ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo);
-    if (requiereHora && (!nuevaJustif.hora_inicio || !nuevaJustif.hora_fin)) {
-      toast.error("Para este tipo de justificación se requiere especificar el rango de horas");
-      return;
+
+    const esMultiple = nuevaJustif.tipo === "reposo_multiple";
+    if (esMultiple) {
+      if (!nuevaJustif.fecha_fin) {
+        toast.error("Para reposo médico debe indicar la fecha final");
+        return;
+      }
+      const inicio = new Date(nuevaJustif.fecha + "T12:00:00");
+      const fin = new Date(nuevaJustif.fecha_fin + "T12:00:00");
+      const diffDays = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (diffDays < 2) {
+        toast.error("El reposo debe cubrir al menos 2 días. Use 'Falta día completo' para un solo día.");
+        return;
+      }
+      if (diffDays > 3) {
+        toast.error("Según la LOTT, el reposo médico autogestionado no puede exceder 3 días consecutivos. Para períodos mayores, consulte al departamento de RRHH.");
+        return;
+      }
+      if (inicio > fin) {
+        toast.error("La fecha de inicio debe ser anterior a la fecha final");
+        return;
+      }
+      if (!justifFile) {
+        toast.error("Para reposo médico debe adjuntar el certificado médico como archivo soporte");
+        return;
+      }
+    }
+
+    if (!esMultiple && ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo)) {
+      if (!nuevaJustif.hora_inicio || !nuevaJustif.hora_fin) {
+        toast.error("Para este tipo de justificación se requiere especificar el rango de horas");
+        return;
+      }
     }
 
     setCreandoJustif(true);
     try {
-      const j = await mavetApi.crearJustificacion(idTrabajador, {
-        fecha: nuevaJustif.fecha,
-        tipo: nuevaJustif.tipo,
-        motivo: nuevaJustif.motivo,
-        descripcion: nuevaJustif.descripcion || undefined,
-        hora_inicio: requiereHora ? nuevaJustif.hora_inicio : undefined,
-        hora_fin: requiereHora ? nuevaJustif.hora_fin : undefined,
-      }, justifFile || undefined);
-      setJustificaciones(prev => [j, ...prev]);
-      setNuevaJustif({ fecha: "", tipo: "falta_dia_completo", motivo: "", descripcion: "", hora_inicio: "", hora_fin: "", archivo: null });
+      const datesToCreate = esMultiple
+        ? (() => {
+            const dates: string[] = [];
+            const current = new Date(nuevaJustif.fecha + "T12:00:00");
+            const end = new Date(nuevaJustif.fecha_fin + "T12:00:00");
+            while (current <= end) {
+              dates.push(current.toISOString().split("T")[0]);
+              current.setDate(current.getDate() + 1);
+            }
+            return dates;
+          })()
+        : [nuevaJustif.fecha];
+
+      const created = [];
+      for (const fecha of datesToCreate) {
+        const j = await mavetApi.crearJustificacion(idTrabajador, {
+          fecha,
+          tipo: esMultiple ? "falta_dia_completo" : nuevaJustif.tipo,
+          motivo: nuevaJustif.motivo,
+          descripcion: nuevaJustif.descripcion || undefined,
+          hora_inicio: (!esMultiple && ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo)) ? nuevaJustif.hora_inicio : undefined,
+          hora_fin: (!esMultiple && ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo)) ? nuevaJustif.hora_fin : undefined,
+        }, justifFile || undefined);
+        created.push(j);
+      }
+      setJustificaciones(prev => [...created, ...prev]);
+      setNuevaJustif({ fecha: "", fecha_fin: "", tipo: "falta_dia_completo", motivo: "", descripcion: "", hora_inicio: "", hora_fin: "", archivo: null });
       setJustifFile(null);
-      toast.success("Justificación creada");
+      const msg = esMultiple
+        ? `Justificación creada para ${datesToCreate.length} días consecutivos`
+        : "Justificación creada";
+      toast.success(msg);
     } catch (err: any) {
       toast.error(err.message || "Error al crear justificación");
     } finally {
@@ -103,7 +152,8 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
   };
 
   const labelCls = "block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider";
-  const requiereHora = ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo);
+  const esMultiple = nuevaJustif.tipo === "reposo_multiple";
+  const requiereHora = !esMultiple && ["falta_parcial", "llegada_tardia", "salida_anticipada"].includes(nuevaJustif.tipo);
 
   if (!idTrabajador) {
     return (
@@ -123,7 +173,7 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
         <div className="mt-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3 bg-white dark:bg-gray-800/50">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Fecha</label>
+              <label className={labelCls}>{esMultiple ? "Fecha inicio" : "Fecha"}</label>
               <input
                 type="date"
                 value={nuevaJustif.fecha}
@@ -131,6 +181,34 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
               />
             </div>
+            {esMultiple ? (
+              <div>
+                <label className={labelCls}>Fecha fin</label>
+                <input
+                  type="date"
+                  value={nuevaJustif.fecha_fin}
+                  min={nuevaJustif.fecha || undefined}
+                  onChange={(e) => setNuevaJustif(prev => ({ ...prev, fecha_fin: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className={labelCls}>Tipo</label>
+                <select
+                  value={nuevaJustif.tipo}
+                  onChange={(e) => setNuevaJustif(prev => ({ ...prev, tipo: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
+                >
+                  {TIPOS_JUSTIFICACION.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {esMultiple && (
             <div>
               <label className={labelCls}>Tipo</label>
               <select
@@ -142,10 +220,21 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
+              {nuevaJustif.fecha && nuevaJustif.fecha_fin && (() => {
+                const inicio = new Date(nuevaJustif.fecha + "T12:00:00");
+                const fin = new Date(nuevaJustif.fecha_fin + "T12:00:00");
+                const diff = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                if (diff < 2 || diff > 3) return null;
+                return (
+                  <p className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 mt-1.5">
+                    {"\u2713"} {diff} días consecutivos — válido según LOTT (Art. 76, hasta 3 días)
+                  </p>
+                );
+              })()}
             </div>
-          </div>
-          
-          {requiereHora && (
+          )}
+
+          {!esMultiple && requiereHora && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Hora de inicio</label>
@@ -191,7 +280,9 @@ export default function JustificacionesPanel({ idTrabajador }: Props) {
             />
           </div>
           <div>
-            <label className={labelCls}>Archivo soporte (opcional)</label>
+            <label className={labelCls}>
+              Archivo soporte {esMultiple ? <span className="text-red-400">*</span> : "(opcional)"}
+            </label>
             <div className="flex items-center gap-2">
               <label className="px-3 py-1.5 text-xs font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 cursor-pointer transition">
                 {justifFile ? justifFile.name : "Seleccionar archivo"}

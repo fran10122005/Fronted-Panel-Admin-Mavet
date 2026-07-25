@@ -83,6 +83,7 @@ const initialPlanificarForm = {
   cupo_maximo: "" as number | string,
   estado: true,
   documentoPlan: null as File | null,
+  documentoPlanUrl: "",
 };
 
 
@@ -137,10 +138,15 @@ export function useTalleres() {
   const esMenor = insc.esMenor;
 
   const inscripcionesAgrupadas = useMemo(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
     const map = new Map<number, { taller: any; alumnos: any[] }>();
-    const inscFiltradas = verHistorialInsc
-      ? inscripciones.filter(ins => ins.estado_inscripcion !== "Inscrito" && ins.estado_inscripcion !== "Activo")
-      : inscripciones.filter(ins => ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo");
+    const inscFiltradas = inscripciones.filter(ins => {
+      const tallerFin = ins.Taller?.fecha_fin;
+      const tallerActivo = !tallerFin || new Date(tallerFin + "T23:59:59") >= hoy;
+      const inscActiva = ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo";
+      return verHistorialInsc ? (!inscActiva || !tallerActivo) : (inscActiva && tallerActivo);
+    });
     inscFiltradas.forEach((ins: any) => {
       const id = ins.Taller?.id_taller || ins.id_taller;
       if (!map.has(id)) {
@@ -152,8 +158,15 @@ export function useTalleres() {
   }, [inscripciones, verHistorialInsc]);
 
   const statsInscripciones = useMemo(() => {
-    const activas = inscripciones.filter(ins => ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo").length;
-    const historial = inscripciones.filter(ins => ins.estado_inscripcion !== "Inscrito" && ins.estado_inscripcion !== "Activo").length;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const activas = inscripciones.filter(ins => {
+      const tallerFin = ins.Taller?.fecha_fin;
+      const tallerActivo = !tallerFin || new Date(tallerFin + "T23:59:59") >= hoy;
+      const inscActiva = ins.estado_inscripcion === "Inscrito" || ins.estado_inscripcion === "Activo";
+      return inscActiva && tallerActivo;
+    }).length;
+    const historial = inscripciones.length - activas;
     return { activas, historial };
   }, [inscripciones]);
 
@@ -290,6 +303,7 @@ export function useTalleres() {
         cupo_maximo: taller.cupo_maximo ?? "",
         estado: taller.estado === "Activo" || taller.estado === true,
         documentoPlan: null,
+        documentoPlanUrl: taller.documento_plan || "",
       });
     } else {
       setIsEditingPlanificado(false);
@@ -302,7 +316,7 @@ export function useTalleres() {
   const handleDocumentoPlanChange = (file: File | null) => {
     setFormError("");
     setFieldErrors(prev => ({ ...prev, documentoPlan: "" }));
-    setPlanificarForm(prev => ({ ...prev, documentoPlan: file }));
+    setPlanificarForm(prev => ({ ...prev, documentoPlan: file, documentoPlanUrl: file ? "" : prev.documentoPlanUrl }));
   };
 
   const handleEliminarPlanificado = (taller: any) => {
@@ -421,7 +435,7 @@ export function useTalleres() {
   const handleSubmitPlanificar = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!planificarForm.documentoPlan && !isEditingPlanificado) {
+    if (!planificarForm.documentoPlan && !planificarForm.documentoPlanUrl) {
       setFormError("Debe adjuntar el documento del plan programático.");
       return;
     }

@@ -206,7 +206,34 @@ export default function useInventario() {
     return cat?.nombre_categoria || null;
   }, [formData.id_categoria_obra, categorias]);
 
-  const isPintura = selectedCategoryName?.toLowerCase() === 'pintura';
+  const tecnicasPorCategoria: Record<string, string[]> = {
+    'Pintura': ['Óleo sobre Lienzo', 'Acrílico sobre Lienzo', 'Acuarela', 'Temple', 'Pastel', 'Mixta'],
+    'Dibujo': ['Carboncillo', 'Tinta China', 'Acuarela', 'Pastel', 'Mixta'],
+    'Escultura': ['Escultura en Bronce', 'Escultura en Mármol', 'Escultura en Madera', 'Mixta'],
+    'Grabado': ['Grabado', 'Serigrafía', 'Litografía', 'Mixta'],
+    'Fotografía': ['Fotografía Digital', 'Fotografía Analógica'],
+    'Arte Digital': ['Arte Digital'],
+    'Cerámica': ['Cerámica'],
+    'Textil': ['Tejido', 'Telar', 'Bordado', 'Mixta'],
+    'Instalación': ['Instalación', 'Mixta'],
+    'Arte Objeto': ['Collage', 'Mixta'],
+  };
+
+  const filteredTecnicas = useMemo(() => {
+    if (!selectedCategoryName) return tecnicas;
+    const normalizedName = selectedCategoryName.trim().toLowerCase();
+    const entry = Object.entries(tecnicasPorCategoria).find(
+      ([key]) => key.toLowerCase() === normalizedName
+    );
+    if (!entry) {
+      console.warn('[Inventario] Categoría sin mapeo de técnicas:', selectedCategoryName);
+      return [];
+    }
+    const permitidas = entry[1];
+    return tecnicas.filter((t: any) =>
+      permitidas.some(p => p.toLowerCase() === (t.nombre_tecnica || '').toLowerCase().trim())
+    );
+  }, [selectedCategoryName, tecnicas]);
 
   const validateObraField = (name: string, value: any, _allData?: any): string => {
     if (["titulo", "ubicacion", "id_estado_actual", "tipo_ingreso"].includes(name) && (!value || !String(value).trim())) {
@@ -253,8 +280,17 @@ export default function useInventario() {
 
       if (name === "id_categoria_obra" && value) {
         const newCat = categorias.find((c: any) => c.id_categoria_obra === value);
-        if (newCat && newCat.nombre_categoria?.toLowerCase() !== 'pintura') {
-          delete newData.id_tecnica;
+        if (newCat && prev.id_tecnica) {
+          const catName = newCat.nombre_categoria;
+          const normalizedCatName = catName.trim().toLowerCase();
+          const entry = Object.entries(tecnicasPorCategoria).find(
+            ([key]) => key.toLowerCase() === normalizedCatName
+          );
+          const permitidas = entry ? entry[1] : null;
+          const tecnicaActual = tecnicas.find((t: any) => t.id_tecnica === prev.id_tecnica);
+          if (tecnicaActual && permitidas && !permitidas.some(p => p.toLowerCase() === (tecnicaActual.nombre_tecnica || '').toLowerCase().trim())) {
+            delete newData.id_tecnica;
+          }
         }
       }
 
@@ -291,8 +327,8 @@ export default function useInventario() {
       if (err) errors[f] = err;
     }
     if (isOtherCategoria && !customCategoria.trim()) errors.customCategoria = "Especifique la categoría";
-    if (isPintura && !formData.id_tecnica && !isOtherTecnica) errors.id_tecnica = "Seleccione una técnica";
-    if (isPintura && isOtherTecnica && !customTecnica.trim()) errors.customTecnica = "Especifique la técnica";
+    if (!formData.id_tecnica && !isOtherTecnica) errors.id_tecnica = "Seleccione una técnica";
+    if (isOtherTecnica && !customTecnica.trim()) errors.customTecnica = "Especifique la técnica";
 
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -682,7 +718,7 @@ export default function useInventario() {
     selectedObraForDetail, setSelectedObraForDetail,
     selectedObraForHistorial, setSelectedObraForHistorial,
     isSubmitting,
-    formErrors,
+formErrors, setFormErrors,
     confirm, setConfirm,
     currentPage, totalPages, totalItems, ITEMS_PER_PAGE,
     goToPage,
@@ -709,7 +745,7 @@ export default function useInventario() {
     validateCedula,
     filteredArtistsList,
     filteredObras,
-    isPintura,
+    filteredTecnicas,
     fetchObrasPaginated,
   };
 }

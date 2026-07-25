@@ -29,7 +29,7 @@ export default function FormModal({
   submitLabelNew, submitLabelEdit,
 }: FormModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className={`${maxWidth} p-0 overflow-hidden bg-white dark:bg-gray-900 rounded-2xl shadow-xl`}>
+    <Modal isOpen={isOpen} onClose={onClose} className={`${maxWidth} p-0 bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto`}>
       <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>

@@ -228,7 +228,7 @@ export interface Prestamo {
   estado: "ACTIVO" | "DEVUELTO";
 }
 
-export type TipoJustificacion = "falta_dia_completo" | "falta_parcial" | "llegada_tardia" | "salida_anticipada";
+export type TipoJustificacion = "falta_dia_completo" | "falta_parcial" | "llegada_tardia" | "salida_anticipada" | "reposo_multiple";
 
 export interface DiaResumen {
   id: string;
@@ -324,7 +324,7 @@ export interface Justificacion {
   id_justificacion: string;
   id_trabajador: string;
   fecha: string;
-  tipo: 'falta_dia_completo' | 'falta_parcial' | 'llegada_tardia' | 'salida_anticipada';
+  tipo: 'falta_dia_completo' | 'falta_parcial' | 'llegada_tardia' | 'salida_anticipada' | 'reposo_multiple';
   hora_inicio?: string;
   hora_fin?: string;
   motivo: string;
