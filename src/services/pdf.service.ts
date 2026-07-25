@@ -1,6 +1,18 @@
 import { Obra, RegistroAsistencia, Trabajador, EventoAuditorio } from "../types";
 import { axiosInstance } from "./api";
 
+function downloadBlob(data: BlobPart, filename: string) {
+  const blob = new Blob([data], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ─── Premium color palette ──────────────────────────────────────────────────
 const C = {
   brand: [128, 0, 0] as [number, number, number],
@@ -388,8 +400,7 @@ export async function exportarReporteAsistencia(
       params,
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Reporte_Asistencia_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarReporteAsistencia]", e);
     alert(
@@ -404,8 +415,7 @@ export async function exportarCatalogoBiblioteca() {
     const res = await axiosInstance.get("/api/reportes/biblioteca", {
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Catalogo_Biblioteca_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarCatalogoBiblioteca]", e);
     alert(
@@ -431,8 +441,7 @@ export async function exportarCartaAvalHoras(
       `/api/reportes/carta-aval/${trabajador.cedula}`,
       { responseType: "blob" },
     );
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Carta_Aval_${trabajador.cedula}.pdf`);
   } catch (e) {
     console.error("[exportarCartaAvalHoras]", e);
     alert("Error al generar la constancia de trabajo. Verifique su conexión.");
@@ -445,8 +454,7 @@ export async function exportarHistorialEventos(_eventos: any[]) {
     const res = await axiosInstance.get("/api/reportes/eventos", {
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Historial_Eventos_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarHistorialEventos]", e);
     alert(
@@ -461,8 +469,7 @@ export async function exportarReporteTrabajadores() {
     const res = await axiosInstance.get("/api/reportes/trabajadores", {
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Reporte_Trabajadores_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarReporteTrabajadores]", e);
     alert(
@@ -478,8 +485,15 @@ export async function exportarReporteAuditoria(params?: { tipo?: string; desde?:
       params,
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    const blob = new Blob([res.data], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `MAVET_Bitacora_Auditoria_${new Date().toISOString().split("T")[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (e) {
     console.error("[exportarReporteAuditoria]", e);
     alert(
@@ -494,8 +508,7 @@ export async function exportarReporteUsuarios() {
     const res = await axiosInstance.get("/api/reportes/usuarios", {
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Reporte_Usuarios_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarReporteUsuarios]", e);
     alert(
@@ -514,8 +527,7 @@ export async function exportarQRPublico(
       params: { publicUrl },
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_QR_Publico_${new Date().toISOString().split("T")[0]}.pdf`);
   } catch (e) {
     console.error("[exportarQRPublico]", e);
     alert("Error al generar el PDF del código QR. Verifique su conexión.");
@@ -680,8 +692,7 @@ export async function exportarCarnetTrabajador(trabajador: Trabajador) {
     const res = await axiosInstance.get(`/api/reportes/carnet/${id}`, {
       responseType: "blob",
     });
-    const url = URL.createObjectURL(res.data);
-    window.open(url, "_blank");
+    downloadBlob(res.data, `MAVET_Carnet_${trabajador.cedula || id}.pdf`);
   } catch (e) {
     console.error("[exportarCarnetTrabajador]", e);
     alert("Error al generar la credencial.");
