@@ -75,7 +75,7 @@ export default function ConfirmDialog({
   const v = variants[variant];
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onCancel} />
       <div className={`relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl border ${v.border} p-6 animate-in zoom-in-95`}>
         <div className="flex flex-col items-center text-center gap-3">

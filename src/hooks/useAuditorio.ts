@@ -624,7 +624,7 @@ export default function useAuditorio() {
           extendedProps: {
             organizador: organizador,
             cedula: cedulaOrganizador,
-            tipoEvento: tipoFinal,
+            tipoEvento: tipoNombre,
             recursos_solicitados: recursosSolicitados,
             correo_electronico: correoElectronico,
             numero_expediente: response.data?.numero_expediente || "",

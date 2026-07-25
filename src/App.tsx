@@ -51,7 +51,7 @@ export default function App() {
         <ScrollToTop />
         <Toaster 
           position="top-center"
-          containerStyle={{ zIndex: 999999 }}
+          containerStyle={{ zIndex: 2147483647 }}
           toastOptions={{
             duration: 4000,
             style: {

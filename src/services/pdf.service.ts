@@ -4,10 +4,14 @@ import { axiosInstance } from "./api";
 // ─── Premium color palette ──────────────────────────────────────────────────
 const C = {
   brand: [128, 0, 0] as [number, number, number],
-  text: [45, 45, 45] as [number, number, number],
-  textMuted: [155, 155, 155] as [number, number, number],
-  line: [228, 228, 228] as [number, number, number],
-  rowOdd: [253, 248, 246] as [number, number, number],
+  text: [33, 33, 33] as [number, number, number],
+  textMuted: [100, 100, 100] as [number, number, number],
+  textLight: [130, 130, 130] as [number, number, number],
+  line: [200, 200, 200] as [number, number, number],
+  rowOdd: [250, 247, 244] as [number, number, number],
+  rowEven: [255, 255, 255] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  accentBg: [245, 240, 237] as [number, number, number],
 };
 const LOGO_PATH = "/images/logo/mavet2.png";
 const GOBER_PATH = "/images/logo/gober.png";
@@ -47,32 +51,71 @@ function getDirCul(): Promise<string> {
   return dirculPromise;
 }
 
+function loadImageDimensions(dataUrl: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve({ w: 100, h: 100 });
+    img.src = dataUrl;
+  });
+}
+
+function fitToBox(natW: number, natH: number, maxW: number, maxH: number): { w: number; h: number } {
+  if (natW === 0 || natH === 0) return { w: maxW, h: maxH };
+  const ratio = Math.min(maxW / natW, maxH / natH);
+  return { w: natW * ratio, h: natH * ratio };
+}
+
 async function addHeader(doc: any, title: string) {
   const pw = doc.internal.pageSize.getWidth();
   const [logo, gober, dircul] = await Promise.all([getLogo(), getGober(), getDirCul()]);
-  const headerY = 4;
-  const imgH = 14;
+  const headerY = 5;
+  const maxImgH = 14;
 
+  // Left: Gober logo
   if (gober) {
-    try { doc.addImage(gober, "PNG", MARGIN, headerY, imgH * 2.5, imgH); } catch { /* */ }
+    try {
+      const dim = await loadImageDimensions(gober);
+      const fit = fitToBox(dim.w, dim.h, 36, maxImgH);
+      doc.addImage(gober, "PNG", MARGIN, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
+    } catch { /* */ }
   }
+
+  // Center: MAVET logo
   if (logo) {
     try {
-      doc.addImage(logo, "PNG", (pw - imgH * 3) / 2, headerY, imgH * 3, imgH);
-    } catch { /* */ }
-  }
-  if (dircul) {
-    try {
-      const dw = imgH * 2.5;
-      doc.addImage(dircul, "PNG", pw - MARGIN - dw, headerY, dw, imgH);
+      const dim = await loadImageDimensions(logo);
+      const fit = fitToBox(dim.w, dim.h, 44, maxImgH);
+      doc.addImage(logo, "PNG", (pw - fit.w) / 2, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
     } catch { /* */ }
   }
 
+  // Right: DirCul logo
+  if (dircul) {
+    try {
+      const dim = await loadImageDimensions(dircul);
+      const fit = fitToBox(dim.w, dim.h, 36, maxImgH);
+      doc.addImage(dircul, "PNG", pw - MARGIN - fit.w, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
+    } catch { /* */ }
+  }
+
+  // Separator line under logos
+  const lineY = headerY + maxImgH + 3;
+  doc.setDrawColor(...C.brand);
+  doc.setLineWidth(0.6);
+  doc.line(MARGIN, lineY, pw - MARGIN, lineY);
+
+  // Title
   if (title) {
     doc.setTextColor(...C.brand);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text(title, pw / 2, 36, { align: "center" });
+    doc.setFontSize(14);
+    doc.text(title, pw / 2, lineY + 7, { align: "center" });
+
+    // Thin decorative line under title
+    doc.setDrawColor(...C.line);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN + 30, lineY + 10, pw - MARGIN - 30, lineY + 10);
   }
 }
 
@@ -84,25 +127,31 @@ async function addFooter(doc: any) {
     doc.setPage(i);
     const ph = doc.internal.pageSize.getHeight();
 
+    // Footer separator line
+    doc.setDrawColor(...C.brand);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, ph - 34, pw - MARGIN, ph - 34);
+
+    // Quote / tagline
     doc.setTextColor(128, 0, 0);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.text(
       "¡MAVET donde el Arte y el Tiempo Inspiran Transformar los Espacios!",
-      pw / 2, ph - 28, { align: "center" },
+      pw / 2, ph - 29, { align: "center" },
     );
 
-    doc.setTextColor(45, 45, 45);
+    // Contact info
+    doc.setTextColor(80, 80, 80);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
     const lines = [
       '"La historia es cuestión de supervivencia. Si no tuviéramos pasado, estaríamos desprovistos de la impresión que define a nuestro ser"',
-      '18 de mayo Día Internacional de los Museos',
-      '"Museos Hiperconectados: Enfoques Nuevos, Públicos Nuevos" - ICOM',
+      '18 de mayo Día Internacional de los Museos · "Museos Hiperconectados: Enfoques Nuevos, Públicos Nuevos" - ICOM',
       'Ubicado en Carrera 6 con Esquina de la Calle 4 Casona 25 Centro - San Cristóbal - Edo. Táchira',
-      'Teléfonos: 0276—3433102 Rf: 3022506-2',
+      'Teléfonos: 0276—3433102 · RIF: 3022506-2',
     ];
-    let fy = ph - 20;
+    let fy = ph - 25;
     for (const line of lines) {
       doc.text(line, pw / 2, fy, { align: "center", maxWidth: pw - MARGIN * 2 });
       fy += 3.5;
@@ -118,9 +167,9 @@ function addSignatureBlock(doc: any, y: number): number {
   doc.setDrawColor(...C.brand);
   doc.setLineWidth(0.4);
   doc.line(cx - 30, y, cx + 30, y);
-  y += 4;
+  y += 5;
 
-  doc.setTextColor(...C.brand);
+  doc.setTextColor(...C.text);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text("Coordinador (a) - MAVET", cx, y, { align: "center" });
@@ -128,10 +177,10 @@ function addSignatureBlock(doc: any, y: number): number {
 
   doc.setTextColor(...C.textMuted);
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(6);
+  doc.setFontSize(6.5);
   doc.text("(Sello y firma)", cx, y, { align: "center" });
 
-  return y + 4;
+  return y + 5;
 }
 
 function addTwoSignatureBlocks(doc: any, y: number): number {
@@ -139,12 +188,14 @@ function addTwoSignatureBlocks(doc: any, y: number): number {
   const cx1 = pw * 0.3;
   const cx2 = pw * 0.7;
 
+  // Signature lines
   doc.setDrawColor(...C.brand);
   doc.setLineWidth(0.4);
-  doc.line(cx1 - 25, y, cx1 + 25, y);
-  doc.line(cx2 - 25, y, cx2 + 25, y);
-  y += 4;
+  doc.line(cx1 - 28, y, cx1 + 28, y);
+  doc.line(cx2 - 28, y, cx2 + 28, y);
+  y += 5;
 
+  // Labels
   doc.setTextColor(...C.text);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
@@ -152,13 +203,14 @@ function addTwoSignatureBlocks(doc: any, y: number): number {
   doc.text("Firma y Cédula del Solicitante", cx2, y, { align: "center" });
   y += 4;
 
+  // Sub-labels
   doc.setTextColor(...C.textMuted);
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(6);
+  doc.setFontSize(6.5);
   doc.text("(Sello y firma)", cx1, y, { align: "center" });
   doc.text("(Aceptación de términos)", cx2, y, { align: "center" });
 
-  return y + 4;
+  return y + 5;
 }
 
 // ─── Reusable: Page numbers + footer ──────────────────────────────────────
@@ -172,21 +224,42 @@ function makeDidDrawPage(title: string, pw: number) {
     if (data.pageNumber > 1) {
       const doc2 = data.doc;
       const [logo, gober, dircul] = await Promise.all([getLogo(), getGober(), getDirCul()]);
+      const headerY = 3;
+      const maxImgH = 10;
 
       if (gober) {
-        try { doc2.addImage(gober, "PNG", MARGIN, 2, 22, 10); } catch { /* */ }
+        try {
+          const dim = await loadImageDimensions(gober);
+          const fit = fitToBox(dim.w, dim.h, 28, maxImgH);
+          doc2.addImage(gober, "PNG", MARGIN, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
+        } catch { /* */ }
       }
       if (logo) {
-        try { doc2.addImage(logo, "PNG", (pw - 26) / 2, 2, 26, 10); } catch { /* */ }
+        try {
+          const dim = await loadImageDimensions(logo);
+          const fit = fitToBox(dim.w, dim.h, 36, maxImgH);
+          doc2.addImage(logo, "PNG", (pw - fit.w) / 2, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
+        } catch { /* */ }
       }
       if (dircul) {
-        try { doc2.addImage(dircul, "PNG", pw - MARGIN - 22, 2, 22, 10); } catch { /* */ }
+        try {
+          const dim = await loadImageDimensions(dircul);
+          const fit = fitToBox(dim.w, dim.h, 28, maxImgH);
+          doc2.addImage(dircul, "PNG", pw - MARGIN - fit.w, headerY + (maxImgH - fit.h) / 2, fit.w, fit.h);
+        } catch { /* */ }
       }
+
+      // Separator line
+      const lineY = headerY + maxImgH + 2;
+      doc2.setDrawColor(...C.brand);
+      doc2.setLineWidth(0.4);
+      doc2.line(MARGIN, lineY, pw - MARGIN, lineY);
+
       if (title) {
         doc2.setTextColor(...C.brand);
         doc2.setFont("helvetica", "bold");
-        doc2.setFontSize(9);
-        doc2.text(title, pw / 2, 20, { align: "center" });
+        doc2.setFontSize(10);
+        doc2.text(title, pw / 2, lineY + 6, { align: "center" });
       }
     }
   };
@@ -534,9 +607,9 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
 
     // ── Datestamp ──
     const now = new Date();
-    doc.setTextColor(...C.textMuted);
+    doc.setTextColor(...C.textLight);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(7.5);
     doc.text(
       `Emitido: ${now.toLocaleDateString("es-VE", {
         day: "2-digit", month: "long", year: "numeric",
@@ -559,106 +632,125 @@ export async function exportarComprobanteReserva(ev: EventoAuditorio) {
         label: "Horario",
         value: `${(ev.start?.split("T")[1]?.substring(0, 5) || "")} - ${(ev.end?.split("T")[1]?.substring(0, 5) || "")}`,
       },
-      { 
-        label: "Recursos", 
+      {
+        label: "Recursos",
         value: ev.extendedProps?.recursos_solicitados && Array.isArray(ev.extendedProps.recursos_solicitados) && ev.extendedProps.recursos_solicitados.length > 0
-          ? ev.extendedProps.recursos_solicitados.join(", ") 
-          : "Ninguno" 
+          ? ev.extendedProps.recursos_solicitados.join(", ")
+          : "Ninguno"
       },
     ];
 
-    const bkg = [248, 245, 242] as [number, number, number];
-    let y = 50;
-    const lx = MARGIN + 4;
-    const vx = 58;
-    const rh = 7.5;
+    let y = 52;
+    const lx = MARGIN + 5;
+    const vx = 62;
+    const rh = 9;
+    const tableW = pw - MARGIN * 2;
 
-    // Section Header 1
+    // ── Section Header: DATOS DE LA RESERVA ──
     doc.setFillColor(...C.brand);
-    doc.rect(MARGIN, y - 5, pw - MARGIN * 2, 7, "F");
+    doc.rect(MARGIN, y - 5.5, tableW, 8, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.text("DATOS DE LA RESERVA", MARGIN + 4, y);
-    y += 6;
+    doc.setFontSize(9);
+    doc.text("DATOS DE LA RESERVA", MARGIN + 5, y - 0.5);
+    y += 5;
 
     info.forEach((r, i) => {
-      const rowTop = y - 5.5;
-      if (i % 2 === 0) {
-        doc.setFillColor(...C.rowOdd);
-        doc.rect(MARGIN, rowTop, pw - MARGIN * 2, rh, "F");
-      }
-      
-      // Bottom border for each row
-      doc.setDrawColor(...C.line);
-      doc.setLineWidth(0.2);
-      doc.line(MARGIN, rowTop + rh, pw - MARGIN, rowTop + rh);
+      const rowTop = y - 5;
 
-      doc.setTextColor(...C.brand); // Brand color for labels
+      // Alternating row background
+      const bg = i % 2 === 0 ? C.rowOdd : C.rowEven;
+      doc.setFillColor(...bg);
+      doc.rect(MARGIN, rowTop, tableW, rh, "F");
+
+      // Bottom border
+      doc.setDrawColor(...C.line);
+      doc.setLineWidth(0.15);
+      doc.line(MARGIN, rowTop + rh, MARGIN + tableW, rowTop + rh);
+
+      // Left accent bar on odd rows
+      if (i % 2 === 0) {
+        doc.setFillColor(...C.brand);
+        doc.rect(MARGIN, rowTop, 1.5, rh, "F");
+      }
+
+      // Label
+      doc.setTextColor(90, 90, 90);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.5);
-      doc.text(r.label + ":", lx, y - 0.5);
-      
+      doc.setFontSize(8);
+      doc.text(r.label, lx, y);
+
+      // Value
       doc.setTextColor(...C.text);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(r.value, vx, y - 0.5);
+      doc.setFontSize(8.5);
+      doc.text(r.value, vx, y);
+
       y += rh;
     });
 
     // ── Términos y Responsabilidades ──
-    y += 12;
-    // Section Header 2
-    doc.setFillColor(...C.brand);
-    doc.rect(MARGIN, y - 5, pw - MARGIN * 2, 7, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN + 4, y);
-    y += 6;
+    y += 14;
 
     const terminos = [
-      "Primera: El solicitante declara recibir las instalaciones y recursos mobiliarios en perfectas condiciones de uso, orden y limpieza.",
-      "Segunda: El solicitante asume la responsabilidad absoluta por cualquier daño, deterioro o pérdida que sufran las instalaciones o mobiliario durante el préstamo, comprometiéndose a resarcir económicamente al MAVET o reponer el bien afectado de forma inmediata.",
-      "Tercera: El espacio será utilizado única y exclusivamente para el motivo declarado.",
-      "Cuarta: Al finalizar, el solicitante se compromete a entregar el espacio en las mismas condiciones en las que fue recibido, respetando el horario."
+      { num: "Primera", text: "El solicitante declara recibir las instalaciones y recursos mobiliarios en perfectas condiciones de uso, orden y limpieza." },
+      { num: "Segunda", text: "El solicitante asume la responsabilidad absoluta por cualquier daño, deterioro o pérdida que sufran las instalaciones o mobiliario durante el préstamo, comprometiéndose a resarcir económicamente al MAVET o reponer el bien afectado de forma inmediata." },
+      { num: "Tercera", text: "El espacio será utilizado única y exclusivamente para el motivo declarado." },
+      { num: "Cuarta", text: "Al finalizar, el solicitante se compromete a entregar el espacio en las mismas condiciones en las que fue recibido, respetando el horario." },
     ];
 
-    doc.setFillColor(...C.rowOdd);
-    doc.rect(MARGIN, y - 4, pw - MARGIN * 2, 46, "F"); // Background box
-    
+    // Estimate height for terms box
+    const termsBoxHeight = 52;
+
+    // Section Header
+    doc.setFillColor(...C.brand);
+    doc.rect(MARGIN, y - 5.5, tableW, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("TÉRMINOS Y RESPONSABILIDADES DE USO", MARGIN + 5, y - 0.5);
+    y += 5;
+
+    // Terms background box
+    doc.setFillColor(...C.accentBg);
+    doc.rect(MARGIN, y - 2, tableW, termsBoxHeight, "F");
+
     // Left accent line
     doc.setDrawColor(...C.brand);
-    doc.setLineWidth(1.5);
-    doc.line(MARGIN, y - 4, MARGIN, y - 4 + 46);
+    doc.setLineWidth(1.8);
+    doc.line(MARGIN, y - 2, MARGIN, y - 2 + termsBoxHeight);
 
-    y += 2;
+    // Thin right border
+    doc.setDrawColor(...C.line);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN + tableW, y - 2, MARGIN + tableW, y - 2 + termsBoxHeight);
+
+    y += 3;
     terminos.forEach((term) => {
-      const colonIndex = term.indexOf(":");
-      const title = term.substring(0, colonIndex + 1);
-      const text = term.substring(colonIndex + 1);
-
+      // Number prefix
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.5);
-      doc.setTextColor(...C.text);
-      doc.text(title, MARGIN + 5, y);
-      
+      doc.setFontSize(8);
+      doc.setTextColor(...C.brand);
+      doc.text(`${term.num}:`, MARGIN + 5, y);
+
+      // Text body
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...C.textMuted);
-      const titleWidth = doc.getTextWidth(title);
-      const lines = doc.splitTextToSize(text, pw - MARGIN * 2 - 8 - titleWidth);
-      doc.text(lines, MARGIN + 5 + titleWidth + 1, y, { align: "justify", maxWidth: pw - MARGIN * 2 - 8 - titleWidth });
-      y += lines.length * 4;
+      doc.setTextColor(60, 60, 60);
+      const numWidth = doc.getTextWidth(`${term.num}: `);
+      const maxTextW = tableW - 12 - numWidth;
+      const lines = doc.splitTextToSize(term.text, maxTextW);
+      doc.text(lines, MARGIN + 5 + numWidth, y, { align: "justify", maxWidth: maxTextW });
+      y += lines.length * 4.2;
     });
 
     // ── Firmas ──
-    y = Math.max(y + 25, ph - 45);
+    y = Math.max(y + 25, ph - 42);
     y = addTwoSignatureBlocks(doc, y);
 
-    // ── Footer ──
+    // ── Pie ──
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(5.5);
-    doc.setTextColor(...C.textMuted);
+    doc.setFontSize(6);
+    doc.setTextColor(...C.textLight);
     doc.text(
       "Documento de constancia digital — Este comprobante acredita la recepción de la solicitud de reserva de espacio en el MAVET.",
       MARGIN, y, { maxWidth: pw - MARGIN * 2 },
