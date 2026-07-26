@@ -356,7 +356,10 @@ export default function useInventario() {
         setCategorias(catData);
       }
 
-      const { id: _omitId, ubicacion, ano, ancho, largo, clasificacion_patrimonial: _cp, ...restForm } = formData;
+      // Excluir campos de solo-lectura del frontend que no son columnas de la BD
+      const { id: _omitId, ubicacion, ano, ancho, largo, clasificacion_patrimonial: _cp,
+              autor: _autor, tecnica: _tecnica, categoria: _categoria, estado: _estado,
+              ...restForm } = formData;
       const medidasStr = formData.ancho && formData.largo ? `${Number(formData.ancho)}x${Number(formData.largo)}` : undefined;
       const payloadBase = {
         ...restForm,
