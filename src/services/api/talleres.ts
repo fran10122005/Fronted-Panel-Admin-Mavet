@@ -141,16 +141,16 @@ export const talleres = {
     }
   },
 
-  crearEspacio: async (payload: any): Promise<{ success: boolean; message: string }> => {
+  crearEspacio: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
-      await axiosInstance.post("/api/educacion/espacios", payload);
-      return { success: true, message: "Espacio creado correctamente." };
+      const res = await axiosInstance.post("/api/educacion/espacios", payload);
+      return { success: true, message: "Espacio creado correctamente.", data: res.data?.data || res.data };
     } catch (e: any) {
       throw new Error(e.response?.data?.message || "Error al crear espacio");
     }
   },
 
-  actualizarEspacio: async (id: number, payload: any): Promise<{ success: boolean; message: string }> => {
+  actualizarEspacio: async (id: string, payload: any): Promise<{ success: boolean; message: string }> => {
     try {
       await axiosInstance.put(`/api/educacion/espacios/${id}`, payload);
       return { success: true, message: "Espacio actualizado correctamente." };
@@ -159,7 +159,20 @@ export const talleres = {
     }
   },
 
-  eliminarEspacio: async (id: number): Promise<{ success: boolean; message: string }> => {
+  subirImagenEspacio: async (id: string, file: File): Promise<{ url: string }> => {
+    try {
+      const fd = new FormData();
+      fd.append("imagen", file);
+      const res = await axiosInstance.post(`/api/educacion/espacios/${id}/imagen`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return { url: res.data?.url || "" };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al subir imagen");
+    }
+  },
+
+  eliminarEspacio: async (id: string): Promise<{ success: boolean; message: string }> => {
     try {
       await axiosInstance.delete(`/api/educacion/espacios/${id}`);
       return { success: true, message: "Espacio eliminado correctamente." };

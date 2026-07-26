@@ -73,25 +73,25 @@ export default function Salas() {
     setIsSubmitting(true);
     setFormError("");
     try {
-      let payload: any = {
+      const payload: any = {
         codigo_espacio: data.codigo_espacio || undefined,
-        nombre_espacio: data.nombre_espacio,
+        nombre: data.nombre_espacio,
         descripcion: data.descripcion || undefined,
       };
-      if (data.capacidad_maxima) payload.capacidad_maxima = Number(data.capacidad_maxima);
-
-      if (data.imagenFile) {
-        const fd = new FormData();
-        Object.keys(payload).forEach(key => fd.append(key, payload[key]));
-        fd.append("imagen", data.imagenFile);
-        payload = fd;
-      }
+      if (data.capacidad_maxima) payload.capacidad = Number(data.capacidad_maxima);
 
       if (isEditing && selectedId) {
         await mavetApi.actualizarEspacio(selectedId, payload);
+        if (data.imagenFile) {
+          await mavetApi.subirImagenEspacio(selectedId, data.imagenFile);
+        }
         toast.success("Espacio actualizado correctamente");
       } else {
-        await mavetApi.crearEspacio(payload);
+        const res = await mavetApi.crearEspacio(payload);
+        if (data.imagenFile) {
+          const id = (res as any)?.data?.id_espacio;
+          if (id) await mavetApi.subirImagenEspacio(id, data.imagenFile);
+        }
         toast.success("Espacio creado correctamente");
       }
       setIsModalOpen(false);
