@@ -220,20 +220,26 @@ export default function useInventario() {
   };
 
   const filteredTecnicas = useMemo(() => {
-    if (!selectedCategoryName) return tecnicas;
+    if (!selectedCategoryName || !formData.id_categoria_obra) return tecnicas;
     const normalizedName = selectedCategoryName.trim().toLowerCase();
     const entry = Object.entries(tecnicasPorCategoria).find(
       ([key]) => key.toLowerCase() === normalizedName
     );
     if (!entry) {
       console.warn('[Inventario] Categoría sin mapeo de técnicas:', selectedCategoryName);
-      return [];
+      return tecnicas.filter((t: any) =>
+        t.id_categoria_obra === formData.id_categoria_obra
+      );
     }
     const permitidas = entry[1];
-    return tecnicas.filter((t: any) =>
-      permitidas.some(p => p.toLowerCase() === (t.nombre_tecnica || '').toLowerCase().trim())
-    );
-  }, [selectedCategoryName, tecnicas]);
+    const catId = formData.id_categoria_obra;
+    return tecnicas.filter((t: any) => {
+      const nombre = (t.nombre_tecnica || '').toLowerCase().trim();
+      if (permitidas.some(p => p.toLowerCase() === nombre)) return true;
+      if (t.id_categoria_obra === catId) return true;
+      return false;
+    });
+  }, [selectedCategoryName, formData.id_categoria_obra, tecnicas]);
 
   const validateObraField = (name: string, value: any, _allData?: any): string => {
     if (["titulo", "ubicacion", "id_estado_actual", "tipo_ingreso"].includes(name) && (!value || !String(value).trim())) {
@@ -343,8 +349,18 @@ export default function useInventario() {
       let categoriaId = formData.id_categoria_obra;
 
       if (isOtherTecnica) {
-        const nuevaTecnica = await mavetApi.crearTecnica({ nombre_tecnica: customTecnica.trim() });
-        tecnicaId = nuevaTecnica.id_tecnica ?? nuevaTecnica.id;
+        const nuevaTecnica = await mavetApi.crearTecnica({
+          nombre_tecnica: customTecnica.trim(),
+          id_categoria_obra: isOtherCategoria ? undefined : formData.id_categoria_obra,
+        });
+        tecnicaId = nuevaTecnica?.id_tecnica ?? nuevaTecnica?.id;
+        if (!tecnicaId || String(tecnicaId) === "other") {
+          const tecnicasList = await mavetApi.getTecnicas();
+          const found = tecnicasList.find(
+            (t: any) => t.nombre_tecnica?.toLowerCase() === customTecnica.trim().toLowerCase()
+          );
+          if (found) tecnicaId = found.id_tecnica;
+        }
         const tecData = await mavetApi.getTecnicas();
         setTecnicas(tecData);
       }

@@ -312,7 +312,6 @@ export function useRRHH() {
         await mavetApi.actualizarTrabajador(editingTrabajadorId, data);
         toast.success("Trabajador actualizado exitosamente.");
       } else {
-        data.horas_semanales = 40;
         const res = await mavetApi.registrarTrabajador(data);
         trabajadorId = res.data?.id_trabajador || res.data?.id;
         toast.success("Trabajador registrado exitosamente.");

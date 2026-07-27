@@ -85,14 +85,25 @@ const allTabs = [
   { id: "facial", label: "Enrolamiento Facial" },
 ];
 
-function getDefaultHorarios(): HorarioDia[] {
+function normalizarHora(hora: string): string {
+  if (!hora) return "09:00";
+  const parts = hora.split(':');
+  return `${parts[0].padStart(2, '0')}:${(parts[1] || '00').padStart(2, '0')}`;
+}
+
+function getDefaultHorarios(tipo: 'completo' | 'medio_tiempo' = 'completo'): HorarioDia[] {
+  const entrada = tipo === 'medio_tiempo' ? "08:00" : "09:00";
+  const salida = tipo === 'medio_tiempo' ? "12:00" : "17:00";
+  const obs = tipo === 'medio_tiempo'
+    ? "Horario medio tiempo 8am-12pm"
+    : "Horario laboral 9am-5pm (pausa 12-1pm)";
   return DIAS_SEMANA.map((dia) => ({
     dia_semana: dia.value,
     dia_label: dia.label,
-    hora_entrada: "09:00",
-    hora_salida: "17:00",
+    hora_entrada: entrada,
+    hora_salida: salida,
     es_dia_laborable: dia.value >= 1 && dia.value <= 5,
-    observaciones: dia.value >= 1 && dia.value <= 5 ? "Horario laboral 9am-5pm (pausa 12-1pm)" : "Día no laborable",
+    observaciones: dia.value >= 1 && dia.value <= 5 ? obs : "Día no laborable",
   }));
 }
 
@@ -127,7 +138,8 @@ export default function TrabajadorFormModal({
   const [nacionalidad, setNacionalidad] = useState("V-");
   const [numeroCedula, setNumeroCedula] = useState("");
 
-  const [horarios, setHorarios] = useState<HorarioDia[]>(getDefaultHorarios());
+  const [tipoHorario, setTipoHorario] = useState<'completo' | 'medio_tiempo'>('completo');
+  const [horarios, setHorarios] = useState<HorarioDia[]>(getDefaultHorarios('completo'));
   const [documentos, setDocumentos] = useState<TrabajadorDocumento[]>([]);
   const [pendingDocs, setPendingDocs] = useState<{ file: File; tipo: string; notas: string; id: string }[]>([]);
 
@@ -151,7 +163,13 @@ export default function TrabajadorFormModal({
         mavetApi.getDocumentos(editingTrabajadorId),
         mavetApi.obtenerMinutaHorario(editingTrabajadorId),
       ]);
-      if (h.length > 0) setHorarios(h);
+      if (h.length > 0) {
+        setHorarios(h.map((hor: HorarioDia) => ({
+          ...hor,
+          hora_entrada: normalizarHora(hor.hora_entrada),
+          hora_salida: normalizarHora(hor.hora_salida),
+        })));
+      }
       setDocumentos(d);
       if (minuta) {
         setMinutaUrl(minuta.url);
@@ -208,7 +226,10 @@ export default function TrabajadorFormModal({
       setFacialDescs([]);
       setFacialQualityMsg("");
       setActiveTab("info");
-      setHorarios(getDefaultHorarios());
+      const hasHorasSem = initialData.horas_semanales && initialData.horas_semanales > 0;
+      const tipoInit = hasHorasSem && initialData.horas_semanales! < 40 ? 'medio_tiempo' : 'completo';
+      setTipoHorario(tipoInit);
+      setHorarios(getDefaultHorarios(tipoInit));
       setDocumentos([]);
       setMinutaUrl(null);
       setMinutaNombre(null);
@@ -277,6 +298,7 @@ export default function TrabajadorFormModal({
 
     const finalData = {
       ...data,
+      horas_semanales: tipoHorario === 'medio_tiempo' ? 20 : 40,
       fecha_nacimiento: parseDate(data.fecha_nacimiento),
       fecha_ingreso: parseDate(data.fecha_ingreso),
     };
@@ -832,6 +854,41 @@ export default function TrabajadorFormModal({
 
           {activeTab === "horario" && (
             <div>
+              {/* Tipo de Jornada */}
+              <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/60">
+                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Jornada</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoHorario('completo');
+                      setHorarios(getDefaultHorarios('completo'));
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      tipoHorario === 'completo'
+                        ? 'bg-brand-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-brand-300'
+                    }`}
+                  >
+                    Completo (40h/sem)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoHorario('medio_tiempo');
+                      setHorarios(getDefaultHorarios('medio_tiempo'));
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      tipoHorario === 'medio_tiempo'
+                        ? 'bg-brand-500 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-brand-300'
+                    }`}
+                  >
+                    Medio Tiempo (20h/sem)
+                  </button>
+                </div>
+              </div>
+
               {/* Selector de Vistas y Botón de PDF */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 bg-gray-50 dark:bg-gray-800/40 p-2 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm">
                 <div className="flex gap-1.5">
