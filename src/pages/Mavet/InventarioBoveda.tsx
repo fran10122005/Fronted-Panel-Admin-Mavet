@@ -38,7 +38,7 @@ export default function InventarioBoveda() {
     selectedObraForDetail, setSelectedObraForDetail,
     selectedObraForHistorial, setSelectedObraForHistorial,
     isSubmitting,
-    formErrors,
+    formErrors, setFormErrors,
     confirm, setConfirm,
     ITEMS_PER_PAGE, currentPage, totalPages, totalItems,
     goToPage,
@@ -49,10 +49,10 @@ export default function InventarioBoveda() {
     artistFormOpen, setArtistFormOpen,
     artistFormData, setArtistFormData,
     artistSearchQuery, setArtistSearchQuery,
-    artistSearchResults,
+    artistSearchResults, setArtistSearchResults,
     isSearchingArtist,
-    isEditingArtist,
-    isArtistPreloaded,
+    isEditingArtist, setIsEditingArtist,
+    isArtistPreloaded, setIsArtistPreloaded,
     isArtistSubmitting,
     artistFieldErrors, setArtistFieldErrors,
     artistInput, setArtistInput,
@@ -451,7 +451,7 @@ export default function InventarioBoveda() {
                           <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Sin coincidencias</div>
                           <div
                             onClick={() => {
-                              const [nombres, ...apellidosArr] = query.split(" ");
+                              const [nombres, ...apellidosArr] = artistInput.trim().split(" ");
                               setArtistFormData({
                                 nombres: nombres || "",
                                 apellidos: apellidosArr.join(" ") || "",

@@ -479,6 +479,7 @@ export default function useInventario() {
         if (!trimmed) error = "El nombre del artista es obligatorio.";
         break;
       case "apellidos":
+        if (!trimmed) error = "El apellido del artista es obligatorio.";
         break;
       case "ci":
         if (trimmed) error = validateCedula(trimmed);
@@ -623,7 +624,7 @@ export default function useInventario() {
   const handleArtistSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const fieldsToCheck = ["nombres", "ci", "correo", "fecha_nacimiento"];
+    const fieldsToCheck = ["nombres", "apellidos"];
     const newErrors: Record<string, string> = {};
     for (const f of fieldsToCheck) {
       const err = validateArtistField(f, artistFormData[f] || "", artistFormData);
@@ -636,6 +637,9 @@ export default function useInventario() {
     }
     const payload = { ...artistFormData };
     if (payload.ci) payload.ci = normalizeCedula(payload.ci);
+    for (const key of Object.keys(payload)) {
+      if (payload[key] === "" || payload[key] == null) delete payload[key];
+    }
     setIsArtistSubmitting(true);
     try {
       if (isEditingArtist) {
@@ -750,8 +754,8 @@ formErrors, setFormErrors,
     artistSearchQuery, setArtistSearchQuery,
     artistSearchResults, setArtistSearchResults,
     isSearchingArtist,
-    isEditingArtist,
-    isArtistPreloaded,
+    isEditingArtist, setIsEditingArtist,
+    isArtistPreloaded, setIsArtistPreloaded,
     isArtistSubmitting,
     artistFieldErrors, setArtistFieldErrors,
     artistInput, setArtistInput,
