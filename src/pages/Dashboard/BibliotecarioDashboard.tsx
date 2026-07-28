@@ -25,7 +25,7 @@ export default function BibliotecarioDashboard() {
       <PageMeta title="Dashboard MAVET | Biblioteca" description="Panel de gestión de biblioteca del MAVET" />
       <div className="space-y-6 animate-fadeIn">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Biblioteca</h1>
+          <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Biblioteca</h1>
           <p className="text-sm text-gray-500">Gestión de títulos, consultas y estadísticas de la biblioteca.</p>
         </div>
 

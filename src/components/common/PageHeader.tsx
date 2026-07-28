@@ -15,7 +15,7 @@ export default function PageHeader({ title, subtitle, searchValue, onSearchChang
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
+          <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
           {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 flex-nowrap shrink-0">{actions}</div>}

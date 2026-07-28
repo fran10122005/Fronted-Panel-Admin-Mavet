@@ -230,7 +230,7 @@ export default function RegistroPublico() {
                 <img src="/images/logo/mavet2.png" alt="MAVET" className="w-full h-full object-contain p-1" />
               </div>
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            <h2 data-tour="page-heading" className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Registro de Visitante
             </h2>
             <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">

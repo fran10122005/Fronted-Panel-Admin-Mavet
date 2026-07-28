@@ -26,7 +26,7 @@ export default function CuradorDashboard() {
       <PageMeta title="Dashboard MAVET | Bóveda" description="Panel de inventario y conservación de obras del MAVET" />
       <div className="space-y-6 animate-fadeIn">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Bóveda</h1>
+          <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Bóveda</h1>
           <p className="text-sm text-gray-500">Inventario de obras, conservación y estado de la colección.</p>
         </div>
 

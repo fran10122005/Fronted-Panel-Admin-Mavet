@@ -30,7 +30,7 @@ export default function RecepcionistaDashboard() {
       <PageMeta title="Dashboard MAVET | Recepción" description="Panel de recepción y visitantes del MAVET" />
       <div className="space-y-6 animate-fadeIn">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Recepción</h1>
+          <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Recepción</h1>
           <p className="text-sm text-gray-500">Control de visitantes y registro de ingresos.</p>
         </div>
 

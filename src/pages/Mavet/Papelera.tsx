@@ -131,7 +131,7 @@ export default function Papelera() {
       <div className="space-y-6 animate-fadeIn p-4 sm:p-6 lg:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Papelera de Reciclaje</h1>
+            <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">Papelera de Reciclaje</h1>
             <p className="text-sm text-gray-500">Aquí puedes restaurar elementos eliminados o borrarlos de forma permanente.</p>
           </div>
           <div className="flex items-center gap-3">
