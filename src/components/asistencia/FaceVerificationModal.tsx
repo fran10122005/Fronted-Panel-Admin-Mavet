@@ -3,10 +3,13 @@ import { Modal } from "../ui/modal";
 import { mavetApi } from "../../services/api";
 import type { DetectionQuality } from "../../services/face.service";
 
-let faceService: Promise<typeof import("../../services/face.service")> | null = null;
+let faceServiceCache: Promise<typeof import("../../services/face.service")> | null = null;
 function getFaceService() {
-  if (!faceService) faceService = import("../../services/face.service");
-  return faceService;
+  if (!faceServiceCache) faceServiceCache = import("../../services/face.service");
+  return faceServiceCache;
+}
+function resetFaceServiceCache() {
+  faceServiceCache = null;
 }
 
 interface Props {
@@ -42,7 +45,9 @@ export default function FaceVerificationModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [quality, setQuality] = useState<DetectionQuality | null>(null);
   const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(true);
+  const wasOpenRef = useRef(false);
   const faceRef = useRef<typeof import("../../services/face.service") | null>(null);
 
   const fallbackRef = useRef(onFallbackToPin);
@@ -240,11 +245,18 @@ export default function FaceVerificationModal({
   useEffect(() => {
     if (!isOpen) {
       stopCamera();
+      wasOpenRef.current = false;
       return;
     }
+
+    const isFirstOpen = !wasOpenRef.current;
+    wasOpenRef.current = true;
     mounted.current = true;
+
+    if (isFirstOpen) {
+      setAttempts(0);
+    }
     setStatus("initializing");
-    setAttempts(0);
     setErrorMsg("");
     setQuality(null);
     setBox(null);
@@ -252,11 +264,6 @@ export default function FaceVerificationModal({
 
     const init = async () => {
       try {
-        const face = await getFaceService();
-        faceRef.current = face;
-        await face.loadModels();
-        if (!mounted.current) return;
-
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
         });
@@ -268,14 +275,37 @@ export default function FaceVerificationModal({
           await videoRef.current.play();
         }
 
+        let face;
+        try {
+          face = await getFaceService();
+          faceRef.current = face;
+        } catch (err) {
+          console.error("FaceVerificationModal: error cargando servicio facial:", err);
+          resetFaceServiceCache();
+          setStatus("error");
+          setErrorMsg("Error al cargar el servicio facial. Pulse Reintentar.");
+          return;
+        }
+
+        try {
+          await face.loadModels();
+        } catch (err) {
+          console.error("FaceVerificationModal: error cargando modelos:", err);
+          resetFaceServiceCache();
+          setStatus("error");
+          setErrorMsg("Error al cargar modelos faciales. Verifique su conexión y pulse Reintentar.");
+          return;
+        }
+
+        if (!mounted.current) return;
         await new Promise((r) => setTimeout(r, 300));
         setStatus("ready");
       } catch (err) {
         if (!mounted.current) return;
-        console.error("FaceVerificationModal init error:", err);
+        console.error("FaceVerificationModal: error accediendo a la cámara:", err);
         stopCamera();
-        setErrorMsg("No se pudo acceder a la cámara. Usará PIN.");
-        setTimeout(() => { if (mounted.current) fallbackRef.current(); }, 15000);
+        setStatus("error");
+        setErrorMsg("No se pudo acceder a la cámara. Verifique permisos y pulse Reintentar.");
       }
     };
     init();
@@ -284,7 +314,7 @@ export default function FaceVerificationModal({
       mounted.current = false;
       stopCamera();
     };
-  }, [isOpen, stopCamera]);
+  }, [isOpen, stopCamera, retryKey]);
 
   useEffect(() => {
     if (status === "ready") {
@@ -329,6 +359,13 @@ export default function FaceVerificationModal({
               <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
             </div>
           )}
+          {status === "error" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          )}
           {(status === "capturing" || status === "verifying") && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
               <div className="text-white text-sm font-semibold">Verificando...</div>
@@ -355,20 +392,29 @@ export default function FaceVerificationModal({
           </p>
         )}
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => { stopCamera(); onFallbackToPin(); }}
-            className="flex-1 p-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm"
-          >
-            Usar PIN en su lugar
-          </button>
+        {status === "error" ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setErrorMsg(""); setStatus("initializing"); setRetryKey((k) => k + 1); }}
+              className="flex-1 p-3 bg-brand-500 text-white rounded-xl font-semibold hover:bg-brand-600 transition text-sm"
+            >
+              Reintentar
+            </button>
+            <button
+              onClick={() => { stopCamera(); onClose(); }}
+              className="flex-1 p-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
           <button
             onClick={() => { stopCamera(); onClose(); }}
-            className="flex-1 p-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
+            className="w-full p-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
           >
             Cancelar
           </button>
-        </div>
+        )}
       </div>
     </Modal>
   );
