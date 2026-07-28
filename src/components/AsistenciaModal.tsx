@@ -8,6 +8,7 @@ import PinDisplay from "./pin/PinDisplay";
 import PinKeypad from "./pin/PinKeypad";
 import ConfirmacionScreen from "./pin/ConfirmacionScreen";
 import FaceVerificationModal from "./asistencia/FaceVerificationModal";
+import FacialEnrollModal from "../pages/Mavet/rrhh/FacialEnrollModal";
 import type { PinVerificarResponse } from "../types";
 
 interface EstadoAsistencia {
@@ -35,7 +36,7 @@ interface Props {
 }
 
 const PIN_MIN = 4;
-const PIN_MAX = 6;
+const PIN_MAX = 4;
 
 const CAMPO_LABELS: Record<string, string> = {
   entrada_manana: "Entrada",
@@ -139,6 +140,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
   const [pinCambioStep, setPinCambioStep] = useState<"actual" | "nuevo" | "confirmar">("actual");
 
   const [isFacialOpen, setIsFacialOpen] = useState(false);
+  const [isFacialEnrollOpen, setIsFacialEnrollOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -164,6 +166,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
     setPinConfirmInput("");
     setPinCambioStep("actual");
     setIsFacialOpen(false);
+    setIsFacialEnrollOpen(false);
     setIsConsultando(false);
     setIsSubmitting(false);
   }, []);
@@ -182,14 +185,7 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
       if (!data.tienePin) {
         showAlert("PIN no configurado. Contacte al departamento de RRHH.", false);
       } else if (data.usarFacial && (data.descriptorFacial || (data.descriptoresFaciales?.length ?? 0) > 0) && data.trabajador) {
-        // Siempre intentar verificación facial primero si el trabajador tiene datos faciales
         setIsFacialOpen(true);
-      } else {
-        // Sin datos faciales → ir directo al PIN
-        setStep("pin");
-        setPinValue("");
-        setPinIntentos(0);
-        setPinBloqueado(false);
       }
     } catch (err: any) {
       showAlert(err.message || "Trabajador no encontrado.", false);
@@ -214,12 +210,33 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
     consultarEstado({ cedulaTrabajador: normalizeCedula(cedula) });
   }, [cedula, consultarEstado, showAlert]);
 
-  const handleFacialSuccess = useCallback((token: string, data: any) => {
+  const handleFacialSuccess = useCallback(async (token: string, data: any) => {
     setIsFacialOpen(false);
-    setPinToken(token);
-    setPinData(data);
-    setStep("confirm");
-  }, []);
+    setIsSubmitting(true);
+    try {
+      const dispositivo = `Kiosko-${navigator.platform || "desconocido"}`;
+      await mavetApi.confirmarAsistenciaConPin({
+        tokenConfirmacion: token,
+        dispositivo,
+      });
+      const mov = data?.siguienteMovimiento || "";
+      showAlert(`${mov} registrada correctamente.`, true);
+      setTimeout(() => onClose(), 2000);
+    } catch (err: any) {
+      if (err.message?.includes("expirado")) {
+        showAlert("El tiempo de confirmación expiró. Inicie el proceso nuevamente.", false);
+        setTimeout(() => resetAll(), 1500);
+      } else {
+        showAlert(err.message || "Error al registrar asistencia.", false);
+        setStep("pin");
+        setPinValue("");
+        setPinIntentos(0);
+        setPinBloqueado(false);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [showAlert, onClose, resetAll]);
 
   const handleFacialFallback = useCallback(() => {
     setIsFacialOpen(false);
@@ -551,15 +568,40 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
                 )}
 
                 {siguiente ? (
-                  <button
-                    onClick={() => { setStep("pin"); setPinValue(""); }}
-                    className="w-full flex items-center justify-center gap-3 p-5 border-2 rounded-xl transition-all font-bold text-lg border-brand-500 bg-brand-50 dark:bg-brand-900/10 hover:bg-brand-500 hover:text-white text-brand-800 dark:text-brand-400"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    Ingresar PIN para {siguiente}
-                  </button>
+                  <div className="space-y-3">
+                    {estado.usarFacial && (estado.descriptorFacial || (estado.descriptoresFaciales?.length ?? 0) > 0) ? (
+                      <button
+                        onClick={() => setIsFacialOpen(true)}
+                        className="w-full flex items-center justify-center gap-3 p-5 border-2 rounded-xl transition-all font-bold text-lg border-brand-500 bg-brand-50 dark:bg-brand-900/10 hover:bg-brand-500 hover:text-white text-brand-800 dark:text-brand-400"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
+                        </svg>
+                        Verificación Facial para {siguiente}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { setStep("pin"); setPinValue(""); }}
+                        className="w-full flex items-center justify-center gap-3 p-5 border-2 rounded-xl transition-all font-bold text-lg border-brand-500 bg-brand-50 dark:bg-brand-900/10 hover:bg-brand-500 hover:text-white text-brand-800 dark:text-brand-400"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Ingresar PIN para {siguiente}
+                      </button>
+                    )}
+                    {(!estado.usarFacial || (!estado.descriptorFacial && (!estado.descriptoresFaciales || estado.descriptoresFaciales.length === 0))) && (
+                      <button
+                        onClick={() => setIsFacialEnrollOpen(true)}
+                        className="w-full flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all font-bold text-base border-theme-purple-500 bg-theme-purple-500/10 hover:bg-theme-purple-500 hover:text-white text-theme-purple-700 dark:text-theme-purple-400"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9h.01M9 9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 15h6" />
+                        </svg>
+                        Enrolar Reconocimiento Facial
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-full text-center bg-gray-100 dark:bg-gray-800 rounded-xl p-5 border-2 border-dashed border-gray-300 dark:border-gray-600">
                     <p className="text-gray-500 dark:text-gray-400 font-semibold">Jornada completa registrada</p>
@@ -730,6 +772,19 @@ export default function AsistenciaModal({ isOpen, onClose }: Props) {
           descriptoresFaciales={estado.descriptoresFaciales || undefined}
           onSuccess={handleFacialSuccess}
           onFallbackToPin={handleFacialFallback}
+        />
+      )}
+
+      {estado && estado.trabajador && (
+        <FacialEnrollModal
+          isOpen={isFacialEnrollOpen}
+          onClose={() => { setIsFacialEnrollOpen(false); }}
+          trabajadorId={estado.trabajador.id}
+          trabajadorNombre={`${estado.trabajador.nombres} ${estado.trabajador.apellidos}`}
+          onSuccess={() => {
+            setIsFacialEnrollOpen(false);
+            showAlert("Rostro enrolado exitosamente. Ya puede usar verificación facial.", true);
+          }}
         />
       )}
     </Modal>

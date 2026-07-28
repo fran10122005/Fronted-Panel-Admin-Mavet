@@ -21,7 +21,7 @@ interface Props {
 
 type Status = "initializing" | "ready" | "capturing" | "verifying" | "success" | "error";
 
-const MAX_ATTEMPTS = Number(import.meta.env.VITE_FACIAL_MAX_ATTEMPTS) || 3;
+const MAX_ATTEMPTS = Number(import.meta.env.VITE_FACIAL_MAX_ATTEMPTS) || 5;
 
 export default function FaceVerificationModal({
   isOpen,
@@ -118,7 +118,7 @@ export default function FaceVerificationModal({
       if (q.ok) {
         if (qualityOkStartRef.current === null) {
           qualityOkStartRef.current = Date.now();
-        } else if (Date.now() - qualityOkStartRef.current >= 1000) {
+        } else if (Date.now() - qualityOkStartRef.current >= 2000) {
           qualityOkStartRef.current = null;
           handleCapture();
           return;
@@ -214,11 +214,20 @@ export default function FaceVerificationModal({
           setTimeout(() => startQualityLoop(), 500);
         }
       }
-    } catch {
-      setStatus("error");
-      setErrorMsg("Error al procesar el rostro. Usará PIN.");
-      try { await mavetApi.registrarFacialFallido({ cedulaTrabajador: trabajador.cedula, motivo: "Error de procesamiento" }); } catch {}
-      setTimeout(() => fallbackRef.current(), 1500);
+    } catch (err) {
+      console.error("FaceVerificationModal capture error:", err);
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      try { await mavetApi.registrarFacialFallido({ cedulaTrabajador: trabajador.cedula, motivo: `Error de procesamiento: ${err instanceof Error ? err.message : 'desconocido'}` }); } catch {}
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setStatus("error");
+        setErrorMsg("Error al procesar el rostro. Usará PIN.");
+        setTimeout(() => fallbackRef.current(), 1500);
+      } else {
+        setErrorMsg(`Error de procesamiento. Intento ${newAttempts}/${MAX_ATTEMPTS}`);
+        setStatus("ready");
+        setTimeout(() => startQualityLoop(), 500);
+      }
     }
   }, [attempts, descriptorFacial, descriptoresFaciales, trabajador.cedula, startQualityLoop]);
 
@@ -255,10 +264,11 @@ export default function FaceVerificationModal({
 
         await new Promise((r) => setTimeout(r, 300));
         setStatus("ready");
-      } catch {
+      } catch (err) {
         if (!mounted.current) return;
+        console.error("FaceVerificationModal init error:", err);
         setErrorMsg("No se pudo acceder a la cámara. Usará PIN.");
-        fallbackRef.current();
+        setTimeout(() => { if (mounted.current) fallbackRef.current(); }, 15000);
       }
     };
     init();
