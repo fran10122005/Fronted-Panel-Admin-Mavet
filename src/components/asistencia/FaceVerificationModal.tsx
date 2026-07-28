@@ -149,6 +149,7 @@ export default function FaceVerificationModal({
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
         if (newAttempts >= MAX_ATTEMPTS) {
+          stopCamera();
           setStatus("error");
           setErrorMsg("No se pudo capturar el rostro de forma clara. Usará PIN.");
           try { await mavetApi.registrarFacialFallido({ cedulaTrabajador: trabajador.cedula, motivo: "Sin rostro detectado en captura múltiple" }); } catch {}
@@ -171,6 +172,7 @@ export default function FaceVerificationModal({
       }
 
       if (storedDescs.length === 0) {
+        stopCamera();
         setStatus("error");
         setErrorMsg("No hay datos faciales de referencia. Usará PIN.");
         setTimeout(() => fallbackRef.current(), 1500);
@@ -181,6 +183,7 @@ export default function FaceVerificationModal({
 
       if (result.match) {
         setStatus("success");
+        stopCamera();
         try {
           const data = await mavetApi.verificarFacial({
             cedulaTrabajador: trabajador.cedula,
@@ -191,6 +194,7 @@ export default function FaceVerificationModal({
             successRef.current(data.token, data);
           }
         } catch {
+          stopCamera();
           setErrorMsg("Error al confirmar identidad facial. Usará PIN.");
           setTimeout(() => fallbackRef.current(), 1500);
         }
@@ -205,6 +209,7 @@ export default function FaceVerificationModal({
         } catch {}
 
         if (newAttempts >= MAX_ATTEMPTS) {
+          stopCamera();
           setStatus("error");
           setErrorMsg("No fue posible reconocerte. Por favor, usa tu PIN.");
           setTimeout(() => fallbackRef.current(), 1500);
@@ -216,6 +221,7 @@ export default function FaceVerificationModal({
       }
     } catch (err) {
       console.error("FaceVerificationModal capture error:", err);
+      stopCamera();
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       try { await mavetApi.registrarFacialFallido({ cedulaTrabajador: trabajador.cedula, motivo: `Error de procesamiento: ${err instanceof Error ? err.message : 'desconocido'}` }); } catch {}
@@ -267,6 +273,7 @@ export default function FaceVerificationModal({
       } catch (err) {
         if (!mounted.current) return;
         console.error("FaceVerificationModal init error:", err);
+        stopCamera();
         setErrorMsg("No se pudo acceder a la cámara. Usará PIN.");
         setTimeout(() => { if (mounted.current) fallbackRef.current(); }, 15000);
       }
