@@ -94,7 +94,7 @@ const Auditorio: React.FC = () => {
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar evento..."
-        searchTestId="buscador-eventos"
+        searchDataTour="buscador-eventos"
         filters={
           <>
             <select
@@ -133,7 +133,7 @@ const Auditorio: React.FC = () => {
               <Download className="h-4 w-4 text-red-500" />
               <span className="hidden sm:inline">Exportar PDF</span>
             </button>
-            <div className="flex rounded-xl bg-white p-1 border border-gray-200 dark:border-gray-800 dark:bg-gray-900 shadow-theme-xs">
+            <div data-tour="toggle-vista" className="flex rounded-xl bg-white p-1 border border-gray-200 dark:border-gray-800 dark:bg-gray-900 shadow-theme-xs">
               <button
                 onClick={() => setViewMode("calendar")}
                 className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
@@ -180,7 +180,7 @@ const Auditorio: React.FC = () => {
         )}
 
         {viewMode === "calendar" ? (
-          <div className={saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}>
+          <div data-tour="calendario-grid" className={saving ? 'opacity-50 pointer-events-none transition-opacity' : ''}>
             <CalendarGrid
               events={filteredEvents}
               onDateSelect={handleDateSelect}
@@ -323,7 +323,7 @@ const Auditorio: React.FC = () => {
 
       </div>
 
-      <div className="mt-8">
+      <div data-tour="heading-salas" className="mt-8">
         <Salas />
       </div>
 

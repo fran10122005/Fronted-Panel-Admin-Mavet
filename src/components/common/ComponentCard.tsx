@@ -4,6 +4,7 @@ interface ComponentCardProps {
   className?: string; // Additional custom classes for styling
   desc?: string; // Description text
   action?: React.ReactNode; // Optional action element to the right
+  headingDataTour?: string;
 }
 
 const ComponentCard: React.FC<ComponentCardProps> = ({
@@ -12,6 +13,7 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
   className = "",
   desc = "",
   action,
+  headingDataTour,
 }) => {
   return (
     <div
@@ -20,7 +22,7 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
       {/* Card Header */}
       <div className="px-6 py-5 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
+          <h3 className="text-base font-medium text-gray-800 dark:text-white/90" data-tour={headingDataTour}>
             {title}
           </h3>
           {desc && (

@@ -110,13 +110,13 @@ export default function Biblioteca() {
         subtitle="Gestión de libros, consultas en sala y registro de consultas."
         actions={
           <>
-            <Button variant="secondary" size="sm" onClick={exportarCatalogoBiblioteca}
+            <Button variant="secondary" size="sm" data-tour="btn-exportar-pdf" onClick={exportarCatalogoBiblioteca}
               startIcon={<svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}>
               <span className="hidden sm:inline">Exportar PDF</span>
               <span className="sm:hidden">PDF</span>
             </Button>
             {canEditLibro && (
-              <Button size="sm" onClick={handleOpenAddLibro}
+              <Button size="sm" data-tour="btn-registrar-libro" onClick={handleOpenAddLibro}
                 startIcon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>}>
                 <span className="hidden sm:inline">Registrar Nuevo Libro</span>
                 <span className="sm:hidden">Nuevo Libro</span>
@@ -126,7 +126,7 @@ export default function Biblioteca() {
         }
       />
 
-      <Tabs
+      <Tabs data-tour="tabs-biblioteca"
         variant="underline"
         tabs={[
           { id: "inventario", label: "Inventario y Consultas", icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
@@ -149,7 +149,7 @@ export default function Biblioteca() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <input type="text" placeholder="Buscar por unidad, título o autor..."
+                <input type="text" data-tour="input-buscar-libro" placeholder="Buscar por unidad, título o autor..."
                   aria-label="Buscar libro"
                   value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                   className={inputCls} />
@@ -157,7 +157,7 @@ export default function Biblioteca() {
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
-                  <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}
+                  <select data-tour="select-estado" value={filterEstado} onChange={(e) => setFilterEstado(e.target.value)}
                     className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todos">Todos</option>
                     <option value="Aprobado">Aprobado</option>
@@ -167,7 +167,7 @@ export default function Biblioteca() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Categoría:</span>
-                  <select value={filterCategoria} onChange={(e) => setFilterCategoria(e.target.value)}
+                  <select data-tour="select-categoria" value={filterCategoria} onChange={(e) => setFilterCategoria(e.target.value)}
                     className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todas">Todas</option>
                     {categorias.map((c: any) => (
@@ -206,7 +206,7 @@ export default function Biblioteca() {
             ) : (
               <>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left table-auto">
+                  <table data-tour="table-libros" className="w-full text-left table-auto">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                         <th className="px-2 py-2.5">Unidad</th>
@@ -333,11 +333,11 @@ export default function Biblioteca() {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
             <div className="px-5 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="font-bold text-gray-800 dark:text-white text-base">Control de Consultas por Cédula</h3>
+                <h3 data-tour="heading-consultas-cedula" className="font-bold text-gray-800 dark:text-white text-base">Control de Consultas por Cédula</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Busque por cédula para ver el historial de consultas de una persona</p>
               </div>
               <div className="relative w-full sm:w-64">
-                <input type="text" placeholder="Buscar por cédula..." value={searchCedula}
+                <input type="text" data-tour="input-buscar-cedula" placeholder="Buscar por cédula..." value={searchCedula}
                   aria-label="Buscar por cédula"
                   onChange={(e) => setSearchCedula(e.target.value)}
                   className={inputCls} />
@@ -549,7 +549,7 @@ function ConsultasTab() {
       {/* ── Estadísticas ── */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-          <h3 className="font-bold text-gray-800 dark:text-white text-base">Estadísticas de Consultas</h3>
+          <h3 data-tour="heading-estadisticas-consultas" className="font-bold text-gray-800 dark:text-white text-base">Estadísticas de Consultas</h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">Resumen de actividad en sala de lectura</p>
         </div>
         <div className="p-4">

@@ -1,15 +1,5 @@
 
 import type { DriveStep } from "driver.js";
-import {
-  findButtonByText,
-  findButtonContainingText,
-  findHeadingByText,
-  findTable,
-  findNthTable,
-  findSelectByLabel,
-  findSectionByHeading,
-  findCardByLabel,
-} from "./tourHelpers";
 
 export const globalTourSteps: DriveStep[] = [
   {
@@ -17,105 +7,93 @@ export const globalTourSteps: DriveStep[] = [
     popover: {
       title: "Menú lateral de navegación",
       description:
-        "Panel de navegación principal del sistema. Aquí encontrará acceso a todos los módulos del MAVET: Dashboard, Recepción, Auditorio, Talleres, Asistencia, Biblioteca, Inventario de Bóveda, Recursos Humanos y Auditoría. En la sección 'Otros' encontrará Manual de Usuario y Cerrar Sesión. Las opciones visibles dependen de su rol asignado.",
+         "Menú principal del sistema. Aquí encuentra todos los módulos: Dashboard, Recepción, Auditorio, Talleres y más. Las opciones visibles dependen de su rol.",
       side: "right",
       align: "start",
     },
   },
   {
-    element: () => findButtonByText("Dashboard") || document.querySelector('a[href="/"]'),
+    element: () => document.querySelector('nav a[href="/"]'),
     popover: {
       title: "Dashboard",
       description:
-        "Página principal con indicadores clave del museo. Según su rol verá un tablero adaptado: Gerente/Admin (obras en bóveda, títulos en biblioteca, visitantes, eventos, gráficos), Recepcionista (visitantes, accesos rápidos), Bibliotecario (estado del catálogo), Educador (talleres y auditorio) o Curador (inventario de bóveda).",
+        "Panel principal con indicadores clave del museo adaptados a su rol.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Recepción") || document.querySelector('a[href="/recepcion"]'),
+    element: () => document.querySelector('nav a[href="/recepcion"]'),
     popover: {
       title: "Recepción MAVET",
       description:
-        "Control de ingreso de visitantes: registro manual con datos personales, escaneo de QR de auto-ingreso, asistencia del personal mediante cédula o QR, generación de QR público para imprimir, gestión de menores y agenda diaria de eventos.",
+        "Control de ingreso de visitantes: registro manual, QR, asistencia del personal, QR público y agenda diaria.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Auditorio") || document.querySelector('a[href="/auditorio"]'),
+    element: () => document.querySelector('nav a[href="/auditorio"]'),
     popover: {
       title: "Auditorio y Espacios",
       description:
-        "Gestión de reservas del auditorio: calendario mensual con vista de lista, creación y edición de eventos con selección de recursos (sillas, mesas, sonido, proyector), filtros por tipo y estado, comprobante PDF, registro de asistentes y administración de salas del museo.",
+        "Gestión de reservas con calendario, creación de eventos, filtros, comprobante PDF y administración de salas.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Talleres") || document.querySelector('a[href="/talleres"]'),
+    element: () => document.querySelector('nav a[href="/talleres"]'),
     popover: {
       title: "Talleres de Formación",
       description:
-        "Gestión completa de talleres: planificación de nuevas ediciones, inscripción de alumnos con acordeones por taller, inventario maestro de talleres base, control de instructores con búsqueda por cédula y registro de sesiones. Incluye exportación a PDF y toggle de historial.",
+        "Planificación de talleres, inscripción de alumnos, inventario maestro, instructores y exportación PDF.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Asistencia") || document.querySelector('a[href="/asistencia"]'),
+    element: () => document.querySelector('nav a[href="/asistencia"]'),
     popover: {
       title: "Asistencia del Personal",
       description:
-        "Control de entrada y salida de trabajadores mediante cédula, PIN o QR del carnet institucional. Dos vistas: Registro Diario (tabla con filtros por cargo y estado) y Resumen Semanal (tarjetas con progreso circular de horas acumuladas vs. horas semanales y gestión de justificaciones).",
+        "Control de entrada/salida con cédula, PIN o QR. Registro diario y resumen semanal con justificaciones.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Biblioteca") || document.querySelector('a[href="/biblioteca"]'),
+    element: () => document.querySelector('nav a[href="/biblioteca"]'),
     popover: {
       title: "Biblioteca",
       description:
-        "Inventario de libros con control de préstamos en sala: catálogo completo con filtros por estado, categoría y autor, búsqueda avanzada, registro y devolución de préstamos por cédula del solicitante. Incluye exportación del catálogo a PDF.",
+        "Inventario de libros con préstamos en sala, filtros, búsqueda y exportación del catálogo a PDF.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Inventario de Bóveda") ||
-      findButtonContainingText("Bóveda") ||
-      document.querySelector('a[href="/inventario-obras"]'),
+    element: () => document.querySelector('nav a[href="/inventario-obras"]'),
     popover: {
       title: "Inventario de Bóveda",
       description:
-        "Catálogo patrimonial de obras de arte: registro de obras con imagen, creación de artistas con búsqueda por cédula, técnicas y categorías personalizadas, filtros por clasificación patrimonial, ubicación y estado, ficha detallada con historial de cambios y exportación del inventario completo.",
+        "Catálogo patrimonial de obras de arte con registro, artistas, filtros y exportación del inventario.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Recursos Humanos") ||
-      findButtonContainingText("RRHH") ||
-      document.querySelector('a[href="/rrhh"]'),
+    element: () => document.querySelector('nav a[href="/rrhh"]'),
     popover: {
       title: "Recursos Humanos",
       description:
-        "Gestión del personal: registro de trabajadores con foto, cargo, horas semanales personalizables y PIN; generación de carnets institucionales con código QR; creación de usuarios del sistema con asignación de roles (Administrador, Recepcionista, Bibliotecario, Curador, Educación) y control de credenciales.",
+        "Registro de trabajadores con foto y PIN, carnets QR, usuarios del sistema con roles y credenciales.",
       side: "right",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Auditoría") || document.querySelector('a[href="/auditoria"]'),
+    element: () => document.querySelector('nav a[href="/auditoria"]'),
     popover: {
       title: "Bitácora de Auditoría",
       description:
@@ -158,91 +136,101 @@ export const globalTourSteps: DriveStep[] = [
 
 export const dashboardTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Panel de"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Panel Principal del MAVET",
+      title: "Panel Principal",
       description:
-        "Bienvenido al Dashboard. Esta vista se adapta según su rol en el sistema: administradores y gerentes ven el panel completo con todos los indicadores; recepcionistas ven estadísticas de visitas y accesos rápidos; bibliotecarios ven estado del catálogo; educadores ven resumen de talleres y auditorio; curadores ven inventario de bóveda.",
+        "Bienvenido al Dashboard. Esta es la vista principal con los indicadores del museo: tarjetas de resumen, lista de eventos, visitantes frecuentes, obras y libros recientes, y el gráfico de visitas.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findCardByLabel("Obras en Bóveda"),
+    element: () => document.querySelector('[data-tour="card-obras"]'),
     popover: {
-      title: "Indicador: Obras en Bóveda",
+      title: "Obras en Bóveda",
       description:
-        "Muestra el total de piezas artísticas registradas en el inventario de la bóveda. Disponible para roles Curador, Restaurador, Gerente y Administrador.",
+        "Total de piezas artísticas registradas en el inventario de la bóveda.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findCardByLabel("Títulos en Biblioteca"),
+    element: () => document.querySelector('[data-tour="card-titulos"]'),
     popover: {
-      title: "Indicador: Biblioteca",
+      title: "Títulos en Biblioteca",
       description:
-        "Total de libros disponibles en el catálogo de la biblioteca del museo. Visible para Bibliotecarios, Gerentes y Administradores.",
+        "Total de libros disponibles en el catálogo de la biblioteca del museo.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findCardByLabel("Visitantes Registrados"),
+    element: () => document.querySelector('[data-tour="card-visitantes"]'),
     popover: {
-      title: "Indicador: Visitantes",
+      title: "Visitantes Registrados",
       description:
-        "Acumulado histórico de ingresos registrados en el museo. Disponible para Recepcionistas, Gerentes y Administradores.",
+        "Acumulado histórico de ingresos registrados en el museo.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findCardByLabel("Eventos Programados"),
+    element: () => document.querySelector('[data-tour="card-eventos"]'),
     popover: {
-      title: "Indicador: Eventos",
+      title: "Eventos Programados",
       description:
-        "Número de actividades agendadas en el auditorio. Visible para el rol de Educación, Gerentes y Administradores.",
+        "Número de actividades agendadas en el auditorio.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Flujo de Visitantes"),
+    element: () => document.querySelector('[data-tour="heading-flujo"]'),
     popover: {
-      title: "Gráfico de visitantes mensual",
+      title: "Gráfico de visitantes",
       description:
-        "Gráfico de área que visualiza el flujo de visitantes día a día durante el mes actual. Los datos se actualizan automáticamente con cada ingreso registrado en Recepción.",
+        "Visualiza el flujo de visitantes día a día durante el mes actual. Se actualiza automáticamente.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Próximos Eventos"),
+    element: () => document.querySelector('[data-tour="heading-eventos"]'),
     popover: {
       title: "Próximos Eventos",
       description:
-        "Lista de las actividades más cercanas programadas en el auditorio. Cada tarjeta muestra fecha, hora y un enlace directo al módulo de Auditorio para ver detalles.",
+        "Actividades más cercanas programadas en el auditorio. Muestra fecha y hora.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Visitantes Frecuentes"),
+    element: () => document.querySelector('[data-tour="heading-visitantes"]'),
     popover: {
-      title: "Top Visitantes Frecuentes",
+      title: "Visitantes Frecuentes",
       description:
-        "Ranking de los 3 visitantes que más han asistido al museo durante el mes actual, con su total de visitas y última fecha de ingreso.",
+        "Ranking de los 3 visitantes que más han asistido al museo este mes.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Últimas Obras Registradas"),
+    element: () => document.querySelector('[data-tour="heading-obras"]'),
     popover: {
       title: "Últimas Obras",
       description:
-        "Tabla con las obras ingresadas más recientemente al inventario de la bóveda. Incluye código de inventario, título y estado de conservación.",
+        "Obras ingresadas recientemente al inventario. Incluye código, título y estado de conservación.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="heading-libros"]'),
+    popover: {
+      title: "Últimos Libros",
+      description:
+        "Libros registrados recientemente en la biblioteca. Incluye código, título y estado.",
       side: "top",
       align: "center",
     },
@@ -251,92 +239,73 @@ export const dashboardTourSteps: DriveStep[] = [
 
 export const auditorioTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Auditorio"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Auditorio y Espacios",
-      description:
-        "Panel de gestión de reservas del auditorio. Aquí podrá crear, editar y eliminar eventos, administrar los espacios físicos del museo y generar comprobantes PDF de las reservas.",
+      title: "Auditorio y Espacios",
+      description: "Gestión de reservas, eventos, salas y comprobantes PDF.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="nueva-reserva"]') || findButtonContainingText("Nueva Reserva"),
+    element: () => document.querySelector('[data-tour="nueva-reserva"]'),
     popover: {
-      title: "Crear nueva reserva",
-      description:
-        "Abra el formulario para registrar una nueva actividad. Complete título, fecha, hora de inicio y fin, tipo de evento (Conferencia, Taller o Reunión) con opción 'Otro' personalizado. Seleccione los recursos necesarios (sillas, mesas, cortinas, sonido, proyector, micrófono). El organizador se busca por cédula con autocompletado de datos.",
+      title: "Nueva reserva",
+      description: "Cree eventos con título, fecha, tipo, recursos y organizador.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="buscador-eventos"]') ||
-      document.querySelector('input[placeholder*="Buscar evento"]'),
+    element: () => document.querySelector('[data-tour="buscador-eventos"]'),
     popover: {
       title: "Buscador de eventos",
-      description:
-        "Escriba aquí para localizar eventos por título, nombre del organizador o código de reserva. Los resultados se filtran en tiempo real.",
+      description: "Busque eventos por título, organizador o código de reserva.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="filtro-tipo"]') ||
-      findSelectByLabel("Tipo"),
+    element: () => document.querySelector('[data-tour="filtro-tipo"]'),
     popover: {
-      title: "Filtros de búsqueda",
-      description:
-        "Filtre eventos por tipo (Conferencia, Taller o Reunión) y por estado de aprobación (Pendiente, Aprobado, Realizada). Cada tipo tiene un color distintivo en el calendario.",
+      title: "Filtros",
+      description: "Filtre por tipo y estado de aprobación.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="exportar-pdf"]') ||
-      findButtonContainingText("Exportar PDF"),
+    element: () => document.querySelector('[data-tour="exportar-pdf"]'),
     popover: {
-      title: "Exportar historial",
-      description:
-        "Descargue un reporte en PDF con el historial completo de eventos del auditorio.",
+      title: "Exportar PDF",
+      description: "Descargue el historial de eventos del auditorio.",
       side: "left",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[class*="Month"]') ||
-      findButtonContainingText("Mes"),
+    element: () => document.querySelector('[data-tour="toggle-vista"]'),
     popover: {
       title: "Vista: Calendario / Lista",
-      description:
-        "Cambie entre la vista de calendario mensual y la vista de lista de tarjetas. La vista calendario es ideal para visualizar la ocupación por día. En la vista lista cada tarjeta muestra tipo, estado, organizador y acciones disponibles.",
+      description: "Cambie entre vista de calendario mensual y lista de tarjetas.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[class*="CalendarGrid"]') ||
-      document.querySelector('[class*="grid"]'),
+    element: () => document.querySelector('[data-tour="calendario-grid"]'),
     popover: {
       title: "Calendario de reservas",
-      description:
-        "Navegue entre meses con las flechas izquierda/derecha o presione 'Hoy' para volver al mes actual. Cada evento se muestra como una burbuja de color: brand para Conferencias, verde para Talleres y naranja para Reuniones. Haga clic en un evento para ver o editar sus datos, generar comprobante o registrar asistentes.",
+      description: "Navegue entre meses y haga clic en eventos para ver o editar.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Gestión de Salas"),
+    element: () => document.querySelector('[data-tour="heading-salas"]'),
     popover: {
-      title: "Gestión de espacios del museo",
-      description:
-        "Administre los espacios físicos del museo: agregue nuevas salas con nombre, código y capacidad. También puede editar o eliminar espacios existentes desde la tabla de gestión.",
+      title: "Gestión de salas",
+      description: "Administre los espacios del museo: alta, edición y eliminación.",
       side: "top",
       align: "center",
     },
@@ -345,74 +314,72 @@ export const auditorioTourSteps: DriveStep[] = [
 
 export const recepcionTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Recepción"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Recepción",
+      title: "Recepción",
       description:
-        "Panel principal de control de ingresos del museo. Desde aquí se gestionan las entradas de visitantes, la asistencia del personal, el registro de menores y el acceso mediante QR público.",
+        "Control de ingreso de visitantes. Busque personas, registre ingresos, genere QR público y administre menores acompañantes.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findButtonContainingText("Asistencia Personal"),
+    element: () => document.querySelector('[data-tour="btn-qr"]'),
     popover: {
-      title: "Asistencia del personal",
+      title: "QR público",
       description:
-        "Registre la entrada o salida de trabajadores del museo. Puede escanear el código QR del carnet institucional, ingresar la cédula manualmente o usar el teclado PIN.",
+        "Genere un código QR para que los visitantes se auto-registren desde su teléfono. El QR puede imprimirse.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findButtonContainingText("Generar QR"),
-    popover: {
-      title: "QR público de auto-ingreso",
-      description:
-        "Genere un código QR para que los visitantes puedan auto-registrarse desde su teléfono móvil sin necesidad de pasar por taquilla. El QR puede imprimirse desde el modal.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
-    element: () => findHeadingByText("Buscador Global"),
+    element: () => document.querySelector('[data-tour="heading-buscador"]'),
     popover: {
       title: "Buscador de personas",
       description:
-        "Busque visitantes por cédula, nombre o teléfono. Escriba al menos 3 caracteres para activar la búsqueda automática. Si la persona ya existe, sus datos se cargarán automáticamente en el formulario de ingreso.",
+        "Busque visitantes por cédula, nombre o teléfono. Si la persona ya existe, sus datos se cargan automáticamente.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('input[placeholder*="Cédula"]') ||
-      document.querySelector('input[placeholder*="Ej."]'),
+    element: () => document.querySelector('[data-tour="heading-ingreso"]'),
     popover: {
       title: "Formulario de ingreso",
       description:
-        "Complete los datos del visitante: seleccione nacionalidad (V- o E-), ingrese cédula, nombres, apellidos, fecha de nacimiento, teléfono y seleccione el motivo de la visita. Marque 'Visita Institucional' si aplica, indique la cantidad de acompañantes y acepte el consentimiento de privacidad. Para menores de edad, use el botón 'Registrar Menor'.",
+        "Complete nacionalidad, cédula, nombres, fecha de nacimiento, teléfono y motivo de visita. Marque 'Visita Institucional' si aplica. Acepte el consentimiento de privacidad para registrar.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Agenda de Hoy"),
+    element: () => document.querySelector('[data-tour="heading-agenda"]'),
     popover: {
       title: "Agenda del día",
       description:
-        "Lista de eventos, talleres y actividades programadas para la fecha actual. Incluye reservas de auditorio y actividades formativas.",
+        "Eventos, talleres y actividades programadas para hoy.",
       side: "left",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Ingresos Registrados"),
+    element: () => document.querySelector('[data-tour="heading-ingresos"]'),
     popover: {
       title: "Historial de ingresos",
       description:
-        "Tabla con todos los ingresos registrados. Use los filtros Hoy, Este Mes o Este Año, busque por cédula o nombre, filtre por rango de fechas y por motivo. Puede exportar los datos a PDF y navegar con paginación.",
+        "Tabla con todos los ingresos registrados. Filtre por periodo, busque por nombre, y exporte a PDF.",
       side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="btn-pdf"]'),
+    popover: {
+      title: "Exportar PDF",
+      description:
+        "Descargue un reporte de los ingresos filtrados.",
+      side: "left",
       align: "center",
     },
   },
@@ -420,21 +387,19 @@ export const recepcionTourSteps: DriveStep[] = [
 
 const talleresSharedSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Gestión de Talleres"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
       title: "Módulo de Talleres",
-      description:
-        "Panel integral para la gestión de actividades formativas del museo. Cuatro secciones principales: Planificados (ediciones activas e históricas), Inscripciones (alumnos por taller), Inventario (talleres base) e Instructores (registro y gestión).",
+      description: "Gestión de actividades formativas: planificados, inscripciones, inventario e instructores.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findSectionByHeading("Talleres Activos"),
+    element: () => document.querySelector('[data-tour="stat-talleres"]'),
     popover: {
       title: "Indicadores",
-      description:
-        "Resumen rápido: talleres activos actualmente, total de alumnos inscritos y cantidad de talleres disponibles en el inventario maestro.",
+      description: "Resumen de talleres activos, alumnos inscritos e inventario.",
       side: "bottom",
       align: "center",
     },
@@ -444,41 +409,37 @@ const talleresSharedSteps: DriveStep[] = [
 const talleresStepsPorTab: Record<string, DriveStep[]> = {
   planificados: [
     {
-      element: () => document.querySelector('[data-tour="buscador-planificados"]') || findHeadingByText("Listado de Talleres"),
+      element: () => document.querySelector('[data-tour="buscador-planificados"]'),
       popover: {
         title: "Buscador y filtros",
-        description:
-          "Busque talleres por nombre del curso o instructor. Use el filtro desplegable para ver solo los talleres de un instructor específico. Active 'Mostrar Historial' para ver ediciones anteriores.",
+        description: "Busque talleres por nombre o instructor. Active historial para ver ediciones anteriores.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: () => document.querySelector('[data-tour="planificar-taller"]') || findButtonContainingText("Planificar Taller"),
+      element: () => document.querySelector('[data-tour="planificar-taller"]'),
       popover: {
-        title: "Planificar nuevo taller",
-        description:
-          "Cree una nueva edición de taller: seleccione un taller del inventario, asigne instructor, espacio físico, fechas, horarios y defina los cupos mínimos y máximos disponibles.",
+        title: "Planificar taller",
+        description: "Cree una edición: seleccione taller, instructor, fechas y cupos.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => document.querySelector('[data-tour="pdf-planificacion"]') || findButtonContainingText("PDF Planificación"),
+      element: () => document.querySelector('[data-tour="pdf-planificacion"]'),
       popover: {
         title: "Exportar planificación",
-        description:
-          "Descargue un PDF con todos los talleres planificados actualmente.",
+        description: "Descargue PDF con todos los talleres planificados.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => findHeadingByText("Listado de Talleres"),
+      element: () => document.querySelector('[data-tour="buscador-planificados"]'),
       popover: {
-        title: "Lista de talleres planificados",
-        description:
-          "Cada taller muestra nombre, instructor, fecha, cupos y estado. Use los botones en cada fila: [Asistencia] para pasar lista, [PDF] para la ficha, [+] para inscribir alumnos, [Sesiones] para ver detalle de encuentros, [Editar] y [Eliminar]. Haga clic en el nombre para ver la ficha completa del taller.",
+        title: "Lista de talleres",
+        description: "Cada taller muestra nombre, instructor, fecha, cupos, estado y acciones.",
         side: "top",
         align: "center",
       },
@@ -486,21 +447,19 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
   ],
   inscripciones: [
     {
-      element: () => findHeadingByText("Alumnos Inscritos"),
+      element: () => document.querySelector('[data-tour="heading-inscripciones"]'),
       popover: {
         title: "Inscripciones por taller",
-        description:
-          "Acordeones agrupados por taller. Cada uno muestra el número de alumnos inscritos. Haga clic para expandir y ver la lista detallada. Use 'Mostrar Historial' para ver inscripciones de ediciones anteriores.",
+        description: "Acordeones por taller con alumnos inscritos. Expanda para ver detalle.",
         side: "top",
         align: "start",
       },
     },
     {
-      element: () => document.querySelector("details") || findHeadingByText("Alumnos Inscritos"),
+      element: () => document.querySelector('[data-tour="heading-inscripciones"]'),
       popover: {
         title: "Detalle de inscripciones",
-        description:
-          "Al expandir un taller, verá el nombre del alumno, cédula, fecha de inscripción y estado. Use el icono [Eliminar] para desinscribir. Busque alumnos por nombre o cédula y navegue con paginación.",
+        description: "Nombre, cédula, fecha y acciones por alumno. Busque y navegue con paginación.",
         side: "top",
         align: "start",
       },
@@ -508,21 +467,19 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
   ],
   inventario: [
     {
-      element: () => document.querySelector('[data-tour="buscador-inventario"]') || findHeadingByText("Inventario de Talleres"),
+      element: () => document.querySelector('[data-tour="buscador-inventario"]'),
       popover: {
         title: "Inventario maestro",
-        description:
-          "Catálogo base de talleres del museo. Busque por nombre o descripción en el campo de texto. Puede exportar el inventario a PDF.",
+        description: "Catálogo base de talleres. Busque por nombre o descripción.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: () => findHeadingByText("Inventario de Talleres"),
+      element: () => document.querySelector('[data-tour="heading-inventario-talleres"]'),
       popover: {
         title: "Tabla de inventario",
-        description:
-          "Lista todos los talleres base con nombre y descripción. Use [Editar] para modificar o [Eliminar] para eliminar. Solo los administradores pueden eliminar. Desde aquí también puede crear un nuevo taller base.",
+        description: "Lista de talleres base. Edite, elimine o cree nuevos.",
         side: "top",
         align: "center",
       },
@@ -530,31 +487,28 @@ const talleresStepsPorTab: Record<string, DriveStep[]> = {
   ],
   instructores: [
     {
-      element: () => findHeadingByText("Gestionar Instructores"),
+      element: () => document.querySelector('[data-tour="heading-instructores"]'),
       popover: {
         title: "Gestión de instructores",
-        description:
-          "Panel completo de instructores. Busque una persona por cédula, complete profesión y especialidad, y créela como instructor. Filtre la tabla por profesión o especialidad.",
+        description: "Busque por cédula, complete datos y cree instructores.",
         side: "bottom",
         align: "start",
       },
     },
     {
-      element: () => findButtonContainingText("Buscar"),
+      element: () => document.querySelector('[data-tour="btn-buscar-instructor"]'),
       popover: {
         title: "Buscar persona",
-        description:
-          "Ingrese una cédula (Ej: V-12345678) y presione Buscar. Si la persona existe y no es instructor, aparecerá una tarjeta verde para continuar con el registro.",
+        description: "Ingrese cédula y presione Buscar para localizar al candidato.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => findButtonContainingText("Crear Instructor"),
+      element: () => document.querySelector('[data-tour="btn-crear-instructor"]'),
       popover: {
         title: "Crear instructor",
-        description:
-          "Complete profesión y especialidad, luego presione Crear Instructor. El nuevo instructor aparecerá en la tabla inferior y estará disponible al planificar talleres.",
+        description: "Complete profesión y especialidad, luego cree el instructor.",
         side: "top",
         align: "center",
       },
@@ -578,79 +532,64 @@ export function getTalleresTourSteps(tabId: string): DriveStep[] {
 
 export const bovedaTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Inventario de Bóveda"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
       title: "Inventario de Bóveda",
-      description:
-        "Catálogo digital del patrimonio artístico del museo. Gestione obras de arte, artistas y todos los datos técnicos asociados a cada pieza. Incluye creación de técnicas y categorías personalizadas.",
+      description: "Catálogo patrimonial: obras, artistas, técnicas y categorías.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="agregar-nueva-obra"]') ||
-      findButtonContainingText("Agregar Nueva Obra"),
+    element: () => document.querySelector('[data-tour="agregar-nueva-obra"]'),
     popover: {
-      title: "Registrar nueva obra",
-      description:
-        "Ingrese una nueva pieza al inventario: código de inventario, título, artista (seleccionable del catálogo), técnica con opción 'Otro (especificar)' para crear una nueva sobre la marcha, año, medidas, categoría también personalizable, ubicación, estado de conservación, clasificación patrimonial e imagen de la obra.",
+      title: "Registrar obra",
+      description: "Ingrese código, título, artista, técnica, medidas y más.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="agregar-artista"]') ||
-      findButtonContainingText("Agregar Artista"),
+    element: () => document.querySelector('[data-tour="heading-artistas"]'),
     popover: {
       title: "Gestión de artistas",
-      description:
-        "Cree fichas de artistas para asociarlos a las obras. Busque primero por cédula para evitar registrar duplicados en el catálogo. Complete nombre, apellido, nacionalidad y fecha de nacimiento.",
+      description: "Cree fichas de artistas buscando primero por cédula.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="buscador-obras"]') ||
-      document.querySelector('input[placeholder="Buscar por código, título o autor..."]'),
+    element: () => document.querySelector('[data-tour="buscador-obras"]'),
     popover: {
       title: "Buscador y filtros",
-      description:
-        "Busque obras por código de inventario, título o autor. Use los filtros avanzados: categoría, autor, ubicación, estado de conservación, clasificación patrimonial y ordenamiento por columna.",
+      description: "Busque por código, título o autor. Use filtros avanzados.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findTable(),
+    element: () => document.querySelector('[data-tour="table-obras"]'),
     popover: {
       title: "Tabla de obras",
-      description:
-        "Inventario completo con código, título, autor, técnica, categoría, dimensiones, ubicación y estado de cada obra. Los estados tienen badges de color: Excelente, Bueno, Regular, Malo o Restauración. Haga clic en cualquier fila para ver la ficha completa con historial de cambios.",
+      description: "Inventario con código, título, autor, estado y más. Haga clic para ver ficha.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Artistas"),
+    element: () => document.querySelector('[data-tour="heading-artistas"]'),
     popover: {
       title: "Artistas registrados",
-      description:
-        "Sección de artistas con tabla de nombres, documentos de identidad y acciones de edición o eliminación. Aquí puede gestionar el catálogo completo de autores.",
+      description: "Tabla con nombres, documentos y acciones de edición.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="exportar-pdf"]') ||
-      findButtonContainingText("Exportar PDF"),
+    element: () => document.querySelector('[data-tour="exportar-pdf"]'),
     popover: {
       title: "Exportar inventario",
-      description:
-        "Descargue un PDF completo con todas las obras del inventario, incluyendo datos técnicos y de catalogación.",
+      description: "Descargue PDF con todas las obras y datos técnicos.",
       side: "left",
       align: "center",
     },
@@ -659,11 +598,10 @@ export const bovedaTourSteps: DriveStep[] = [
 
 const bibliotecaSharedSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Biblioteca"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Biblioteca",
-      description:
-        "Gestión del inventario bibliográfico del museo. Dos secciones: Inventario (catálogo de libros con registro, edición y filtros) y Consultas/Préstamos (control de préstamos en sala y devoluciones por cédula del solicitante).",
+      title: "Biblioteca",
+      description: "Inventario bibliográfico con préstamos en sala y devoluciones por cédula.",
       side: "bottom",
       align: "center",
     },
@@ -673,53 +611,46 @@ const bibliotecaSharedSteps: DriveStep[] = [
 const bibliotecaStepsPorTab: Record<string, DriveStep[]> = {
   inventario: [
     {
-      element: () => findButtonContainingText("Registrar Nuevo Libro"),
+      element: () => document.querySelector('[data-tour="btn-registrar-libro"]'),
       popover: {
-        title: "Registrar nuevo libro",
-        description:
-          "Agregue un nuevo título al catálogo: unidad, título, autor, estante, categoría, año, cantidad total, estado y observaciones.",
+        title: "Registrar libro",
+        description: "Agregue título: unidad, autor, estante, categoría, año y estado.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => findButtonContainingText("Exportar PDF"),
+      element: () => document.querySelector('[data-tour="btn-exportar-pdf"]'),
       popover: {
         title: "Exportar catálogo",
-        description:
-          "Descargue el catálogo completo de la biblioteca en formato PDF.",
+        description: "Descargue el catálogo completo en PDF.",
         side: "left",
         align: "center",
       },
     },
     {
-      element: () =>
-        document.querySelector('input[placeholder*="Buscar por unidad"]') ||
-        document.querySelector('input[placeholder*="buscar"]'),
+      element: () => document.querySelector('[data-tour="input-buscar-libro"]'),
       popover: {
         title: "Buscador de libros",
-        description:
-          "Busque libros por unidad, título o autor dentro del catálogo. Resultados en tiempo real. Puede ordenar la tabla haciendo clic en los encabezados de columna.",
+        description: "Busque por unidad, título o autor. Resultados en tiempo real.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => findSelectByLabel("Estado"),
+      element: () => document.querySelector('[data-tour="select-estado"]'),
       popover: {
         title: "Filtros de catálogo",
-        description:
-          "Filtre los libros por estado (disponible, prestado), categoría y autor. Use los filtros en conjunto con el buscador para encontrar rápidamente lo que necesita.",
+        description: "Filtre por estado, categoría y autor.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () => findNthTable(0),
+      element: () => document.querySelector('[data-tour="table-libros"]'),
       popover: {
         title: "Catálogo de libros",
-        description:
-          "Tabla del inventario con unidad, título, autor, estante, categoría, cantidad disponible y total, y estado actual del ejemplar. Haga clic en una fila para ver el detalle completo del libro.",
+        description: "Tabla con unidad, título, autor, categoría, cantidad y estado.",
         side: "top",
         align: "center",
       },
@@ -727,11 +658,10 @@ const bibliotecaStepsPorTab: Record<string, DriveStep[]> = {
   ],
   consultas: [
     {
-      element: () => findHeadingByText("Control de Préstamos"),
+      element: () => document.querySelector('[data-tour="heading-consultas-cedula"]'),
       popover: {
         title: "Préstamos por cédula",
-        description:
-          "Busque por cédula del solicitante para ver el historial completo de préstamos: libros activos, devueltos, fechas y estados. Use [Devolver] para registrar la devolución de un libro activo y [Ver detalle] para consultar la información del préstamo.",
+        description: "Historial de préstamos: activos, devueltos, fechas y acciones.",
         side: "top",
         align: "center",
       },
@@ -753,11 +683,10 @@ export function getBibliotecaTourSteps(tabId: string): DriveStep[] {
 
 const rrhhSharedSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Gestión de RRHH"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Recursos Humanos",
-      description:
-        "Gestión integral del personal del museo y usuarios del sistema. Dos secciones principales: Trabajadores (registro, carnets con QR, horarios personalizables) y Usuarios (cuentas de acceso al sistema con asignación de roles).",
+      title: "Recursos Humanos",
+      description: "Gestión de personal: trabajadores con carnets QR y usuarios del sistema con roles.",
       side: "bottom",
       align: "center",
     },
@@ -767,25 +696,19 @@ const rrhhSharedSteps: DriveStep[] = [
 const rrhhStepsPorTab: Record<string, DriveStep[]> = {
   trabajadores: [
     {
-      element: () =>
-        findButtonByText("Trabajadores") ||
-        findButtonContainingText("Trabajadores"),
+      element: () => document.querySelector('[data-tour="rrhh-tabs"]'),
       popover: {
-        title: "Pestaña: Trabajadores",
-        description:
-          "Registre y administre el personal del museo. Cada trabajador puede tener foto, cargo, horario semanal con horas personalizables (tiempo completo o parcial), PIN de acceso y un carnet institucional con código QR para control de asistencia.",
+        title: "Pestaña Trabajadores",
+        description: "Registre personal con foto, cargo, horario, PIN y carnet QR.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () =>
-        document.querySelector('[data-tour="registrar-trabajador"]') ||
-        findButtonContainingText("Registrar Trabajador"),
+      element: () => document.querySelector('[data-tour="registrar-trabajador"]'),
       popover: {
-        title: "Registrar nuevo trabajador",
-        description:
-          "Complete los datos del empleado: nombres, apellidos, cédula, fecha de nacimiento, teléfono, correo, cargo, tipo de horario (tiempo completo o parcial), horas semanales personalizables y estado. Una vez registrado, podrá generar su carnet institucional con código QR y PIN de acceso.",
+        title: "Registrar trabajador",
+        description: "Complete datos del empleado y genere su carnet con QR y PIN.",
         side: "left",
         align: "center",
       },
@@ -793,24 +716,19 @@ const rrhhStepsPorTab: Record<string, DriveStep[]> = {
   ],
   usuarios: [
     {
-      element: () =>
-        findButtonByText("Usuarios") || findButtonContainingText("Usuarios"),
+      element: () => document.querySelector('[data-tour="rrhh-tabs"]'),
       popover: {
-        title: "Pestaña: Usuarios del sistema",
-        description:
-          "Gestione las cuentas de acceso al panel administrativo. Cree usuarios vinculados a trabajadores, asigne roles (Administrador, Recepcionista, Bibliotecario, Curador, Educación) y restablezca contraseñas cuando sea necesario. Puede suspender o activar cuentas según sea necesario.",
+        title: "Pestaña Usuarios",
+        description: "Gestione cuentas de acceso, roles y restablezca contraseñas.",
         side: "bottom",
         align: "center",
       },
     },
     {
-      element: () =>
-        document.querySelector('[data-tour="crear-usuario"]') ||
-        findButtonContainingText("Crear Usuario"),
+      element: () => document.querySelector('[data-tour="crear-usuario"]'),
       popover: {
-        title: "Crear usuario del sistema",
-        description:
-          "Cree una nueva cuenta de acceso vinculando un trabajador existente. Defina el correo electrónico, contraseña inicial y el rol del sistema que determinará los módulos a los que tendrá acceso. También puede restablecer la contraseña o cambiar el estado (Activo/Suspendido) desde las acciones de la tabla.",
+        title: "Crear usuario",
+        description: "Vincule un trabajador, defina correo, contraseña y rol del sistema.",
         side: "left",
         align: "center",
       },
@@ -832,33 +750,28 @@ export function getRRHHTourSteps(tabId: string): DriveStep[] {
 
 export const asistenciaTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Registro de Asistencia Personal"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Asistencia",
-      description:
-        "Control de entrada y salida de trabajadores del museo. Dos vistas: Registro Diario (tabla detallada con filtros) y Resumen Semanal (panel de cumplimiento por trabajador).",
+      title: "Asistencia",
+      description: "Control de entrada/salida: registro diario y resumen semanal.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Registro Diario") || findButtonContainingText("Diario"),
+    element: () => document.querySelector('[data-tour="tabs-asistencia"]'),
     popover: {
-      title: "Pestaña: Registro Diario",
-      description:
-        "Tabla con todas las marcaciones del día: hora, trabajador, cédula, cargo, entrada, salida y observaciones. Filtre por cargo, estado (con entrada, con salida, completo, incompleto) o seleccione una fecha específica. Use [Observaciones] para añadir notas y [Justificar] para registrar justificaciones de inasistencia.",
+      title: "Registro Diario",
+      description: "Marcaciones del día con filtros por cargo, estado y fecha.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Resumen Semanal") || findButtonContainingText("Semanal"),
+    element: () => document.querySelector('[data-tour="tabs-asistencia"]'),
     popover: {
-      title: "Pestaña: Resumen Semanal",
-      description:
-        "Cuadrícula de tarjetas con el resumen de cada trabajador: progreso circular con horas acumuladas vs. horas semanales configuradas, estado (Completo, Justificado o Incompleto), horas restantes y observaciones. Use [Gestionar Justificaciones] para administrar inasistencias.",
+      title: "Resumen Semanal",
+      description: "Progreso circular con horas acumuladas y gestión de justificaciones.",
       side: "bottom",
       align: "center",
     },
@@ -867,44 +780,37 @@ export const asistenciaTourSteps: DriveStep[] = [
 
 export const auditoriaTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Bitácora de Auditoría"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Auditoría",
-      description:
-        "Registro detallado de todas las acciones realizadas en el sistema para fines de supervisión y control. Solo accesible para Administradores y Gerentes.",
+      title: "Auditoría",
+      description: "Registro detallado de acciones del sistema. Solo Administradores.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[data-tour="filtro-tipo"]') ||
-      findSelectByLabel("Tipo de Acción"),
+    element: () => document.querySelector('[data-tour="select-tipo-accion"]'),
     popover: {
-      title: "Filtros de búsqueda",
-      description:
-        "Filtre los registros por tipo de acción: Inicio de sesión, Cierre de sesión, Creación, Actualización, Eliminación, Restauración o Exportación. También puede filtrar por rango de fechas usando los campos Desde y Hasta.",
+      title: "Filtros",
+      description: "Filtre por tipo de acción y rango de fechas.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonContainingText("Generar Reporte"),
+    element: () => document.querySelector('[data-tour="btn-generar-reporte"]'),
     popover: {
       title: "Exportar reporte",
-      description:
-        "Descargue un reporte en PDF con los registros de auditoría filtrados.",
+      description: "Descargue PDF con los registros filtrados.",
       side: "left",
       align: "center",
     },
   },
   {
-    element: () => findTable(),
+    element: () => document.querySelector('[data-tour="table-auditoria"]'),
     popover: {
       title: "Registro de actividad",
-      description:
-        "Tabla con fecha y hora, usuario, tipo de acción (con badge de color), detalle descriptivo y dirección IP. Los tipos están codificados por color: azul para login, gris para logout, rojo para eliminación, verde para creación y amarillo para demás acciones. Navegue entre páginas con los botones Anterior/Siguiente.",
+      description: "Fecha, usuario, acción con badge de color, detalle e IP.",
       side: "top",
       align: "center",
     },
@@ -913,52 +819,46 @@ export const auditoriaTourSteps: DriveStep[] = [
 
 export const papeleraTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Papelera de Reciclaje"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Papelera de reciclaje",
-      description:
-        "Gestión de registros eliminados del sistema. Aquí puede restaurar elementos a su módulo de origen o eliminarlos definitivamente. Solo accesible para Administradores. Puede filtrar por tipo de elemento (Obra, Libro, Trabajador, Taller, Artista, Espacio, Usuario, etc.) y buscar por texto.",
+      title: "Papelera",
+      description: "Restauración y eliminación definitiva de registros. Solo Administradores.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('a[href="/"]') || findButtonContainingText("Volver"),
+    element: () => document.querySelector('[data-tour="btn-volver"]'),
     popover: {
       title: "Volver al Dashboard",
-      description:
-        "Regrese al panel principal sin afectar los registros de la papelera.",
+      description: "Regrese al panel principal.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findTable(),
+    element: () => document.querySelector('[data-tour="table-papelera"]'),
     popover: {
       title: "Registros eliminados",
-      description:
-        "Lista de elementos eliminados organizados por tipo, con título, detalles y fecha de eliminación. Use la paginación para navegar entre resultados.",
+      description: "Elementos organizados por tipo con fecha de eliminación.",
       side: "top",
       align: "center",
     },
   },
   {
-    element: () => findButtonContainingText("Restaurar"),
+    element: () => document.querySelector('[data-tour="btn-restaurar"]'),
     popover: {
       title: "Restaurar registro",
-      description:
-        "Devuelva el elemento eliminado a su módulo de origen con todos sus datos intactos. Use esta opción para recuperar información eliminada por error.",
+      description: "Recupere el elemento a su módulo de origen.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findButtonContainingText("Eliminar permanentemente"),
+    element: () => document.querySelector('[data-tour="btn-vaciar"]'),
     popover: {
       title: "Eliminación definitiva",
-      description:
-        "Elimine el registro de forma permanente. Precaución: esta acción no se puede deshacer. También dispone del botón 'Vaciar Papelera' para limpiar todos los registros de una sola vez. Solo debe usarse con autorización explícita.",
+      description: "Elimine permanentemente. Precaución: no se puede deshacer.",
       side: "bottom",
       align: "center",
     },
@@ -967,23 +867,19 @@ export const papeleraTourSteps: DriveStep[] = [
 
 export const profileTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Mi Perfil"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Perfil de Usuario",
-      description:
-        "Información de su cuenta personal. Aquí puede ver y actualizar sus datos de perfil incluyendo foto, nombre, correo electrónico, teléfono y rol asignado en el sistema.",
+      title: "Mi Perfil",
+      description: "Información personal: foto, nombre, correo, teléfono y rol.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('[class*="UserMetaCard"]') ||
-      document.querySelector('[class*="rounded-2xl"]'),
+    element: () => document.querySelector('[data-tour="heading-info-personal"]'),
     popover: {
       title: "Tarjeta de identificación",
-      description:
-        "Foto de perfil, nombre completo y rol. Desde aquí puede actualizar su foto, cambiar su contraseña y editar sus datos personales como correo electrónico, teléfono y dirección.",
+      description: "Foto, nombre, rol. Edite datos, cambie contraseña.",
       side: "bottom",
       align: "center",
     },
@@ -992,45 +888,37 @@ export const profileTourSteps: DriveStep[] = [
 
 export const ingresosTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Registro de Ingresos"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Ingresos",
-      description:
-        "Panel de control de visitas al museo y registro horario del personal. Dos vistas principales: Dashboard de Visitantes (estadísticas y métricas) y Reloj de Trabajadores (marcación de entrada y salida).",
+      title: "Ingresos",
+      description: "Dashboard de visitantes y reloj de trabajadores.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Dashboard Visitantes") ||
-      findButtonContainingText("Dashboard"),
+    element: () => document.querySelector('[data-tour="tabs-ingresos"]'),
     popover: {
-      title: "Pestaña: Dashboard Visitantes",
-      description:
-        "Vista resumen con estadísticas de visitas: visitas del día, visitantes únicos registrados, total histórico acumulado y tabla de ingresos por motivo.",
+      title: "Dashboard Visitantes",
+      description: "Estadísticas: visitas del día, únicos, total histórico e ingresos por motivo.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Reloj de Trabajadores") ||
-      findButtonContainingText("Reloj"),
+    element: () => document.querySelector('[data-tour="tabs-ingresos"]'),
     popover: {
-      title: "Pestaña: Reloj de Trabajadores",
-      description:
-        "Registro de entrada y salida del personal del museo. Permite escanear el código QR del carnet, ingresar la cédula o usar el teclado PIN para marcar asistencia.",
+      title: "Reloj de Trabajadores",
+      description: "Marque entrada/salida con QR, cédula o PIN.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () => findHeadingByText("Visitas de Hoy"),
+    element: () => document.querySelector('[data-tour="stat-visitas-hoy"]'),
     popover: {
-      title: "Estadísticas de visitas",
-      description:
-        "Tarjetas con indicadores clave: visitas del día, visitantes únicos registrados, total acumulado histórico y otras métricas de ingreso.",
+      title: "Estadísticas",
+      description: "Visitas del día, únicos, total acumulado y más.",
       side: "bottom",
       align: "center",
     },
@@ -1039,35 +927,28 @@ export const ingresosTourSteps: DriveStep[] = [
 
 export const educacionTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Módulo de Educación"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Módulo de Educación",
-      description:
-        "Portal integrado de gestión educativa del museo. Acceso rápido a Talleres y Cursos (planificación, inscripciones e instructores) y a las Solicitudes de Auditorio (reservas, calendario y salas) desde una sola pantalla.",
+      title: "Educación",
+      description: "Acceso a talleres, cursos y solicitudes de auditorio.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Talleres y Cursos") ||
-      findButtonContainingText("Talleres"),
+    element: () => document.querySelector('[data-tour="tabs-educacion"]'),
     popover: {
-      title: "Pestaña: Talleres y Cursos",
-      description:
-        "Gestión de actividades formativas del museo: talleres activos, planificación de nuevas ediciones, inscripción de alumnos y control de instructores.",
+      title: "Talleres y Cursos",
+      description: "Planificación, inscripciones e instructores.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      findButtonByText("Solicitudes de Auditorio") ||
-      findButtonContainingText("Auditorio"),
+    element: () => document.querySelector('[data-tour="tabs-educacion"]'),
     popover: {
-      title: "Pestaña: Solicitudes de Auditorio",
-      description:
-        "Administración de solicitudes de uso del auditorio para actividades educativas. Calendario de reservas, creación y seguimiento de eventos, con generación de comprobantes PDF.",
+      title: "Solicitudes de Auditorio",
+      description: "Calendario de reservas y eventos educativos.",
       side: "bottom",
       align: "center",
     },
@@ -1076,48 +957,104 @@ export const educacionTourSteps: DriveStep[] = [
 
 export const registroPublicoTourSteps: DriveStep[] = [
   {
-    element: () => document.querySelector('[data-tour="page-heading"]') || findHeadingByText("Registro de Visitante"),
+    element: () => document.querySelector('[data-tour="page-heading"]'),
     popover: {
-      title: "Registro Público de Visitantes",
-      description:
-        "Formulario de auto-registro para visitantes del museo. Proceso en varios pasos: verificación de cédula, datos personales y confirmación con código QR. No requiere iniciar sesión.",
+      title: "Registro de Visitante",
+      description: "Auto-registro en pasos: cédula, datos personales y confirmación.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('input[placeholder*="Cédula"]') ||
-      document.querySelector('input[name="cedula"]'),
+    element: () => document.querySelector('[data-tour="heading-identificate"]'),
     popover: {
-      title: "Paso 1: Verificación de cédula",
-      description:
-        "Ingrese su número de cédula para verificar si ya está registrado en el sistema. Si ya existe, sus datos se cargarán automáticamente. Si es nuevo, continúe al siguiente paso.",
+      title: "Paso 1: Verificación",
+      description: "Ingrese su cédula. Si ya existe, los datos se cargan automáticamente.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('input[placeholder*="Nombre"]') ||
-      document.querySelector('input[name="nombres"]'),
+    element: () => document.querySelector('[data-tour="heading-datos"]'),
     popover: {
       title: "Paso 2: Datos personales",
-      description:
-        "Complete sus datos: nombres, apellidos, teléfono, fecha de nacimiento y cantidad de acompañantes. Si es una visita institucional, marque la casilla correspondiente. Acepte el consentimiento de privacidad para continuar.",
+      description: "Complete nombres, teléfono, fecha de nacimiento y acompañantes.",
       side: "bottom",
       align: "center",
     },
   },
   {
-    element: () =>
-      document.querySelector('select[id*="motivo"]') ||
-      document.querySelector('select[name*="motivo"]'),
+    element: () => document.querySelector('[data-tour="select-motivo"]'),
     popover: {
-      title: "Paso 3: Motivo y confirmación",
-      description:
-        "Seleccione el motivo de su visita: visita general, investigación, eventos culturales, taller o exposición. Si selecciona 'Otro', especifique el motivo. Al finalizar recibirá un código QR de confirmación que podrá mostrar en recepción.",
+      title: "Paso 3: Motivo",
+      description: "Seleccione motivo de visita y reciba su QR de confirmación.",
       side: "bottom",
+      align: "center",
+    },
+  },
+];
+
+export const catalogosTourSteps: DriveStep[] = [
+  {
+    element: () => document.querySelector('[data-tour="page-heading"]'),
+    popover: {
+      title: "Catálogos del Sistema",
+      description: "Gestión unificada de roles, cargos, categorías, técnicas y más.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="tabs-catalogos"]'),
+    popover: {
+      title: "Pestañas",
+      description: "Navegue entre catálogos. Cada uno tiene búsqueda, creación y edición.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="btn-nuevo"]'),
+    popover: {
+      title: "Nuevo registro",
+      description: "Cree una entrada en el catálogo activo mediante formulario modal.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="input-buscar-catalogo"]'),
+    popover: {
+      title: "Buscador",
+      description: "Filtre registros en tiempo real mientras escribe.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="table-catalogos"]'),
+    popover: {
+      title: "Tabla de registros",
+      description: "Datos principales con botones Editar y Eliminar.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="btn-editar"]'),
+    popover: {
+      title: "Editar registro",
+      description: "Modifique datos del registro existente con formulario precargado.",
+      side: "left",
+      align: "center",
+    },
+  },
+  {
+    element: () => document.querySelector('[data-tour="btn-eliminar"]'),
+    popover: {
+      title: "Eliminar registro",
+      description: "Elimine con confirmación. Algunos catálogos tienen datos referenciados.",
+      side: "left",
       align: "center",
     },
   },
@@ -1134,6 +1071,7 @@ export const pageTourSteps: Record<string, DriveStep[]> = {
   "/asistencia": asistenciaTourSteps,
   "/auditoria": auditoriaTourSteps,
   "/papelera": papeleraTourSteps,
+  "/catalogos": catalogosTourSteps,
   "/profile": profileTourSteps,
   "/ingresos": ingresosTourSteps,
   "/educacion": educacionTourSteps,

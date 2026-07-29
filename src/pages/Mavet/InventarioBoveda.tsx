@@ -220,7 +220,7 @@ export default function InventarioBoveda() {
         ) : (
           <>
             <div className="flex-1 overflow-x-auto">
-              <table className="w-full text-left table-auto">
+              <table data-tour="table-obras" className="w-full text-left table-auto">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                     <th className="px-2 py-2.5" onClick={() => handleSort("codigo_inventario")} style={{cursor: 'pointer'}}>
@@ -307,7 +307,7 @@ export default function InventarioBoveda() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Artistas</h2>
+            <h2 data-tour="heading-artistas" className="text-lg font-bold text-gray-900 dark:text-white">Artistas</h2>
             <span className="text-xs text-gray-500">({artistsList.length} registrados)</span>
           </div>
           <div className="relative w-full sm:max-w-xs">
@@ -316,6 +316,7 @@ export default function InventarioBoveda() {
             </div>
             <input
               type="text"
+              data-tour="input-buscar-artista"
               placeholder="Buscar artista..."
               value={artistSearch}
               onChange={(e) => setArtistSearch(e.target.value)}
@@ -324,7 +325,7 @@ export default function InventarioBoveda() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left table-auto">
+          <table data-tour="table-artistas" className="w-full text-left table-auto">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                 <th className="px-2 py-2.5">Nombres</th>

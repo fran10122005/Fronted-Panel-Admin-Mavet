@@ -53,7 +53,7 @@ export default function AuditLogs() {
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h4 className="text-base font-semibold text-gray-800 dark:text-white/90">Filtros</h4>
-            <button
+            <button data-tour="btn-generar-reporte"
               onClick={() => exportarReporteAuditoria(filtro.tipo || filtro.desde || filtro.hasta ? filtro : undefined)}
               className="bg-brand-500 text-white font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
             >
@@ -67,7 +67,7 @@ export default function AuditLogs() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo de Acción</label>
-                <select value={filtro.tipo} onChange={e => { setFiltro(f => ({ ...f, tipo: e.target.value })); setPage(1); }}
+                <select data-tour="select-tipo-accion" value={filtro.tipo} onChange={e => { setFiltro(f => ({ ...f, tipo: e.target.value })); setPage(1); }}
                   className={inputCls}>
                   <option value="">Todos</option>
                   <option value="login">Inicio de sesión</option>
@@ -81,12 +81,12 @@ export default function AuditLogs() {
               </div>
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Desde</label>
-                <input type="date" value={filtro.desde} onChange={e => { setFiltro(f => ({ ...f, desde: e.target.value })); setPage(1); }}
+                <input data-tour="input-fecha-desde" type="date" value={filtro.desde} onChange={e => { setFiltro(f => ({ ...f, desde: e.target.value })); setPage(1); }}
                   className={inputCls} />
               </div>
               <div>
                 <label className="block mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hasta</label>
-                <input type="date" value={filtro.hasta} onChange={e => { setFiltro(f => ({ ...f, hasta: e.target.value })); setPage(1); }}
+                <input data-tour="input-fecha-hasta" type="date" value={filtro.hasta} onChange={e => { setFiltro(f => ({ ...f, hasta: e.target.value })); setPage(1); }}
                   className={inputCls} />
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function AuditLogs() {
 
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <h4 className="text-base font-semibold text-gray-800 dark:text-white/90">Registro de Actividad</h4>
+            <h4 data-tour="heading-registro" className="text-base font-semibold text-gray-800 dark:text-white/90">Registro de Actividad</h4>
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {loading ? "..." : `${logs.length} registros`}
             </span>
@@ -109,7 +109,7 @@ export default function AuditLogs() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table data-tour="table-auditoria" className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <th className="pb-3 pr-3">Fecha y Hora</th>

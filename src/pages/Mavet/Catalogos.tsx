@@ -249,14 +249,14 @@ function CatalogTable({ config }: { config: TabConfig }) {
       title={config.title}
       desc={config.desc}
       action={
-        <Button size="sm" onClick={openCreate}
+        <Button size="sm" data-tour="btn-nuevo" onClick={openCreate}
           startIcon={<PlusIcon />}>Nuevo</Button>
       }
     >
       <div className="overflow-hidden border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
         <div className="px-4 pb-4">
           <div className="relative w-full sm:w-72">
-            <input type="text" placeholder="Buscar..." value={search}
+            <input data-tour="input-buscar-catalogo" type="text" placeholder="Buscar..." value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 pl-10 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -272,7 +272,7 @@ function CatalogTable({ config }: { config: TabConfig }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table data-tour="table-catalogos" className="w-full text-sm text-left">
               <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-6 py-4 font-semibold">{config.col1}</th>
@@ -291,9 +291,9 @@ function CatalogTable({ config }: { config: TabConfig }) {
                     )}
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="xs" onClick={() => openEdit(item)}
+                        <Button variant="ghost" size="xs" data-tour="btn-editar" onClick={() => openEdit(item)}
                           startIcon={<EditIcon />}>Editar</Button>
-                        <Button variant="danger" size="xs" onClick={() => setDelId(config.getId(item))}
+                        <Button variant="danger" size="xs" data-tour="btn-eliminar" onClick={() => setDelId(config.getId(item))}
                           startIcon={<TrashIcon />}>Eliminar</Button>
                       </div>
                     </td>
@@ -402,13 +402,13 @@ export default function Catalogos() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Catálogos del Sistema</h1>
+        <h1 data-tour="page-heading" className="text-2xl font-bold text-gray-900 dark:text-white">Catálogos del Sistema</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Gestión unificada de catálogos y tablas de referencia del sistema.
         </p>
       </div>
 
-      <Tabs tabs={TABS.map(t => ({ id: t.id, label: t.label }))} activeTab={activeTab} onChange={setActiveTab} variant="underline" />
+      <Tabs data-tour="tabs-catalogos" tabs={TABS.map(t => ({ id: t.id, label: t.label }))} activeTab={activeTab} onChange={setActiveTab} variant="underline" />
 
       <div className="mt-6">
         {TABS.map(tab => activeTab === tab.id && (

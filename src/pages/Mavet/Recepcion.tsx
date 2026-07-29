@@ -50,7 +50,7 @@ export default function Recepcion() {
       <PageHeader
         title="Recepción MAVET"
         actions={
-          <Button size="sm" variant="secondary" onClick={() => setIsQrModalOpen(true)}
+          <Button data-tour="btn-qr" size="sm" variant="secondary" onClick={() => setIsQrModalOpen(true)}
             startIcon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" /></svg>}>
             Generar QR Público
           </Button>
@@ -63,7 +63,7 @@ export default function Recepcion() {
         <div className="lg:col-span-8 space-y-6">
           {/* Panel de Búsqueda */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
+            <h2 data-tour="heading-buscador" className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
@@ -72,6 +72,7 @@ export default function Recepcion() {
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <input
+                  data-tour="input-buscar"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -124,7 +125,7 @@ export default function Recepcion() {
           {/* Panel de Formulario */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
             <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+              <h2 data-tour="heading-ingreso" className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                 </svg>
@@ -163,7 +164,7 @@ export default function Recepcion() {
                       <option value="V-">V-</option>
                       <option value="E-">E-</option>
                     </select>
-                    <input type="text" name="cedula" value={formData.cedula} onChange={handleChange}
+                    <input data-tour="input-cedula" type="text" name="cedula" value={formData.cedula} onChange={handleChange}
                       disabled={formData.fecha_nacimiento !== "" && age < 9}
                       placeholder="Ej. 31.243.332"
                       className="w-full rounded-r-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white/90 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 disabled:opacity-50" />
@@ -271,7 +272,7 @@ export default function Recepcion() {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-brand-100 dark:bg-brand-900/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
             <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+              <h2 data-tour="heading-agenda" className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                 <svg className="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Agenda de Hoy
                 {eventosHoy.length > 0 && (
                   <Badge scheme="info">{eventosHoy.length}</Badge>
@@ -318,7 +319,7 @@ export default function Recepcion() {
       {/* Ingresos del día / mes / año */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 gap-4">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <h2 data-tour="heading-ingresos" className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-brand-500">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
@@ -367,7 +368,7 @@ export default function Recepcion() {
               <option value="mes">Mes</option>
               <option value="ano">Año</option>
             </select>
-            <Button variant="danger" size="xs" className="text-xs px-2 py-1.5 h-auto" onClick={() => {
+            <Button data-tour="btn-pdf" variant="danger" size="xs" className="text-xs px-2 py-1.5 h-auto" onClick={() => {
               const etiquetas = { hoy: "Hoy", mes: "Este Mes", ano: "Este Año" };
               exportarReporteIngresos(ingresos, etiquetas[ingresosFiltro]);
             }} disabled={ingresos.length === 0}
@@ -386,7 +387,7 @@ export default function Recepcion() {
         ) : ingresos.length > 0 ? (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table data-tour="table-ingresos" className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
                     <th className="pb-2.5 pr-3 font-medium">Nombre</th>

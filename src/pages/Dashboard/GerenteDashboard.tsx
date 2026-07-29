@@ -39,8 +39,8 @@ export default function GerenteDashboard() {
           <p className="text-sm text-gray-500">Resumen general del estado de la institución.</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-          <div className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+            <div data-tour="card-obras" className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
             <div className="absolute bottom-0 left-0 right-0 h-10 md:h-16 opacity-[0.12] dark:opacity-[0.05] z-[-1] pointer-events-none">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparklineDataObras}>
@@ -62,7 +62,7 @@ export default function GerenteDashboard() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
+          <div data-tour="card-titulos" className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
             <div className="absolute bottom-0 left-0 right-0 h-10 md:h-16 opacity-[0.12] dark:opacity-[0.05] z-[-1] pointer-events-none">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparklineDataLibros}>
@@ -84,7 +84,7 @@ export default function GerenteDashboard() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
+          <div data-tour="card-visitantes" className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
             <div className="absolute bottom-0 left-0 right-0 h-10 md:h-16 opacity-[0.12] dark:opacity-[0.05] z-[-1] pointer-events-none">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparklineDataVisitantes}>
@@ -106,7 +106,7 @@ export default function GerenteDashboard() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
+          <div data-tour="card-eventos" className="relative overflow-hidden z-0 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25 group">
             <div className="absolute bottom-0 left-0 right-0 h-10 md:h-16 opacity-[0.12] dark:opacity-[0.05] z-[-1] pointer-events-none">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparklineDataEventos}>
@@ -132,7 +132,7 @@ export default function GerenteDashboard() {
         <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6">
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Próximos Eventos</h3>
+              <h3 data-tour="heading-eventos" className="font-bold text-gray-800 dark:text-white text-lg">Próximos Eventos</h3>
               <Link to="/auditorio" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ver Auditorio</Link>
             </div>
             <div className="p-0 divide-y divide-gray-100 dark:divide-gray-800 animate-fadeIn">
@@ -181,7 +181,7 @@ export default function GerenteDashboard() {
 
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Visitantes Frecuentes</h3>
+              <h3 data-tour="heading-visitantes" className="font-bold text-gray-800 dark:text-white text-lg">Visitantes Frecuentes</h3>
               <span className="text-xs text-gray-400 font-medium">Top 3 del mes</span>
             </div>
             <div className="p-0 divide-y divide-gray-100 dark:divide-gray-800">
@@ -228,7 +228,7 @@ export default function GerenteDashboard() {
 
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Últimas Obras Registradas</h3>
+              <h3 data-tour="heading-obras" className="font-bold text-gray-800 dark:text-white text-lg">Últimas Obras Registradas</h3>
               <Link to="/inventario-obras" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ir a Bóveda</Link>
             </div>
             <div className="p-5 overflow-x-auto">
@@ -279,7 +279,7 @@ export default function GerenteDashboard() {
 
           <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-sm flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-brand-500/25">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Últimos Libros Registrados</h3>
+              <h3 data-tour="heading-libros" className="font-bold text-gray-800 dark:text-white text-lg">Últimos Libros Registrados</h3>
               <Link to="/biblioteca" className="text-sm text-brand-500 hover:text-brand-600 font-medium">Ir a Biblioteca</Link>
             </div>
             <div className="p-5 overflow-x-auto">
@@ -332,7 +332,7 @@ export default function GerenteDashboard() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 shadow-sm animate-fadeIn" style={{ animationDelay: '100ms' }}>
           <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-3">
             <div>
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Flujo de Visitantes del Mes</h3>
+              <h3 data-tour="heading-flujo" className="font-bold text-gray-800 dark:text-white text-lg">Flujo de Visitantes del Mes</h3>
               <p className="text-xs text-gray-500">Actividad registrada en {currentMonthName.toUpperCase()}</p>
             </div>
             <span className="inline-flex items-center self-start sm:self-auto gap-1 text-xs font-semibold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-200 dark:border-amber-500/20">

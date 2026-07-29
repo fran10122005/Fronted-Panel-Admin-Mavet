@@ -140,6 +140,7 @@ export default function AsistenciaPersonal() {
           <>
             <button
               onClick={() => setIsRegistroOpen(true)}
+              data-tour="btn-registrar-asistencia"
               className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center gap-2 text-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,6 +150,7 @@ export default function AsistenciaPersonal() {
             </button>
             <button
               onClick={() => setIsExportModalOpen(true)}
+              data-tour="btn-exportar-asistencia"
               className="bg-white text-gray-700 border border-gray-300 font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
             >
               <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,6 +170,7 @@ export default function AsistenciaPersonal() {
         ]}
         activeTab={activeTab}
         onChange={(id) => setActiveTab(id as "diario" | "semanal")}
+        dataTour="tabs-asistencia"
       />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm min-h-[400px] flex flex-col">
@@ -183,17 +186,20 @@ export default function AsistenciaPersonal() {
                     </svg>
                   </div>
                   <input type="text" placeholder="Buscar por nombre o cédula..."
+                    data-tour="input-buscar-asistencia"
                     aria-label="Buscar registro"
                     value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                     className={inputCls} />
                 </div>
                 <div className="relative w-full sm:w-auto sm:min-w-[160px]">
                   <input type="date" value={asistFecha} onChange={handleFechaChange}
+                    data-tour="input-fecha-asistencia"
                     className={inputCls} />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Cargo:</span>
                   <select value={filterCargo} onChange={(e) => setFilterCargo(e.target.value)}
+                    data-tour="select-cargo"
                     className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todos">Todos</option>
                     {uniqueCargos.map((cargo) => (
@@ -204,6 +210,7 @@ export default function AsistenciaPersonal() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">Estado:</span>
                   <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+                    data-tour="select-estado"
                     className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-brand-500 focus:outline-none dark:text-white/90">
                     <option value="Todos">Todos</option>
                     <option value="con_entrada">Con entrada</option>
@@ -222,7 +229,7 @@ export default function AsistenciaPersonal() {
             ) : (
               <div className="flex flex-col flex-1">
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left table-auto">
+                  <table data-tour="table-asistencia" className="w-full text-left table-auto">
                     <thead>
                       <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                         <th className="px-4 py-3">Fecha</th>
@@ -290,7 +297,7 @@ export default function AsistenciaPersonal() {
         {activeTab === 'semanal' && (
           <div className="p-6 custom-scrollbar">
             <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Estado de Horas de la Semana Actual</h2>
+              <h2 data-tour="heading-resumen" className="text-lg font-bold text-gray-800 dark:text-gray-100">Estado de Horas de la Semana Actual</h2>
               <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                 <div className="relative flex-1 sm:w-56">
                   <input type="text" placeholder="Buscar por nombre o cargo..."

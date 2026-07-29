@@ -6,11 +6,12 @@ interface PageHeaderProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
+  searchDataTour?: string;
   filters?: ReactNode;
   actions?: ReactNode;
 }
 
-export default function PageHeader({ title, subtitle, searchValue, onSearchChange, searchPlaceholder, filters, actions }: PageHeaderProps) {
+export default function PageHeader({ title, subtitle, searchValue, onSearchChange, searchPlaceholder, searchDataTour, filters, actions }: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -32,6 +33,7 @@ export default function PageHeader({ title, subtitle, searchValue, onSearchChang
                 value={searchValue}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder || "Buscar..."}
+                data-tour={searchDataTour}
                 className="pl-10 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/20 shadow-sm dark:text-white/90"
               />
             </div>

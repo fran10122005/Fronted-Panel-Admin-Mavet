@@ -136,7 +136,7 @@ export default function Papelera() {
           </div>
           <div className="flex items-center gap-3">
             {totalItems > 0 && (
-              <button
+              <button data-tour="btn-vaciar"
                 onClick={() => setModalType("vaciar")}
                 className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-xl border border-red-200 dark:border-red-800/50 transition-colors"
               >
@@ -144,7 +144,7 @@ export default function Papelera() {
                 Vaciar Papelera
               </button>
             )}
-            <Link
+            <Link data-tour="btn-volver"
               to="/"
               className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
             >
@@ -156,7 +156,7 @@ export default function Papelera() {
 
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <input
+            <input data-tour="input-buscar-papelera"
               type="text"
               placeholder="Buscar por título..."
               value={search}
@@ -165,7 +165,7 @@ export default function Papelera() {
             />
           </div>
           <div className="w-full sm:w-56">
-            <Select
+            <Select data-tour="select-filtro-tipo"
               options={TIPO_OPTIONS}
               value={tipoFilter}
               onChange={(e) => setTipoFilter(e.target.value)}
@@ -176,7 +176,7 @@ export default function Papelera() {
 
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table data-tour="table-papelera" className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 text-xs text-gray-500 font-semibold uppercase tracking-wider">
                   <th className="px-6 py-4">Tipo</th>

@@ -128,7 +128,7 @@ export default function RRHH() {
             <div className="flex-1 overflow-x-auto">
               {activeTab === "trabajadores" && (
                 <>
-                  <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                  <div data-tour="filtros-trabajadores" className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Filtrar:</span>
                     {(["todos", "activos", "inactivos"] as const).map((f) => (
                       <Button key={f} size="xs" variant={filtroEstadoTrabajadores === f ? "primary" : "secondary"}
@@ -137,7 +137,7 @@ export default function RRHH() {
                       </Button>
                     ))}
                   </div>
-                  <table className="w-full text-left table-auto">
+                  <table data-tour="table-trabajadores" className="w-full text-left table-auto">
                     <thead>
                       <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                         <th className="px-2 py-2 w-8"></th>
@@ -205,7 +205,7 @@ export default function RRHH() {
 
               {activeTab === "usuarios" && (
                 <>
-                  <div className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                  <div data-tour="filtros-usuarios" className="px-4 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Filtrar:</span>
                     {filterPills.map((f) => (
                       <Button key={f} size="xs" variant={filtroEstadoUsuarios === f ? "primary" : "secondary"}
@@ -215,7 +215,7 @@ export default function RRHH() {
                     ))}
                   </div>
                   <div className="overflow-x-auto">
-                  <table className="w-full text-left table-auto">
+                  <table data-tour="table-usuarios" className="w-full text-left table-auto">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 uppercase text-[10px] font-semibold tracking-wider border-b border-gray-200 dark:border-gray-700">
                       <th className="px-2 py-2 w-8"></th>

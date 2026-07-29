@@ -27,9 +27,9 @@ function tallerFinalizado(t: any): boolean {
   return fin < hoy;
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function StatCard({ icon, label, value, color, dataTour }: { icon: React.ReactNode; label: string; value: number; color: string; dataTour?: string }) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-3 py-3 sm:px-5 sm:py-4 shadow-sm">
+    <div data-tour={dataTour} className="flex items-center gap-2 sm:gap-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-3 py-3 sm:px-5 sm:py-4 shadow-sm">
       <div className={`flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg ${color}`}>
         {icon}
       </div>
@@ -236,10 +236,12 @@ export default function Talleres() {
         tabs={tabItems}
         activeTab={activeTab}
         onChange={(id) => setActiveTab(id as "planificados" | "inscripciones" | "instructores")}
+        dataTour="tabs-talleres"
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
+          dataTour="stat-talleres"
           icon={
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -250,6 +252,7 @@ export default function Talleres() {
           color="bg-brand-500"
         />
         <StatCard
+          dataTour="stat-alumnos"
           icon={
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -260,6 +263,7 @@ export default function Talleres() {
           color="bg-emerald-500"
         />
         <StatCard
+          dataTour="stat-inventario"
           icon={
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -443,7 +447,7 @@ export default function Talleres() {
       )}
 
       {activeTab === "planificados" && (
-      <ComponentCard title="Inventario de Talleres" desc="Catálogo maestro de talleres disponibles"
+      <ComponentCard title="Inventario de Talleres" desc="Catálogo maestro de talleres disponibles" headingDataTour="heading-inventario-talleres"
         action={
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
@@ -556,6 +560,7 @@ export default function Talleres() {
       <ComponentCard
         title={verHistorialInsc ? "Historial de Inscripciones" : "Alumnos Inscritos"}
         desc={verHistorialInsc ? "Registro de inscripciones finalizadas o inactivas" : "Inscripciones activas agrupadas por taller"}
+        headingDataTour="heading-inscripciones"
         action={
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-56">
@@ -712,7 +717,7 @@ export default function Talleres() {
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Gestionar Instructores</h2>
+              <h2 data-tour="heading-instructores" className="text-lg font-semibold text-gray-800 dark:text-gray-200">Gestionar Instructores</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Listado de instructores registrados.</p>
             </div>
             <div className="flex items-center gap-3">
@@ -721,7 +726,7 @@ export default function Talleres() {
                 <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 Exportar PDF
               </button>
-              <button type="button" onClick={openCrearInstructor}
+              <button type="button" onClick={openCrearInstructor} data-tour="btn-crear-instructor"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg hover:bg-brand-600 transition">
                 + Crear Instructor
               </button>
@@ -747,7 +752,7 @@ export default function Talleres() {
                     <input type="text" value={nuevaCedula} onChange={e => { setFormError(""); setNuevaCedula(e.target.value); }}
                       onKeyDown={(e) => { if (e.key === "Enter") handleBuscarPersona(); }}
                       className={inputCls} placeholder="Ej. V-12345678" />
-                    <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()}
+                    <button type="button" onClick={handleBuscarPersona} disabled={buscandoPersona || !nuevaCedula.trim()} data-tour="btn-buscar-instructor"
                       className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 shrink-0 text-sm whitespace-nowrap">
                       {buscandoPersona ? (
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

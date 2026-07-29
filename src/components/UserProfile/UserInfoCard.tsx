@@ -109,8 +109,8 @@ export default function UserInfoCard({ profile, onRefresh }: UserInfoCardProps) 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <h4 className="text-base font-semibold text-gray-800 dark:text-white/90">Información Personal</h4>
-        <button
+        <h4 data-tour="heading-info-personal" className="text-base font-semibold text-gray-800 dark:text-white/90">Información Personal</h4>
+        <button data-tour="btn-editar-perfil"
           onClick={openModal}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
         >

@@ -14,6 +14,7 @@ interface TabsProps {
   variant?: "pills" | "underline";
   fullWidth?: boolean;
   className?: string;
+  dataTour?: string;
 }
 
 const variants = {
@@ -39,11 +40,11 @@ const variants = {
   },
 };
 
-export default function Tabs({ tabs, activeTab, onChange, variant = "pills", fullWidth, className }: TabsProps) {
+export default function Tabs({ tabs, activeTab, onChange, variant = "pills", fullWidth, className, dataTour }: TabsProps) {
   const style = variants[variant];
 
   return (
-    <nav className={twMerge(style.container, className)} role="tablist" aria-label="Navegación de pestañas">
+    <nav className={twMerge(style.container, className)} role="tablist" aria-label="Navegación de pestañas" data-tour={dataTour}>
       {tabs.map((tab) => (
         <button
           key={tab.id}

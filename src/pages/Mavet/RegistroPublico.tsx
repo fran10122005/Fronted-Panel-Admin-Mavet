@@ -252,7 +252,7 @@ export default function RegistroPublico() {
           {step === 1 && (
             <form onSubmit={handleVerificarCedula} className="mt-6 animate-fade-in">
               <div className="text-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Identifícate</h3>
+                <h3 data-tour="heading-identificate" className="text-lg font-bold text-gray-900 dark:text-white">Identifícate</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Ingresa tu cédula para comenzar el registro
                 </p>
@@ -264,7 +264,7 @@ export default function RegistroPublico() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
                   </svg>
                 </div>
-                <input
+                <input data-tour="input-cedula-registro"
                   id="cedula"
                   name="cedula"
                   type="text"
@@ -278,7 +278,7 @@ export default function RegistroPublico() {
                 />
               </div>
 
-              <button
+              <button data-tour="btn-siguiente"
                 type="submit"
                 disabled={isLoading}
                 className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 text-white px-5 py-3 text-base font-bold shadow-lg shadow-brand-500/25 hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-500/30 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
@@ -315,9 +315,9 @@ export default function RegistroPublico() {
                 </div>
                 <div className="flex-1 min-w-0">
                   {existe ? (
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">¡Hola de nuevo, {nombreExistente}!</h3>
+                    <h3 data-tour="heading-datos" className="text-lg font-bold text-gray-900 dark:text-white truncate">¡Hola de nuevo, {nombreExistente}!</h3>
                   ) : (
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">¡Bienvenido al Museo!</h3>
+                    <h3 data-tour="heading-datos" className="text-lg font-bold text-gray-900 dark:text-white">¡Bienvenido al Museo!</h3>
                   )}
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Completa los datos para registrar tu entrada.</p>
                 </div>
@@ -335,7 +335,7 @@ export default function RegistroPublico() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                           </svg>
                         </div>
-                        <input
+                        <input data-tour="input-nombres"
                           type="text"
                           required
                           value={formData.nombres}
@@ -410,7 +410,7 @@ export default function RegistroPublico() {
                 <label className="block text-sm font-bold text-brand-800 dark:text-brand-300 mb-2">
                   ¿Cuál es el motivo de tu visita hoy? *
                 </label>
-                <select
+                <select data-tour="select-motivo"
                   required
                   value={formData.id_motivo}
                   onChange={e => setFormData({ ...formData, id_motivo: e.target.value })}
@@ -518,7 +518,7 @@ export default function RegistroPublico() {
 
               {/* Actions */}
               <div className="mt-4 space-y-3">
-                <button
+                <button data-tour="btn-registrar-ingreso"
                   type="submit"
                   disabled={isLoading}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 text-white px-5 py-3 text-base font-bold shadow-lg shadow-brand-500/25 hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-500/30 focus:outline-none focus:ring-4 focus:ring-brand-500/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"

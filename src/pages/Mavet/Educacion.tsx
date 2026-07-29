@@ -14,7 +14,7 @@ export default function Educacion() {
         subtitle="Gestión de talleres, cursos y reservas del auditorio."
       />
 
-      <Tabs
+      <Tabs data-tour="tabs-educacion"
         variant="underline"
         tabs={[
           { id: "talleres", label: "Talleres y Cursos" },

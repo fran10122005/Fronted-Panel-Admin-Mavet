@@ -36,7 +36,7 @@ const Ingresos: React.FC = () => {
         subtitle="Control de visitas y registro de entrada/salida del personal."
         actions={
           pestanaActiva === "visitantes" && (
-            <button onClick={cargarEstadisticas} className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium hover:underline">
+            <button data-tour="btn-actualizar" onClick={cargarEstadisticas} className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium hover:underline">
               Actualizar Datos
             </button>
           )
@@ -44,7 +44,7 @@ const Ingresos: React.FC = () => {
       />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-        <Tabs
+        <Tabs data-tour="tabs-ingresos"
           variant="underline"
           fullWidth
           tabs={[
@@ -66,23 +66,23 @@ const Ingresos: React.FC = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5 bg-gray-50 dark:bg-gray-800/50">
-                      <h4 className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Visitas de Hoy</h4>
+                      <h4 data-tour="stat-visitas-hoy" className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Visitas de Hoy</h4>
                       <p className="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white">{stats.visitasHoy}</p>
                     </div>
                     <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5 bg-gray-50 dark:bg-gray-800/50">
-                      <h4 className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Visitantes Únicos</h4>
+                      <h4 data-tour="stat-visitantes-unicos" className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Visitantes Únicos</h4>
                       <p className="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white">{stats.totalVisitantesUnicos}</p>
                     </div>
                     <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-5 bg-gray-50 dark:bg-gray-800/50 col-span-2 sm:col-span-1">
-                      <h4 className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Total Visitas</h4>
+                      <h4 data-tour="stat-total-visitas" className="text-[10px] sm:text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Total Visitas</h4>
                       <p className="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white">{stats.totalVisitasHistoricas}</p>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Ingresos por Motivo</h4>
+                      <h4 data-tour="heading-ingresos-motivo" className="font-semibold text-gray-900 dark:text-white">Ingresos por Motivo</h4>
                       <div className="relative w-56">
-                        <input type="text" placeholder="Buscar motivo..."
+                        <input data-tour="input-buscar-motivo" type="text" placeholder="Buscar motivo..."
                           value={searchMotivo}
                           onChange={e => setSearchMotivo(e.target.value)}
                           className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-1.5 pl-8 text-xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
@@ -97,7 +97,7 @@ const Ingresos: React.FC = () => {
                           ? stats.porMotivo.filter((item: any) => (item.motivo || "").toLowerCase().includes(searchMotivo.toLowerCase()))
                           : stats.porMotivo;
                         return filteredMotivos.length > 0 ? (
-                        <table className="w-full text-left">
+                        <table data-tour="table-ingresos-motivo" className="w-full text-left">
                           <thead>
                             <tr className="bg-gray-50 dark:bg-gray-900/50">
                               <th className="py-2.5 px-4 font-medium text-sm text-gray-700 dark:text-gray-300">Motivo</th>
@@ -128,14 +128,14 @@ const Ingresos: React.FC = () => {
             <div className="flex flex-col gap-4 max-w-lg mx-auto">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Cédula del Trabajador</label>
-                <input type="text" placeholder="Ingrese número de cédula" onKeyDown={limitNumericInput}
+                <input data-tour="input-cedula-reloj" type="text" placeholder="Ingrese número de cédula" onKeyDown={limitNumericInput}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white/90" />
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 font-medium text-white transition-colors text-sm">
+                <button data-tour="btn-marcar-entrada" className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 font-medium text-white transition-colors text-sm">
                   Marcar Entrada
                 </button>
-                <button className="flex-1 rounded-lg bg-red-600 hover:bg-red-700 py-3 font-medium text-white transition-colors text-sm">
+                <button data-tour="btn-marcar-salida" className="flex-1 rounded-lg bg-red-600 hover:bg-red-700 py-3 font-medium text-white transition-colors text-sm">
                   Marcar Salida
                 </button>
               </div>
