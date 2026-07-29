@@ -157,16 +157,14 @@ const Auditorio: React.FC = () => {
                 <span className="hidden sm:inline">Lista</span>
               </button>
             </div>
-            {!isGerente && (
-              <button
-                data-tour="nueva-reserva"
-                onClick={handleNewReserva}
-                className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Nueva Reserva</span>
-              </button>
-            )}
+            <button
+              data-tour="nueva-reserva"
+              onClick={handleNewReserva}
+              className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nueva Reserva</span>
+            </button>
           </>
         }
       />
@@ -268,16 +266,14 @@ const Auditorio: React.FC = () => {
                         >
                           <AlertCircle className="h-3.5 w-3.5" />
                         </button>
-                        {!isGerente && (
-                          <button
-                            onClick={() => !evIsPast && handleEditFromList(ev)}
-                            disabled={evIsPast}
-                            className={`p-1.5 rounded-lg transition-colors ${evIsPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                            title={evIsPast ? "No se puede editar evento histórico" : "Editar"}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => !evIsPast && handleEditFromList(ev)}
+                          disabled={evIsPast}
+                          className={`p-1.5 rounded-lg transition-colors ${evIsPast ? 'text-gray-300 cursor-not-allowed opacity-50 dark:text-gray-600' : 'text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                          title={evIsPast ? "No se puede editar evento histórico" : "Editar"}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                         <button
                           onClick={() => {
                             setConfirm({
@@ -332,7 +328,7 @@ const Auditorio: React.FC = () => {
       </div>
 
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-2xl w-full mx-4">
-        { (isGerente || isPastEvent) && selectedEvent ? (
+        { isPastEvent && selectedEvent ? (
           <div className="p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between mb-6 pr-4">
               <div>
@@ -500,7 +496,7 @@ const Auditorio: React.FC = () => {
                   type="text"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  disabled={isGerente || isPastEvent}
+                  disabled={isPastEvent}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                   placeholder="Ej. Conferencia de Historia del Arte"
                 />
@@ -515,7 +511,7 @@ const Auditorio: React.FC = () => {
                   max={maxDateStr}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  disabled={isGerente || isPastEvent || isDateLocked}
+                  disabled={isPastEvent || isDateLocked}
                   className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {fieldErrors.eventDate && (
@@ -535,7 +531,7 @@ const Auditorio: React.FC = () => {
                       value={customTipoEvento}
                       onChange={(e) => setCustomTipoEvento(e.target.value)}
                       placeholder="Especifique el tipo de evento..."
-                      disabled={isGerente || isPastEvent}
+                      disabled={isPastEvent}
                       className="w-full rounded-lg border border-brand-500 dark:border-brand-400 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white/90 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-50"
                       required
                       autoFocus
@@ -553,7 +549,7 @@ const Auditorio: React.FC = () => {
                     required
                     value={tipoEvento}
                     onChange={(e) => setTipoEvento(e.target.value)}
-                    disabled={isGerente || isPastEvent}
+                    disabled={isPastEvent}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                   >
                     {tiposEventoList.map((t) => (
@@ -571,7 +567,7 @@ const Auditorio: React.FC = () => {
                   type="time"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  disabled={isGerente || isPastEvent}
+                  disabled={isPastEvent}
                   min="09:00"
                   max="16:00"
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
@@ -591,7 +587,7 @@ const Auditorio: React.FC = () => {
                   type="time"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  disabled={isGerente || isPastEvent}
+                  disabled={isPastEvent}
                   min="09:00"
                   max="16:00"
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 [color-scheme:light] dark:[color-scheme:dark] disabled:opacity-50"
@@ -619,7 +615,7 @@ const Auditorio: React.FC = () => {
                             setRecursosSolicitados(recursosSolicitados.filter(r => r !== recurso));
                           }
                         }}
-                        disabled={isGerente || isPastEvent}
+                        disabled={isPastEvent}
                         className="accent-brand-600 w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">{recurso}</span>
@@ -651,14 +647,14 @@ const Auditorio: React.FC = () => {
                             handleCedulaBlur();
                           }
                         }}
-                        disabled={isGerente || isPastEvent}
+                        disabled={isPastEvent}
                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                         placeholder="Ej. 31.619.791"
                       />
                       <button
                         type="button"
                         onClick={handleCedulaBlur}
-                        disabled={isGerente || organizadorLoading || !cedulaOrganizador || isPastEvent}
+                        disabled={organizadorLoading || !cedulaOrganizador || isPastEvent}
                         className="bg-brand-500 hover:bg-brand-600 text-white px-4 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Search className="w-5 h-5" />
@@ -688,7 +684,7 @@ const Auditorio: React.FC = () => {
                           type="text"
                           value={organizadorNombres}
                           onChange={(e) => setOrganizadorNombres(e.target.value)}
-                          disabled={isGerente || isPastEvent}
+                          disabled={isPastEvent}
                           className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                           placeholder="Nombres"
                         />
@@ -700,7 +696,7 @@ const Auditorio: React.FC = () => {
                           type="text"
                           value={organizadorApellidos}
                           onChange={(e) => setOrganizadorApellidos(e.target.value)}
-                          disabled={isGerente || isPastEvent}
+                          disabled={isPastEvent}
                           className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                           placeholder="Apellidos"
                         />
@@ -712,7 +708,7 @@ const Auditorio: React.FC = () => {
                           value={organizadorTelefono}
                           onChange={(e) => setOrganizadorTelefono(e.target.value)}
                           onKeyDown={limitNumericInput}
-                          disabled={isGerente || isPastEvent}
+                          disabled={isPastEvent}
                           className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                           placeholder="Ej. 04141234567"
                         />
@@ -723,7 +719,7 @@ const Auditorio: React.FC = () => {
                           type="date"
                           value={organizadorFechaNac}
                           onChange={(e) => setOrganizadorFechaNac(e.target.value)}
-                          disabled={isGerente || isPastEvent}
+                          disabled={isPastEvent}
                           className="show-date-picker w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500"
                         />
                       </div>
@@ -740,7 +736,7 @@ const Auditorio: React.FC = () => {
                           setOrganizadorAuto(false);
                         }}
                         readOnly={organizadorAuto}
-                        disabled={isGerente || isPastEvent}
+                        disabled={isPastEvent}
                         className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-60"
                         placeholder="Se autocompleta con cédula"
                       />
@@ -754,7 +750,7 @@ const Auditorio: React.FC = () => {
                       type="email"
                       value={correoElectronico}
                       onChange={(e) => setCorreoElectronico(e.target.value)}
-                      disabled={isGerente || isPastEvent}
+                      disabled={isPastEvent}
                       className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-500 disabled:opacity-50"
                       placeholder="ejemplo@correo.com"
                     />
@@ -771,18 +767,7 @@ const Auditorio: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-800">
-              {isGerente ? (
-                <div className="flex items-center justify-end w-full">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Cerrar
-                  </button>
-                </div>
-              ) : (
-                <>
+              <>
                   <div>
                     {selectedEvent && (
                       <button 
@@ -832,8 +817,7 @@ const Auditorio: React.FC = () => {
                       {saving ? "Guardando..." : selectedEvent ? "Actualizar Reserva" : "Guardar Reserva"}
                     </button>
                   </div>
-                </>
-              )}
+              </>
             </div>
           </form>
           </div>

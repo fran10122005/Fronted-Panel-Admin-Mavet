@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuth, getUserRole } from "../../context/AuthContext";
-import { parsePermisos, tienePermiso, Permisos } from "../../config/permissions";
+import { parsePermisos, tienePermiso } from "../../config/permissions";
 
 interface Props {
   allowedRoles?: string[];
@@ -19,7 +19,7 @@ export default function RoleProtectedRoute({ allowedRoles, modulo }: Props) {
   }
 
   const userRole = getUserRole(user);
-  const isSuperUser = userRole === "Administrador" || userRole === "admin";
+  const isSuperUser = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   if (isSuperUser) return <Outlet />;
 

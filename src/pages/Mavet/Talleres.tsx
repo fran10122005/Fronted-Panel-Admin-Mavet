@@ -322,7 +322,7 @@ export default function Talleres() {
                 <span className="sm:hidden">PDF</span>
               </button>
             )}
-            {!isGerente && !verHistorial && (
+            {!verHistorial && (
               <button data-tour="planificar-taller" onClick={handleOpenPlanificar}
                 className="bg-brand-500 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm hover:bg-brand-600 transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,7 +384,7 @@ export default function Talleres() {
                       <span className="text-[10px] font-semibold text-gray-400 italic tracking-wide">Solo Lectura</span>
                     ) : tallerFinalizado(t) ? (
                       <span className="text-[10px] font-semibold text-gray-400 italic tracking-wide">Solo Lectura</span>
-                    ) : !isGerente && (
+                    ) : (
                       <>
                         <button onClick={() => openEnroll(t)}
                           className="flex flex-col items-center p-1 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors group" title="Inscribir">
@@ -456,7 +456,6 @@ export default function Talleres() {
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
             </div>
-            {!isGerente && (
             <div className="flex items-center gap-2">
               <button type="button"
                 onClick={() => exportarInventarioTalleres(filteredInventario)}
@@ -469,7 +468,6 @@ export default function Talleres() {
                 + Crear Taller
               </button>
             </div>
-            )}
           </div>
         }
       >

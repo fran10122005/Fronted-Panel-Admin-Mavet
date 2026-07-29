@@ -113,8 +113,8 @@ const routePermissions: Record<string, string[]> = {
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["Administrador", "admin", "Gerente", "Recepcionista"],
   "/auditoria": ["Administrador", "admin", "Gerente"],
+  "/papelera": ["Administrador", "admin", "Gerente"],
   "/catalogos": ["Administrador", "admin", "Gerente"],
-  "/papelera": ["Administrador", "admin"],
   "/manual": ["*"],
 };
 
@@ -128,8 +128,8 @@ const pathToModule: Record<string, string> = {
   "/inventario-obras": "inventario_obras",
   "/rrhh": "rrhh",
   "/auditoria": "auditoria",
-  "/catalogos": "catalogos",
   "/papelera": "papelera",
+  "/catalogos": "catalogos",
 };
 
 const AppSidebar: React.FC = () => {
@@ -141,7 +141,7 @@ const AppSidebar: React.FC = () => {
   const userRole = getUserRole(user);
 
   const userPermisos = user?.Role?.permisos ? parsePermisos(user.Role.permisos) : null;
-  const isAdmin = userRole === "Administrador" || userRole === "admin";
+  const isAdmin = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const filteredNavItems = useCallback(() => {
     if (isAdmin) return navItems;

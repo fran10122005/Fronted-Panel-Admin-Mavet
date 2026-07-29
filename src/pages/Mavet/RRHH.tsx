@@ -103,7 +103,7 @@ export default function RRHH() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <Tabs
-            tabs={tabs.filter(t => !(isGerente && t.id === "usuarios"))}
+            tabs={tabs}
             activeTab={activeTab}
             onChange={(id) => setActiveTab(id as "trabajadores" | "usuarios")}
             data-tour="rrhh-tabs"
@@ -256,20 +256,24 @@ export default function RRHH() {
                         </td>
                         <td className="px-2 py-2 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Button size="xs" variant="secondary" onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario"
-                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
-                            <Button size="xs" variant="secondary" onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña"
-                              startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>} />
-                            {(!(u.rol === "Administrador" && activeAdminsCount <= 1 && u.estado === true)) && (
-                              <Button size="xs" variant={u.estado === true ? "danger" : "secondary"}
-                                onClick={() => handleToggleEstadoUsuario(u)}
-                                title={u.estado === true ? "Suspender usuario" : "Activar usuario"}
-                                startIcon={
-                                  u.estado === true
-                                    ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                }
-                              />
+                            {!isGerente && (
+                              <>
+                                <Button size="xs" variant="secondary" onClick={() => handleOpenEditarUsuario(u)} title="Editar usuario"
+                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+                                <Button size="xs" variant="secondary" onClick={() => handleResetPassword(u.id, u.correo)} title="Restablecer contraseña"
+                                  startIcon={<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4v-3.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>} />
+                                {(!(u.rol === "Administrador" && activeAdminsCount <= 1 && u.estado === true)) && (
+                                  <Button size="xs" variant={u.estado === true ? "danger" : "secondary"}
+                                    onClick={() => handleToggleEstadoUsuario(u)}
+                                    title={u.estado === true ? "Suspender usuario" : "Activar usuario"}
+                                    startIcon={
+                                      u.estado === true
+                                        ? <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    }
+                                  />
+                                )}
+                              </>
                             )}
                           </div>
                         </td>

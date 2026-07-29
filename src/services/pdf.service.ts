@@ -300,6 +300,7 @@ export async function exportarInventarioObras(obras: Obra[]) {
       o.codigo_inventario || o.id?.toString() || "—",
       o.titulo || "—",
       o.autor || "—",
+      o.medidas || "—",
       o.ano?.toString() || "—",
       o.tecnica || "—",
       o.estado || "—",
@@ -308,7 +309,7 @@ export async function exportarInventarioObras(obras: Obra[]) {
 
     (doc as any).autoTable({
       head: [
-        ["Código", "Título", "Autor", "Año", "Técnica", "Estado", "Ubicación"],
+        ["Código", "Título", "Autor", "Medidas", "Año", "Técnica", "Estado", "Ubicación"],
       ],
       body: tableData,
       startY: 50,
@@ -331,11 +332,12 @@ export async function exportarInventarioObras(obras: Obra[]) {
       columnStyles: {
         0: { cellWidth: 24, halign: "center" },
         1: { cellWidth: "auto" },
-        2: { cellWidth: 42 },
-        3: { cellWidth: 14, halign: "center" },
-        4: { cellWidth: 34 },
-        5: { cellWidth: 24, halign: "center" },
-        6: { cellWidth: 34 },
+        2: { cellWidth: 36 },
+        3: { cellWidth: 22, halign: "center" },
+        4: { cellWidth: 14, halign: "center" },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 24, halign: "center" },
+        7: { cellWidth: 28 },
       },
       margin: { left: MARGIN, right: MARGIN, top: 42 },
       didDrawPage: makeDidDrawPage(title, pw),

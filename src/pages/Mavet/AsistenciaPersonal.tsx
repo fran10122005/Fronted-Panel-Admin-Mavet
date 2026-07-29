@@ -252,12 +252,7 @@ export default function AsistenciaPersonal() {
                           </td>
                           <td className="px-4 py-3 text-center font-semibold text-sm">{a.horasCumplidas != null ? formatHoras(a.horasCumplidas) : "—"}</td>
                           <td className="px-4 py-3">
-                            {isGerente ? (
-                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate block max-w-[150px]" title={a.observaciones || ""}>
-                                {a.observaciones || "—"}
-                              </span>
-                            ) : (
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[150px]" title={a.observaciones || ""}>
                                   {a.observaciones || "—"}
                                 </span>
@@ -271,7 +266,6 @@ export default function AsistenciaPersonal() {
                                   </svg>
                                 </button>
                               </div>
-                            )}
                           </td>
                         </tr>
                       ))}
