@@ -135,6 +135,24 @@ export const obras = {
     return res.data?.data || res.data;
   },
 
+  actualizarTecnica: async (id: string, payload: { nombre_tecnica?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/obras/tecnicas/${id}`, payload);
+      return { success: true, message: "Técnica actualizada exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar técnica");
+    }
+  },
+
+  eliminarTecnica: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/obras/tecnicas/${id}`);
+      return { success: true, message: "Técnica eliminada." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar técnica");
+    }
+  },
+
   getEstadosObra: async (): Promise<any[]> => {
     try {
       const res = await axiosInstance.get("/api/obras/estados");
@@ -158,9 +176,45 @@ export const obras = {
     return res.data?.data || res.data;
   },
 
+  actualizarEstado: async (id: string, payload: { nombre_estado?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/obras/estados/${id}`, payload);
+      return { success: true, message: "Estado actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar estado");
+    }
+  },
+
+  eliminarEstado: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/obras/estados/${id}`);
+      return { success: true, message: "Estado eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar estado");
+    }
+  },
+
   crearCategoria: async (payload: { nombre_categoria: string; descripcion?: string }): Promise<any> => {
     const res = await axiosInstance.post("/api/obras/categorias", payload);
     return res.data?.data || res.data;
+  },
+
+  actualizarCategoriaObra: async (id: string, payload: { nombre_categoria?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/obras/categorias/${id}`, payload);
+      return { success: true, message: "Categoría actualizada exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar categoría");
+    }
+  },
+
+  eliminarCategoriaObra: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/obras/categorias/${id}`);
+      return { success: true, message: "Categoría eliminada." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar categoría");
+    }
   },
 
   getHistorialObra: async (id: string): Promise<{ data: any[]; meta?: any }> => {

@@ -52,6 +52,33 @@ export const auditorio = {
     }
   },
 
+  crearTipoEvento: async (payload: { nombre: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post("/api/tipos-evento", payload);
+      return { success: true, message: "Tipo de evento creado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear tipo de evento");
+    }
+  },
+
+  actualizarTipoEvento: async (id: string, payload: { nombre?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/tipos-evento/${id}`, payload);
+      return { success: true, message: "Tipo de evento actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar tipo de evento");
+    }
+  },
+
+  eliminarTipoEvento: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/tipos-evento/${id}`);
+      return { success: true, message: "Tipo de evento eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar tipo de evento");
+    }
+  },
+
   registrarReservaAuditorio: async (payload: any): Promise<{ success: boolean; message: string; data?: any }> => {
     try {
       const res = await axiosInstance.post("/api/educacion/solicitudes-espacio", payload);

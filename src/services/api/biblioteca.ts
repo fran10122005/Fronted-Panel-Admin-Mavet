@@ -176,4 +176,22 @@ export const biblioteca = {
     const res = await axiosInstance.post("/api/biblioteca/categorias", payload);
     return res.data?.data || res.data;
   },
+
+  actualizarCategoriaLibro: async (id: string, payload: { nombre_categoria?: string; ubicacion_estante?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/biblioteca/categorias/${id}`, payload);
+      return { success: true, message: "Categoría actualizada exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar categoría");
+    }
+  },
+
+  eliminarCategoriaLibro: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/biblioteca/categorias/${id}`);
+      return { success: true, message: "Categoría eliminada." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar categoría");
+    }
+  },
 };

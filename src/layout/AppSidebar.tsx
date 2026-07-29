@@ -16,6 +16,7 @@ import {
 
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth, getUserRole } from "../context/AuthContext";
+import { parsePermisos, tieneAlgunPermiso } from "../config/permissions";
 
 type NavItem = {
   name: string;
@@ -78,6 +79,15 @@ const navItems: NavItem[] = [
     name: "Auditoría",
     path: "/auditoria",
   },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+      </svg>
+    ),
+    name: "Catálogos",
+    path: "/catalogos",
+  },
 ];
 
 const othersItems: NavItem[] = [
@@ -103,8 +113,23 @@ const routePermissions: Record<string, string[]> = {
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["Administrador", "admin", "Gerente", "Recepcionista"],
   "/auditoria": ["Administrador", "admin", "Gerente"],
+  "/catalogos": ["Administrador", "admin", "Gerente"],
   "/papelera": ["Administrador", "admin"],
   "/manual": ["*"],
+};
+
+const pathToModule: Record<string, string> = {
+  "/": "dashboard",
+  "/recepcion": "recepcion",
+  "/auditorio": "auditorio",
+  "/talleres": "talleres",
+  "/asistencia": "asistencia",
+  "/biblioteca": "biblioteca",
+  "/inventario-obras": "inventario_obras",
+  "/rrhh": "rrhh",
+  "/auditoria": "auditoria",
+  "/catalogos": "catalogos",
+  "/papelera": "papelera",
 };
 
 const AppSidebar: React.FC = () => {
@@ -115,14 +140,22 @@ const AppSidebar: React.FC = () => {
   // Agregamos fallbacks en caso de que el objeto user antiguo en localStorage no tenga .Role
   const userRole = getUserRole(user);
 
+  const userPermisos = user?.Role?.permisos ? parsePermisos(user.Role.permisos) : null;
+  const isAdmin = userRole === "Administrador" || userRole === "admin";
+
   const filteredNavItems = useCallback(() => {
-    if (userRole === "Administrador" || userRole === "admin") return navItems;
+    if (isAdmin) return navItems;
     return navItems.filter((item) => {
+      if (item.path && item.path in pathToModule) {
+        const mod = pathToModule[item.path];
+        if (userPermisos && userPermisos !== "all" && tieneAlgunPermiso(userPermisos, mod as any)) return true;
+        if (userPermisos === "all") return true;
+      }
       const allowedRoles = routePermissions[item.path || ""] || [];
       if (allowedRoles.includes("*")) return true;
       return allowedRoles.includes(userRole);
     });
-  }, [userRole])();
+  }, [userRole, userPermisos, isAdmin])();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";

@@ -1,11 +1,13 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuth, getUserRole } from "../../context/AuthContext";
+import { parsePermisos, tienePermiso, Permisos } from "../../config/permissions";
 
 interface Props {
-  allowedRoles: string[];
+  allowedRoles?: string[];
+  modulo?: string;
 }
 
-export default function RoleProtectedRoute({ allowedRoles }: Props) {
+export default function RoleProtectedRoute({ allowedRoles, modulo }: Props) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -17,13 +19,17 @@ export default function RoleProtectedRoute({ allowedRoles }: Props) {
   }
 
   const userRole = getUserRole(user);
-
   const isSuperUser = userRole === "Administrador" || userRole === "admin";
-  const hasAccess = isSuperUser || allowedRoles.includes(userRole);
 
-  if (!hasAccess) {
-    return <Navigate to="/" replace />;
+  if (isSuperUser) return <Outlet />;
+
+  if (modulo) {
+    const rawPermisos = user?.Role?.permisos;
+    const permisos = parsePermisos(rawPermisos);
+    if (tienePermiso(permisos, modulo as any, "read")) return <Outlet />;
   }
 
-  return <Outlet />;
+  if (allowedRoles && allowedRoles.includes(userRole)) return <Outlet />;
+
+  return <Navigate to="/" replace />;
 }

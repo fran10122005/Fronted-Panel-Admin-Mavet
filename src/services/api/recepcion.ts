@@ -11,6 +11,33 @@ export const recepcion = {
     }
   },
 
+  crearMotivo: async (payload: { nombre: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post("/api/visitantes/motivos", payload);
+      return { success: true, message: "Motivo creado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear motivo");
+    }
+  },
+
+  actualizarMotivo: async (id: string, payload: { nombre?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/visitantes/motivos/${id}`, payload);
+      return { success: true, message: "Motivo actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar motivo");
+    }
+  },
+
+  eliminarMotivo: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/visitantes/motivos/${id}`);
+      return { success: true, message: "Motivo eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar motivo");
+    }
+  },
+
   checkVisitante: async (cedula: string): Promise<{ existe: boolean; visitante: any }> => {
     try {
       const res = await axiosInstance.get(`/api/visitantes/ingresos/check/${cedula}`);

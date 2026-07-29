@@ -16,6 +16,41 @@ import type {
 } from "../../types";
 
 export const rrhh = {
+  getCargos: async (): Promise<any[]> => {
+    try {
+      const res = await axiosInstance.get("/api/rrhh/cargos");
+      return Array.isArray(res.data) ? res.data : res.data.data || [];
+    } catch {
+      return [];
+    }
+  },
+
+  crearCargo: async (payload: { nombre_cargo: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.post("/api/rrhh/cargos", payload);
+      return { success: true, message: "Cargo creado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear cargo");
+    }
+  },
+
+  actualizarCargo: async (id: string, payload: { nombre_cargo?: string; descripcion?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/rrhh/cargos/${id}`, payload);
+      return { success: true, message: "Cargo actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar cargo");
+    }
+  },
+
+  eliminarCargo: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/rrhh/cargos/${id}`);
+      return { success: true, message: "Cargo eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar cargo");
+    }
+  },
   getTrabajadores: async (page?: number, limit?: number): Promise<{ data: Trabajador[]; totalItems: number; totalPages: number; currentPage: number }> => {
     try {
       const params: any = {};

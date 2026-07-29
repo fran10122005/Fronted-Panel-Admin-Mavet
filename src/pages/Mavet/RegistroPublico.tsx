@@ -446,7 +446,7 @@ export default function RegistroPublico() {
 
                   <optgroup label="Motivos Generales">
                     {motivos.map(m => (
-                      <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.descripcion}</option>
+                      <option key={`m_${m.id_motivo}`} value={`motivo_${m.id_motivo}`}>{m.nombre}</option>
                     ))}
                   </optgroup>
                 </select>

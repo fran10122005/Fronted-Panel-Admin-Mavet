@@ -1,5 +1,5 @@
 import { axiosInstance } from "./client";
-import type { Rol, Cargo, Usuario, UsuarioPayload } from "../../types";
+import type { Rol, Usuario, UsuarioPayload } from "../../types";
 
 export const auth = {
   login: async (correo: string, password: string): Promise<{ token: string; usuario: any }> => {
@@ -20,12 +20,30 @@ export const auth = {
     }
   },
 
-  getCargos: async (): Promise<Cargo[]> => {
+  crearRol: async (payload: { nombre_rol: string; permisos?: string }): Promise<{ success: boolean; message: string }> => {
     try {
-      const res = await axiosInstance.get("/api/rrhh/cargos");
-      return Array.isArray(res.data) ? res.data : res.data.data || [];
-    } catch {
-      return [];
+      await axiosInstance.post("/api/auth/roles", payload);
+      return { success: true, message: "Rol creado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al crear rol");
+    }
+  },
+
+  actualizarRol: async (id: string, payload: { nombre_rol?: string; permisos?: string }): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.put(`/api/auth/roles/${id}`, payload);
+      return { success: true, message: "Rol actualizado exitosamente." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al actualizar rol");
+    }
+  },
+
+  eliminarRol: async (id: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await axiosInstance.delete(`/api/auth/roles/${id}`);
+      return { success: true, message: "Rol eliminado." };
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || "Error al eliminar rol");
     }
   },
 
