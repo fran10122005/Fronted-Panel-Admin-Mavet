@@ -7,12 +7,13 @@ import { validateEmail, validatePhone } from "../utils/validation";
 import { useAuth, getUserRole } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
-const initialFormState: Partial<Obra> & { id_artista?: number; id_tecnica?: number; id_estado_actual?: number; id_categoria_obra?: number; ancho?: number; largo?: number } = {
+const initialFormState: Partial<Obra> & { id_artista?: number; id_tecnica?: number; id_estado_actual?: number; id_categoria_obra?: number; ancho?: number; largo?: number; alto?: number } = {
   id: "",
   codigo_inventario: "",
   titulo: "",
   ancho: undefined,
   largo: undefined,
+  alto: undefined,
   ano: new Date().getFullYear(),
   id_categoria_obra: undefined,
   tipo_ingreso: "",
@@ -27,8 +28,8 @@ export default function useInventario() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
 
-  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador" || userRole === "Restaurador";
-  const canDeleteObra = userRole === "Administrador" || userRole === "admin";
+  const canEditObra = userRole === "Administrador" || userRole === "admin" || userRole === "Curador" || userRole === "Restaurador" || userRole === "Gerente";
+  const canDeleteObra = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const previewUrlRef = useRef<string | null>(null);
   const artistDropdownRef = useRef<HTMLDivElement>(null);
@@ -158,9 +159,11 @@ export default function useInventario() {
   };
 
   const parseMedidas = (medidas?: string) => {
-    if (!medidas) return { ancho: undefined, largo: undefined };
-    const parts = medidas.split(/[xX×]/).map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
-    return parts.length >= 2 ? { ancho: parts[0], largo: parts[1] } : { ancho: undefined, largo: undefined };
+    if (!medidas) return { ancho: undefined, largo: undefined, alto: undefined };
+    const parts = medidas.split(/[xX×]/).map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    if (parts.length >= 3) return { ancho: parts[0], largo: parts[1], alto: parts[2] };
+    if (parts.length >= 2) return { ancho: parts[0], largo: parts[1], alto: undefined };
+    return { ancho: undefined, largo: undefined, alto: undefined };
   };
 
   const handleEdit = (obra: Obra) => {
@@ -270,6 +273,12 @@ export default function useInventario() {
       if (isNaN(num) || num <= 0) return "El largo debe ser un número positivo.";
       if (num > 1000) return "El largo no puede superar los 1000 cm.";
     }
+    if (name === "alto") {
+      if (value === "" || value === undefined || value === null) return "";
+      const num = Number(value);
+      if (isNaN(num) || num <= 0) return "El alto debe ser un número positivo.";
+      if (num > 1000) return "El alto no puede superar los 1000 cm.";
+    }
     if (name === "peso" && value !== undefined && value !== "" && value !== null) {
       const num = Number(value);
       if (isNaN(num) || num < 0) return "El peso debe ser un número válido.";
@@ -373,10 +382,12 @@ export default function useInventario() {
       }
 
       // Excluir campos de solo-lectura del frontend que no son columnas de la BD
-      const { id: _omitId, ubicacion, ano, ancho, largo, clasificacion_patrimonial: _cp,
+      const { id: _omitId, ubicacion, ano, ancho, largo, alto, clasificacion_patrimonial: _cp,
               autor: _autor, tecnica: _tecnica, categoria: _categoria, estado: _estado,
               ...restForm } = formData;
-      const medidasStr = formData.ancho && formData.largo ? `${Number(formData.ancho)}x${Number(formData.largo)}` : undefined;
+      const medidasStr = formData.ancho && formData.largo
+        ? (formData.alto ? `${Number(formData.ancho)}x${Number(formData.largo)}x${Number(formData.alto)}` : `${Number(formData.ancho)}x${Number(formData.largo)}`)
+        : undefined;
       const payloadBase = {
         ...restForm,
         medidas: medidasStr,

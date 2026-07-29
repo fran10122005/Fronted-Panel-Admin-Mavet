@@ -36,9 +36,9 @@ export default function Biblioteca() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
 
-  const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria";
-  const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria";
-  const canDeleteLibro = userRole === "Administrador" || userRole === "admin";
+  const canPrestarDevolver = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria" || userRole === "Gerente";
+  const canEditLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Bibliotecario" || userRole === "Bibliotecaria" || userRole === "Gerente";
+  const canDeleteLibro = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
 
   const {
     categorias, isLoading,

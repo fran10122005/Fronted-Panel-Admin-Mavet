@@ -103,7 +103,7 @@ const routePermissions: Record<string, string[]> = {
   "/rrhh": ["Administrador", "admin", "Gerente"],
   "/asistencia": ["Administrador", "admin", "Gerente", "Recepcionista"],
   "/auditoria": ["Administrador", "admin", "Gerente"],
-  "/papelera": ["Administrador", "admin"],
+  "/papelera": ["Administrador", "admin", "Gerente"],
   "/manual": ["*"],
 };
 
@@ -116,7 +116,7 @@ const AppSidebar: React.FC = () => {
   const userRole = getUserRole(user);
 
   const filteredNavItems = useCallback(() => {
-    if (userRole === "Administrador" || userRole === "admin") return navItems;
+    if (userRole === "Administrador" || userRole === "admin" || userRole === "Gerente") return navItems;
     return navItems.filter((item) => {
       const allowedRoles = routePermissions[item.path || ""] || [];
       if (allowedRoles.includes("*")) return true;

@@ -18,7 +18,7 @@ export default function RoleProtectedRoute({ allowedRoles }: Props) {
 
   const userRole = getUserRole(user);
 
-  const isSuperUser = userRole === "Administrador" || userRole === "admin";
+  const isSuperUser = userRole === "Administrador" || userRole === "admin" || userRole === "Gerente";
   const hasAccess = isSuperUser || allowedRoles.includes(userRole);
 
   if (!hasAccess) {

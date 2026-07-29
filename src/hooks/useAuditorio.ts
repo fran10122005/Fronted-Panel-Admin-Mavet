@@ -373,8 +373,6 @@ export default function useAuditorio() {
   };
 
   const handleDateSelect = (dateStr: string) => {
-    if (isGerente) return;
-
     const selectedDate = new Date(`${dateStr}T00:00:00`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);

@@ -627,69 +627,73 @@ export default function InventarioBoveda() {
 </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
-              <div>
-                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Medidas</label>
-                <div className="flex items-center gap-1.5">
-                  <div className="flex-1 relative">
-                    <input
-                      type="number"
-                      name="ancho"
-                      placeholder="Ancho"
-                      min={1}
-                      max={1000}
-                      value={formData.ancho ?? ""}
-                      onChange={handleChange}
-                      className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                        formErrors.ancho
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
-                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                      }`}
-                      required
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
+                <div className="sm:col-span-2">
+                  <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Medidas</label>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        name="ancho"
+                        placeholder="Ancho"
+                        min={1}
+                        max={1000}
+                        value={formData.ancho ?? ""}
+                        onChange={handleChange}
+                        className={`w-full rounded-lg border pl-3 pr-10 py-2.5 text-base focus:outline-none dark:text-white/90 ${
+                          formErrors.ancho
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
+                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                        }`}
+                        required
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-400 dark:text-gray-500 px-0.5 select-none">x</span>
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        name="largo"
+                        placeholder="Largo"
+                        min={1}
+                        max={1000}
+                        value={formData.largo ?? ""}
+                        onChange={handleChange}
+                        className={`w-full rounded-lg border pl-3 pr-10 py-2.5 text-base focus:outline-none dark:text-white/90 ${
+                          formErrors.largo
+                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
+                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                        }`}
+                        required
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
+                    </div>
+                    {categorias.find((c: any) => c.id_categoria_obra == formData.id_categoria_obra)?.nombre_categoria === "Escultura" && (
+                      <>
+                        <span className="text-sm font-bold text-gray-400 dark:text-gray-500 px-0.5 select-none">x</span>
+                        <div className="flex-1 relative">
+                          <input
+                            type="number"
+                            name="alto"
+                            placeholder="Alto"
+                            min={1}
+                            max={1000}
+                            value={formData.alto ?? ""}
+                            onChange={handleChange}
+                            className={`w-full rounded-lg border pl-3 pr-10 py-2.5 text-base focus:outline-none dark:text-white/90 ${
+                              formErrors.alto
+                                ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
+                                : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                            }`}
+                            required
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <span className="text-sm font-bold text-gray-400 dark:text-gray-500 px-0.5 select-none">x</span>
-                  <div className="flex-1 relative">
-                    <input
-                      type="number"
-                      name="largo"
-                      placeholder="Largo"
-                      min={1}
-                      max={1000}
-                      value={formData.largo ?? ""}
-                      onChange={handleChange}
-                      className={`w-full rounded-lg border pl-3 pr-8 py-1.5 text-sm focus:outline-none dark:text-white/90 ${
-                        formErrors.largo
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
-                          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                      }`}
-                      required
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 dark:text-gray-500 pointer-events-none">cm</span>
-                  </div>
-                </div>
-                {(formErrors.ancho || formErrors.largo) && (
-                  <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ancho || formErrors.largo}</p>
-                )}
-              </div>
-              <div>
-                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Año</label>
-                <input
-                  type="number"
-                  name="ano"
-                  value={formData.ano}
-                  onChange={handleChange}
-                  onKeyDown={limitNumericInput}
-                  min={1000}
-                  max={new Date().getFullYear() + 5}
-                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
-                    formErrors.ano
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
-                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
-                  }`}
-                  required
-                />
-                {formErrors.ano && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ano}</p>}
+                  {(formErrors.ancho || formErrors.largo || formErrors.alto) && (
+                    <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ancho || formErrors.largo || formErrors.alto}</p>
+                  )}
               </div>
               <div>
                 <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Estado de Conservación</label>
@@ -769,6 +773,28 @@ export default function InventarioBoveda() {
                   <option value="Por requisito de exposición">Por requisito de exposición del autor</option>
                 </select>
                 {formErrors.tipo_ingreso && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.tipo_ingreso}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+              <div>
+                <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Año</label>
+                <input
+                  type="number"
+                  name="ano"
+                  value={formData.ano}
+                  onChange={handleChange}
+                  onKeyDown={limitNumericInput}
+                  min={1000}
+                  max={new Date().getFullYear() + 5}
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none dark:text-white/90 ${
+                    formErrors.ano
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 shadow-sm transition-all duration-200'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900'
+                  }`}
+                  required
+                />
+                {formErrors.ano && <p className="text-red-500 text-[11px] mt-0.5">{formErrors.ano}</p>}
               </div>
               <div>
                 <label className="block mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">Clasificación Patrimonial</label>
